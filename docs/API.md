@@ -1,0 +1,296 @@
+# API Reference
+
+Base URL: `http://localhost:8080/api/v1`
+
+All authenticated endpoints require JWT in httpOnly cookie (set automatically on login).
+
+---
+
+## Auth
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/auth/google` | No | Redirect to Google consent |
+| GET | `/auth/google/callback` | No | OAuth callback, issues JWT |
+| POST | `/auth/logout` | Yes | Clear auth cookies |
+| GET | `/auth/me` | Yes | Get current user |
+
+**GET /auth/me response:**
+```json
+{
+  "id": "uuid",
+  "email": "user@gmail.com",
+  "name": "Ahmad Hafizh",
+  "avatar_url": "https://..."
+}
+```
+
+---
+
+## Currency
+
+Supported currencies (MVP): `IDR`, `USD`, `JPY`, `SGD`, `KRW`
+
+Rates cached in Redis, TTL 1 hour.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/currency/convert` | No | Convert amount between currencies |
+| GET | `/currency/rates` | No | Get all rates for a base currency |
+
+**GET /currency/convert?from=USD&to=IDR&amount=100**
+```json
+{
+  "from": "USD",
+  "to": "IDR",
+  "amount": 100,
+  "converted": 1620000,
+  "rate": 16200,
+  "fetched_at": "2026-06-08T10:00:00Z"
+}
+```
+
+**GET /currency/rates?base=IDR**
+```json
+{
+  "base": "IDR",
+  "rates": [
+    { "currency": "USD", "rate": 0.0000617, "symbol": "$" },
+    { "currency": "JPY", "rate": 0.00923,   "symbol": "¥" },
+    { "currency": "SGD", "rate": 0.0000836, "symbol": "S$" },
+    { "currency": "KRW", "rate": 0.0851,    "symbol": "₩" }
+  ],
+  "fetched_at": "2026-06-08T10:00:00Z"
+}
+```
+
+---
+
+## Trips
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/trips` | Yes | List user's trips |
+| POST | `/trips` | Yes | Create trip |
+| GET | `/trips/:id` | Yes | Get full trip detail |
+| PUT | `/trips/:id` | Yes | Update trip metadata |
+| DELETE | `/trips/:id` | Yes | Delete trip |
+
+**POST /trips body:**
+```json
+{
+  "title": "Bali Trip",
+  "description": "Honeymoon",
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-07",
+  "base_currency": "IDR",
+  "cover_image_url": "https://...",
+  "notes": "Optional general trip notes"
+}
+```
+
+**GET /trips/:id response:**
+```json
+{
+  "id": "uuid",
+  "title": "Bali Trip",
+  "description": "Honeymoon",
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-07",
+  "base_currency": "IDR",
+  "cover_image_url": "https://...",
+  "notes": "...",
+  "transportations": [...],
+  "accommodations": [...],
+  "days": [
+    {
+      "id": "uuid",
+      "date": "2026-07-01",
+      "day_number": 1,
+      "notes": "...",
+      "activities": [...]
+    }
+  ]
+}
+```
+
+---
+
+## Transportations (trip-level)
+
+`type` values: `flight` | `bus` | `train` | `ferry` | `ship` | `car` | `other`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips/:trip_id/transportations` | Yes | Add transportation |
+| PUT | `/transportations/:id` | Yes | Update |
+| DELETE | `/transportations/:id` | Yes | Delete |
+
+**POST body:**
+```json
+{
+  "type": "flight",
+  "label": "Jakarta → Bali",
+  "departure_datetime": "2026-07-01T06:00:00Z",
+  "arrival_datetime": "2026-07-01T07:20:00Z",
+  "from": "CGK",
+  "to": "DPS",
+  "operator": "Garuda Indonesia",
+  "reference_number": "GA-400",
+  "notes": "Check-in 2h before"
+}
+```
+
+---
+
+## Accommodations (trip-level)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips/:trip_id/accommodations` | Yes | Add accommodation |
+| PUT | `/accommodations/:id` | Yes | Update |
+| DELETE | `/accommodations/:id` | Yes | Delete |
+
+**POST body:**
+```json
+{
+  "name": "Four Seasons Bali",
+  "location_name": "Jimbaran, Bali",
+  "lat": -8.7832,
+  "lng": 115.1637,
+  "google_place_id": "ChIJ...",
+  "check_in": "2026-07-01",
+  "check_out": "2026-07-07",
+  "confirmation_number": "FS-12345",
+  "notes": "Early check-in requested"
+}
+```
+
+---
+
+## Activities (day-level, polymorphic)
+
+Activity has 3 types: `location`, `note`, `todo`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips/:trip_id/days/:day_id/activities` | Yes | Add activity |
+| PUT | `/activities/:id` | Yes | Update activity |
+| DELETE | `/activities/:id` | Yes | Delete activity |
+| PUT | `/trips/:trip_id/days/:day_id/activities/reorder` | Yes | Reorder |
+
+**POST body — type: location**
+```json
+{
+  "type": "location",
+  "title": "Kuta Beach",
+  "start_time": "08:00",
+  "end_time": "10:00",
+  "payload": {
+    "location_name": "Kuta Beach, Bali",
+    "lat": -8.7184,
+    "lng": 115.1686,
+    "google_place_id": "ChIJ...",
+    "address": "Kuta, Badung Regency, Bali",
+    "notes": "Morning swim, watch sunrise",
+    "image_urls": ["https://..."]
+  }
+}
+```
+
+**POST body — type: note**
+```json
+{
+  "type": "note",
+  "title": "Reminders",
+  "payload": {
+    "content": "Bring sunscreen, cash for local market, ..."
+  }
+}
+```
+
+**POST body — type: todo**
+```json
+{
+  "type": "todo",
+  "title": "Packing checklist",
+  "payload": {
+    "items": [
+      { "id": "uuid", "text": "Sunscreen", "completed": false },
+      { "id": "uuid", "text": "Adapter plug", "completed": false }
+    ]
+  }
+}
+```
+
+**PUT reorder body:**
+```json
+{
+  "activity_ids": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
+
+**Activity response (unified):**
+```json
+{
+  "id": "uuid",
+  "type": "location",
+  "title": "Kuta Beach",
+  "start_time": "08:00",
+  "end_time": "10:00",
+  "order_index": 0,
+  "payload": { "..." : "..." }
+}
+```
+
+---
+
+## Budget / Expenses
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/trips/:trip_id/expenses` | Yes | List expenses with summary |
+| POST | `/trips/:trip_id/expenses` | Yes | Add expense |
+| PUT | `/expenses/:id` | Yes | Update expense |
+| DELETE | `/expenses/:id` | Yes | Delete expense |
+
+**POST body:**
+```json
+{
+  "title": "Hotel deposit",
+  "amount": 500,
+  "currency": "USD",
+  "category": "accommodation",
+  "activity_id": "uuid (optional)"
+}
+```
+
+**GET /trips/:trip_id/expenses response:**
+```json
+{
+  "expenses": [...],
+  "summary": {
+    "total_base": 5000000,
+    "base_currency": "IDR",
+    "by_category": [
+      { "category": "accommodation", "total": 2000000 },
+      { "category": "transport",     "total": 500000 },
+      { "category": "food",          "total": 1500000 },
+      { "category": "activity",      "total": 1000000 }
+    ]
+  }
+}
+```
+
+---
+
+## Error Format
+
+```json
+{
+  "error": "trip not found",
+  "code": "TRIP_NOT_FOUND"
+}
+```
+
+HTTP status codes: 400, 401, 403, 404, 500.

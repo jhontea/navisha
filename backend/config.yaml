@@ -1,0 +1,16 @@
+server:
+  port: 8090
+
+db:
+  pool_size: 10
+
+redis:
+  pool_size: 10
+
+currency:
+  supported: [IDR, USD, JPY, SGD, KRW]
+  cache_ttl: 3600
+
+jwt:
+  access_ttl: 3600     # 1 hour
+  refresh_ttl: 604800  # 7 days

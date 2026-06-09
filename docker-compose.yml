@@ -1,0 +1,34 @@
+name: navisha-dev
+
+services:
+  postgres-navisha:
+    container_name: postgres-navisha
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: navisha
+      POSTGRES_PASSWORD: navisha
+      POSTGRES_DB: navisha
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - navisha-dev-network
+
+  redis-navisha:
+    container_name: redis-navisha
+    image: redis:7-alpine
+    ports:
+      - "6389:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - navisha-dev-network
+
+networks:
+  navisha-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
