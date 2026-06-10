@@ -4,6 +4,77 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-10 — Session 7: Frontend Trip CRUD + shadcn Base UI Fix
+
+**Status**: Dashboard shows user info + trip list. Create/view/delete trip flow working end-to-end. Resolved shadcn Base UI ref-forwarding issue blocking RHF.
+
+### Completed
+- `features/trip/api.ts` — typed client for list/get/create/update/delete
+- `features/trip/hooks/useTrips.ts` — `useTrips` (`useInfiniteQuery` for cursor pagination, `LIMIT=20`), `useTrip`, `useCreateTrip`, `useUpdateTrip`, `useDeleteTrip`; all mutations invalidate `["trips", "list"]`
+- `features/trip/components/TripCard.tsx`, `TripList.tsx` (grid + Load more), `TripForm.tsx` (RHF + Zod)
+- `features/auth/components/UserBadge.tsx` — avatar/name/email pill driven by `useAuth`
+- Pages: `app/(dashboard)/dashboard/page.tsx` (header + UserBadge + New trip + LogoutButton + TripList), `app/(dashboard)/trips/new/page.tsx`, `app/(dashboard)/trips/[id]/page.tsx` (detail + day list + Delete with `confirm()`)
+- shadcn install: `textarea`, `select` (form component not shipped by current registry)
+- **Fixed shadcn Input + Textarea ref forwarding** — current `npx shadcn add input/textarea` ships Base UI–backed wrappers as **plain function components**, not `React.forwardRef`. RHF's `register("field")` returns a ref callback that React silently drops at non-forwardRef boundaries → field never registered in RHF → submit value `undefined` → Zod 4 returns `"Invalid input: expected string, received undefined"` (truncates to "Invalid input" in UI). Rewrote both to native `<input>`/`<textarea>` with `forwardRef`.
+
+### Key Decisions
+- **Cursor pagination in frontend** — `useInfiniteQuery` reads `next_cursor` from each page; `getNextPageParam` returns `undefined` when empty to disable Load more.
+- **Controller for shadcn Select** — Base UI Select uses Field context internally; `setValue` alone left RHF unaware of the field. `Controller` from RHF binds value/onChange explicitly.
+- **`showPicker()` onClick only** — Chrome rejects `showPicker()` from `onFocus` (programmatic focus / Tab key counts as non-gesture in strict mode). `onClick` fires only from a real user gesture. Wrapped in try/catch as defence.
+- **Replace shadcn Input/Textarea wholesale, not Controller every field** — RHF integration is foundational; fixing the primitive once beats wrapping every form field in `Controller`.
+- **Form route over modal** — `/trips/new` as a page (matches backend dev's mental model of routing). Modal can come later if multi-form UX demands it.
+
+### Pending
+- [ ] Trip update page (form reused with `useUpdateTrip`)
+- [ ] Replace `window.confirm` with shadcn `Dialog` for delete confirmation
+- [ ] Activities domain (polymorphic location/note/todo) — backend + frontend
+- [ ] Transportation, Accommodation domains
+- [ ] Expense + Currency domain backend
+- [ ] User handler unit tests (UsecaseInterface mock)
+
+### Resume From
+**Activities domain backend** — `internal/activity/` package. Polymorphic via `type` discriminator + JSONB payload (already in migration). CRUD endpoints scoped under `/api/v1/trips/:trip_id/days/:day_id/activities`. Ownership cascades: trip → user. Frontend later adds DayView + ActivityForm with per-type field sets.
+
+---
+
+## 2026-06-10 — Session 6: Trip Domain Backend + Tests
+
+**Status**: Trip CRUD backend complete with tests. Cursor pagination working. OAuth flow now redirects to `/auth/callback` to avoid cookie-timing race in Next.js middleware.
+
+### Completed
+- **OAuth redirect fix**: backend now redirects to `frontendURL + "/auth/callback"` (not `/dashboard`). New page `app/(auth)/auth/callback/page.tsx` does client-side `router.replace("/dashboard")` after mount — avoids middleware race where cookie set via `Set-Cookie` on redirect wasn't yet visible to Next.js middleware on the immediate `/dashboard` request. Added `/auth/callback` to `AUTH_PATHS` in middleware.
+- **Trip domain backend** — `internal/trip/`:
+  - `repository.go` — slim interface: BeginTx/Commit/Rollback + List/FindByID/InsertTrip/InsertDays/Update/Delete/ListDays. Removed old broad interface (activities, transports, accommodations deferred).
+  - `repository_pg.go` — pg implementation; cursor pagination using row-value comparison `(start_date, id) < ($cursor_date, $cursor_id)` on indexed columns; fetches `limit+1` rows to detect next page.
+  - `usecase.go` — Create orchestrates transaction (BeginTx → InsertTrip → InsertDays → Commit), validates dates + currency, generates day rows. List clamps limit (default 20, max 50). Get/Update/Delete enforce ownership via `apperr.ErrForbidden`. Update does NOT regenerate days on date-range change (deferred until itinerary builder).
+  - `handler.go` — REST endpoints `GET/POST/PUT/DELETE /api/v1/trips[/:id]`, error mapping (404/403/400/500), date parsing YYYY-MM-DD, cursor query param.
+  - Wired in `cmd/server/main.go`.
+- **Tests** (19 passing):
+  - `mocks_test.go` — `mockRepo` records calls, returns canned values; test helpers (`setupCurrencies`, `date`)
+  - `usecase_test.go` — `generateDays`, `validateDates`, Create success/invalid-currency/invalid-dates/rollback-on-failure, Get/Update/Delete ownership checks, List limit clamping
+  - `cursor_test.go` — `encodeCursor`/`decodeCursor` roundtrip, empty cursor, invalid base64/format/date
+
+### Key Decisions
+- **Cursor pagination over offset** — stable load-more UX; new trip insertions don't shift pages. Cursor = `base64("<RFC3339 start_date>|<uuid>")`.
+- **Repository owns transaction lifecycle** — `BeginTx`/`Commit`/`Rollback` exposed as repo methods so usecase doesn't call `tx.Commit()` directly; keeps all DB interaction routed through repository even though pgx.Tx leaks into signatures.
+- **Days kept in trip domain** — `ListDays` lives in `trip/repository_pg.go`; insert split into `InsertTrip` + `InsertDays` so usecase orchestrates the transaction (user feedback).
+- **Mocks in separate `mocks_test.go`** — keeps test fixtures discoverable, avoids cluttering `usecase_test.go` (user feedback).
+- **Update does not regenerate days** — flagged via inline comment; will revisit when itinerary builder needs to handle range changes.
+
+### Pending
+- [ ] Frontend trip list page on dashboard (consume cursor pagination)
+- [ ] Frontend trip create/edit form
+- [ ] Activities domain (polymorphic location/note/todo)
+- [ ] Transportation domain
+- [ ] Accommodation domain
+- [ ] Expense + Currency domain backend
+- [ ] User handler unit tests (UsecaseInterface mock)
+
+### Resume From
+**Frontend trip list page** — `app/(dashboard)/dashboard/page.tsx` replaces placeholder with trip list. Build `features/trip/hooks/useTrips.ts` (TanStack Query infinite query for cursor pagination), `features/trip/components/TripCard.tsx`, `features/trip/components/TripList.tsx`. API client method in `lib/api.ts` already supports the call. Use shadcn `Card` component for trip rows.
+
+---
+
 ## 2026-06-09 — Session 5: Frontend Setup & Auth UI
 
 **Status**: Auth flow fully working end-to-end (frontend + backend). Login, logout, protected routes, landing page all functional. Frontend restructured to feature-slice architecture.

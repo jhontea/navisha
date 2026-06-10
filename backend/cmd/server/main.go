@@ -12,6 +12,7 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/config"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
@@ -71,6 +72,11 @@ func main() {
 	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg)
 	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL)
 
+	// Trip domain
+	tripRepo := trip.NewPostgresRepository(db)
+	tripUsecase := trip.NewUsecase(tripRepo)
+	tripHandler := trip.NewHandler(tripUsecase)
+
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
@@ -95,6 +101,7 @@ func main() {
 	// API v1
 	api := e.Group("/api/v1")
 	userHandler.RegisterRoutes(api, authMiddleware)
+	tripHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown
 	go func() {

@@ -70,11 +70,33 @@ Rates cached in Redis, TTL 1 hour.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/trips` | Yes | List user's trips |
-| POST | `/trips` | Yes | Create trip |
-| GET | `/trips/:id` | Yes | Get full trip detail |
+| GET | `/trips?limit=20&cursor=…` | Yes | List user's trips (cursor pagination) |
+| POST | `/trips` | Yes | Create trip + auto-generated days |
+| GET | `/trips/:id` | Yes | Get trip detail with days |
 | PUT | `/trips/:id` | Yes | Update trip metadata |
-| DELETE | `/trips/:id` | Yes | Delete trip |
+| DELETE | `/trips/:id` | Yes | Delete trip (CASCADE days/activities) |
+
+**GET /trips response:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "user_id": "uuid",
+      "title": "Bali Trip",
+      "start_date": "2026-07-01",
+      "end_date": "2026-07-07",
+      "base_currency": "IDR",
+      "cover_image_url": "https://...",
+      "notes": "...",
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  ],
+  "next_cursor": "MjAyNi0wNi0xMFQwMDowMDowMFp8YWJj"
+}
+```
+Pagination: order = `start_date DESC, id DESC`. Pass `next_cursor` from prior response as `?cursor=` for next page. Empty `next_cursor` = no more pages. `limit` default 20, max 50.
 
 **POST /trips body:**
 ```json
@@ -93,6 +115,7 @@ Rates cached in Redis, TTL 1 hour.
 ```json
 {
   "id": "uuid",
+  "user_id": "uuid",
   "title": "Bali Trip",
   "description": "Honeymoon",
   "start_date": "2026-07-01",
@@ -100,19 +123,22 @@ Rates cached in Redis, TTL 1 hour.
   "base_currency": "IDR",
   "cover_image_url": "https://...",
   "notes": "...",
-  "transportations": [...],
-  "accommodations": [...],
+  "created_at": "...",
+  "updated_at": "...",
   "days": [
     {
       "id": "uuid",
+      "trip_id": "uuid",
       "date": "2026-07-01",
       "day_number": 1,
-      "notes": "...",
-      "activities": [...]
+      "notes": ""
     }
   ]
 }
 ```
+Activities/transportations/accommodations not yet returned — separate endpoints added in later sessions.
+
+**Errors:** 400 invalid dates/currency/cursor · 403 not owner · 404 not found
 
 ---
 

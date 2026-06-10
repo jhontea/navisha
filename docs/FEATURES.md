@@ -15,10 +15,11 @@
 - [ ] Accessible from nav bar — no trip required
 
 ### Trip Management
-- [ ] Create trip (title, description, date range, base currency, cover image, notes)
-- [ ] List my trips on dashboard
-- [ ] Edit trip details
-- [ ] Delete trip
+- [x] Create trip (title, description, date range, base currency, cover image, notes)
+- [x] List my trips on dashboard (cursor pagination)
+- [x] View trip detail with day list
+- [x] Delete trip (CASCADE deletes days/activities)
+- [ ] Edit trip page (backend ready, frontend page pending)
 - [ ] Add/edit/delete transportation records (flight, bus, train, ferry, ship, car)
 - [ ] Add/edit/delete accommodation records (name, dates, confirmation number)
 
