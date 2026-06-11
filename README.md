@@ -25,7 +25,7 @@ Navisha is an open-source travel itinerary app that helps you plan trips day by 
 | Layer | Technology |
 |-------|-----------|
 | Backend | Go, Echo, PostgreSQL 16, Redis 7 |
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui |
+| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI) |
 | Maps | Google Maps JS API + Places API |
 | Currency | Frankfurter API (ECB data, free, no key) |
 | Auth | Google OAuth 2.0 + JWT (httpOnly cookie) |

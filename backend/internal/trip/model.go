@@ -1,9 +1,6 @@
 package trip
 
-import (
-	"encoding/json"
-	"time"
-)
+import "time"
 
 type Trip struct {
 	ID            string
@@ -20,60 +17,15 @@ type Trip struct {
 }
 
 type Day struct {
-	ID         string
-	TripID     string
-	Date       time.Time
-	DayNumber  int
-	Notes      string
-	Activities []Activity
+	ID        string
+	TripID    string
+	Date      time.Time
+	DayNumber int
+	Notes     string
 }
 
-type ActivityType string
-
-const (
-	ActivityTypeLocation ActivityType = "location"
-	ActivityTypeNote     ActivityType = "note"
-	ActivityTypeTodo     ActivityType = "todo"
-)
-
-type Activity struct {
-	ID         string
-	DayID      string
-	Type       ActivityType
-	Title      string
-	StartTime  string
-	EndTime    string
-	OrderIndex int
-	Payload    json.RawMessage
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-}
-
-// Payload shapes per activity type — validated in usecase layer.
-
-type LocationPayload struct {
-	LocationName  string   `json:"location_name"`
-	Lat           float64  `json:"lat"`
-	Lng           float64  `json:"lng"`
-	GooglePlaceID string   `json:"google_place_id"`
-	Address       string   `json:"address"`
-	Notes         string   `json:"notes"`
-	ImageURLs     []string `json:"image_urls"`
-}
-
-type NotePayload struct {
-	Content string `json:"content"`
-}
-
-type TodoItem struct {
-	ID        string `json:"id"`
-	Text      string `json:"text"`
-	Completed bool   `json:"completed"`
-}
-
-type TodoPayload struct {
-	Items []TodoItem `json:"items"`
-}
+// Transportation and Accommodation kept here until their own domains exist.
+// They reference TripID by string only — no cross-imports needed.
 
 type Transportation struct {
 	ID                string

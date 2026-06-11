@@ -5,7 +5,7 @@ Travel itinerary app. Users create trips, build day-by-day itineraries, view map
 
 ## Stack
 - **Backend**: Go, Echo framework, PostgreSQL, Redis, JWT + Google OAuth, Viper (config)
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui, Zustand, TanStack Query
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI–backed, shadcn-style CLI), Zustand, TanStack Query
 - **Maps**: Google Maps JS API + Places API
 - **Currency**: Frankfurter API (free, no key) — supported: IDR, USD, JPY, SGD, KRW
 - **Infra (dev)**: Docker Compose (PostgreSQL 16, Redis 7) — containers suffixed `-navisha`
@@ -32,10 +32,11 @@ navisha/
 ### Frontend (Next.js)
 - App Router only — no Pages Router
 - Server Components by default; use `"use client"` only when necessary
-- Feature-based component structure: `components/features/<feature>/`
+- Feature-slice structure: `src/features/<feature>/{components,hooks,store.ts,types.ts}`
+- coss ui primitives in `src/components/ui/` (Base UI–backed, do not modify generated files)
 - API calls go through `lib/api.ts` (typed fetch wrapper)
-- Global state in Zustand stores at `stores/`
-- Forms with React Hook Form + Zod validation
+- Zustand stores live inside each feature slice (e.g. `features/auth/store.ts`)
+- Forms with React Hook Form + Zod (v4) validation
 
 ## Dev Setup
 ```bash
@@ -51,3 +52,13 @@ cd frontend && npm run dev
 
 ## User
 Ahmad is a backend engineer (Go). Needs more guidance on frontend patterns, React/Next.js idioms, and UI composition.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

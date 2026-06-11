@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/config"
+	"github.com/ahmadhafizh/navisha/backend/internal/activity"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
@@ -77,6 +78,11 @@ func main() {
 	tripUsecase := trip.NewUsecase(tripRepo)
 	tripHandler := trip.NewHandler(tripUsecase)
 
+	// Activity domain
+	activityRepo := activity.NewPostgresRepository(db)
+	activityUsecase := activity.NewUsecase(activityRepo)
+	activityHandler := activity.NewHandler(activityUsecase)
+
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
@@ -102,6 +108,7 @@ func main() {
 	api := e.Group("/api/v1")
 	userHandler.RegisterRoutes(api, authMiddleware)
 	tripHandler.RegisterRoutes(api, authMiddleware)
+	activityHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown
 	go func() {

@@ -9,8 +9,8 @@ Example: `/fe-add-component trip TripCard "Card showing trip summary on dashboar
 ## Steps
 
 1. **Determine component location**:
-   - Feature-specific → `src/components/features/{feature}/{ComponentName}.tsx`
-   - Reusable primitive → `src/components/ui/` (shadcn style — only if truly generic)
+   - Feature-specific → `src/features/{feature}/components/{ComponentName}.tsx`
+   - Reusable primitive → `src/components/ui/` (coss ui, Base UI–backed — only if truly generic; prefer installing via `npx shadcn add <name>`)
 
 2. **Choose Server vs Client Component**:
    - Default: **Server Component** (no directive needed)
@@ -45,8 +45,8 @@ Example: `/fe-add-component trip TripCard "Card showing trip summary on dashboar
 
 4. **Styling**: Tailwind classes only. Use `cn()` from `lib/utils.ts` for conditional classes.
 
-5. **shadcn/ui**: Import from `@/components/ui/` — never modify files in that folder.
+5. **coss ui**: Import from `@/components/ui/` — never modify files in that folder. Consult `frontend/.agents/skills/coss/SKILL.md` for composition rules (Field, render prop vs asChild, etc.).
 
-6. **Types**: Add or reuse types from `src/types/`. Match the shape returned by `docs/API.md`.
+6. **Types**: Add or reuse types from the relevant feature slice (`src/features/{feature}/types.ts`). Match shape returned by `docs/API.md`.
 
 7. **Exports**: Use named exports (not default exports) for all components.

@@ -4,6 +4,49 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-11 — Session 8: Activity Domain Backend + Graphify + coss Skill
+
+**Status**: Activity domain CRUD + reorder live with payload validation per type. Graphify knowledge graph built. coss ui skill installed. UI library reference corrected across docs.
+
+### Completed
+- **coss ui skill** installed via `npx skills add cosscom/coss` → `frontend/.agents/skills/coss/` + `coss-particles/`
+- **Docs alignment** — frontend uses **coss ui** (Base UI–backed, shadcn-style CLI), not shadcn/Radix: updated `README.md`, root `CLAUDE.md`, `frontend/CLAUDE.md`, `docs/ARCHITECTURE.md`, `.claude/commands/fe-add-{component,page}.md`. Captured: custom Input/Textarea use `forwardRef` because coss-shipped variants are non-forwardRef and silently drop RHF refs.
+- **Graphify** installed: `brew install uv` → `uv tool install graphifyy` → `graphify claude install`. Hooks (`PreToolUse` on Bash/Read/Glob) registered in `.claude/settings.json`. Initial AST-only build: **469 nodes / 748 edges / 38 communities**. `.graphifyignore` + `.gitignore` exclude noise.
+- **`internal/activity/` domain** — polymorphic CRUD + reorder:
+  - `model.go` — `Type` constants, `Activity` (`Payload json.RawMessage`), `LocationPayload`/`NotePayload`/`TodoPayload`
+  - `repository.go` — interface w/ BeginTx/Commit/Rollback + `FindDayOwner`/`FindActivityOwner` (ownership via JOIN)
+  - `repository_pg.go` — `ListByDay`, CRUD, `UpdateOrderTx`, `ListIDsByDay`
+  - `usecase.go` — `Create` appends at end (`order_index = len(existing)`); `Update` cannot change type; `Reorder` rejects with `ErrReorderMismatch` unless caller sends exactly the day's full ID set; `validatePayload` per type; ownership checks via `apperr.ErrForbidden`
+  - `handler.go` — 5 routes: `GET/POST /days/:day_id/activities`, `PUT /days/:day_id/activities/reorder`, `PUT/DELETE /activities/:id`
+- **`internal/trip/model.go` slimmed** — removed `Activity`/`ActivityType`/`LocationPayload`/`NotePayload`/`TodoItem`/`TodoPayload` and `Day.Activities` (moved to activity domain). `Transportation` + `Accommodation` parked here until their own domains exist.
+- **Tests** (23 passing): `mocks_test.go`, `usecase_test.go` (Create success/empty-day/forbidden/day-not-found/invalid-type/empty-title, Update/Delete forbidden+success, Reorder success/forbidden/mismatch-extra/mismatch-missing/rollback-on-error, `sameSet`), `payload_test.go` (per-type validation roundtrip + `Type.Valid`).
+- Wired in `cmd/server/main.go`. Smoke check: routes return 401 without auth.
+- **API.md** updated — paths align with implementation (`/days/:day_id/...`, not `/trips/:trip_id/days/...`); reorder body field `ids` not `activity_ids`; added GET response shape + ownership note.
+- **FEATURES.md** — itinerary builder backend items checked off; frontend pending.
+- **ARCHITECTURE.md** + **backend/CLAUDE.md** — `internal/activity/` added to tree.
+
+### Key Decisions
+- **Activity as separate domain** — polymorphic payload + reorder + per-type validation justify splitting from trip; day stays in trip (per earlier feedback). Cross-domain refs by string ID only.
+- **Routes nested under `/days/:day_id/`, not `/trips/:trip_id/days/:day_id/`** — `day_id` is globally unique (UUID); requiring trip_id adds no security (server JOINs to verify ownership regardless) and bloats URL. Update/Delete keyed by activity ID directly.
+- **Reorder requires full ID set** — catches drift if frontend has stale local state. Single transaction; mismatch detected pre-tx so no work is wasted.
+- **Order index assigned by server on create** — `len(existing)` appends. Frontend never sends `order_index` on create; reorder is the only way to mutate position.
+- **Update cannot change type** — handler ignores `type` field on PUT. Type change is rare and semantically equivalent to delete+create (different payload shape).
+- **Payload validation only when present** — empty payload allowed (some clients may not send one for simple notes); strict shape enforcement when non-empty.
+- **Graphify AST-only mode** — no `GEMINI_API_KEY` set, skip Claude subagent dispatch (semantic extraction costs tokens). AST captures structural edges (calls, types, fields). Cross-doc relationships absent until LLM extraction enabled.
+
+### Pending
+- [ ] Frontend activity UI: `DayView`, `ActivityCard` per type, `ActivityForm` per type, drag-and-drop reorder
+- [ ] Expense + Currency domain backend (usecase + handler)
+- [ ] Transportation + Accommodation: move to own domains or build CRUD in trip
+- [ ] User handler unit tests (UsecaseInterface mock)
+- [ ] Trip edit page on frontend
+- [ ] Replace `window.confirm` with coss `Dialog` for delete confirmation
+
+### Resume From
+**Frontend activity UI** — `features/itinerary/` slice. Hooks: `useActivities(dayID)`, `useCreateActivity`, `useUpdateActivity`, `useDeleteActivity`, `useReorderActivities`. Components: `DayView` (collapsible per day on trip detail), `ActivityCard` with per-type body, `ActivityForm` with type selector → conditional fields. Trip detail page (`app/(dashboard)/trips/[id]/page.tsx`) currently shows day list; expand each day with `useActivities` lazy fetch. Drag-and-drop with `dnd-kit` for reorder.
+
+---
+
 ## 2026-06-10 — Session 7: Frontend Trip CRUD + shadcn Base UI Fix
 
 **Status**: Dashboard shows user info + trip list. Create/view/delete trip flow working end-to-end. Resolved shadcn Base UI ref-forwarding issue blocking RHF.

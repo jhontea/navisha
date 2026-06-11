@@ -1,0 +1,6 @@
+.agents/
+graphify-out/
+node_modules/
+.next/
+bin/
+*.log

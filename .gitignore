@@ -10,5 +10,8 @@ backend/*.exe
 frontend/node_modules/
 frontend/.next/
 
+# Graphify knowledge graph (regenerated per machine)
+graphify-out/
+
 # OS
 .DS_Store

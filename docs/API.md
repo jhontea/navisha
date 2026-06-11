@@ -200,10 +200,13 @@ Activity has 3 types: `location`, `note`, `todo`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/trips/:trip_id/days/:day_id/activities` | Yes | Add activity |
-| PUT | `/activities/:id` | Yes | Update activity |
+| GET | `/days/:day_id/activities` | Yes | List activities for a day |
+| POST | `/days/:day_id/activities` | Yes | Add activity (appended at end) |
+| PUT | `/activities/:id` | Yes | Update activity (cannot change type) |
 | DELETE | `/activities/:id` | Yes | Delete activity |
-| PUT | `/trips/:trip_id/days/:day_id/activities/reorder` | Yes | Reorder |
+| PUT | `/days/:day_id/activities/reorder` | Yes | Reorder activities for the day |
+
+Ownership chain (`activity → day → trip → user`) verified server-side via JOIN. 403 if caller does not own the parent trip.
 
 **POST body — type: location**
 ```json
@@ -252,20 +255,44 @@ Activity has 3 types: `location`, `note`, `todo`
 **PUT reorder body:**
 ```json
 {
-  "activity_ids": ["uuid-1", "uuid-2", "uuid-3"]
+  "ids": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
+Must contain the **full set** of activity IDs for the day in their new order. Server rejects with 400 `reorder list does not match day activities` if set differs. Reorder is atomic (single transaction).
+
+**GET /days/:day_id/activities response:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "day_id": "uuid",
+      "type": "location",
+      "title": "Kuta Beach",
+      "start_time": "08:00",
+      "end_time": "10:00",
+      "order_index": 0,
+      "payload": { "...": "..." },
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  ]
 }
 ```
 
-**Activity response (unified):**
+**Activity response (unified — POST, PUT, list item):**
 ```json
 {
   "id": "uuid",
+  "day_id": "uuid",
   "type": "location",
   "title": "Kuta Beach",
   "start_time": "08:00",
   "end_time": "10:00",
   "order_index": 0,
-  "payload": { "..." : "..." }
+  "payload": { "...": "..." },
+  "created_at": "...",
+  "updated_at": "..."
 }
 ```
 

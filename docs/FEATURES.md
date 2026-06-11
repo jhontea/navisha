@@ -24,14 +24,15 @@
 - [ ] Add/edit/delete accommodation records (name, dates, confirmation number)
 
 ### Itinerary Builder
-- [ ] Days auto-generated from trip date range
-- [ ] Add activity to a day — choose type:
-  - **Location**: search place via Google Maps, auto-fill name/lat/lng/address, add images + notes
+- [x] Days auto-generated from trip date range
+- [x] Add activity to a day — choose type (backend only):
+  - **Location**: payload validated (location_name required); Google Maps autofill in frontend pending
   - **Note**: free-text content only
   - **Todo**: checklist with check/uncheck per item
-- [ ] Edit / delete any activity
-- [ ] Reorder activities within a day (drag & drop)
-- [ ] Day-level notes
+- [x] Edit / delete any activity (backend only)
+- [x] Reorder activities within a day — atomic, full-set required (backend only)
+- [ ] Frontend itinerary UI (DayView, ActivityCard, ActivityForm)
+- [ ] Day-level notes (backend column exists, no endpoint yet)
 
 ### Map View
 - [ ] Display location-type activities as markers on Google Maps per day

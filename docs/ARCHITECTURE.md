@@ -22,9 +22,10 @@ Each feature lives in its own package under `internal/`. Every domain package is
 ```
 internal/
 ├── user/        model.go · repository.go · usecase.go · handler.go
-├── trip/        model.go · repository.go · usecase.go · handler.go
-├── expense/     model.go · repository.go · usecase.go · handler.go
-├── currency/    model.go · repository.go · usecase.go · handler.go
+├── trip/        model.go · repository.go · usecase.go · handler.go (Trip + Day; Transportation/Accommodation parked here)
+├── activity/    model.go · repository.go · usecase.go · handler.go (polymorphic: location | note | todo)
+├── expense/     model.go · repository.go (usecase + handler pending)
+├── currency/    model.go · repository.go (usecase + handler pending)
 ├── apperr/      shared sentinel errors (ErrNotFound, ErrUnauthorized …)
 └── middleware/  cross-cutting: JWT auth, CORS
 ```
@@ -110,7 +111,7 @@ src/
 │       ├── components/   ExpenseList, ExpenseForm, BudgetSummary (to be built)
 │       └── types.ts      Expense, ExpenseSummary, CurrencyRate
 ├── components/
-│   └── ui/               shadcn/ui primitives — never modified directly
+│   └── ui/               coss ui primitives (Base UI–backed) — never modified directly
 ├── lib/
 │   ├── api.ts            shared typed fetch wrapper (credentials: include, ApiError class)
 │   └── utils.ts          cn(), formatCurrency(), formatDate(), formatDateRange()
@@ -134,7 +135,7 @@ src/
 | React | 18 | UI rendering |
 | TypeScript | 5 | Type safety |
 | Tailwind CSS | 3 | Styling (utility-first) |
-| shadcn/ui | latest | Accessible UI primitives built on Radix UI |
+| coss ui | latest | Accessible UI primitives built on Base UI; shadcn-style CLI install. Skill in `frontend/.agents/skills/coss/` |
 | TanStack Query | v5 | Server state: caching, loading/error states, background refetch |
 | Zustand | v4 | Client/UI state: lightweight, no boilerplate |
 | React Hook Form | v7 | Form state management, performant re-renders |

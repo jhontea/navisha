@@ -9,9 +9,10 @@ backend/
 ├── cmd/server/           # main.go — wire dependencies, start server
 ├── internal/
 │   ├── user/             # domain: model.go, repository.go, usecase.go, handler.go
-│   ├── trip/             # domain: model.go, repository.go, usecase.go, handler.go
-│   ├── expense/          # domain: model.go, repository.go, usecase.go, handler.go
-│   ├── currency/         # domain: model.go, repository.go, usecase.go, handler.go
+│   ├── trip/             # domain: trip + day (transportations/accommodations parked here)
+│   ├── activity/         # domain: polymorphic activities (location | note | todo)
+│   ├── expense/          # domain: model.go, repository.go (usecase + handler pending)
+│   ├── currency/         # domain: model.go, repository.go (usecase + handler pending)
 │   ├── apperr/           # shared sentinel errors (ErrNotFound, ErrUnauthorized, etc.)
 │   └── middleware/       # JWT auth, CORS — cross-cutting, not domain-specific
 ├── pkg/
