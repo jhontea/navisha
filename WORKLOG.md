@@ -4,6 +4,56 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-12 — Session 9: Frontend Activity UI
+
+**Status**: Activities create / view / edit / delete fully wired end-to-end. Trip detail page renders day sections with activities visible by default; click-to-edit cards; per-type icon-button type picker.
+
+### Completed
+- **`features/activity/` slice**:
+  - `types.ts` — moved Activity / payload types out of `features/trip/types.ts`. Added `CreateActivityInput`, `UpdateActivityInput`, `ReorderInput`, `ActivityListResponse`
+  - `api.ts` — `list / create / update / delete / reorder`, all routed through `lib/api.ts`
+  - `hooks/useActivities.ts` — `useActivities` (query), `useCreateActivity`, `useUpdateActivity`, `useDeleteActivity`, `useReorderActivities`. All mutations invalidate `["activities","list",dayId]`
+  - `components/ActivityCard.tsx` — per-type icon (MapPin / StickyNote / ListChecks) + body switch. Click anywhere on card opens edit dialog (`role="button"`, keyboard Enter/Space). Delete = `Trash2` icon button revealed on hover, `stopPropagation` so it doesn't trigger edit
+  - `components/ActivityForm.tsx` — RHF + Zod (v4) + `Controller` for type picker + `useFieldArray` for todo items. Type picker = 3-button grid with icon+label; in edit mode only the locked type is shown as a static chip. Times only rendered for `location` (note + todo have no schedule). Time inputs use `onClick={e => e.currentTarget.showPicker?.()}` so click on the field — not just the calendar icon — opens the native picker
+  - `components/DayActivities.tsx` — fetches activities lazily per day (TanStack Query handles cache), lists `ActivityCard` rows + `+ Add activity` button, hosts two `Dialog`s (create + edit)
+- **Trip detail page** (`app/(dashboard)/trips/[id]/page.tsx`) — replaced `<details>` collapsible with always-visible day sections. Each day has a header strip + `DayActivities` rendered inline
+- **`features/trip/types.ts` slimmed** — removed `Activity`, `ActivityType`, `LocationPayload`, `NotePayload`, `TodoItem`, `TodoPayload` (all moved to activity slice)
+- Graph updated (`graphify update .`)
+
+### Two rounds of review fixes
+**Round 1**
+- Type picker: was `Select` dropdown → now 3-button grid with `lucide-react` icons
+- Time inputs auto-open native picker on click (not only icon click)
+- Note type hides time fields
+- Activities default-visible (removed `<details>` collapsible)
+- Card click-to-edit (no Edit button)
+- Delete is now `Trash2` icon button, hover-revealed
+
+**Round 2**
+- Edit mode: only the selected type chip is shown (other type buttons hidden) — caller passes `lockType` from `DayActivities` edit dialog
+- Times also hidden for `todo` type — only `location` carries `start_time`/`end_time` going forward. `ActivityCard` mirrors this in its display
+
+### Key Decisions
+- **Times bound to `location` only** — note and todo are time-agnostic. Backend still accepts `start_time`/`end_time` on any type (column is `TEXT NOT NULL DEFAULT ''`); frontend simply never sends them for note/todo. No backend migration needed.
+- **Click-to-edit beats explicit Edit button** — fewer UI affordances per row, larger hit target. Keyboard accessibility preserved via `role="button"` + Enter/Space.
+- **Delete icon hover-reveal** — avoids visual noise on long itineraries while keeping the action discoverable. `focus:opacity-100` keeps it usable via keyboard tab.
+- **Lazy activity fetch per day** — each `DayActivities` mounts its own `useActivities(dayId)`. Cache key per `dayId` so edits stay scoped. Trade-off: N requests on initial render; acceptable for typical trip sizes (~7 days). Switch to batched endpoint if profile shows it matters.
+- **Locked type renders as chip in edit mode** — same component handles add + edit. Avoids a second "ActivityCard editing inline" component.
+
+### Pending — must come back to
+- [ ] **Drag-drop reorder** — backend `Reorder` endpoint + hook exist; UI not wired. Needs `dnd-kit` (`@dnd-kit/core` + `@dnd-kit/sortable`). Wire in `DayActivities` so dragging cards calls `useReorderActivities` with the new full ID set
+- [ ] **Replace `window.confirm()` with coss `AlertDialog`** — currently used for trip delete (`trips/[id]/page.tsx`) and activity delete (`DayActivities`). coss has `alert-dialog` primitive (see `frontend/.agents/skills/coss/references/primitives/alert-dialog.md`)
+- [ ] **Google Maps Places autofill for location activities** — `LocationPayload` already has `google_place_id`, `lat`, `lng`, `address` fields. Activity form currently asks user to type these manually. Need Places Autocomplete on `location_name` to populate the rest. Blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (already in env contract, not set yet)
+- [ ] Trip edit page (backend ready)
+- [ ] Day-level notes endpoint + UI (column exists)
+- [ ] Expense + Currency domain backend (usecase + handler)
+- [ ] Transportation + Accommodation: move to own domains or finish CRUD inside trip
+
+### Resume From
+**Drag-drop reorder for activities.** `cd frontend && npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`. In `DayActivities.tsx`, wrap the activity list in `DndContext` + `SortableContext`, make `ActivityCard` use `useSortable`. On drag end, compute new ID order and call `useReorderActivities.mutate({ ids })`. Backend enforces full-set match so no partial reorder logic needed on the client.
+
+---
+
 ## 2026-06-11 — Session 8: Activity Domain Backend + Graphify + coss Skill
 
 **Status**: Activity domain CRUD + reorder live with payload validation per type. Graphify knowledge graph built. coss ui skill installed. UI library reference corrected across docs.
