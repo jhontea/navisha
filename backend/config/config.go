@@ -34,7 +34,8 @@ type RedisConfig struct {
 
 type CurrencyConfig struct {
 	Supported []string
-	CacheTTL  int `mapstructure:"cache_ttl"`
+	CacheTTL  int    `mapstructure:"cache_ttl"`
+	APIKey    string `mapstructure:"api_key"`
 }
 
 type JWTConfig struct {
@@ -83,6 +84,7 @@ func Load() (*Config, error) {
 		"google.client_secret": "GOOGLE_CLIENT_SECRET",
 		"google.redirect_url":  "GOOGLE_REDIRECT_URL",
 		"app.frontend_url":     "FRONTEND_URL",
+		"currency.api_key":     "CURRENCYFREAKS_API_KEY",
 	} {
 		if err := v.BindEnv(key, envVar); err != nil {
 			return nil, fmt.Errorf("config.Load: bind env %s: %w", envVar, err)

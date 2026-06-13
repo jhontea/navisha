@@ -7,7 +7,7 @@ Travel itinerary app. Users create trips, build day-by-day itineraries, view map
 - **Backend**: Go, Echo framework, PostgreSQL, Redis, JWT + Google OAuth, Viper (config)
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI–backed, shadcn-style CLI), Zustand, TanStack Query
 - **Maps**: Google Maps JS API + Places API
-- **Currency**: Frankfurter API (free, no key) — supported: IDR, USD, JPY, SGD, KRW
+- **Currency**: CurrencyFreaks API (USD-based, free tier w/ key) — supported: IDR, USD, JPY, SGD, KRW
 - **Infra (dev)**: Docker Compose (PostgreSQL 16, Redis 7) — containers suffixed `-navisha`
 
 ## Repo Structure

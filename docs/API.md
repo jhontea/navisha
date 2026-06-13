@@ -31,38 +31,53 @@ All authenticated endpoints require JWT in httpOnly cookie (set automatically on
 
 Supported currencies (MVP): `IDR`, `USD`, `JPY`, `SGD`, `KRW`
 
-Rates cached in Redis, TTL 1 hour.
+Source: **CurrencyFreaks** API (USD-based free tier). Cross rates `base→target` computed as `usd_rates[target] / usd_rates[base]`. Full USD-keyed rates cached in Redis under `rates:USD`, TTL from `config.yaml` (default 1h).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/currency/convert` | No | Convert amount between currencies |
-| GET | `/currency/rates` | No | Get all rates for a base currency |
+| GET | `/currency/supported` | Yes | List supported currency codes + symbols |
+| GET | `/currency/rates?base=IDR` | Yes | All cross-rates for a base currency |
+| GET | `/currency/convert?from=USD&to=IDR&amount=100` | Yes | Convert amount between currencies |
 
-**GET /currency/convert?from=USD&to=IDR&amount=100**
+**GET /currency/supported response:**
+```json
+{
+  "supported": [
+    { "code": "IDR", "symbol": "Rp" },
+    { "code": "USD", "symbol": "$" },
+    { "code": "JPY", "symbol": "¥" },
+    { "code": "SGD", "symbol": "S$" },
+    { "code": "KRW", "symbol": "₩" }
+  ]
+}
+```
+
+**GET /currency/convert?from=USD&to=IDR&amount=100 response:**
 ```json
 {
   "from": "USD",
   "to": "IDR",
   "amount": 100,
-  "converted": 1620000,
-  "rate": 16200,
-  "fetched_at": "2026-06-08T10:00:00Z"
+  "converted_amount": 1781050,
+  "rate": 17810.5
 }
 ```
 
-**GET /currency/rates?base=IDR**
+**GET /currency/rates?base=IDR response:**
 ```json
 {
   "base": "IDR",
   "rates": [
-    { "currency": "USD", "rate": 0.0000617, "symbol": "$" },
-    { "currency": "JPY", "rate": 0.00923,   "symbol": "¥" },
-    { "currency": "SGD", "rate": 0.0000836, "symbol": "S$" },
-    { "currency": "KRW", "rate": 0.0851,    "symbol": "₩" }
-  ],
-  "fetched_at": "2026-06-08T10:00:00Z"
+    { "currency": "IDR", "rate": 1.0,       "symbol": "Rp", "fetched_at": "..." },
+    { "currency": "USD", "rate": 0.0000562, "symbol": "$",  "fetched_at": "..." },
+    { "currency": "JPY", "rate": 0.00899,   "symbol": "¥",  "fetched_at": "..." },
+    { "currency": "SGD", "rate": 0.0000721, "symbol": "S$", "fetched_at": "..." },
+    { "currency": "KRW", "rate": 0.0853,    "symbol": "₩",  "fetched_at": "..." }
+  ]
 }
 ```
+
+**Errors:** 400 unsupported currency · 400 invalid amount (Convert)
 
 ---
 
@@ -300,12 +315,17 @@ Must contain the **full set** of activity IDs for the day in their new order. Se
 
 ## Budget / Expenses
 
+Categories: `accommodation | transport | food | activity | other`
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/trips/:trip_id/expenses` | Yes | List expenses with summary |
-| POST | `/trips/:trip_id/expenses` | Yes | Add expense |
-| PUT | `/expenses/:id` | Yes | Update expense |
+| GET | `/trips/:trip_id/expenses` | Yes | List expenses for a trip |
+| POST | `/trips/:trip_id/expenses` | Yes | Add expense (auto-converts to trip base currency) |
+| GET | `/trips/:trip_id/expenses/summary` | Yes | Total + by-category breakdown |
+| PUT | `/expenses/:id` | Yes | Update expense (reconverts) |
 | DELETE | `/expenses/:id` | Yes | Delete expense |
+
+Ownership chain `expense → trip → user` verified via JOIN. Currency conversion runs at insert/update via `currency.Usecase`; `converted_amount` + `base_currency` are stored on the row.
 
 **POST body:**
 ```json
@@ -314,24 +334,45 @@ Must contain the **full set** of activity IDs for the day in their new order. Se
   "amount": 500,
   "currency": "USD",
   "category": "accommodation",
-  "activity_id": "uuid (optional)"
+  "activity_id": "uuid (optional, may be null)"
+}
+```
+
+**Expense response (POST, PUT, list item):**
+```json
+{
+  "id": "uuid",
+  "trip_id": "uuid",
+  "activity_id": null,
+  "title": "Hotel deposit",
+  "amount": 500,
+  "currency": "USD",
+  "converted_amount": 8905250,
+  "base_currency": "IDR",
+  "category": "accommodation",
+  "created_at": "...",
+  "updated_at": "..."
 }
 ```
 
 **GET /trips/:trip_id/expenses response:**
 ```json
 {
-  "expenses": [...],
-  "summary": {
-    "total_base": 5000000,
-    "base_currency": "IDR",
-    "by_category": [
-      { "category": "accommodation", "total": 2000000 },
-      { "category": "transport",     "total": 500000 },
-      { "category": "food",          "total": 1500000 },
-      { "category": "activity",      "total": 1000000 }
-    ]
-  }
+  "items": [ /* expense objects */ ]
+}
+```
+
+**GET /trips/:trip_id/expenses/summary response:**
+```json
+{
+  "total_base": 5000000,
+  "base_currency": "IDR",
+  "by_category": [
+    { "category": "accommodation", "total": 2000000 },
+    { "category": "transport",     "total": 500000 },
+    { "category": "food",          "total": 1500000 },
+    { "category": "activity",      "total": 1000000 }
+  ]
 }
 ```
 
