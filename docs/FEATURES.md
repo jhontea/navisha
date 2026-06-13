@@ -8,11 +8,11 @@
 - [x] Protected routes (frontend middleware + backend JWT middleware)
 
 ### Currency Converter (standalone tool)
-- [ ] Convert any amount between supported currencies
-- [ ] Show live exchange rate (Frankfurter API, ECB data)
-- [ ] Rate cached in Redis for 1 hour
-- [ ] Supported: IDR, USD, JPY, SGD, KRW
-- [ ] Accessible from nav bar — no trip required
+- [x] Convert any amount between supported currencies (backend only)
+- [x] Show live exchange rate (CurrencyFreaks API, USD-based; cross rates derived)
+- [x] USD-keyed rates cached in Redis for 1 hour
+- [x] Supported: IDR, USD, JPY, SGD, KRW
+- [ ] Frontend converter page accessible from nav bar — no trip required
 
 ### Trip Management
 - [x] Create trip (title, description, date range, base currency, cover image, notes)
@@ -41,11 +41,12 @@
 - [ ] Toggle between single-day view and full trip view
 
 ### Budget Tracker
-- [ ] Add expense (title, amount, currency, category, optional link to activity)
-- [ ] Auto-convert to trip base currency via exchange rate
-- [ ] Expense list per trip
-- [ ] Summary: total spend + breakdown by category
-- [ ] No hard budget limit in MVP — tracking only
+- [x] Add expense (title, amount, currency, category, optional link to activity) — backend only
+- [x] Auto-convert to trip base currency via exchange rate (CurrencyFreaks)
+- [x] Expense list per trip (backend only)
+- [x] Summary: total spend + breakdown by category (backend only)
+- [x] No hard budget limit in MVP — tracking only
+- [ ] Frontend expense UI: form, list, summary card
 
 ---
 

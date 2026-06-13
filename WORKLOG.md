@@ -4,6 +4,59 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-13 — Session 10: Currency + Expense Backend
+
+**Status**: Currency and expense backend domains live with tests. CurrencyFreaks API wired, USD-keyed rates cached in Redis, cross-rates derived. Expense auto-converts to trip base currency via cross-domain `Converter` interface.
+
+### Completed
+- **Fix stale gitlink** (out-of-band) — `frontend/` was registered in parent index as submodule (mode `160000`, SHA `a60a192c6...`) but had no `.git` dir and no `.gitmodules` entry, so all frontend changes since Session 5 were invisible to parent git. `git rm --cached frontend` + `git add frontend` re-staged 59 frontend files. Added `frontend/.gitignore` entries for `.agents/`, `graphify-out/`, `skills-lock.json` to avoid committing per-machine artifacts. Result: commit `a73f4d9` covering Sessions 5–9 work.
+- **`pkg/currency/currencyfreaks.go`** — HTTP client for `https://api.currencyfreaks.com/v2.0/rates/latest`. Returns USD-based rates (free tier). String-typed `rates` parsed to `float64`; date parsed from `"2006-01-02 15:04:05-07"` format. 10s timeout.
+- **`internal/currency/`** — full domain:
+  - `repository_redis.go` — fetches USD-based map via `pkg/currency.Client`, caches in Redis `rates:USD` for `cfg.Currency.CacheTTL` seconds. `GetRate(base, target)` and `GetRates(base)` derive cross-rates from cache.
+  - `rate_math.go` — pure `crossRate(usdRates, base, target)` helper. Same-currency = 1.0; missing/zero entries → error.
+  - `usecase.go` — `Rates` (validates supported), `Convert` (rejects negative amounts)
+  - `handler.go` — `GET /currency/supported`, `GET /currency/rates?base=…`, `GET /currency/convert?from&to&amount`. All require auth.
+- **`internal/expense/`** — full domain:
+  - `model.go` — typed `Category` (`accommodation | transport | food | activity | other`); `ActivityID *string` for nullable FK; `Category.Valid()`
+  - `repository.go` — added `FindTripOwner` (returns user_id + base_currency for the trip) and `FindExpenseOwner` (JOIN expense→trip)
+  - `repository_pg.go` — full CRUD + `Summary(tripID, baseCurrency)` aggregates `converted_amount` GROUP BY category. Shared `scan` helper across QueryRow + Rows
+  - `usecase.go` — defines local `Converter` interface (cross-domain rule: no import of currency package). `Create`/`Update` resolve trip base, call `Converter.Convert(in.Currency, base, in.Amount)`, store both raw and converted amount. Ownership via `FindTripOwner` / `FindExpenseOwner`.
+  - `handler.go` — `GET/POST /trips/:trip_id/expenses`, `GET /trips/:trip_id/expenses/summary`, `PUT/DELETE /expenses/:id`
+- **Wiring (`cmd/server/main.go`)** — added `pkgcurrency.NewClient(cfg.Currency.APIKey)` → `currency.NewRedisRepository` → `currency.NewUsecase` → `currency.NewHandler`. Expense usecase receives `currencyUsecase` as the `Converter`.
+- **Config** — `CurrencyConfig.APIKey` field added; `CURRENCYFREAKS_API_KEY` bound via Viper. `.env` + `.env.example` updated.
+- **Tests** (~27 new, 77 total project-wide):
+  - `internal/currency/rate_math_test.go` — 7 cross-rate cases including USD↔X, X↔Y, same-currency, missing base/target, zero base
+  - `internal/currency/usecase_test.go` — mock repo; `Rates` unsupported/success, `Convert` success/negative/repo-error
+  - `internal/expense/mocks_test.go` — `mockRepo` with trip+expense indexes, `mockConverter` w/ fixed multiplier
+  - `internal/expense/usecase_test.go` — `Category.Valid`, `validateInput` table, Create success/forbidden/trip-not-found/converter-fails/validation-first, Update/Delete/List/Summary ownership
+- **Docs updated**:
+  - `docs/API.md` — Currency section aligned with impl (auth=yes, `converted_amount` not `converted`, `/supported` endpoint, `fetched_at` per rate). Expense section split list/summary, ownership note, full response shape.
+  - `docs/FEATURES.md` — Currency Converter + Budget Tracker backend checked; frontend pending.
+  - `docs/ARCHITECTURE.md` — ADR-004 rewritten: CurrencyFreaks chosen over Frankfurter; tree entries updated.
+  - `README.md`, `CLAUDE.md`, `backend/CLAUDE.md` — Frankfurter → CurrencyFreaks references.
+
+### Key Decisions
+- **`Converter` interface defined in expense, satisfied by `currency.Usecase`** — keeps `internal/expense` zero cross-domain imports per repo rule. Adapter-free, no extra file. Same pattern can hold for future cross-domain coupling.
+- **Cache the USD map, derive any base** — CurrencyFreaks free tier is USD-anchored. Caching `rates:USD` once means any `from→to` permutation reuses one upstream call. Avoids N separate cache entries per base.
+- **`rate_math.crossRate` extracted as pure function** — testable without Redis/HTTP mocks. Repository code shrunk and unit-tested without touching network.
+- **`ActivityID *string` not `string`** — DB column is nullable; matches reality. Pointer cleanly serializes to `null` in JSON.
+- **Skip the Frankfurter port that was started** — wrote `pkg/currency/frankfurter.go` before user requested CurrencyFreaks; deleted that file in favour of `currencyfreaks.go`. Function shape and package name reused.
+
+### Pending
+- [ ] **Frontend currency converter page** — standalone tool from nav (no trip). Calls `/currency/rates` + `/currency/convert`.
+- [ ] **Frontend expense UI** — form + list + summary card per trip; use `/trips/:trip_id/expenses` + `/summary`.
+- [ ] Drag-drop reorder polish + AlertDialog replace (carryover from Sessions 7–9).
+- [ ] Trip edit page.
+- [ ] Day-level notes endpoint + UI.
+- [ ] Transportation + Accommodation: move to own domains or finish CRUD inside trip.
+- [ ] User handler unit tests (UsecaseInterface mock).
+- [ ] Google Maps Places autofill for location activities.
+
+### Resume From
+**Frontend expense UI.** `cd frontend`. Build `features/expense/` slice: `types.ts` (Expense, Category, ExpenseSummary), `api.ts` (list / create / update / delete / summary), `hooks/useExpenses.ts` (`useQuery` for list + summary, mutations invalidate both), `components/ExpenseForm.tsx` (RHF + Zod, category Select like trip base_currency, amount + currency input — show converted preview after blur via on-demand `/currency/convert`), `components/ExpenseList.tsx`, `components/BudgetSummary.tsx` (total + by-category bars). Mount in trip detail page below the day list, or new section on `/trips/[id]`.
+
+---
+
 ## 2026-06-12 — Session 9: Frontend Activity UI
 
 **Status**: Activities create / view / edit / delete fully wired end-to-end. Trip detail page renders day sections with activities visible by default; click-to-edit cards; per-type icon-button type picker.

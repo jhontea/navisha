@@ -11,14 +11,14 @@ backend/
 │   ├── user/             # domain: model.go, repository.go, usecase.go, handler.go
 │   ├── trip/             # domain: trip + day (transportations/accommodations parked here)
 │   ├── activity/         # domain: polymorphic activities (location | note | todo)
-│   ├── expense/          # domain: model.go, repository.go (usecase + handler pending)
-│   ├── currency/         # domain: model.go, repository.go (usecase + handler pending)
+│   ├── expense/          # domain: CRUD + summary, auto-convert via currency.Usecase (Converter interface)
+│   ├── currency/         # domain: rates / convert / supported; Redis-cached CurrencyFreaks USD map
 │   ├── apperr/           # shared sentinel errors (ErrNotFound, ErrUnauthorized, etc.)
 │   └── middleware/       # JWT auth, CORS — cross-cutting, not domain-specific
 ├── pkg/
 │   ├── jwt/              # token generation/validation
 │   ├── oauth/            # Google OAuth helpers
-│   └── currency/         # Frankfurter API HTTP client
+│   └── currency/         # CurrencyFreaks API HTTP client
 ├── migrations/           # numbered SQL files (001_init.sql, 002_xxx.sql)
 ├── config/               # typed config struct + Viper loader
 ├── config.yaml           # base config (non-secret, git-tracked)
@@ -88,6 +88,7 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URL=http://localhost:8090/api/v1/auth/google/callback
 FRONTEND_URL=http://localhost:3000
+CURRENCYFREAKS_API_KEY=
 ```
 
 **Priority**: env vars override config.yaml (Viper handles this automatically).
@@ -95,4 +96,4 @@ FRONTEND_URL=http://localhost:3000
 ## Supported Currencies
 `IDR`, `USD`, `JPY`, `SGD`, `KRW` — defined in `config.yaml`, loaded into `currency.SupportedCurrencies` at startup.
 
-Exchange rates fetched from Frankfurter API, cached in Redis key `rates:{base}` with TTL from config.
+Exchange rates fetched from CurrencyFreaks API (USD-based). Full USD-keyed map cached in Redis key `rates:USD` with TTL from config; cross-rates `base→target = rates[target]/rates[base]` derived in `internal/currency/rate_math.go`.

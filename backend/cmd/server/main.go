@@ -12,11 +12,13 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/config"
 	"github.com/ahmadhafizh/navisha/backend/internal/activity"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
+	"github.com/ahmadhafizh/navisha/backend/internal/expense"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
+	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -83,6 +85,17 @@ func main() {
 	activityUsecase := activity.NewUsecase(activityRepo)
 	activityHandler := activity.NewHandler(activityUsecase)
 
+	// Currency domain
+	currencyClient := pkgcurrency.NewClient(cfg.Currency.APIKey)
+	currencyRepo := currency.NewRedisRepository(rdb, currencyClient, cfg.Currency.CacheTTL)
+	currencyUsecase := currency.NewUsecase(currencyRepo)
+	currencyHandler := currency.NewHandler(currencyUsecase)
+
+	// Expense domain (depends on currency.Usecase via Converter interface)
+	expenseRepo := expense.NewPostgresRepository(db)
+	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
+	expenseHandler := expense.NewHandler(expenseUsecase)
+
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
@@ -109,6 +122,8 @@ func main() {
 	userHandler.RegisterRoutes(api, authMiddleware)
 	tripHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)
+	currencyHandler.RegisterRoutes(api, authMiddleware)
+	expenseHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown
 	go func() {

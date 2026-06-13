@@ -24,8 +24,8 @@ internal/
 ├── user/        model.go · repository.go · usecase.go · handler.go
 ├── trip/        model.go · repository.go · usecase.go · handler.go (Trip + Day; Transportation/Accommodation parked here)
 ├── activity/    model.go · repository.go · usecase.go · handler.go (polymorphic: location | note | todo)
-├── expense/     model.go · repository.go (usecase + handler pending)
-├── currency/    model.go · repository.go (usecase + handler pending)
+├── expense/     model.go · repository.go · repository_pg.go · usecase.go · handler.go (auto-convert to trip base currency)
+├── currency/    model.go · repository.go · repository_redis.go · usecase.go · handler.go + rate_math.go (cross-rate helper)
 ├── apperr/      shared sentinel errors (ErrNotFound, ErrUnauthorized …)
 └── middleware/  cross-cutting: JWT auth, CORS
 ```
@@ -199,8 +199,8 @@ Eliminates password management, forgot-password flows, and email verification. R
 ### ADR-003: Google Maps over Mapbox
 Google Places Autocomplete has better POI data quality and global coverage for travel use cases.
 
-### ADR-004: Frankfurter API for currency
-Free, no API key required, powered by ECB data. Sufficient for MVP. Swap to Open Exchange Rates for real-time forex if needed.
+### ADR-004: CurrencyFreaks API for currency
+Free tier supports ~150 currencies on USD-based latest rates with an API key. Selected over Frankfurter (ECB, EUR-based, no key) because CurrencyFreaks covers the MVP currencies (IDR, USD, JPY, SGD, KRW) directly and updates more frequently. We cache the full USD-keyed map in Redis (`rates:USD`, TTL 1h) and derive `base→target = rates[target] / rates[base]` client-side, so any base permutation reuses a single upstream call.
 
 ### ADR-005: JWT in httpOnly cookie
 Prevents XSS token theft vs localStorage. CSRF mitigated via SameSite=Strict.
