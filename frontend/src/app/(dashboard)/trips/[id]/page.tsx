@@ -1,13 +1,22 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { formatDateRange } from "@/lib/utils"
 import { useTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DayPanel } from "@/features/activity/components/DayPanel"
+import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 
 export default function TripDetailPage() {
@@ -17,6 +26,7 @@ export default function TripDetailPage() {
 
   const { data: trip, isLoading, isError, error } = useTrip(id)
   const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   if (isLoading) {
     return <p className="p-8 text-sm text-muted-foreground">Loading…</p>
@@ -30,7 +40,6 @@ export default function TripDetailPage() {
   }
 
   const onDelete = () => {
-    if (!confirm("Delete this trip? This cannot be undone.")) return
     deleteTrip(id, {
       onSuccess: () => router.push("/dashboard"),
     })
@@ -58,14 +67,21 @@ export default function TripDetailPage() {
             <p className="text-sm text-muted-foreground">{trip.description}</p>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onDelete}
-          disabled={isDeleting}
-        >
-          {isDeleting ? "Deleting…" : "Delete"}
-        </Button>
+        <div className="flex gap-2">
+          <Link href={`/trips/${id}/edit`}>
+            <Button variant="outline" size="sm">
+              Edit
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmDelete(true)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting…" : "Delete"}
+          </Button>
+        </div>
       </header>
 
       {trip.notes && (
@@ -82,21 +98,50 @@ export default function TripDetailPage() {
 
       <Separator className="my-6" />
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold">
-          Itinerary · {trip.days.length} day{trip.days.length !== 1 ? "s" : ""}
-        </h2>
-        <div className="flex flex-col gap-3">
-          {trip.days.map((d) => (
-            <DayPanel
-              key={d.id}
-              dayId={d.id}
-              dayNumber={d.day_number}
-              date={d.date}
-            />
-          ))}
-        </div>
-      </section>
+      <Tabs defaultValue="itinerary" className="flex-col">
+        <TabsList className="w-full">
+          <TabsTrigger value="itinerary" className="flex-1">
+            Itinerary
+            <span className="ml-1.5 rounded bg-background/60 px-1.5 py-0.5 text-xs data-active:bg-muted">
+              {trip.days.length}
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="budget" className="flex-1">
+            Budget
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="itinerary" className="pt-4">
+          <div className="flex flex-col gap-3">
+            {trip.days.map((d) => (
+              <DayPanel
+                key={d.id}
+                dayId={d.id}
+                dayNumber={d.day_number}
+                date={d.date}
+              />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="budget" className="pt-4">
+          <ExpenseSection
+            tripId={id}
+            tripBaseCurrency={trip.base_currency}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete "${trip.title}"?`}
+        description="This will permanently remove the trip and all its days, activities, and expenses. This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        isPending={isDeleting}
+        onConfirm={onDelete}
+      />
     </main>
   )
 }

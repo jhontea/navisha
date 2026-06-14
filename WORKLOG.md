@@ -4,6 +4,45 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-14 — Session 11: Frontend Currency + Expense UI, Tabs, Trip Edit, AlertDialog
+
+**Status**: Currency converter live as standalone page. Per-trip Budget UI shipped (form with live convert preview, expense list with cross-currency display, stacked-bar summary). Trip detail page reorganized as tabs. Trip edit page complete. All three `window.confirm()` calls replaced with a shared coss AlertDialog wrapper.
+
+### Completed
+- **`features/currency/`** — types, api client (`supported / rates / convert`), hooks (`useSupportedCurrencies`, `useConvert` query keyed by `[from, to, amount]` with 5-min stale, `useRates`), `CurrencyConverter` component with two side inputs + swap (`ArrowLeftRight` icon). New `/currency` page; nav button added to dashboard header.
+- **`features/expense/`** — types (`ExpenseCategory`, `Expense`, `ExpenseSummary`), api (`list / create / update / delete / summary`), hooks invalidating both list + summary on mutation, `ExpenseForm` with RHF + Zod + live convert preview when source currency ≠ trip base, `ExpenseCard` with cross-currency secondary line + hover delete, `BudgetSummary` with total + stacked-bar by category share + per-category list, `ExpenseSection` composing it all into the trip detail page.
+- **Trip detail page**:
+  - Restructured around coss `Tabs` (Itinerary / Budget). List shown horizontally on top, content below, `w-full` + `flex-1` triggers so tabs align with body column.
+  - Added "Edit" button next to "Delete" linking to new `/trips/[id]/edit`.
+- **`/trips/[id]/edit/page.tsx`** — fetches existing trip via `useTrip`, wires `useUpdateTrip`, reuses `TripForm`. Redirects back to detail on save.
+- **`TripForm` refactor** — inverted control: form is now pure presentational, takes `initial?: Trip`, `onSubmit`, `isSubmitting`, `submitLabel`. `useCreateTrip` / `useUpdateTrip` + redirect live in the page that owns the mutation. Mirrors `ActivityForm` + `ExpenseForm` pattern.
+- **`components/ConfirmDialog.tsx`** — reusable coss `AlertDialog` wrapper: `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `destructive`, `isPending`, `onConfirm`. `destructive` prop applies the destructive button colors.
+- **Replaced 3 `window.confirm()` calls** with `ConfirmDialog`:
+  - Trip detail page (delete trip)
+  - `DayActivities` (delete activity)
+  - `ExpenseSection` (delete expense)
+  - Each call site holds the target item in state (`useState<Trip | Activity | Expense | null>`); the dialog reads it for the title; `onConfirm` runs the mutation and `onSettled` closes the dialog. `isPending` disables buttons during the request.
+- **coss components added via shadcn CLI**: `tabs`, `alert-dialog`.
+
+### Key Decisions
+- **`ConfirmDialog` lives in `components/`, not a feature slice** — used across auth-unrelated features (trip / activity / expense). Generic primitive belongs in shared components.
+- **`Tabs` use explicit `flex-col` + `w-full` overrides** — coss `Tabs` root applies `data-horizontal:flex-col`, which depends on a Tailwind v3 `data-horizontal:` variant configuration. Until that's verified, an explicit `className="flex-col"` on the root and `w-full` + `flex-1` on the list/triggers guarantees the layout matches a top-tab pattern.
+- **Live convert preview is opt-in** — only fired when `source currency !== trip.base_currency`. Avoids hitting `/currency/convert` when no conversion is needed.
+- **Active tab badge styling** — counter chip on the active trigger uses `data-active:bg-muted` so it stays visible against the active pill's white background; inactive triggers use `bg-background/60` to stand out against the muted container.
+- **`TripForm` inversion** — caller owns the mutation hook, redirect, and submit label. The form stays a single component for both create and edit pages.
+
+### Pending — must come back to
+- [ ] Day-level notes endpoint + UI (column exists, no endpoint yet).
+- [ ] Transportation + Accommodation: own domains or finish CRUD inside trip + frontend UI.
+- [ ] Activities: optional Google Maps Places autofill (blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
+- [ ] User handler unit tests (`UsecaseInterface` mock).
+- [ ] Map view (Phase 1 feature, untouched).
+
+### Resume From
+**Pick: day-level notes (small) or transport/accommodation (larger).** Day notes — backend `PUT /days/:id/notes` with ownership JOIN, frontend inline textarea in `DayPanel` (collapsible already). Transport / accommodation — split decision (new domain vs trip): see WORKLOG Session 8 "Activity as separate domain" rationale. Activities precedent suggests separate domains because both have their own forms + lifecycle.
+
+---
+
 ## 2026-06-13 — Session 10: Currency + Expense Backend
 
 **Status**: Currency and expense backend domains live with tests. CurrencyFreaks API wired, USD-keyed rates cached in Redis, cross-rates derived. Expense auto-converts to trip base currency via cross-domain `Converter` interface.

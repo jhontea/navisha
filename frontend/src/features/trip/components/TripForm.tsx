@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useCreateTrip } from "../hooks/useTrips"
+import type { CreateTripInput, Trip } from "../types"
 
 const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW"] as const
 
@@ -46,10 +46,20 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>
 
-export function TripForm() {
-  const router = useRouter()
-  const { mutateAsync, isPending } = useCreateTrip()
+interface Props {
+  initial?: Trip
+  onSubmit: (input: CreateTripInput) => Promise<unknown>
+  isSubmitting: boolean
+  submitLabel?: string
+}
 
+export function TripForm({
+  initial,
+  onSubmit,
+  isSubmitting,
+  submitLabel,
+}: Props) {
+  const router = useRouter()
   const {
     register,
     handleSubmit,
@@ -57,40 +67,32 @@ export function TripForm() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: "",
-      description: "",
-      start_date: "",
-      end_date: "",
-      base_currency: "IDR",
-      cover_image_url: "",
-      notes: "",
-    },
+    defaultValues: buildDefaults(initial),
   })
 
-  const onSubmit = async (values: FormValues) => {
-    const trip = await mutateAsync({
-      ...values,
+  const submit = async (values: FormValues) => {
+    await onSubmit({
+      title: values.title,
       description: values.description ?? "",
+      start_date: values.start_date,
+      end_date: values.end_date,
+      base_currency: values.base_currency,
       cover_image_url: values.cover_image_url ?? "",
       notes: values.notes ?? "",
     })
-    router.push(`/trips/${trip.id}`)
   }
 
-  // Open native date picker on click — avoids the user having to hit the calendar icon.
-  // showPicker requires a user gesture; only call from onClick (not onFocus) and swallow
-  // NotAllowedError if the browser is strict.
+  // showPicker requires a user gesture; onClick only, swallow NotAllowedError.
   const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
     try {
       e.currentTarget.showPicker?.()
     } catch {
-      // ignore — falls back to default browser behaviour (calendar icon click)
+      // ignore — falls back to native calendar icon click
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
       <Field label="Title" error={errors.title?.message}>
         <Input placeholder="Bali Trip" {...register("title")} />
       </Field>
@@ -154,16 +156,42 @@ export function TripForm() {
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          disabled={isPending}
+          disabled={isSubmitting}
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Creating…" : "Create trip"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting
+            ? "Saving…"
+            : submitLabel ?? (initial ? "Save changes" : "Create trip")}
         </Button>
       </div>
     </form>
   )
+}
+
+function buildDefaults(initial?: Trip): FormValues {
+  if (!initial) {
+    return {
+      title: "",
+      description: "",
+      start_date: "",
+      end_date: "",
+      base_currency: "IDR",
+      cover_image_url: "",
+      notes: "",
+    }
+  }
+  return {
+    title: initial.title,
+    description: initial.description ?? "",
+    start_date: initial.start_date,
+    end_date: initial.end_date,
+    base_currency:
+      (initial.base_currency as FormValues["base_currency"]) ?? "IDR",
+    cover_image_url: initial.cover_image_url ?? "",
+    notes: initial.notes ?? "",
+  }
 }
 
 function Field({

@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import {
   useActivities,
   useCreateActivity,
@@ -40,6 +41,7 @@ export function DayActivities({ dayId }: Props) {
   const { data, isLoading, isError } = useActivities(dayId)
   const [editing, setEditing] = useState<Activity | null>(null)
   const [creating, setCreating] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState<Activity | null>(null)
 
   const createMut = useCreateActivity(dayId)
   const updateMut = useUpdateActivity(editing?.id ?? "", dayId)
@@ -94,9 +96,7 @@ export function DayActivities({ dayId }: Props) {
                 activity={a}
                 index={i}
                 onEdit={() => setEditing(a)}
-                onDelete={() => {
-                  if (confirm(`Delete "${a.title}"?`)) deleteMut.mutate(a.id)
-                }}
+                onDelete={() => setConfirmingDelete(a)}
                 isDeleting={
                   deleteMut.isPending && deleteMut.variables === a.id
                 }
@@ -161,6 +161,23 @@ export function DayActivities({ dayId }: Props) {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmingDelete}
+        onOpenChange={(o) => !o && setConfirmingDelete(null)}
+        title={`Delete "${confirmingDelete?.title ?? ""}"?`}
+        description="This activity will be permanently removed from the day."
+        confirmLabel="Delete"
+        destructive
+        isPending={deleteMut.isPending}
+        onConfirm={() => {
+          if (confirmingDelete) {
+            deleteMut.mutate(confirmingDelete.id, {
+              onSettled: () => setConfirmingDelete(null),
+            })
+          }
+        }}
+      />
     </div>
   )
 }
