@@ -16,6 +16,11 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <UserBadge />
+          <Link href="/currency">
+            <Button variant="outline" size="sm">
+              Currency
+            </Button>
+          </Link>
           <Link href="/trips/new">
             <Button size="sm">New trip</Button>
           </Link>
