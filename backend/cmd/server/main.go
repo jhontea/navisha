@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/config"
+	"github.com/ahmadhafizh/navisha/backend/internal/accommodation"
 	"github.com/ahmadhafizh/navisha/backend/internal/activity"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 	"github.com/ahmadhafizh/navisha/backend/internal/expense"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
@@ -96,6 +98,16 @@ func main() {
 	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
 	expenseHandler := expense.NewHandler(expenseUsecase)
 
+	// Transportation domain
+	transportationRepo := transportation.NewPostgresRepository(db)
+	transportationUsecase := transportation.NewUsecase(transportationRepo)
+	transportationHandler := transportation.NewHandler(transportationUsecase)
+
+	// Accommodation domain
+	accommodationRepo := accommodation.NewPostgresRepository(db)
+	accommodationUsecase := accommodation.NewUsecase(accommodationRepo)
+	accommodationHandler := accommodation.NewHandler(accommodationUsecase)
+
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
@@ -124,6 +136,8 @@ func main() {
 	activityHandler.RegisterRoutes(api, authMiddleware)
 	currencyHandler.RegisterRoutes(api, authMiddleware)
 	expenseHandler.RegisterRoutes(api, authMiddleware)
+	transportationHandler.RegisterRoutes(api, authMiddleware)
+	accommodationHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown
 	go func() {

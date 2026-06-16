@@ -36,4 +36,8 @@ type Repository interface {
 	Delete(id string) error
 
 	ListDays(tripID string) ([]Day, error)
+	FindDayOwner(dayID string) (userID string, err error)
+	UpdateDayNotes(dayID, notes string) (*Day, error)
 }
+
+var ErrDayNotFound = errors.New("day not found")

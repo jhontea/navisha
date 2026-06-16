@@ -183,6 +183,37 @@ func (r *postgresRepository) Delete(id string) error {
 	return nil
 }
 
+func (r *postgresRepository) FindDayOwner(dayID string) (string, error) {
+	var userID string
+	err := r.db.QueryRow(context.Background(),
+		`SELECT t.user_id
+		 FROM days d
+		 JOIN trips t ON t.id = d.trip_id
+		 WHERE d.id = $1`, dayID).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrDayNotFound
+		}
+		return "", fmt.Errorf("trip.FindDayOwner: %w", err)
+	}
+	return userID, nil
+}
+
+func (r *postgresRepository) UpdateDayNotes(dayID, notes string) (*Day, error) {
+	d := &Day{}
+	err := r.db.QueryRow(context.Background(),
+		`UPDATE days SET notes = $2 WHERE id = $1
+		 RETURNING id, trip_id, date, day_number, notes`, dayID, notes).
+		Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Notes)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrDayNotFound
+		}
+		return nil, fmt.Errorf("trip.UpdateDayNotes: %w", err)
+	}
+	return d, nil
+}
+
 func (r *postgresRepository) ListDays(tripID string) ([]Day, error) {
 	rows, err := r.db.Query(context.Background(),
 		`SELECT id, trip_id, date, day_number, notes

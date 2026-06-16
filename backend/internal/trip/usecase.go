@@ -20,6 +20,7 @@ type UsecaseInterface interface {
 	Get(userID, tripID string) (*Trip, []Day, error)
 	Update(userID, tripID string, in UpdateInput) (*Trip, error)
 	Delete(userID, tripID string) error
+	UpdateDayNotes(userID, dayID, notes string) (*Day, error)
 }
 
 type CreateInput struct {
@@ -156,6 +157,19 @@ func (u *Usecase) Delete(userID, tripID string) error {
 		return apperr.ErrForbidden
 	}
 	return u.repo.Delete(tripID)
+}
+
+// UpdateDayNotes mutates only the notes column on a single day.
+// Ownership chain day → trip → user verified via FindDayOwner JOIN.
+func (u *Usecase) UpdateDayNotes(userID, dayID, notes string) (*Day, error) {
+	owner, err := u.repo.FindDayOwner(dayID)
+	if err != nil {
+		return nil, err
+	}
+	if owner != userID {
+		return nil, apperr.ErrForbidden
+	}
+	return u.repo.UpdateDayNotes(dayID, notes)
 }
 
 func validateDates(start, end time.Time) error {

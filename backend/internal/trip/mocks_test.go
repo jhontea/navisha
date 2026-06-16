@@ -28,10 +28,18 @@ type mockRepo struct {
 	deleteErr      error
 	listDaysResult []Day
 	listDaysErr    error
+
+	dayOwners            map[string]string
+	findDayOwnerErr      error
+	updateDayNotesResult *Day
+	updateDayNotesErr    error
 }
 
 func newMockRepo() *mockRepo {
-	return &mockRepo{trips: map[string]*Trip{}}
+	return &mockRepo{
+		trips:     map[string]*Trip{},
+		dayOwners: map[string]string{},
+	}
 }
 
 func (m *mockRepo) BeginTx(_ context.Context) (pgx.Tx, error) {
@@ -87,6 +95,26 @@ func (m *mockRepo) Delete(_ string) error {
 }
 func (m *mockRepo) ListDays(_ string) ([]Day, error) {
 	return m.listDaysResult, m.listDaysErr
+}
+
+func (m *mockRepo) FindDayOwner(dayID string) (string, error) {
+	if m.findDayOwnerErr != nil {
+		return "", m.findDayOwnerErr
+	}
+	if owner, ok := m.dayOwners[dayID]; ok {
+		return owner, nil
+	}
+	return "", ErrDayNotFound
+}
+
+func (m *mockRepo) UpdateDayNotes(dayID, notes string) (*Day, error) {
+	if m.updateDayNotesErr != nil {
+		return nil, m.updateDayNotesErr
+	}
+	if m.updateDayNotesResult != nil {
+		return m.updateDayNotesResult, nil
+	}
+	return &Day{ID: dayID, Notes: notes}, nil
 }
 
 // Test helpers

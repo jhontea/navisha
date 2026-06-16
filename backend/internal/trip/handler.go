@@ -25,6 +25,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	g.GET("/trips/:id", h.Get, authMiddleware)
 	g.PUT("/trips/:id", h.Update, authMiddleware)
 	g.DELETE("/trips/:id", h.Delete, authMiddleware)
+	g.PUT("/days/:day_id/notes", h.UpdateDayNotes, authMiddleware)
 }
 
 type tripRequest struct {
@@ -138,6 +139,30 @@ func (h *Handler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+type dayNotesRequest struct {
+	Notes string `json:"notes"`
+}
+
+func (h *Handler) UpdateDayNotes(c echo.Context) error {
+	userID := c.Get(middleware.UserIDKey).(string)
+	dayID := c.Param("day_id")
+	var req dayNotesRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	d, err := h.usecase.UpdateDayNotes(userID, dayID, req.Notes)
+	if err != nil {
+		return mapErr(err)
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"id":         d.ID,
+		"trip_id":    d.TripID,
+		"date":       d.Date.Format("2006-01-02"),
+		"day_number": d.DayNumber,
+		"notes":      d.Notes,
+	})
+}
+
 func parseDates(start, end string) (time.Time, time.Time, error) {
 	s, err := time.Parse("2006-01-02", start)
 	if err != nil {
@@ -184,6 +209,8 @@ func mapErr(err error) error {
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, "trip not found")
+	case errors.Is(err, ErrDayNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, "day not found")
 	case errors.Is(err, ErrInvalidDates):
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid dates: end must be on or after start")
 	case errors.Is(err, ErrInvalidCurrency):

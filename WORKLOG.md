@@ -4,6 +4,56 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-15 — Session 12: Day Notes + Transportation + Accommodation (Backend + Frontend)
+
+**Status**: Three trip-level features shipped end-to-end. Day notes save inline, transportation and accommodation each get their own domain, slice, and trip detail tab. Trip detail page now has 4 tabs: Itinerary / Transport / Stay / Budget.
+
+### Completed
+- **Day notes** (extends `internal/trip` rather than splitting Day into its own domain — Day stays a child of Trip):
+  - `repository.go` — `FindDayOwner(dayID)` + `UpdateDayNotes(dayID, notes)` + `ErrDayNotFound`
+  - `repository_pg.go` — JOIN `days → trips` for ownership; targeted UPDATE on `days.notes`
+  - `usecase.go` — `UpdateDayNotes(userID, dayID, notes)` with ownership check
+  - `handler.go` — `PUT /api/v1/days/:day_id/notes` (body `{ notes }`); 404 mapping for `ErrDayNotFound`
+  - Mock + tests: 3 new (success / forbidden / day-not-found)
+  - Frontend: `tripApi.updateDayNotes` + `useUpdateDayNotes(tripId)`; `DayPanel` gains `notes` prop, inline Textarea above the activity list, save-on-blur dirty check, "Saving…" indicator
+- **`internal/transportation/`** — full domain, mirrors activity split:
+  - `model.go` — `Type` enum (flight/bus/train/ferry/ship/car/other), `Transportation` struct with `*time.Time` for nullable departure/arrival
+  - `repository.go` + `repository_pg.go` — interface w/ `FindTripOwner` + `FindTransportationOwner` JOIN; List ordered by `COALESCE(departure_datetime, created_at)`
+  - `usecase.go` — CRUD + ownership; `validate` rejects unknown type and arrival-before-departure
+  - `handler.go` — `GET/POST /trips/:trip_id/transportations`, `PUT/DELETE /transportations/:id`. RFC3339 parsing for optional datetimes.
+- **`internal/accommodation/`** — full domain:
+  - `model.go` — `*float64` lat/lng for nullable; YYYY-MM-DD dates
+  - `repository.go` + `repository_pg.go` — same ownership pattern as transportation; List ordered by `check_in ASC`
+  - `usecase.go` — CRUD + ownership; `validate` requires `name`, rejects `check_out` before `check_in`
+  - `handler.go` — `GET/POST /trips/:trip_id/accommodations`, `PUT/DELETE /accommodations/:id`. Dates parsed/serialized as YYYY-MM-DD.
+- **Trip model cleanup** — `Transportation` + `Accommodation` structs removed from `trip/model.go`. Comment replaced with pointer to the new domain packages.
+- **Wiring (`cmd/server/main.go`)** — both new domains constructed and routes registered. Build clean, existing tests pass.
+- **Frontend slices**:
+  - `features/transportation/` — types, api, hooks, `TransportationForm` (7-button type picker with `lucide-react` icons, `datetime-local` inputs with `showPicker` onClick + ISO ↔ local helpers), `TransportationCard` (From→Arrow→To), `TransportationSection` (list + Dialog forms + ConfirmDialog).
+  - `features/accommodation/` — same shape; `AccommodationForm` uses Zod `refine` for `check_out >= check_in`; `AccommodationCard` shows date range, location, confirmation number.
+- **Trip detail page** — added `Transport` + `Stay` tabs between Itinerary and Budget. Each tab content = its `Section` component.
+
+### Key Decisions
+- **Day notes stay in trip domain, not split into `internal/day/`** — per Session 6 decision (Day = child aggregate of Trip, CASCADE-deleted, auto-created). Single new method on trip repo is cheaper than a parallel domain package.
+- **Transport / Accommodation each split to own domain** — mirrors `internal/activity` split (Session 8). Both have full CRUD, type/payload validation, dedicated forms. Splitting keeps `internal/trip` lean.
+- **`Transportation.{FromLocation, ToLocation}`, not `From/To`** — `from`/`to` are SQL reserved keywords; column names are `from_location`/`to_location`, Go fields follow.
+- **Datetime fields nullable** — `*time.Time` on backend, `string | null` on frontend. Forms send `null` when empty. Departure-arrival validation only fires when both are set.
+- **Save-on-blur for day notes** — fewer requests than per-keystroke save, instant enough for a text field. Dirty check (`draft !== notes`) avoids no-op PUTs when user just clicks through.
+- **Frontend transport form uses `datetime-local`** — native picker, no extra date library. ISO/local converter helpers live in the same file.
+- **Tabs grow to 4 (Itinerary / Transport / Stay / Budget)** — kept consistent `flex-1` triggers and `w-full` list. Reorganization didn't touch tab styling settled in Session 11.
+
+### Pending — must come back to
+- [ ] Activities: Google Maps Places autofill (blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
+- [ ] User handler unit tests (`UsecaseInterface` mock).
+- [ ] Transportation + Accommodation unit tests (mirror trip/activity patterns).
+- [ ] Map view (Phase 1 feature — render location activities + transport hops as a route).
+- [ ] Phase 2 features: share trip, collaborator invite, PDF export, mobile.
+
+### Resume From
+**Transportation + Accommodation unit tests** are the closest next deliverable to ship. Mirror `internal/activity/{mocks_test.go, usecase_test.go}` — small mockRepo with trip + entity owner maps, validate-input tests, ownership Forbidden tests, success cases. Targets ~10–15 new tests per domain. After that, choose between Map view (large, Phase 1 closer) or Google Maps Places autofill (small, needs API key).
+
+---
+
 ## 2026-06-14 — Session 11: Frontend Currency + Expense UI, Tabs, Trip Edit, AlertDialog
 
 **Status**: Currency converter live as standalone page. Per-trip Budget UI shipped (form with live convert preview, expense list with cross-currency display, stacked-bar summary). Trip detail page reorganized as tabs. Trip edit page complete. All three `window.confirm()` calls replaced with a shared coss AlertDialog wrapper.
