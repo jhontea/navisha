@@ -55,3 +55,16 @@ export function useDeleteTrip() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["trips", "list"] }),
   })
 }
+
+// Invalidates the parent trip detail so the inline day notes value stays
+// in sync with what we just persisted. tripId comes from the page that owns
+// the DayPanel.
+export function useUpdateDayNotes(tripId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ dayId, notes }: { dayId: string; notes: string }) =>
+      tripApi.updateDayNotes(dayId, notes),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId] }),
+  })
+}

@@ -1,6 +1,7 @@
 import { api } from "@/lib/api"
 import type {
   CreateTripInput,
+  Day,
   Trip,
   TripDetail,
   TripListResponse,
@@ -23,4 +24,7 @@ export const tripApi = {
     api.put<Trip>(`/trips/${id}`, input),
 
   delete: (id: string) => api.delete<void>(`/trips/${id}`),
+
+  updateDayNotes: (dayId: string, notes: string) =>
+    api.put<Day>(`/days/${dayId}/notes`, { notes }),
 }

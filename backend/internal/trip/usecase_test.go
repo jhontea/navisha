@@ -233,6 +233,43 @@ func TestUsecase_Delete_Success(t *testing.T) {
 	}
 }
 
+// ---------- UpdateDayNotes ----------
+
+func TestUsecase_UpdateDayNotes_Success(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["d1"] = "user-1"
+	u := NewUsecase(repo)
+
+	d, err := u.UpdateDayNotes("user-1", "d1", "remember sunscreen")
+	if err != nil {
+		t.Fatalf("UpdateDayNotes: %v", err)
+	}
+	if d.Notes != "remember sunscreen" {
+		t.Errorf("notes = %q, want remember sunscreen", d.Notes)
+	}
+}
+
+func TestUsecase_UpdateDayNotes_Forbidden(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["d1"] = "user-other"
+	u := NewUsecase(repo)
+
+	_, err := u.UpdateDayNotes("user-1", "d1", "x")
+	if !errors.Is(err, apperr.ErrForbidden) {
+		t.Errorf("err = %v, want ErrForbidden", err)
+	}
+}
+
+func TestUsecase_UpdateDayNotes_DayNotFound(t *testing.T) {
+	repo := newMockRepo()
+	u := NewUsecase(repo)
+
+	_, err := u.UpdateDayNotes("user-1", "missing", "x")
+	if !errors.Is(err, ErrDayNotFound) {
+		t.Errorf("err = %v, want ErrDayNotFound", err)
+	}
+}
+
 // ---------- List limit clamping ----------
 
 func TestUsecase_List_LimitClamping(t *testing.T) {

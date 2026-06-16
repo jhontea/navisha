@@ -11,6 +11,8 @@ import { formatDateRange } from "@/lib/utils"
 import { useTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DayPanel } from "@/features/activity/components/DayPanel"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
+import { TransportationSection } from "@/features/transportation/components/TransportationSection"
+import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
 import {
   Tabs,
   TabsContent,
@@ -106,6 +108,12 @@ export default function TripDetailPage() {
               {trip.days.length}
             </span>
           </TabsTrigger>
+          <TabsTrigger value="transport" className="flex-1">
+            Transport
+          </TabsTrigger>
+          <TabsTrigger value="stay" className="flex-1">
+            Stay
+          </TabsTrigger>
           <TabsTrigger value="budget" className="flex-1">
             Budget
           </TabsTrigger>
@@ -116,12 +124,22 @@ export default function TripDetailPage() {
             {trip.days.map((d) => (
               <DayPanel
                 key={d.id}
+                tripId={id}
                 dayId={d.id}
                 dayNumber={d.day_number}
                 date={d.date}
+                notes={d.notes ?? ""}
               />
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="transport" className="pt-4">
+          <TransportationSection tripId={id} />
+        </TabsContent>
+
+        <TabsContent value="stay" className="pt-4">
+          <AccommodationSection tripId={id} />
         </TabsContent>
 
         <TabsContent value="budget" className="pt-4">
