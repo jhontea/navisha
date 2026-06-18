@@ -16,6 +16,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import {
   TRANSPORTATION_TYPES,
@@ -37,6 +44,8 @@ const TYPE_META: Record<
   other: { label: "Other", Icon: Boxes },
 }
 
+const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW"] as const
+
 const schema = z.object({
   type: z.enum([
     "flight",
@@ -55,12 +64,20 @@ const schema = z.object({
   departure_datetime: z.string().optional(),
   arrival_datetime: z.string().optional(),
   notes: z.string().max(2000).optional(),
+  amount: z.string().optional(),
+  currency: z.enum(SUPPORTED_CURRENCIES).optional(),
 })
 
 type FormValues = z.infer<typeof schema>
 
 interface Props {
   initial?: Transportation
+  // tripBaseCurrency used as the default `currency` when the cost field renders.
+  tripBaseCurrency?: string
+  // When true, render the optional cost field; on submit the value is included
+  // in `input.cost` and the backend creates the linked expense atomically.
+  // Defaults to false for edit dialogs.
+  withCost?: boolean
   onSubmit: (input: CreateTransportationInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
@@ -68,10 +85,14 @@ interface Props {
 
 export function TransportationForm({
   initial,
+  tripBaseCurrency,
+  withCost,
   onSubmit,
   onCancel,
   isSubmitting,
 }: Props) {
+  const defaultCurrency =
+    (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
   const {
     register,
     handleSubmit,
@@ -90,11 +111,18 @@ export function TransportationForm({
       departure_datetime: toLocalInput(initial?.departure_datetime),
       arrival_datetime: toLocalInput(initial?.arrival_datetime),
       notes: initial?.notes ?? "",
+      amount: "",
+      currency: defaultCurrency,
     },
   })
 
   const submit = async (v: FormValues) => {
-    await onSubmit({
+    const amount = v.amount ? Number(v.amount) : 0
+    const cost =
+      withCost && amount > 0 && v.currency
+        ? { amount, currency: v.currency }
+        : null
+    const entity: CreateTransportationInput = {
       type: v.type,
       label: v.label,
       operator: v.operator,
@@ -104,7 +132,9 @@ export function TransportationForm({
       departure_datetime: fromLocalInput(v.departure_datetime),
       arrival_datetime: fromLocalInput(v.arrival_datetime),
       notes: v.notes,
-    })
+      cost,
+    }
+    await onSubmit(entity)
   }
 
   const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
@@ -192,6 +222,43 @@ export function TransportationForm({
           />
         </Field>
       </div>
+
+      {withCost && (
+        <div className="rounded-lg border border-dashed bg-muted/30 p-3">
+          <Label className="text-xs text-muted-foreground">
+            Cost (optional — adds an expense to the trip budget)
+          </Label>
+          <div className="mt-2 grid grid-cols-[1fr_6rem] gap-2">
+            <Input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              {...register("amount")}
+            />
+            <Controller
+              control={control}
+              name="currency"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? defaultCurrency}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+      )}
 
       <Field label="Notes" error={errors.notes?.message}>
         <Textarea rows={2} {...register("notes")} />

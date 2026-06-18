@@ -139,11 +139,17 @@ export default function TripDetailPage() {
         </TabsContent>
 
         <TabsContent value="transport" className="pt-4">
-          <TransportationSection tripId={id} />
+          <TransportationSection
+            tripId={id}
+            tripBaseCurrency={trip.base_currency}
+          />
         </TabsContent>
 
         <TabsContent value="stay" className="pt-4">
-          <AccommodationSection tripId={id} />
+          <AccommodationSection
+            tripId={id}
+            tripBaseCurrency={trip.base_currency}
+          />
         </TabsContent>
 
         <TabsContent value="map" className="pt-4">

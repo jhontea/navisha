@@ -1,6 +1,7 @@
 package transportation
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -66,9 +67,9 @@ func TestValidate(t *testing.T) {
 func TestCreate_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	out, err := u.Create("user-1", "trip-1", CreateInput{
+	out, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Type: TypeFlight, Label: "GA420", FromLocation: "CGK", ToLocation: "DPS",
 	})
 	if err != nil {
@@ -82,9 +83,9 @@ func TestCreate_Success(t *testing.T) {
 func TestCreate_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-other"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{Type: TypeFlight})
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{Type: TypeFlight})
 	if !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
@@ -92,9 +93,9 @@ func TestCreate_Forbidden(t *testing.T) {
 
 func TestCreate_TripNotFound(t *testing.T) {
 	repo := newMockRepo()
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "missing", CreateInput{Type: TypeFlight})
+	_, err := u.Create(context.Background(), "user-1", "missing", CreateInput{Type: TypeFlight})
 	if !errors.Is(err, ErrTripNotFound) {
 		t.Errorf("err = %v, want ErrTripNotFound", err)
 	}
@@ -103,9 +104,9 @@ func TestCreate_TripNotFound(t *testing.T) {
 func TestCreate_InvalidType(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{Type: "bogus"})
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{Type: "bogus"})
 	if !errors.Is(err, ErrInvalidType) {
 		t.Errorf("err = %v, want ErrInvalidType", err)
 	}
@@ -118,7 +119,7 @@ func TestUpdate_Forbidden(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-other"
 	repo.items["t1"] = &Transportation{ID: "t1", TripID: "trip-1", Type: TypeFlight}
 	repo.itemOf["t1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	_, err := u.Update("user-1", "t1", UpdateInput{Type: TypeBus})
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -131,7 +132,7 @@ func TestUpdate_Success(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-1"
 	repo.items["t1"] = &Transportation{ID: "t1", TripID: "trip-1", Type: TypeFlight}
 	repo.itemOf["t1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	out, err := u.Update("user-1", "t1", UpdateInput{Type: TypeBus, Label: "K10"})
 	if err != nil {
@@ -147,7 +148,7 @@ func TestDelete_Forbidden(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-other"
 	repo.items["t1"] = &Transportation{ID: "t1", TripID: "trip-1"}
 	repo.itemOf["t1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	if err := u.Delete("user-1", "t1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
@@ -159,7 +160,7 @@ func TestDelete_Success(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-1"
 	repo.items["t1"] = &Transportation{ID: "t1", TripID: "trip-1"}
 	repo.itemOf["t1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	if err := u.Delete("user-1", "t1"); err != nil {
 		t.Errorf("Delete: %v", err)
@@ -174,7 +175,7 @@ func TestDelete_Success(t *testing.T) {
 func TestList_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-other"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	if _, err := u.List("user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
@@ -188,7 +189,7 @@ func TestList_Success(t *testing.T) {
 		{ID: "t1", Type: TypeFlight},
 		{ID: "t2", Type: TypeBus},
 	}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	out, err := u.List("user-1", "trip-1")
 	if err != nil {

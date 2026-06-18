@@ -19,6 +19,44 @@ func NewPostgresRepository(db *pgxpool.Pool) Repository {
 
 var _ Repository = (*postgresRepository)(nil)
 
+func (r *postgresRepository) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("accommodation.BeginTx: %w", err)
+	}
+	return tx, nil
+}
+
+func (r *postgresRepository) Commit(ctx context.Context, tx pgx.Tx) error {
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("accommodation.Commit: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresRepository) Rollback(ctx context.Context, tx pgx.Tx) error {
+	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+		return fmt.Errorf("accommodation.Rollback: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresRepository) InsertTx(ctx context.Context, tx pgx.Tx, a *Accommodation) (*Accommodation, error) {
+	row := tx.QueryRow(ctx,
+		`INSERT INTO accommodations (trip_id, name, location_name, lat, lng, google_place_id,
+		                             check_in, check_out, confirmation_number, notes)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		 RETURNING id, trip_id, name, location_name, lat, lng, google_place_id,
+		           check_in, check_out, confirmation_number, notes, created_at, updated_at`,
+		a.TripID, a.Name, a.LocationName, a.Lat, a.Lng, a.GooglePlaceID,
+		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes)
+	out, err := scan(row)
+	if err != nil {
+		return nil, fmt.Errorf("accommodation.InsertTx: %w", err)
+	}
+	return out, nil
+}
+
 func (r *postgresRepository) FindTripOwner(tripID string) (string, error) {
 	var userID string
 	err := r.db.QueryRow(context.Background(),

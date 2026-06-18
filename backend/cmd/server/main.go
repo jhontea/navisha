@@ -98,14 +98,14 @@ func main() {
 	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
 	expenseHandler := expense.NewHandler(expenseUsecase)
 
-	// Transportation domain
+	// Transportation domain (uses expenseUsecase for atomic linked-expense create)
 	transportationRepo := transportation.NewPostgresRepository(db)
-	transportationUsecase := transportation.NewUsecase(transportationRepo)
+	transportationUsecase := transportation.NewUsecase(transportationRepo, expenseUsecase)
 	transportationHandler := transportation.NewHandler(transportationUsecase)
 
-	// Accommodation domain
+	// Accommodation domain (same pattern)
 	accommodationRepo := accommodation.NewPostgresRepository(db)
-	accommodationUsecase := accommodation.NewUsecase(accommodationRepo)
+	accommodationUsecase := accommodation.NewUsecase(accommodationRepo, expenseUsecase)
 	accommodationHandler := accommodation.NewHandler(accommodationUsecase)
 
 	// Echo

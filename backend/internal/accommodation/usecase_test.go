@@ -1,6 +1,7 @@
 package accommodation
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -49,11 +50,11 @@ func TestValidate(t *testing.T) {
 func TestCreate_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	in := date(2026, 7, 1)
 	out := date(2026, 7, 7)
-	a, err := u.Create("user-1", "trip-1", CreateInput{
+	a, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Name: "Four Seasons", CheckIn: in, CheckOut: out,
 	})
 	if err != nil {
@@ -67,9 +68,9 @@ func TestCreate_Success(t *testing.T) {
 func TestCreate_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-other"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Name: "x", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
 	})
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -79,9 +80,9 @@ func TestCreate_Forbidden(t *testing.T) {
 
 func TestCreate_TripNotFound(t *testing.T) {
 	repo := newMockRepo()
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "missing", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "missing", CreateInput{
 		Name: "x", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
 	})
 	if !errors.Is(err, ErrTripNotFound) {
@@ -92,9 +93,9 @@ func TestCreate_TripNotFound(t *testing.T) {
 func TestCreate_InvalidName(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Name: "", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
 	})
 	if !errors.Is(err, ErrInvalidName) {
@@ -105,9 +106,9 @@ func TestCreate_InvalidName(t *testing.T) {
 func TestCreate_InvalidDates(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Name: "x", CheckIn: date(2026, 7, 7), CheckOut: date(2026, 7, 1),
 	})
 	if !errors.Is(err, ErrInvalidDates) {
@@ -122,7 +123,7 @@ func TestUpdate_Forbidden(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-other"
 	repo.items["a1"] = &Accommodation{ID: "a1", TripID: "trip-1", Name: "Hotel"}
 	repo.itemOf["a1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	_, err := u.Update("user-1", "a1", UpdateInput{
 		Name: "x", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
@@ -137,7 +138,7 @@ func TestUpdate_Success(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-1"
 	repo.items["a1"] = &Accommodation{ID: "a1", TripID: "trip-1", Name: "Old"}
 	repo.itemOf["a1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	out, err := u.Update("user-1", "a1", UpdateInput{
 		Name: "New name", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
@@ -155,7 +156,7 @@ func TestDelete_Forbidden(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-other"
 	repo.items["a1"] = &Accommodation{ID: "a1", TripID: "trip-1"}
 	repo.itemOf["a1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	if err := u.Delete("user-1", "a1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
@@ -167,7 +168,7 @@ func TestDelete_Success(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-1"
 	repo.items["a1"] = &Accommodation{ID: "a1", TripID: "trip-1"}
 	repo.itemOf["a1"] = "trip-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	if err := u.Delete("user-1", "a1"); err != nil {
 		t.Errorf("Delete: %v", err)
@@ -182,7 +183,7 @@ func TestDelete_Success(t *testing.T) {
 func TestList_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.tripOwners["trip-1"] = "user-other"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	if _, err := u.List("user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
@@ -196,7 +197,7 @@ func TestList_Success(t *testing.T) {
 		{ID: "a1", Name: "A"},
 		{ID: "a2", Name: "B"},
 	}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockExpenseCreator{})
 
 	out, err := u.List("user-1", "trip-1")
 	if err != nil {

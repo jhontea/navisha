@@ -21,9 +21,11 @@ import { TransportationForm } from "./TransportationForm"
 
 interface Props {
   tripId: string
+  // Used for the optional cost field default + auto-created expense category.
+  tripBaseCurrency: string
 }
 
-export function TransportationSection({ tripId }: Props) {
+export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
   const { data, isLoading, isError } = useTransportations(tripId)
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Transportation | null>(null)
@@ -77,9 +79,12 @@ export function TransportationSection({ tripId }: Props) {
             <DialogTitle>New transportation</DialogTitle>
           </DialogHeader>
           <TransportationForm
+            tripBaseCurrency={tripBaseCurrency}
+            withCost
             isSubmitting={createMut.isPending}
             onCancel={() => setCreating(false)}
             onSubmit={async (input: CreateTransportationInput) => {
+              // Backend creates the linked expense atomically via input.cost.
               await createMut.mutateAsync(input)
               setCreating(false)
             }}

@@ -25,16 +25,22 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	g.DELETE("/accommodations/:id", h.Delete, authMiddleware)
 }
 
+type costRequest struct {
+	Amount   float64 `json:"amount"`
+	Currency string  `json:"currency"`
+}
+
 type request struct {
-	Name               string   `json:"name"`
-	LocationName       string   `json:"location_name"`
-	Lat                *float64 `json:"lat"`
-	Lng                *float64 `json:"lng"`
-	GooglePlaceID      string   `json:"google_place_id"`
-	CheckIn            string   `json:"check_in"`  // YYYY-MM-DD
-	CheckOut           string   `json:"check_out"` // YYYY-MM-DD
-	ConfirmationNumber string   `json:"confirmation_number"`
-	Notes              string   `json:"notes"`
+	Name               string       `json:"name"`
+	LocationName       string       `json:"location_name"`
+	Lat                *float64     `json:"lat"`
+	Lng                *float64     `json:"lng"`
+	GooglePlaceID      string       `json:"google_place_id"`
+	CheckIn            string       `json:"check_in"`  // YYYY-MM-DD
+	CheckOut           string       `json:"check_out"` // YYYY-MM-DD
+	ConfirmationNumber string       `json:"confirmation_number"`
+	Notes              string       `json:"notes"`
+	Cost               *costRequest `json:"cost"`
 }
 
 func (req *request) toInput() (CreateInput, error) {
@@ -46,6 +52,10 @@ func (req *request) toInput() (CreateInput, error) {
 	if err != nil {
 		return CreateInput{}, err
 	}
+	var cost *Cost
+	if req.Cost != nil && req.Cost.Amount > 0 && req.Cost.Currency != "" {
+		cost = &Cost{Amount: req.Cost.Amount, Currency: req.Cost.Currency}
+	}
 	return CreateInput{
 		Name:               req.Name,
 		LocationName:       req.LocationName,
@@ -56,6 +66,7 @@ func (req *request) toInput() (CreateInput, error) {
 		CheckOut:           out,
 		ConfirmationNumber: req.ConfirmationNumber,
 		Notes:              req.Notes,
+		Cost:               cost,
 	}, nil
 }
 
@@ -84,7 +95,7 @@ func (h *Handler) Create(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
 	}
-	a, err := h.usecase.Create(userID, tripID, in)
+	a, err := h.usecase.Create(c.Request().Context(), userID, tripID, in)
 	if err != nil {
 		return mapErr(err)
 	}

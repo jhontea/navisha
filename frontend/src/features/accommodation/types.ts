@@ -18,6 +18,11 @@ export interface AccommodationListResponse {
   items: Accommodation[]
 }
 
+export interface CostInput {
+  amount: number
+  currency: string
+}
+
 export interface CreateAccommodationInput {
   name: string
   location_name?: string
@@ -28,6 +33,7 @@ export interface CreateAccommodationInput {
   check_out: string
   confirmation_number?: string
   notes?: string
+  cost?: CostInput | null
 }
 
 export type UpdateAccommodationInput = CreateAccommodationInput
