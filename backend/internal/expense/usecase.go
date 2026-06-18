@@ -1,9 +1,11 @@
 package expense
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/jackc/pgx/v5"
 )
 
 // Converter abstracts currency conversion. Defined here so the expense
@@ -19,6 +21,17 @@ type UsecaseInterface interface {
 	Update(userID, expenseID string, in UpdateInput) (*Expense, error)
 	Delete(userID, expenseID string) error
 	Summary(userID, tripID string) (*Summary, error)
+}
+
+// LinkedExpenseCreator is the cross-domain contract that transportation /
+// accommodation use to attach an expense atomically with their own insert.
+// CreateLinkedExpenseTx runs inside the caller's transaction so a failure
+// rolls back both rows.
+type LinkedExpenseCreator interface {
+	CreateLinkedExpenseTx(
+		ctx context.Context, tx pgx.Tx,
+		userID, tripID, title, currency, category string, amount float64,
+	) error
 }
 
 type CreateInput struct {
@@ -47,6 +60,44 @@ func NewUsecase(repo Repository, converter Converter) *Usecase {
 }
 
 var _ UsecaseInterface = (*Usecase)(nil)
+var _ LinkedExpenseCreator = (*Usecase)(nil)
+
+// CreateLinkedExpenseTx is called by transportation / accommodation usecases
+// inside their transaction. We resolve the trip's base currency, run the
+// non-DB currency conversion outside any locks, then insert via tx so the
+// caller controls commit/rollback boundaries.
+func (u *Usecase) CreateLinkedExpenseTx(
+	ctx context.Context, tx pgx.Tx,
+	userID, tripID, title, currency, category string, amount float64,
+) error {
+	owner, base, err := u.repo.FindTripOwner(tripID)
+	if err != nil {
+		return err
+	}
+	if owner != userID {
+		return apperr.ErrForbidden
+	}
+	cat := Category(category)
+	if err := validateInput(title, amount, currency, cat); err != nil {
+		return err
+	}
+
+	converted, _, err := u.converter.Convert(currency, base, amount)
+	if err != nil {
+		return fmt.Errorf("expense.CreateLinkedExpenseTx convert: %w", err)
+	}
+
+	_, err = u.repo.CreateTx(ctx, tx, &Expense{
+		TripID:          tripID,
+		Title:           title,
+		Amount:          amount,
+		Currency:        currency,
+		ConvertedAmount: converted,
+		BaseCurrency:    base,
+		Category:        cat,
+	})
+	return err
+}
 
 func (u *Usecase) List(userID, tripID string) ([]Expense, error) {
 	owner, _, err := u.repo.FindTripOwner(tripID)

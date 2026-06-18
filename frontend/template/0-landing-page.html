@@ -1,0 +1,348 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Navisha - Travel Smarter, Not Harder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#001a41",
+                    "on-secondary-fixed": "#0c1e26",
+                    "surface-container-highest": "#e0e2ed",
+                    "surface-container": "#ecedf9",
+                    "secondary": "#50616b",
+                    "on-surface-variant": "#414755",
+                    "tertiary": "#9e3d00",
+                    "surface-dim": "#d8d9e5",
+                    "tertiary-container": "#c64f00",
+                    "tertiary-fixed": "#ffdbcc",
+                    "on-primary-fixed-variant": "#004493",
+                    "budget-green": "#DCFCE7",
+                    "stay-purple": "#EDE9FE",
+                    "inverse-surface": "#2d3039",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#566771",
+                    "error": "#ba1a1a",
+                    "surface": "#f9f9ff",
+                    "secondary-fixed": "#d3e5f1",
+                    "inverse-on-surface": "#eef0fc",
+                    "primary-container": "#0070eb",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e6e8f3",
+                    "secondary-fixed-dim": "#b7c9d5",
+                    "on-background": "#181c23",
+                    "secondary-container": "#d3e5f1",
+                    "transport-blue": "#DBEAFE",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#181c23",
+                    "primary": "#0058bc",
+                    "note-yellow": "#FEF9C3",
+                    "on-secondary-fixed-variant": "#384953",
+                    "surface-container-low": "#f1f3fe",
+                    "destructive-red": "#EF4444",
+                    "on-tertiary-container": "#fffbff",
+                    "primary-fixed": "#d8e2ff",
+                    "inverse-primary": "#adc6ff",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "on-primary-container": "#fefcff",
+                    "outline-variant": "#c1c6d7",
+                    "primary-fixed-dim": "#adc6ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "outline": "#717786",
+                    "surface-variant": "#e0e2ed",
+                    "surface-tint": "#005bc1",
+                    "on-tertiary-fixed": "#351000",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f9f9ff",
+                    "background": "#f9f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width": "1200px",
+                    "margin-mobile": "1rem",
+                    "margin-desktop": "2.5rem",
+                    "unit": "4px",
+                    "gutter": "1.5rem"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Geist"],
+                    "body-md": ["Inter"],
+                    "display": ["Geist"],
+                    "headline-sm": ["Geist"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Geist"],
+                    "headline-lg-mobile": ["Geist"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        body {
+            background-color: #f9f9ff;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(210,100%,98%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(220,100%,97%,1) 0, transparent 50%);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<!-- Header / Nav Shell -->
+<nav class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto sticky top-0 z-50 bg-surface/80 backdrop-blur-md">
+<div class="text-headline-md font-headline-md font-bold text-primary">
+            Navisha
+        </div>
+<div>
+<button class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors px-4 py-2">
+                Login
+            </button>
+</div>
+</nav>
+<main class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
+<!-- Hero Section -->
+<section class="flex flex-col items-center text-center py-20 md:py-32">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-fixed mb-6 border border-outline-variant/30">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span class="text-label-sm font-label-sm">New: AI Itinerary Generator</span>
+</div>
+<h1 class="font-display text-display text-on-surface mb-6 max-w-3xl leading-tight">
+                Travel Smarter, <br class="hidden md:block"> Not Harder
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-10 max-w-2xl mx-auto">
+                The modern planner for adventurous souls. Organize your itineraries, track expenses, and manage logistics all in one beautiful interface.
+            </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+<!-- Google Login Button -->
+<button class="group flex items-center gap-3 bg-primary text-on-primary px-8 py-4 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
+</svg>
+                    Continue with Google
+                </button>
+<button class="flex items-center gap-2 text-primary font-label-md text-label-md px-8 py-4 rounded-xl border border-primary/20 hover:bg-primary/5 transition-all">
+                    View Demo
+                </button>
+</div>
+</section>
+<!-- Feature Bento Grid -->
+<section class="py-12 md:py-24">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Feature 1: Trip Planning -->
+<div class="md:col-span-2 group relative overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-500">
+<div class="relative z-10">
+<div class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-3">Intelligent Trip Planning</h3>
+<p class="text-body-md text-on-surface-variant max-w-sm mb-8">
+                            Map out your entire journey with our drag-and-drop builder. Connect flights, stays, and activities seamlessly.
+                        </p>
+</div>
+<!-- Visual Element for Planning -->
+<div class="absolute -right-8 -bottom-8 w-1/2 h-64 bg-surface-container rounded-tl-3xl border border-outline-variant p-4 rotate-2 group-hover:rotate-0 transition-transform duration-500">
+<div class="flex flex-col gap-3">
+<div class="h-8 bg-white rounded-lg w-full flex items-center px-3 gap-2">
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="h-2 bg-surface-variant rounded w-1/2"></div>
+</div>
+<div class="h-8 bg-white rounded-lg w-3/4 flex items-center px-3 gap-2">
+<div class="w-2 h-2 bg-tertiary rounded-full"></div>
+<div class="h-2 bg-surface-variant rounded w-2/3"></div>
+</div>
+<div class="h-8 bg-white rounded-lg w-full flex items-center px-3 gap-2">
+<div class="w-2 h-2 bg-secondary rounded-full"></div>
+<div class="h-2 bg-surface-variant rounded w-1/3"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Feature 2: Budget Tracking -->
+<div class="group bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-500">
+<div class="w-12 h-12 bg-tertiary/10 text-tertiary rounded-xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-3">Budget Tracking</h3>
+<p class="text-body-sm text-on-surface-variant mb-6">
+                        Keep your finances in check with real-time currency conversion and category breakdowns.
+                    </p>
+<div class="p-4 bg-budget-green/30 rounded-2xl flex items-end justify-between">
+<div>
+<div class="text-label-sm text-on-surface-variant">Remaining</div>
+<div class="text-headline-sm font-bold text-on-surface">$1,420</div>
+</div>
+<div class="w-12 h-1 bg-on-surface-variant/10 rounded-full overflow-hidden">
+<div class="w-2/3 h-full bg-primary"></div>
+</div>
+</div>
+</div>
+<!-- Feature 3: Itinerary Management -->
+<div class="group bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-500">
+<div class="w-12 h-12 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-3">Itinerary Management</h3>
+<p class="text-body-sm text-on-surface-variant mb-6">
+                        Every detail of your day, from hotel check-ins to restaurant reservations, organized beautifully.
+                    </p>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low border border-outline-variant/10">
+<span class="material-symbols-outlined text-[16px] text-primary">directions_bus</span>
+<span class="text-label-sm font-medium">10:00 AM • Tokyo Metro</span>
+</div>
+<div class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low border border-outline-variant/10">
+<span class="material-symbols-outlined text-[16px] text-primary">restaurant</span>
+<span class="text-label-sm font-medium">01:30 PM • Ichiran Ramen</span>
+</div>
+</div>
+</div>
+<!-- Large Visual: The Dashboard Feel -->
+<div class="md:col-span-2 relative overflow-hidden bg-on-primary-fixed rounded-3xl p-10 min-h-[400px]">
+<div class="relative z-20 flex flex-col h-full justify-center">
+<h2 class="text-on-primary font-display text-headline-lg mb-4">All your travel plans in your pocket.</h2>
+<p class="text-on-primary-fixed-variant text-body-lg max-w-md">
+                            Navisha works across all your devices, ensuring you have your itinerary even when you're offline in the middle of a trek.
+                        </p>
+</div>
+<!-- Abstract UI Mockup -->
+<div class="absolute right-[-10%] top-20 w-[400px] h-[600px] glass-card rounded-3xl border border-white/20 shadow-2xl p-6 hidden lg:block animate-float">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 rounded-full bg-primary-container"></div>
+<div class="h-4 bg-on-surface/10 rounded w-1/3"></div>
+</div>
+<div class="space-y-6">
+<div class="h-32 bg-surface-container-high rounded-2xl"></div>
+<div class="space-y-4">
+<div class="h-3 bg-on-surface/5 rounded w-full"></div>
+<div class="h-3 bg-on-surface/5 rounded w-5/6"></div>
+<div class="h-3 bg-on-surface/5 rounded w-4/6"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 text-center">
+<div class="bg-surface-container-high rounded-[40px] p-12 md:p-20 border border-outline-variant/20">
+<h2 class="font-headline-lg text-headline-lg md:text-headline-lg text-on-surface mb-6">Ready for your next adventure?</h2>
+<p class="text-body-lg text-on-surface-variant mb-10 max-w-xl mx-auto">
+                    Join over 50,000 travelers who have streamlined their planning process with Navisha.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="group flex items-center gap-3 bg-on-background text-surface px-10 py-5 rounded-2xl font-label-md text-label-md hover:shadow-2xl transition-all">
+<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
+</svg>
+                        Get Started with Google
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="border-t border-outline-variant/30 py-12">
+<div class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex flex-col items-center md:items-start gap-4">
+<div class="text-headline-sm font-bold text-primary">Navisha</div>
+<p class="text-label-sm text-outline">© 2024 Navisha Travel. All rights reserved.</p>
+</div>
+<div class="flex gap-8">
+<a class="text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+<a class="text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interactions for primary button
+        const ctaButtons = document.querySelectorAll('button');
+        ctaButtons.forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.96)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simple scroll reveal for feature cards
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section > div > div').forEach(el => {
+            el.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
+            observer.observe(el);
+        });
+    </script>
+</body></html>

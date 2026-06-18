@@ -1,0 +1,206 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Login | Navisha</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#566771",
+                      "on-background": "#181c23",
+                      "secondary": "#50616b",
+                      "on-tertiary-fixed-variant": "#7c2e00",
+                      "on-primary-fixed-variant": "#004493",
+                      "surface-dim": "#d8d9e5",
+                      "surface-container-highest": "#e0e2ed",
+                      "primary": "#0058bc",
+                      "outline": "#717786",
+                      "error": "#ba1a1a",
+                      "stay-purple": "#EDE9FE",
+                      "surface-tint": "#005bc1",
+                      "tertiary-fixed-dim": "#ffb595",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#001a41",
+                      "tertiary": "#9e3d00",
+                      "primary-fixed": "#d8e2ff",
+                      "surface-container-low": "#f1f3fe",
+                      "note-yellow": "#FEF9C3",
+                      "secondary-fixed": "#d3e5f1",
+                      "on-surface": "#181c23",
+                      "on-surface-variant": "#414755",
+                      "on-secondary-fixed-variant": "#384953",
+                      "on-primary-container": "#fefcff",
+                      "inverse-on-surface": "#eef0fc",
+                      "secondary-container": "#d3e5f1",
+                      "on-tertiary": "#ffffff",
+                      "inverse-primary": "#adc6ff",
+                      "budget-green": "#DCFCE7",
+                      "surface-container": "#ecedf9",
+                      "tertiary-container": "#c64f00",
+                      "on-secondary": "#ffffff",
+                      "transport-blue": "#DBEAFE",
+                      "surface-container-lowest": "#ffffff",
+                      "background": "#f9f9ff",
+                      "tertiary-fixed": "#ffdbcc",
+                      "secondary-fixed-dim": "#b7c9d5",
+                      "on-error": "#ffffff",
+                      "surface-container-high": "#e6e8f3",
+                      "primary-container": "#0070eb",
+                      "outline-variant": "#c1c6d7",
+                      "destructive-red": "#EF4444",
+                      "inverse-surface": "#2d3039",
+                      "surface-variant": "#e0e2ed",
+                      "on-secondary-fixed": "#0c1e26",
+                      "on-tertiary-fixed": "#351000",
+                      "surface": "#f9f9ff",
+                      "on-tertiary-container": "#fffbff",
+                      "on-error-container": "#93000a",
+                      "primary-fixed-dim": "#adc6ff",
+                      "surface-bright": "#f9f9ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "max-width": "1200px",
+                      "margin-desktop": "2.5rem",
+                      "margin-mobile": "1rem",
+                      "unit": "4px",
+                      "gutter": "1.5rem"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Geist"],
+                      "label-md": ["Inter"],
+                      "headline-sm": ["Geist"],
+                      "label-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "display": ["Geist"],
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Geist"],
+                      "headline-lg-mobile": ["Geist"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-geist { font-family: 'Geist', sans-serif; }
+        .shadow-soft { box-shadow: 0 10px 25px -5px rgba(0, 88, 188, 0.05), 0 8px 10px -6px rgba(0, 88, 188, 0.03); }
+        .glass-bg { backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.8); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-surface-container-low min-h-screen flex flex-col">
+<!-- Background Decoration (Subtle Shaders) -->
+<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+<div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]"></div>
+<div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[120px]"></div>
+</div>
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center p-margin-mobile relative z-10 min-h-screen">
+<div class="w-full max-w-[420px] bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-soft p-8 md:p-10 transition-all duration-300 hover:shadow-xl mx-auto">
+<!-- Brand Logo -->
+<div class="flex flex-col items-center mb-6">
+<div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 transition-transform hover:scale-105 duration-300">
+<span class="material-symbols-outlined text-on-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">explore</span>
+</div>
+<h1 class="font-display text-headline-md text-primary tracking-tight">Navisha</h1>
+<p class="font-geist text-headline-sm text-on-surface mt-2">Welcome back</p>
+<p class="font-body-sm text-on-surface-variant mt-1 text-center">Ready for your next adventure?</p>
+</div>
+<!-- Social Login -->
+<button class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md text-on-surface hover:bg-surface-container-low transition-all duration-200 group active:scale-[0.98]">
+<svg height="18" viewBox="0 0 18 18" width="18" xmlns="http://www.w3.org/2000/svg">
+<path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"></path>
+<path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"></path>
+<path d="M3.964 10.711a5.41 5.41 0 0 1 0-3.422V4.957H.957a8.997 8.997 0 0 0 0 8.086l3.007-2.332z" fill="#FBBC05"></path>
+<path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.957l3.007 2.332c.708-2.127 2.692-3.711 5.036-3.711z" fill="#EA4335"></path>
+</svg>
+                Continue with Google
+            </button>
+<!-- Divider -->
+
+<!-- Login Form -->
+
+<!-- Login Form -->
+<div class="mt-8 pt-6 border-t border-outline-variant/30 text-center">
+<p class="font-body-sm text-on-surface-variant">
+                    Don't have an account? 
+                    <a class="font-label-md text-primary hover:underline ml-1" href="#">Sign up</a>
+</p>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 border-t border-outline-variant/20 relative z-10 text-center">
+<div class="flex items-center gap-2">
+<span class="font-display font-bold text-label-md text-primary">Navisha</span>
+<span class="font-body-sm text-secondary">© 2024 Navisha Travel. All rights reserved.</span>
+</div>
+<div class="flex gap-6 flex-wrap justify-center">
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+</footer>
+<!-- Micro-interactions Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('input');
+            
+            inputs.forEach(input => {
+                // Focus styling handled by Tailwind focus: classes
+                
+                // Simple placeholder animation feel
+                input.addEventListener('focus', () => {
+                    input.parentElement.classList.add('scale-[1.01]');
+                });
+                
+                input.addEventListener('blur', () => {
+                    input.parentElement.classList.remove('scale-[1.01]');
+                });
+            });
+
+            // Password visibility toggle simulation
+            const togglePass = document.querySelector('button[type="button"]');
+            const passInput = document.getElementById('password');
+            let isVisible = false;
+
+            if (togglePass && passInput) {
+                togglePass.addEventListener('click', () => {
+                    isVisible = !isVisible;
+                    passInput.type = isVisible ? 'text' : 'password';
+                    togglePass.querySelector('span').textContent = isVisible ? 'visibility_off' : 'visibility';
+                });
+            }
+        });
+    </script>
+
+
+</body></html>

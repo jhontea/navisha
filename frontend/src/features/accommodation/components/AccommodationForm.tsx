@@ -1,16 +1,26 @@
 "use client"
 
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import type {
   Accommodation,
   CreateAccommodationInput,
 } from "../types"
+
+const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW"] as const
+
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -31,6 +41,8 @@ const schema = z
       .regex(ISO_DATE, "Use the date picker"),
     confirmation_number: z.string().max(200).optional(),
     notes: z.string().max(2000).optional(),
+    amount: z.string().optional(),
+    currency: z.enum(SUPPORTED_CURRENCIES).optional(),
   })
   .refine((d) => new Date(d.check_out) >= new Date(d.check_in), {
     message: "Check-out must be on or after check-in",
@@ -41,6 +53,8 @@ type FormValues = z.infer<typeof schema>
 
 interface Props {
   initial?: Accommodation
+  tripBaseCurrency?: string
+  withCost?: boolean
   onSubmit: (input: CreateAccommodationInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
@@ -48,13 +62,18 @@ interface Props {
 
 export function AccommodationForm({
   initial,
+  tripBaseCurrency,
+  withCost,
   onSubmit,
   onCancel,
   isSubmitting,
 }: Props) {
+  const defaultCurrency =
+    (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -68,11 +87,13 @@ export function AccommodationForm({
       check_out: initial?.check_out ?? "",
       confirmation_number: initial?.confirmation_number ?? "",
       notes: initial?.notes ?? "",
+      amount: "",
+      currency: defaultCurrency,
     },
   })
 
   const submit = async (v: FormValues) => {
-    await onSubmit({
+    const entity: CreateAccommodationInput = {
       name: v.name,
       location_name: v.location_name,
       lat: v.lat ? Number(v.lat) : null,
@@ -82,7 +103,13 @@ export function AccommodationForm({
       check_out: v.check_out,
       confirmation_number: v.confirmation_number,
       notes: v.notes,
-    })
+    }
+    const amount = v.amount ? Number(v.amount) : 0
+    const cost =
+      withCost && amount > 0 && v.currency
+        ? { amount, currency: v.currency }
+        : null
+    await onSubmit({ ...entity, cost })
   }
 
   const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
@@ -135,6 +162,43 @@ export function AccommodationForm({
           <Input placeholder="115.1637" {...register("lng")} />
         </Field>
       </div>
+
+      {withCost && (
+        <div className="rounded-lg border border-dashed bg-muted/30 p-3">
+          <Label className="text-xs text-muted-foreground">
+            Cost (optional — adds an expense to the trip budget)
+          </Label>
+          <div className="mt-2 grid grid-cols-[1fr_6rem] gap-2">
+            <Input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              {...register("amount")}
+            />
+            <Controller
+              control={control}
+              name="currency"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? defaultCurrency}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+      )}
 
       <Field label="Notes">
         <Textarea rows={2} {...register("notes")} />

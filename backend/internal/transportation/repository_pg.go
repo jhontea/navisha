@@ -19,6 +19,49 @@ func NewPostgresRepository(db *pgxpool.Pool) Repository {
 
 var _ Repository = (*postgresRepository)(nil)
 
+func (r *postgresRepository) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transportation.BeginTx: %w", err)
+	}
+	return tx, nil
+}
+
+func (r *postgresRepository) Commit(ctx context.Context, tx pgx.Tx) error {
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("transportation.Commit: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresRepository) Rollback(ctx context.Context, tx pgx.Tx) error {
+	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+		return fmt.Errorf("transportation.Rollback: %w", err)
+	}
+	return nil
+}
+
+// InsertTx mirrors Insert but runs against a caller-owned transaction so
+// the usecase can chain a linked expense insert atomically.
+func (r *postgresRepository) InsertTx(ctx context.Context, tx pgx.Tx, t *Transportation) (*Transportation, error) {
+	row := tx.QueryRow(ctx,
+		`INSERT INTO transportations (trip_id, type, label, operator, reference_number,
+		                              from_location, to_location, departure_datetime,
+		                              arrival_datetime, notes)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		 RETURNING id, trip_id, type, label, operator, reference_number,
+		           from_location, to_location, departure_datetime, arrival_datetime,
+		           notes, created_at, updated_at`,
+		t.TripID, string(t.Type), t.Label, t.Operator, t.ReferenceNumber,
+		t.FromLocation, t.ToLocation, t.DepartureDatetime, t.ArrivalDatetime,
+		t.Notes)
+	out, err := scan(row)
+	if err != nil {
+		return nil, fmt.Errorf("transportation.InsertTx: %w", err)
+	}
+	return out, nil
+}
+
 func (r *postgresRepository) FindTripOwner(tripID string) (string, error) {
 	var userID string
 	err := r.db.QueryRow(context.Background(),

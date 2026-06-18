@@ -1,0 +1,412 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Navisha | Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#001a41",
+                    "on-secondary-fixed": "#0c1e26",
+                    "surface-container-highest": "#e0e2ed",
+                    "surface-container": "#ecedf9",
+                    "secondary": "#50616b",
+                    "on-surface-variant": "#414755",
+                    "tertiary": "#9e3d00",
+                    "surface-dim": "#d8d9e5",
+                    "tertiary-container": "#c64f00",
+                    "tertiary-fixed": "#ffdbcc",
+                    "on-primary-fixed-variant": "#004493",
+                    "budget-green": "#DCFCE7",
+                    "stay-purple": "#EDE9FE",
+                    "inverse-surface": "#2d3039",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#566771",
+                    "error": "#ba1a1a",
+                    "surface": "#f9f9ff",
+                    "secondary-fixed": "#d3e5f1",
+                    "inverse-on-surface": "#eef0fc",
+                    "primary-container": "#0070eb",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e6e8f3",
+                    "secondary-fixed-dim": "#b7c9d5",
+                    "on-background": "#181c23",
+                    "secondary-container": "#d3e5f1",
+                    "transport-blue": "#DBEAFE",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#181c23",
+                    "primary": "#0058bc",
+                    "note-yellow": "#FEF9C3",
+                    "on-secondary-fixed-variant": "#384953",
+                    "surface-container-low": "#f1f3fe",
+                    "destructive-red": "#EF4444",
+                    "on-tertiary-container": "#fffbff",
+                    "primary-fixed": "#d8e2ff",
+                    "inverse-primary": "#adc6ff",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "on-primary-container": "#fefcff",
+                    "outline-variant": "#c1c6d7",
+                    "primary-fixed-dim": "#adc6ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "outline": "#717786",
+                    "surface-variant": "#e0e2ed",
+                    "surface-tint": "#005bc1",
+                    "on-tertiary-fixed": "#351000",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f9f9ff",
+                    "background": "#f9f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width": "1200px",
+                    "margin-mobile": "1rem",
+                    "margin-desktop": "2.5rem",
+                    "unit": "4px",
+                    "gutter": "1.5rem"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Geist"],
+                    "body-md": ["Inter"],
+                    "display": ["Geist"],
+                    "headline-sm": ["Geist"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Geist"],
+                    "headline-lg-mobile": ["Geist"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9ff;
+            color: #181c23;
+        }
+        .geist-font {
+            font-family: 'Geist', sans-serif;
+        }
+        .trip-card-shadow {
+            box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.03);
+        }
+        .trip-card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 16px 32px rgba(0, 88, 188, 0.06);
+        }
+        /* Custom Scrollbar for Sidebar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #e0e2ed;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="hidden md:flex flex-col w-72 bg-surface border-r border-outline-variant h-full z-50">
+<div class="p-8">
+<span class="text-headline-md font-headline-md font-bold text-primary">Navisha</span>
+</div>
+<div class="flex-1 overflow-y-auto px-4 space-y-8 sidebar-scroll">
+<!-- Main Navigation -->
+<nav class="space-y-1">
+<p class="px-4 text-label-sm text-outline uppercase tracking-wider mb-2">Main</p>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-fixed text-on-primary-fixed rounded-xl font-label-md transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl font-label-md transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">sync_alt</span>
+                Converter
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl font-label-md transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">explore</span>
+                Explore
+            </a>
+</nav>
+<!-- Contextual Trip Navigation (Visible when trip selected) -->
+<nav class="space-y-1">
+<div class="px-4 flex items-center justify-between mb-2">
+<p class="text-label-sm text-outline uppercase tracking-wider">Active Trip</p>
+<span class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Tokyo</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-low rounded-lg font-body-sm transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">calendar_month</span>
+                Itinerary
+            </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-low rounded-lg font-body-sm transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">flight</span>
+                Transport
+            </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-low rounded-lg font-body-sm transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">hotel</span>
+                Stay
+            </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-low rounded-lg font-body-sm transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">payments</span>
+                Budget
+            </a>
+</nav>
+</div>
+<!-- User Profile & Footer Actions -->
+<div class="p-6 border-t border-outline-variant">
+<div class="flex items-center justify-between mb-4">
+<button class="relative p-2 hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-container-low transition-all cursor-pointer">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant flex-shrink-0">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUlsNntUbqlnO_YrjTyO9NKAgoe2E_3bUgTuQU4L9XE-hE5jxzxtp1QhS1TwPf2WEt9U-PBlm7rjbXjOFIrFfpRHOe39u1_cczwB1zcIPIiKoIJ5hmdmy6WVrjr2SHk9hAOkv8i172TKu0wCCJRj-Mn4zyVe976pwCt1Co7Ksr3zP6xAUvybehI6EBWa5xhYrAVhverRrGcHSe4H6rTTjdUnBz4rgFab9A9rxxk0qGTd0Vx2ExLsJGNrGWuiLxxx4JCGlWj1NUWik">
+</div>
+<div class="min-w-0">
+<p class="text-label-md text-on-surface truncate">Alex Rivera</p>
+<p class="text-label-sm text-on-surface-variant truncate">Gold Member</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Container -->
+<div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+<!-- Top Utility Bar (Search) -->
+<div class="md:flex hidden items-center justify-between px-margin-desktop py-4 sticky top-0 bg-surface/80 backdrop-blur-md z-40">
+<div class="flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant w-96 max-w-full">
+<span class="material-symbols-outlined text-on-surface-variant mr-2" style="font-size: 20px;">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm font-body-sm w-full" placeholder="Search trips, places, or contacts..." type="text">
+</div>
+<div class="flex gap-4">
+<button class="bg-primary/5 text-primary px-4 py-2 rounded-lg font-label-md hover:bg-primary/10 transition-colors">Help Center</button>
+</div>
+</div>
+<!-- Main Content Content -->
+<main class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop pt-8 pb-24 w-full">
+<!-- Welcome Header -->
+<header class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div class="space-y-2">
+<h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface">Welcome back, Alex</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant">Where are we exploring next?</p>
+</div>
+<button class="flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">add</span>
+                New Trip
+            </button>
+</header>
+<!-- Bento Grid / Trip List -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="trip-container">
+<!-- Trip Card 1 -->
+<div class="group bg-surface-container-lowest border border-[#F1F5F9] rounded-xl overflow-hidden trip-card-shadow trip-card-hover transition-all duration-300 cursor-pointer">
+<div class="h-48 overflow-hidden relative">
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full text-label-sm font-label-sm text-primary z-10">
+                        Upcoming
+                    </div>
+<div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCpNFPMs4OkvTzOE7KNw1V1gEkO8j8ogyk959AfvKt7ao9oPYPNzK2E_fgm7XIQ8dPR46U148JjXYsLoKKXUc_Z80d1EHIxz9Zqk7rKGvKJ28EAOQTNRWpHwGGZknf2irl_WTE5dGaQEUemGaRMMciiq_cMu0DykrzloM0615IzoKVC94JeTuwxQJX-aS5PNZa4HM-0GugmAuaMnrqJHLH_D5amJoSYXdukBI0QRkgk0VgK1qHW5Us8CR12F9GZ6OBs47Vwm6TPV48')"></div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 text-primary font-label-sm text-label-sm mb-2">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                        Tokyo, Japan
+                    </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface mb-2">Summer in Tokyo</h3>
+<div class="flex items-center justify-between mt-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            July 15 - July 28
+                        </div>
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img alt="Traveler" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGGn6a3vFTFnzWF6QeEoNZlDshOJvz7_DNlAApRJHGJtMYmZOGpOl0DFw0OXQjwgozWoKCzRCQWJCSx2U6nrPLdrjej6d6d0lR-KeJMqZ5zOH6swBwnrbA-fNjFsINoqE0XtwpRGF1mM79I-KsZ0YstrrF7AVoZRti8Bvw_CjAGz7DsoVKIpFZDcUgydsgZM0dzUlrfM1071yEatlr_J-5lS4WG4LUz783Ja11O20BYw47A8EHXlaCLKIXJh2iLt34fk3Y6PJnUA8">
+</div>
+<div class="w-7 h-7 rounded-full border-2 border-surface-container-lowest bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-on-primary-fixed">
+                                +2
+                            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Trip Card 2 -->
+<div class="group bg-surface-container-lowest border border-[#F1F5F9] rounded-xl overflow-hidden trip-card-shadow trip-card-hover transition-all duration-300 cursor-pointer">
+<div class="h-48 overflow-hidden relative">
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full text-label-sm font-label-sm text-secondary z-10">
+                        Planning
+                    </div>
+<div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHm0hLXIG-3ff8S6ifvy3N6870axdZUGHiA_iNoXBpIpSSbr7L5VHKTquMr6IyoT-7TYrxsLUibVrXaNe66KUgA8KCJw6RzORPVXy1u22Zy35ctqNEwC95wNHrWz5mrwv0zzpMHWQKypADrk823kOStXos1LJqg1itu819jL48KNSvA-OicFuBN8n2spNvaEMySnR5poBaVhqxz3cd1MkRHxZ3vvNGaS0Eb3NLbhzT8y3VLH-c56Vt0GZlq2kGsotQV-0Vf07vdfM')"></div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 text-primary font-label-sm text-label-sm mb-2">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                        Zermatt, Switzerland
+                    </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface mb-2">Skiing Weekend</h3>
+<div class="flex items-center justify-between mt-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            Dec 05 - Dec 08
+                        </div>
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img alt="Traveler" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhtxRKZUd_jldx64uAB5fBQQrAm7QMcANfzUsNwWig0eSYBd-IaVDAzIKdZLb06BlRvYPBnSj1F6QFEgRWa51rTGXxNgbqoSi5gjZixArUFlnvVbMgqBszeJXnS72Sk7TLXfpmyXLm4HONUzW_BH1Jh8yzQGAwB4e8LjzfZnszRS8xUrCde6dE9xiUgY7-WvwtS8dotluNUmz_iFL_beCrDuYQMzsV8L4dSXTBtzuWzcEF-vLLDMe_fkP-Ta_GXDqpoCvlJfDEMrY">
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Trip Card 3 -->
+<div class="group bg-surface-container-lowest border border-[#F1F5F9] rounded-xl overflow-hidden trip-card-shadow trip-card-hover transition-all duration-300 cursor-pointer">
+<div class="h-48 overflow-hidden relative">
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full text-label-sm font-label-sm text-on-surface-variant z-10">
+                        Past
+                    </div>
+<div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB_dr1DAyyU-j4l2Iik9it9wLt_Tz7o4a46DLI1Uqb1je19rCCOug0qoiWnKRy-fZmm_Gk-2G1m-mQn0FwcNhqB21cWoPZ38tX8kpDnln4tH1hUaMNbqPm1X4cBKcrgiq4OpynxV85Fzb30KoyZb5kJ-N3NAViMpIz9-aj0N8XDYFZKDUyPuEFylPpG9GzupKFN_nkpyA9zaK5Cbhd2gQRk0ZoDsuirocoVvnbPW7ZvxG5TMt9grvYKFc8eNqgDVbBCtr-A9nHxJGw')"></div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 text-primary font-label-sm text-label-sm mb-2">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                        Lisbon, Portugal
+                    </div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface mb-2">Coastal Escape</h3>
+<div class="flex items-center justify-between mt-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            May 10 - May 18
+                        </div>
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img alt="Traveler" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMAenzYi_sYh3YR25N1l7i98IJQtrOPsThqqXvJVDIowQOLQYSG_nmvrz0IAEE7xL3YhwiNjO7eC1iaUymDTz72ngcu-1S4h72uclFe77ZbZ2TV9Sb9tdeOBKjbdQQfQFkbS0bk4J1_6t5voLmcetY4XoGhFhtzgSck4H0bB7wnQ3ZXyxd0OiY0nJVoCQ8bp-RPagGDtzN5zul7pb49J-0ff0W2OkU8sBboOVT1PkdAvRoFnDT2cy27aNxka-IzM2Dx9t4-ur6yEI">
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State Placeholder (Hidden by default) -->
+<div class="hidden col-span-full flex flex-col items-center justify-center py-24 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant" id="empty-state">
+<div class="w-24 h-24 bg-surface-container-high rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-outline text-[48px]">map</span>
+</div>
+<h2 class="text-headline-md font-headline-md text-on-surface mb-2">No trips planned yet</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mb-8 max-w-sm">The world is waiting for you. Start planning your first adventure with Navisha today.</p>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-md text-label-md hover:bg-primary-container transition-all">
+                    Create My First Trip
+                </button>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="md:col-span-1 p-6 bg-primary-fixed rounded-2xl flex flex-col justify-between h-40">
+<span class="material-symbols-outlined text-primary text-[32px]">flight_takeoff</span>
+<div>
+<p class="text-headline-md font-headline-md text-on-primary-fixed">12</p>
+<p class="text-label-md font-label-md text-on-primary-fixed-variant">Trips Completed</p>
+</div>
+</div>
+<div class="md:col-span-1 p-6 bg-stay-purple rounded-2xl flex flex-col justify-between h-40">
+<span class="material-symbols-outlined text-on-secondary-fixed text-[32px]">public</span>
+<div>
+<p class="text-headline-md font-headline-md text-on-secondary-fixed">8</p>
+<p class="text-label-md font-label-md text-on-secondary-fixed-variant">Countries Visited</p>
+</div>
+</div>
+<div class="md:col-span-2 p-6 bg-surface-container rounded-2xl flex items-center gap-8 h-40">
+<div class="flex-1">
+<p class="text-headline-sm font-headline-sm text-on-surface mb-1">Traveler Level: Gold</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">250 miles until Platinum status</p>
+<div class="w-full h-2 bg-surface-container-high rounded-full mt-4 overflow-hidden">
+<div class="w-3/4 h-full bg-primary transition-all duration-1000"></div>
+</div>
+</div>
+<div class="hidden sm:block w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[40px]">military_tech</span>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Mobile Navigation (Bottom Bar) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant px-6 py-4 flex justify-around items-center z-50">
+<button class="flex flex-col items-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold mt-1">Dashboard</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined">explore</span>
+<span class="text-[10px] font-medium mt-1">Explore</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined">sync_alt</span>
+<span class="text-[10px] font-medium mt-1">Converter</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium mt-1">Profile</span>
+</button>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tripCards = document.querySelectorAll('.group[trip-card]');
+        // Note: I added trip-card conceptually above, but standard querySelector on cards works too
+        const cards = document.querySelectorAll('.trip-card-hover');
+        const tripContainer = document.getElementById('trip-container');
+        const emptyState = document.getElementById('empty-state');
+
+        window.toggleEmptyState = () => {
+            const hasTrips = tripContainer.querySelectorAll('.trip-card-hover').length > 0;
+            if (hasTrips) {
+                cards.forEach(card => card.style.display = 'none');
+                emptyState.classList.remove('hidden');
+            } else {
+                cards.forEach(card => card.style.display = 'block');
+                emptyState.classList.add('hidden');
+            }
+        };
+
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease-out';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 * index);
+        });
+    });
+</script>
+</body></html>

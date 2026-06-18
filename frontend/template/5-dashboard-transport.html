@@ -1,0 +1,494 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Navisha - Transport Planner</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Geist:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#2d3039",
+                      "on-primary-fixed": "#001a41",
+                      "surface-container-high": "#e6e8f3",
+                      "on-tertiary": "#ffffff",
+                      "inverse-primary": "#adc6ff",
+                      "secondary-container": "#d3e5f1",
+                      "primary-fixed-dim": "#adc6ff",
+                      "on-secondary-fixed-variant": "#384953",
+                      "on-primary-fixed-variant": "#004493",
+                      "on-error": "#ffffff",
+                      "inverse-on-surface": "#eef0fc",
+                      "secondary-fixed": "#d3e5f1",
+                      "on-surface": "#181c23",
+                      "background": "#f9f9ff",
+                      "secondary": "#50616b",
+                      "surface-dim": "#d8d9e5",
+                      "surface-tint": "#005bc1",
+                      "on-primary": "#ffffff",
+                      "stay-purple": "#EDE9FE",
+                      "on-secondary-container": "#566771",
+                      "tertiary-fixed-dim": "#ffb595",
+                      "on-tertiary-fixed": "#351000",
+                      "surface-container-low": "#f1f3fe",
+                      "transport-blue": "#DBEAFE",
+                      "tertiary-fixed": "#ffdbcc",
+                      "outline": "#717786",
+                      "note-yellow": "#FEF9C3",
+                      "tertiary-container": "#c64f00",
+                      "primary-container": "#0070eb",
+                      "primary": "#0058bc",
+                      "surface-bright": "#f9f9ff",
+                      "on-error-container": "#93000a",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#7c2e00",
+                      "on-primary-container": "#fefcff",
+                      "surface-container": "#ecedf9",
+                      "surface": "#f9f9ff",
+                      "surface-container-highest": "#e0e2ed",
+                      "on-secondary": "#ffffff",
+                      "budget-green": "#DCFCE7",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-container": "#fffbff",
+                      "tertiary": "#9e3d00",
+                      "on-background": "#181c23",
+                      "surface-variant": "#e0e2ed",
+                      "secondary-fixed-dim": "#b7c9d5",
+                      "error-container": "#ffdad6",
+                      "outline-variant": "#c1c6d7",
+                      "destructive-red": "#EF4444",
+                      "on-secondary-fixed": "#0c1e26",
+                      "primary-fixed": "#d8e2ff",
+                      "on-surface-variant": "#414755"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "max-width": "1200px",
+                      "margin-desktop": "2.5rem",
+                      "margin-mobile": "1rem",
+                      "gutter": "1.5rem",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "headline-sm": ["Geist"],
+                      "label-md": ["Inter"],
+                      "headline-lg": ["Geist"],
+                      "label-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-lg-mobile": ["Geist"],
+                      "body-sm": ["Inter"],
+                      "headline-md": ["Geist"],
+                      "body-lg": ["Inter"],
+                      "display": ["Geist"]
+              },
+              "fontSize": {
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Geist', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e0e2ed; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c1c6d7; }
+
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary/20">
+<!-- Side Navigation Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-lowest shadow-sm flex flex-col h-full py-10 px-4 z-50">
+<div class="mb-10 px-4 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">explore</span>
+</div>
+<h1 class="font-display text-headline-md font-bold text-primary dark:text-primary-fixed">Navisha</h1>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-colors active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-colors active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">currency_exchange</span> Converter
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-colors active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">map</span> Itinerary
+            </a>
+<!-- Active Tab: Transport -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-surface-variant/30 transition-colors active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">directions_bus</span> Transport
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-colors active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">hotel</span> Stay
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-colors active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">payments</span> Budget
+            </a>
+</nav>
+<div class="mt-auto px-4 py-6 border-t border-outline-variant/30">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-95">
+<span class="material-symbols-outlined">add</span> New Trip
+            </button>
+<div class="mt-6 flex items-center gap-3 px-1">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden ring-2 ring-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a young millennial traveler with a friendly expression, set against a blurred urban architectural background. The photo is high-quality with soft, natural lighting, conveying a sense of adventure and professional organization consistent with a modern travel planner app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuASV0d6nGBVYSIOgpE2m3vE1N6liepzfuAILxzk1hWm2IlUJuGtuSGVzL8vCOQcRWGYk6b-mkVT4otrZwVoIiv0i2QFMXwG5dNTBWh4X2GfsuZH5dLEoHfa8TGmSIUL3g6QfkDHEmJU59pDgAtDOtUjIyl0OmLnDPg7MK6Z0xuE8NVw85kj7g0OBH0rlmyhsYpWrdWVqhM2DmpJHp7jDaDJpm8BM1_flaph1Cnt4KnyYU9Owe0U9p3bZ5EhpscGd1rEpW5lspj9W1Q">
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Alex Rivera</p>
+<p class="text-[11px] text-outline">Pro Traveler</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full h-16 px-10 ml-64 max-w-[calc(100%-16rem)] sticky top-0 bg-surface/80 backdrop-blur-md z-40">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Transport</h2>
+<div class="h-4 w-[1px] bg-outline-variant/50"></div>
+<p class="text-secondary text-body-sm">Tokyo Summer Adventure</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-body-sm w-64 focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search bookings..." type="text">
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<button class="bg-primary text-on-primary px-5 py-2 rounded-full font-label-md text-label-md hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
+                Share Trip
+            </button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 p-10 max-w-[1200px]">
+<!-- Add Transportation Section -->
+<section class="mb-12">
+<div class="flex items-end justify-between mb-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Add Transportation</h3>
+<p class="text-on-surface-variant text-body-md">Log your flights, trains, and transfers to keep your itinerary organized.</p>
+</div>
+<div class="hidden md:flex gap-2">
+<span class="px-3 py-1 rounded-full bg-transport-blue text-primary text-[11px] font-bold">SMART SYNC ACTIVE</span>
+</div>
+</div>
+<!-- Form Card -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-sm p-8">
+<form class="space-y-8">
+<!-- Type Selector -->
+<div>
+<label class="block font-label-md text-label-md text-outline mb-4">Transportation Type</label>
+<div class="flex flex-wrap gap-4">
+<button class="type-btn group flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary hover:bg-primary/5 transition-all w-28 active:scale-95 focus:border-primary focus:bg-primary/5" data-type="Flight" type="button">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary">flight</span>
+<span class="font-label-sm text-label-sm">Flight</span>
+</button>
+<button class="type-btn group flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-primary bg-primary/5 transition-all w-28 active:scale-95" data-type="Train" type="button">
+<span class="material-symbols-outlined text-2xl text-primary">train</span>
+<span class="font-label-sm text-label-sm text-primary">Train</span>
+</button>
+<button class="type-btn group flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary hover:bg-primary/5 transition-all w-28 active:scale-95" data-type="Bus" type="button">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary">directions_bus</span>
+<span class="font-label-sm text-label-sm">Bus</span>
+</button>
+<button class="type-btn group flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary hover:bg-primary/5 transition-all w-28 active:scale-95" data-type="Ferry" type="button">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary">directions_boat</span>
+<span class="font-label-sm text-label-sm">Ferry</span>
+</button>
+<button class="type-btn group flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary hover:bg-primary/5 transition-all w-28 active:scale-95" data-type="Other" type="button">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary">more_horiz</span>
+<span class="font-label-sm text-label-sm">Other</span>
+</button>
+</div>
+</div>
+<!-- Input Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant">From Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">location_on</span>
+<input class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-body-md" placeholder="e.g. London Heathrow (LHR)" type="text">
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant">To Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">explore</span>
+<input class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-body-md" placeholder="e.g. Tokyo Narita (NRT)" type="text">
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant">Confirmation Number</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">confirmation_number</span>
+<input class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-body-md" placeholder="e.g. JL-720394" type="text">
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant">Departure Time</label>
+<input class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-body-md" type="datetime-local">
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-label-md text-on-surface-variant">Arrival Time</label>
+<input class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-body-md" type="datetime-local">
+</div>
+<div class="flex items-end">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3.5 rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2" type="submit">
+<span class="material-symbols-outlined">save</span>
+                                Save Transport
+                            </button>
+</div>
+</div>
+</form>
+</div>
+</section>
+<!-- Upcoming Travel List -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface">Upcoming Travel</h3>
+<div class="flex gap-2">
+<button class="p-2 rounded-lg bg-surface-container-high text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container-high text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">sort</span>
+</button>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Travel Card 1: Flight -->
+<div class="bg-surface-container-lowest border-l-4 border-l-primary rounded-xl p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-transport-blue flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">flight</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">NRT</span>
+<span class="material-symbols-outlined text-outline">arrow_forward</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">HND</span>
+</div>
+<p class="text-body-sm text-outline flex items-center gap-1">
+<span class="font-bold text-on-surface-variant">Japan Airlines</span> • Flight JL102
+                            </p>
+</div>
+</div>
+<div class="flex flex-col lg:items-center">
+<p class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Departure</p>
+<p class="font-label-md text-label-md text-on-surface">Aug 14, 2024 • 09:15 AM</p>
+</div>
+<div class="flex flex-col lg:items-center">
+<p class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Confirmation</p>
+<p class="font-label-md text-label-md text-primary font-mono select-all">AX-99210B</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-lg hover:bg-surface-variant text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-variant text-outline hover:text-destructive-red transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 group-hover:bg-primary group-hover:text-on-primary transition-all">
+                            View Ticket
+                        </button>
+</div>
+</div>
+<!-- Travel Card 2: Train -->
+<div class="bg-surface-container-lowest border-l-4 border-l-primary rounded-xl p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">train</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">TYO</span>
+<span class="material-symbols-outlined text-outline">arrow_forward</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">OSA</span>
+</div>
+<p class="text-body-sm text-outline flex items-center gap-1">
+<span class="font-bold text-on-surface-variant">Shinkansen Nozomi</span> • Car 4, Seat 12A
+                            </p>
+</div>
+</div>
+<div class="flex flex-col lg:items-center">
+<p class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Departure</p>
+<p class="font-label-md text-label-md text-on-surface">Aug 18, 2024 • 11:30 AM</p>
+</div>
+<div class="flex flex-col lg:items-center">
+<p class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Confirmation</p>
+<p class="font-label-md text-label-md text-primary font-mono">TK-SH721</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-lg hover:bg-surface-variant text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-variant text-outline hover:text-destructive-red transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 group-hover:bg-primary group-hover:text-on-primary transition-all">
+                            View Ticket
+                        </button>
+</div>
+</div>
+<!-- Travel Card 3: Bus -->
+<div class="bg-surface-container-lowest border-l-4 border-l-primary rounded-xl p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-3xl">directions_bus</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Kyoto Central</span>
+<span class="material-symbols-outlined text-outline">arrow_forward</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Arashiyama</span>
+</div>
+<p class="text-body-sm text-outline flex items-center gap-1">
+<span class="font-bold text-on-surface-variant">Kyoto Bus Line</span> • Route 28
+                            </p>
+</div>
+</div>
+<div class="flex flex-col lg:items-center">
+<p class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Departure</p>
+<p class="font-label-md text-label-md text-on-surface">Aug 20, 2024 • 08:00 AM</p>
+</div>
+<div class="flex flex-col lg:items-center">
+<p class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Confirmation</p>
+<p class="font-label-md text-label-md text-primary font-mono">KY-229</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-lg hover:bg-surface-variant text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-variant text-outline hover:text-destructive-red transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 group-hover:bg-primary group-hover:text-on-primary transition-all">
+                            View Ticket
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats / Map Bento Preview -->
+<section class="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 relative h-64 rounded-2xl overflow-hidden shadow-sm group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A clean, minimalist digital map of Japan, specifically highlighting Tokyo and Osaka with subtle glowing route lines connecting them. The map uses a soft pastel color palette of whites, light grays, and primary blues, matching the modern digital planner aesthetic. No cluttered text, just elegant geographic silhouettes." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAZPUMARHnD_WE2nCGZ2mXk8ufS7jAK4VmkWQ_I6z4co6ecyL0u9aTBEHTCsNwwm23uexVnEImunylxOPaLw-nMosufJH3HLYeDDq_JPmJRY3VnCd_agSDEuXFqP54DLNZ6J0aeTa-r99-8JKMkrhfrttpAQW1xE56qSq9m_YDmX_LbwhfxMJz3-oAyxsTmswe84K_v0AKjMg-Vf0aqP4j5kylGzY5hCNEfT1WqxuR3Avd_k07VuNMMGgNWEF5xSHHaaWa3b2JrjWY')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-on-primary">
+<p class="font-label-sm text-label-sm uppercase opacity-80 mb-1">Route Visualization</p>
+<h4 class="font-headline-sm text-headline-sm">Regional Travel Network</h4>
+</div>
+</div>
+<div class="bg-primary p-8 rounded-2xl shadow-sm text-on-primary flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-4xl mb-4">analytics</span>
+<h4 class="font-headline-sm text-headline-sm">Travel Summary</h4>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center border-b border-on-primary/20 pb-2">
+<span class="text-body-sm opacity-80">Total Distance</span>
+<span class="font-bold">1,240 km</span>
+</div>
+<div class="flex justify-between items-center border-b border-on-primary/20 pb-2">
+<span class="text-body-sm opacity-80">CO2 Offset</span>
+<span class="font-bold">12.4 kg</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-body-sm opacity-80">On-time Prob.</span>
+<span class="font-bold">98%</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB for quick action -->
+<button class="fixed bottom-10 right-10 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl shadow-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<script>
+        // Micro-interactions for the form buttons
+        const typeButtons = document.querySelectorAll('.type-btn');
+        typeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active classes from all
+                typeButtons.forEach(b => {
+                    b.classList.remove('border-primary', 'bg-primary/5');
+                    b.classList.add('border-outline-variant/30');
+                    const icon = b.querySelector('.material-symbols-outlined');
+                    const label = b.querySelector('.font-label-sm');
+                    icon.classList.remove('text-primary');
+                    label.classList.remove('text-primary');
+                });
+                
+                // Add active classes to clicked
+                btn.classList.remove('border-outline-variant/30');
+                btn.classList.add('border-primary', 'bg-primary/5');
+                const icon = btn.querySelector('.material-symbols-outlined');
+                const label = btn.querySelector('.font-label-sm');
+                icon.classList.add('text-primary');
+                label.classList.add('text-primary');
+            });
+        });
+
+        // Form submission animation (placeholder logic)
+        document.querySelector('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Saving...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check</span> Saved!';
+                btn.classList.replace('bg-primary', 'bg-budget-green');
+                btn.classList.replace('text-on-primary', 'text-on-tertiary-fixed-variant');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-budget-green', 'bg-primary');
+                    btn.classList.replace('text-on-tertiary-fixed-variant', 'text-on-primary');
+                    btn.disabled = false;
+                }, 2000);
+            }, 1000);
+        });
+    </script>
+</body></html>

@@ -1,5 +1,11 @@
 package accommodation
 
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5"
+)
+
 type mockRepo struct {
 	tripOwners map[string]string
 	items      map[string]*Accommodation
@@ -15,6 +21,10 @@ type mockRepo struct {
 
 	tripOwnerErr error
 	itemOwnerErr error
+
+	beginTxCalls  int
+	commitCalls   int
+	rollbackCalls int
 }
 
 func newMockRepo() *mockRepo {
@@ -88,4 +98,42 @@ func (m *mockRepo) Delete(id string) error {
 	}
 	delete(m.items, id)
 	return nil
+}
+
+func (m *mockRepo) BeginTx(_ context.Context) (pgx.Tx, error) {
+	m.beginTxCalls++
+	return nil, nil
+}
+func (m *mockRepo) Commit(_ context.Context, _ pgx.Tx) error {
+	m.commitCalls++
+	return nil
+}
+func (m *mockRepo) Rollback(_ context.Context, _ pgx.Tx) error {
+	m.rollbackCalls++
+	return nil
+}
+func (m *mockRepo) InsertTx(_ context.Context, _ pgx.Tx, a *Accommodation) (*Accommodation, error) {
+	return m.Insert(a)
+}
+
+// mockExpenseCreator satisfies ExpenseCreator.
+type mockExpenseCreator struct {
+	calls      int
+	lastUser   string
+	lastTrip   string
+	lastTitle  string
+	lastAmount float64
+	err        error
+}
+
+func (m *mockExpenseCreator) CreateLinkedExpenseTx(
+	_ context.Context, _ pgx.Tx,
+	userID, tripID, title, _, _ string, amount float64,
+) error {
+	m.calls++
+	m.lastUser = userID
+	m.lastTrip = tripID
+	m.lastTitle = title
+	m.lastAmount = amount
+	return m.err
 }

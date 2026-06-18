@@ -1,5 +1,11 @@
 package expense
 
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5"
+)
+
 type mockRepo struct {
 	trips     map[string]tripMeta // tripID → owner + base
 	expenses  map[string]*Expense
@@ -100,6 +106,12 @@ func (m *mockRepo) Delete(id string) error {
 
 func (m *mockRepo) Summary(_, _ string) (*Summary, error) {
 	return m.summaryResult, m.summaryErr
+}
+
+func (m *mockRepo) CreateTx(_ context.Context, _ pgx.Tx, e *Expense) (*Expense, error) {
+	// Reuse the same code path as Create for tests; the tx parameter is
+	// inert at this level.
+	return m.Create(e)
 }
 
 // mockConverter returns a fixed multiplier.

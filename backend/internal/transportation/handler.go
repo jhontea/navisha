@@ -25,16 +25,22 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	g.DELETE("/transportations/:id", h.Delete, authMiddleware)
 }
 
+type costRequest struct {
+	Amount   float64 `json:"amount"`
+	Currency string  `json:"currency"`
+}
+
 type request struct {
-	Type              string  `json:"type"`
-	Label             string  `json:"label"`
-	Operator          string  `json:"operator"`
-	ReferenceNumber   string  `json:"reference_number"`
-	FromLocation      string  `json:"from_location"`
-	ToLocation        string  `json:"to_location"`
-	DepartureDatetime *string `json:"departure_datetime"` // RFC3339 or empty
-	ArrivalDatetime   *string `json:"arrival_datetime"`
-	Notes             string  `json:"notes"`
+	Type              string       `json:"type"`
+	Label             string       `json:"label"`
+	Operator          string       `json:"operator"`
+	ReferenceNumber   string       `json:"reference_number"`
+	FromLocation      string       `json:"from_location"`
+	ToLocation        string       `json:"to_location"`
+	DepartureDatetime *string      `json:"departure_datetime"` // RFC3339 or empty
+	ArrivalDatetime   *string      `json:"arrival_datetime"`
+	Notes             string       `json:"notes"`
+	Cost              *costRequest `json:"cost"` // optional auto-expense
 }
 
 func (req *request) toInput() (CreateInput, error) {
@@ -46,6 +52,10 @@ func (req *request) toInput() (CreateInput, error) {
 	if err != nil {
 		return CreateInput{}, err
 	}
+	var cost *Cost
+	if req.Cost != nil && req.Cost.Amount > 0 && req.Cost.Currency != "" {
+		cost = &Cost{Amount: req.Cost.Amount, Currency: req.Cost.Currency}
+	}
 	return CreateInput{
 		Type:              Type(req.Type),
 		Label:             req.Label,
@@ -56,6 +66,7 @@ func (req *request) toInput() (CreateInput, error) {
 		DepartureDatetime: dep,
 		ArrivalDatetime:   arr,
 		Notes:             req.Notes,
+		Cost:              cost,
 	}, nil
 }
 
@@ -95,7 +106,7 @@ func (h *Handler) Create(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")
 	}
-	t, err := h.usecase.Create(userID, tripID, in)
+	t, err := h.usecase.Create(c.Request().Context(), userID, tripID, in)
 	if err != nil {
 		return mapErr(err)
 	}

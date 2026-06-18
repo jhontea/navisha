@@ -21,9 +21,10 @@ import { AccommodationForm } from "./AccommodationForm"
 
 interface Props {
   tripId: string
+  tripBaseCurrency: string
 }
 
-export function AccommodationSection({ tripId }: Props) {
+export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
   const { data, isLoading, isError } = useAccommodations(tripId)
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Accommodation | null>(null)
@@ -75,9 +76,12 @@ export function AccommodationSection({ tripId }: Props) {
             <DialogTitle>New stay</DialogTitle>
           </DialogHeader>
           <AccommodationForm
+            tripBaseCurrency={tripBaseCurrency}
+            withCost
             isSubmitting={createMut.isPending}
             onCancel={() => setCreating(false)}
             onSubmit={async (input: CreateAccommodationInput) => {
+              // Backend creates the linked expense atomically via input.cost.
               await createMut.mutateAsync(input)
               setCreating(false)
             }}

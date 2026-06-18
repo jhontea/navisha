@@ -37,6 +37,11 @@ export interface TransportationListResponse {
   items: Transportation[]
 }
 
+export interface CostInput {
+  amount: number
+  currency: string
+}
+
 export interface CreateTransportationInput {
   type: TransportationType
   label?: string
@@ -47,6 +52,9 @@ export interface CreateTransportationInput {
   departure_datetime?: string | null
   arrival_datetime?: string | null
   notes?: string
+  // Optional auto-expense: when present, backend creates linked expense
+  // atomically with the transportation row.
+  cost?: CostInput | null
 }
 
 export type UpdateTransportationInput = CreateTransportationInput

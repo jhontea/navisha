@@ -103,6 +103,22 @@ func (r *postgresRepository) Create(e *Expense) (*Expense, error) {
 	return out, nil
 }
 
+func (r *postgresRepository) CreateTx(ctx context.Context, tx pgx.Tx, e *Expense) (*Expense, error) {
+	row := tx.QueryRow(ctx,
+		`INSERT INTO expenses (trip_id, activity_id, title, amount, currency,
+		                       converted_amount, base_currency, category)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		 RETURNING id, trip_id, activity_id, title, amount, currency,
+		           converted_amount, base_currency, category, created_at, updated_at`,
+		e.TripID, e.ActivityID, e.Title, e.Amount, e.Currency,
+		e.ConvertedAmount, e.BaseCurrency, string(e.Category))
+	out, err := scan(row)
+	if err != nil {
+		return nil, fmt.Errorf("expense.CreateTx: %w", err)
+	}
+	return out, nil
+}
+
 func (r *postgresRepository) Update(e *Expense) (*Expense, error) {
 	row := r.db.QueryRow(context.Background(),
 		`UPDATE expenses

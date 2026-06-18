@@ -1,6 +1,11 @@
 package expense
 
-import "errors"
+import (
+	"context"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
+)
 
 var (
 	ErrNotFound        = errors.New("expense not found")
@@ -19,6 +24,10 @@ type Repository interface {
 	List(tripID string) ([]Expense, error)
 	FindByID(id string) (*Expense, error)
 	Create(e *Expense) (*Expense, error)
+	// CreateTx inserts using an existing transaction. Called by cross-domain
+	// usecases (transportation/accommodation) when they need atomicity with
+	// their own entity insert.
+	CreateTx(ctx context.Context, tx pgx.Tx, e *Expense) (*Expense, error)
 	Update(e *Expense) (*Expense, error)
 	Delete(id string) error
 	Summary(tripID, baseCurrency string) (*Summary, error)

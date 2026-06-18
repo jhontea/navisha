@@ -1,6 +1,11 @@
 package accommodation
 
-import "errors"
+import (
+	"context"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
+)
 
 var (
 	ErrNotFound     = errors.New("accommodation not found")
@@ -18,4 +23,9 @@ type Repository interface {
 	Insert(a *Accommodation) (*Accommodation, error)
 	Update(a *Accommodation) (*Accommodation, error)
 	Delete(id string) error
+
+	BeginTx(ctx context.Context) (pgx.Tx, error)
+	Commit(ctx context.Context, tx pgx.Tx) error
+	Rollback(ctx context.Context, tx pgx.Tx) error
+	InsertTx(ctx context.Context, tx pgx.Tx, a *Accommodation) (*Accommodation, error)
 }
