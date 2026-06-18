@@ -13,6 +13,7 @@ import { DayPanel } from "@/features/activity/components/DayPanel"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { TransportationSection } from "@/features/transportation/components/TransportationSection"
 import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
+import { TripMap } from "@/features/map/components/TripMap"
 import {
   Tabs,
   TabsContent,
@@ -114,6 +115,9 @@ export default function TripDetailPage() {
           <TabsTrigger value="stay" className="flex-1">
             Stay
           </TabsTrigger>
+          <TabsTrigger value="map" className="flex-1">
+            Map
+          </TabsTrigger>
           <TabsTrigger value="budget" className="flex-1">
             Budget
           </TabsTrigger>
@@ -140,6 +144,10 @@ export default function TripDetailPage() {
 
         <TabsContent value="stay" className="pt-4">
           <AccommodationSection tripId={id} />
+        </TabsContent>
+
+        <TabsContent value="map" className="pt-4">
+          <TripMap days={trip.days} />
         </TabsContent>
 
         <TabsContent value="budget" className="pt-4">
