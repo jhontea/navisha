@@ -26,6 +26,15 @@ const TYPE_META: Record<ActivityType, { label: string; Icon: typeof MapPin }> = 
   todo: { label: "Todo", Icon: ListChecks },
 }
 
+// Accepts dot or comma as decimal separator; trims trailing junk after first
+// number prefix (e.g. paste of "108.2631914, 21" → 108.2631914).
+function parseCoord(s: string): number {
+  if (!s) return NaN
+  const cleaned = s.replace(",", ".").trim()
+  const match = cleaned.match(/^-?\d+(\.\d+)?/)
+  return match ? Number(match[0]) : NaN
+}
+
 const schema = z.object({
   type: z.enum(TYPES),
   title: z.string().min(1, "Title is required").max(120),
@@ -33,8 +42,14 @@ const schema = z.object({
   end_time: z.string().optional(),
   // location
   location_name: z.string().optional(),
-  lat: z.string().optional(),
-  lng: z.string().optional(),
+  lat: z
+    .string()
+    .optional()
+    .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid latitude"),
+  lng: z
+    .string()
+    .optional()
+    .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid longitude"),
   address: z.string().optional(),
   location_notes: z.string().optional(),
   // note
@@ -320,16 +335,19 @@ function buildDefaults(initial?: Activity): FormValues {
 
 function buildPayload(v: FormValues) {
   switch (v.type) {
-    case "location":
+    case "location": {
+      const lat = v.lat ? parseCoord(v.lat) : 0
+      const lng = v.lng ? parseCoord(v.lng) : 0
       return {
         location_name: v.location_name ?? "",
-        lat: v.lat ? Number(v.lat) : 0,
-        lng: v.lng ? Number(v.lng) : 0,
+        lat: Number.isFinite(lat) ? lat : 0,
+        lng: Number.isFinite(lng) ? lng : 0,
         google_place_id: "",
         address: v.address ?? "",
         notes: v.location_notes ?? "",
         image_urls: [],
       }
+    }
     case "note":
       return { content: v.note_content ?? "" }
     case "todo":
