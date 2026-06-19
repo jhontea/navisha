@@ -1,40 +1,67 @@
+import Link from "next/link"
 import { LoginButton } from "@/features/auth/components/LoginButton"
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="flex w-full max-w-sm flex-col items-center gap-8">
-        {/* Logo / Brand */}
-        <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-            N
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Navisha</h1>
-          <p className="text-sm text-muted-foreground">
-            Plan your journey. Own your adventure.
-          </p>
-        </div>
-
-        {/* Login card */}
-        <div className="w-full rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div className="text-center">
-              <h2 className="text-lg font-semibold">Welcome back</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Sign in to access your trips
-              </p>
-            </div>
-            <LoginButton />
-          </div>
-        </div>
-
-        <p className="text-center text-xs text-muted-foreground">
-          By continuing, you agree to our{" "}
-          <span className="underline underline-offset-2">Terms of Service</span>{" "}
-          and{" "}
-          <span className="underline underline-offset-2">Privacy Policy</span>.
-        </p>
+    <main className="flex min-h-screen flex-col bg-surface-container-low">
+      {/* Background Decoration */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[120px]" />
       </div>
+
+      {/* Main Content */}
+      <div className="flex-grow flex items-center justify-center p-4 relative z-10 min-h-screen">
+        <div className="w-full max-w-[420px] bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-soft p-8 md:p-10 transition-all duration-300 hover:shadow-xl mx-auto">
+          {/* Brand Logo */}
+          <div className="flex flex-col items-center mb-6">
+            <Link href="/" className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 transition-transform hover:scale-105 duration-300">
+              <span className="material-symbols-outlined text-on-primary text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                explore
+              </span>
+            </Link>
+            <Link href="/" className="font-display text-headline-md text-primary tracking-tight hover:opacity-80 transition-opacity">
+              Navisha
+            </Link>
+            <p className="font-geist text-headline-sm text-on-surface mt-2">Welcome back</p>
+            <p className="font-body-sm text-on-surface-variant mt-1 text-center">
+              Ready for your next adventure?
+            </p>
+          </div>
+
+          {/* Social Login */}
+          <LoginButton />
+         
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 border-t border-outline-variant/20 relative z-10 text-center">
+        <div className="flex items-center gap-2">
+          <span className="font-display font-bold text-label-md text-primary">Navisha</span>
+          <span className="font-body-sm text-outline">© 2024 Navisha Travel. All rights reserved.</span>
+        </div>
+        <div className="flex gap-6 flex-wrap justify-center">
+          <a
+            className="font-body-sm text-on-surface-variant hover:text-primary transition-colors"
+            href="#"
+          >
+            Privacy Policy
+          </a>
+          <a
+            className="font-body-sm text-on-surface-variant hover:text-primary transition-colors"
+            href="#"
+          >
+            Terms of Service
+          </a>
+          <a
+            className="font-body-sm text-on-surface-variant hover:text-primary transition-colors"
+            href="#"
+          >
+            Help Center
+          </a>
+        </div>
+      </footer>
     </main>
   )
 }

@@ -7,11 +7,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v
 export function LoginButton() {
   return (
     <Button
-      size="lg"
       onClick={() => {
         window.location.href = `${API_BASE}/auth/google`
       }}
-      className="gap-3 text-base"
+      className="w-full gap-3 py-3 px-4 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md text-on-surface hover:bg-surface-container-low transition-all duration-200 group active:scale-[0.98]"
+      variant="outline"
     >
       <GoogleIcon />
       Continue with Google

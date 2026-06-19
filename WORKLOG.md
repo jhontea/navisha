@@ -4,6 +4,56 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-19 — Session 13: Map View, User Handler Tests, Atomic Auto-Expense
+
+**Status**: Map view scaffolded but blocked on Maps API key activation. User-domain handler covered. Transport + Accommodation extended with optional cost that creates a linked expense atomically (single DB transaction). ActivityForm lat/lng input hardened against comma/locale paste.
+
+### Completed
+- **Transportation + Accommodation unit tests** (Session 12 carryover) — added `mocks_test.go` + `usecase_test.go` for each. Total 14 transportation cases (`Type.Valid`, `validate` table with arrival-before-departure check, Create success/forbidden/trip-not-found/invalid-type, Update/Delete forbidden+success, List ownership) and 13 accommodation cases (`validate` table including check_out before check_in, Create success/forbidden/trip-not-found/invalid-name/invalid-dates, Update/Delete/List ownership).
+- **`internal/user/handler_test.go`** (12 tests, plus `mocks_test.go` w/ `mockUsecase`):
+  - `GoogleRedirect`: `oauth_state` cookie HttpOnly + `MaxAge=300`, state value in redirect URL
+  - `GoogleCallback`: success path (cookies set, state cleared, redirect to `frontendURL + /auth/callback`), invalid state (missing cookie + value mismatch table), missing code, login fails → 500
+  - `Logout`: both token cookies cleared
+  - `Refresh`: success (new pair issued), missing cookie 401, invalid token 401 + clears cookies
+  - `Me`: success returns user JSON, `ErrNotFound` → 404, other error → 500
+  - Uses `httptest` + `echo.New().NewContext` + `c.Set(middleware.UserIDKey, ...)` for `Me`. Helper `findCookie` walks `rec.Result().Cookies()`.
+- **`features/map/`** slice (frontend) — Google Maps via `@vis.gl/react-google-maps`:
+  - `hooks/useTripLocations.ts` — `useQueries` parallel fetch of activities per day, flatten location-type, filter `(lat||lng)!=0`, sort by `order_index`
+  - `components/TripMap.tsx` — `APIProvider` + `Map` (`mapId="DEMO_MAP_ID"`) + `AdvancedMarker` with `Pin` (per-day color from stable 8-color palette by `day_number - 1`). `Polyline` custom component via `useMap()` + native `google.maps.Polyline` (vis.gl ships no Polyline). `FitBounds` auto-zoom on visible points. `InfoWindow` on marker click. Day filter chips ("All days" + per-day colored chip).
+  - Trip detail page: new "Map" tab (5 tabs total: Itinerary / Transport / Stay / Map / Budget)
+  - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` set in `frontend/.env.local`
+  - **Blocked**: API key needs Maps JavaScript API enabled + HTTP referrer restriction on Cloud Console + billing. User skipped resolution; map renders empty until configured. Code stays in place.
+- **`ActivityForm` lat/lng input fix** — paste like `"108.2631914, 21"` previously sent `NaN` to backend → `json.Unmarshal` to `float64` failed → 400. Added `parseCoord(s)` helper above schema that replaces comma → dot and regex-extracts the first `^-?\d+(\.\d+)?` prefix. Wired into Zod `refine` (rejects bad input before submit) and `buildPayload` (safe fallback to 0 only on truly unparseable).
+- **Atomic auto-expense for Transport + Accommodation** — single API call creates the entity and (optionally) a linked expense inside one DB transaction:
+  - `expense.Repository.CreateTx(ctx, tx, e)` — tx-aware insert
+  - `expense.LinkedExpenseCreator` interface + `expense.Usecase.CreateLinkedExpenseTx` impl (re-verifies ownership, runs currency conversion outside the tx, inserts via the caller's tx)
+  - `transportation.Repository` + `accommodation.Repository` each add `BeginTx/Commit/Rollback/InsertTx`
+  - `transportation.Usecase.Create` + `accommodation.Usecase.Create` now take `context.Context`. If `Cost == nil` they take the simple non-tx Insert path; if `Cost` is set they orchestrate `BeginTx → InsertTx(entity) → CreateLinkedExpenseTx(...)→ Commit`, with `defer Rollback`. Either both rows commit or both roll back.
+  - Handlers accept optional `cost: { amount, currency }` in request body.
+  - `main.go` injects `expenseUsecase` into both new domain constructors.
+  - Existing transport + accommodation tests updated (`NewUsecase` takes `ExpenseCreator`, `Create` takes `ctx`). All 116+ project tests green.
+- **Frontend simplified to single call** — `CreateTransportationInput` + `CreateAccommodationInput` types add `cost?: CostInput | null`. Forms pack cost into input directly. Sections drop the earlier two-call orchestration + `useCreateExpense` import — one mutation per Add.
+
+### Key Decisions
+- **Cross-domain transaction via interface** — `expense.LinkedExpenseCreator` is defined inside `internal/expense` and re-declared as a structural interface on the caller side (`transportation.ExpenseCreator` / `accommodation.ExpenseCreator`). Same shape, satisfied by `*expense.Usecase`. Lets transportation/accommodation stay free of `import .../expense`.
+- **Conversion runs before tx, insert runs inside tx** — `currency.Usecase.Convert` is an HTTP/Redis call; doing it under a lock would hold the row for the network roundtrip. Run it just before the insert; if it fails the linked-insert error rolls everything back.
+- **No-cost path stays simple** — `if Cost == nil { return u.repo.Insert(t) }`. Avoids opening a transaction for the common case (an entity logged without a price).
+- **Repository owns tx primitives** — `BeginTx / Commit / Rollback` exposed on the Repository interface, mirroring the trip-domain pattern (Session 6). Usecase orchestrates without touching `pgxpool` directly.
+- **`parseCoord` extracts first valid number prefix** — covers comma decimals (Indonesian/EU locales) and accidental paste of full coordinate pairs into a single field. Zod `refine` runs the same parser so invalid input is caught client-side before the API ever sees it.
+- **Map view ships despite the API issue** — turning off the tab would lose context; an empty map with the dev-mode hint is better than silently disabling the feature.
+
+### Pending — must come back to
+- [ ] **Map view live** — needs Google Cloud project to enable Maps JavaScript API + HTTP referrer restrictions + billing. Once unblocked, current code should work; verify InfoWindow + Pin styling on real data.
+- [ ] **Activity Places autofill** — same prereq (Maps Places API on the key).
+- [ ] **Update transport/accommodation should also re-link expense edits** — currently only Create writes the linked expense. Editing the entity's cost requires the user to edit the expense row in the Budget tab. Decide whether to mirror updates or leave them decoupled.
+- [ ] **Delete cascade for linked expense** — deleting a transport/accommodation does not delete its linked expense (no FK in schema). Acceptable for MVP; revisit if user complains about orphan budget rows.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export, mobile app.
+
+### Resume From
+**Decide on linked-expense lifecycle for Update + Delete.** Two options: (1) tag the expense row with `transportation_id` / `accommodation_id` (schema migration) so the entity owns its expense lifecycle; (2) leave them independent and rely on the user to clean up via the Budget tab. Option 2 is the cheaper MVP path. Beyond that: unblock Maps API (Cloud Console steps documented in Session 13 above) or pick up the Phase 2 backlog.
+
+---
+
 ## 2026-06-15 — Session 12: Day Notes + Transportation + Accommodation (Backend + Frontend)
 
 **Status**: Three trip-level features shipped end-to-end. Day notes save inline, transportation and accommodation each get their own domain, slice, and trip detail tab. Trip detail page now has 4 tabs: Itinerary / Transport / Stay / Budget.
