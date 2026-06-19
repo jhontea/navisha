@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { LocationAutocomplete } from "./LocationAutocomplete"
 import type {
   Activity,
   ActivityType,
@@ -35,30 +36,57 @@ function parseCoord(s: string): number {
   return match ? Number(match[0]) : NaN
 }
 
-const schema = z.object({
-  type: z.enum(TYPES),
-  title: z.string().min(1, "Title is required").max(120),
-  start_time: z.string().optional(),
-  end_time: z.string().optional(),
-  // location
-  location_name: z.string().optional(),
-  lat: z
-    .string()
-    .optional()
-    .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid latitude"),
-  lng: z
-    .string()
-    .optional()
-    .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid longitude"),
-  address: z.string().optional(),
-  location_notes: z.string().optional(),
-  // note
-  note_content: z.string().optional(),
-  // todo
-  todo_items: z
-    .array(z.object({ id: z.string(), text: z.string(), completed: z.boolean() }))
-    .optional(),
-})
+const schema = z
+  .object({
+    type: z.enum(TYPES),
+    title: z.string().min(1, "Title is required").max(120),
+    start_time: z.string().optional(),
+    end_time: z.string().optional(),
+    // location
+    location_name: z.string().optional(),
+    lat: z
+      .string()
+      .optional()
+      .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid latitude"),
+    lng: z
+      .string()
+      .optional()
+      .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid longitude"),
+    address: z.string().optional(),
+    google_place_id: z.string().optional(),
+    location_notes: z.string().optional(),
+    // note
+    note_content: z.string().optional(),
+    // todo
+    todo_items: z
+      .array(z.object({ id: z.string(), text: z.string(), completed: z.boolean() }))
+      .optional(),
+  })
+  .superRefine((d, ctx) => {
+    // Required field per activity type. Validated up front so the user sees
+    // the error inline instead of the backend's 400.
+    if (d.type === "location" && !d.location_name?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Location name is required",
+        path: ["location_name"],
+      })
+    }
+    if (d.type === "note" && !d.note_content?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Content is required",
+        path: ["note_content"],
+      })
+    }
+    if (d.type === "todo" && (!d.todo_items || d.todo_items.length === 0)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Add at least one todo item",
+        path: ["todo_items"],
+      })
+    }
+  })
 
 type FormValues = z.infer<typeof schema>
 
@@ -83,6 +111,7 @@ export function ActivityForm({
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -184,9 +213,23 @@ export function ActivityForm({
       {type === "location" && (
         <>
           <Field label="Location name" error={errors.location_name?.message}>
-            <Input
-              placeholder="Kuta Beach, Bali"
-              {...register("location_name")}
+            <Controller
+              control={control}
+              name="location_name"
+              render={({ field }) => (
+                <LocationAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="Search a place…"
+                  onPlaceSelect={(p) => {
+                    field.onChange(p.location_name)
+                    setValue("lat", String(p.lat), { shouldValidate: true })
+                    setValue("lng", String(p.lng), { shouldValidate: true })
+                    setValue("address", p.address)
+                    setValue("google_place_id", p.google_place_id)
+                  }}
+                />
+              )}
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
@@ -289,6 +332,7 @@ function buildDefaults(initial?: Activity): FormValues {
       lat: "",
       lng: "",
       address: "",
+      google_place_id: "",
       location_notes: "",
       note_content: "",
       todo_items: [],
@@ -303,6 +347,7 @@ function buildDefaults(initial?: Activity): FormValues {
     lat: "",
     lng: "",
     address: "",
+    google_place_id: "",
     location_notes: "",
     note_content: "",
     todo_items: [],
@@ -317,6 +362,7 @@ function buildDefaults(initial?: Activity): FormValues {
         lat: p.lat?.toString() ?? "",
         lng: p.lng?.toString() ?? "",
         address: p.address ?? "",
+        google_place_id: p.google_place_id ?? "",
         location_notes: p.notes ?? "",
       }
     }
@@ -342,7 +388,7 @@ function buildPayload(v: FormValues) {
         location_name: v.location_name ?? "",
         lat: Number.isFinite(lat) ? lat : 0,
         lng: Number.isFinite(lng) ? lng : 0,
-        google_place_id: "",
+        google_place_id: v.google_place_id ?? "",
         address: v.address ?? "",
         notes: v.location_notes ?? "",
         image_urls: [],
