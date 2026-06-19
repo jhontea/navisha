@@ -3,16 +3,35 @@
 @tailwind utilities;
 
 @layer base {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-geist {
+    font-family: 'Geist', sans-serif;
+  }
+}
+
+@layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 33% 98%;
+    --foreground: 222.2 47.4% 11.2%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 215 100% 36%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 210 33% 88%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -24,6 +43,53 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    --on-primary: 0 0% 100%;
+    --on-secondary-container: 210 14% 35%;
+    --on-background: 222.2 47.4% 11.2%;
+    --on-surface-variant: 220 13% 30%;
+    --on-tertiary-fixed-variant: 24 88% 22%;
+    --on-primary-fixed-variant: 215 100% 27%;
+    --surface-dim: 230 20% 88%;
+    --surface-container-highest: 230 20% 92%;
+    --outline: 220 13% 47%;
+    --error: 0 72% 42%;
+    --surface-tint: 215 100% 36%;
+    --tertiary-fixed-dim: 24 100% 72%;
+    --error-container: 0 100% 94%;
+    --on-primary-fixed: 215 100% 10%;
+    --tertiary: 24 88% 32%;
+    --primary-fixed: 230 100% 92%;
+    --surface-container-low: 240 33% 96%;
+    --secondary-fixed: 210 33% 88%;
+    --inverse-on-surface: 240 33% 98%;
+    --secondary-container: 210 33% 88%;
+    --inverse-primary: 215 100% 76%;
+    --budget-green: 120 100% 90%;
+    --stay-purple: 260 100% 94%;
+    --inverse-surface: 240 13% 20%;
+    --surface-container: 240 33% 94%;
+    --on-secondary: 0 0% 100%;
+    --surface-container-high: 230 20% 90%;
+    --secondary-fixed-dim: 210 33% 78%;
+    --transport-blue: 210 100% 94%;
+    --on-error: 0 0% 100%;
+    --on-error-container: 0 100% 22%;
+    --on-surface: 222.2 47.4% 11.2%;
+    --note-yellow: 60 100% 94%;
+    --on-secondary-fixed-variant: 210 14% 22%;
+    --surface-container-lowest: 0 0% 100%;
+    --destructive-red: 0 72% 52%;
+    --on-tertiary-container: 24 100% 98%;
+    --primary-fixed-dim: 215 100% 76%;
+    --on-primary-container: 215 100% 98%;
+    --outline-variant: 220 13% 82%;
+    --surface-bright: 240 33% 98%;
+    --on-tertiary-fixed: 24 88% 10%;
+    --on-tertiary: 0 0% 100%;
+    --background: 240 33% 98%;
+    --on-background: 222.2 47.4% 11.2%;
+    --surface-variant: 230 20% 92%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -51,6 +117,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: #f9f9ff;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(210,100%,98%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(220,100%,97%,1) 0, transparent 50%);
   }
 }
 
@@ -58,4 +128,26 @@
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Custom styles from template */
+.shadow-soft {
+  box-shadow: 0 10px 25px -5px rgba(0, 88, 188, 0.05), 0 8px 10px -6px rgba(0, 88, 188, 0.03);
+}
+.glass-bg {
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
