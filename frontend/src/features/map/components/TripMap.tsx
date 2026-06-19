@@ -18,9 +18,9 @@ import {
 } from "../hooks/useTripLocations"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
-// Required by AdvancedMarker. Default style — replace with a custom Cloud
-// Console-defined map ID for branded styling later.
-const MAP_ID = "DEMO_MAP_ID"
+// Cloud Console Map ID — required by AdvancedMarker. Pick a real ID from
+// Google Maps Platform → Map Management.
+const MAP_ID = "cc475d9a8bf16e26f8975c02"
 
 // Stable color per day_number so polylines/markers stay visually consistent
 // when toggling Days filter.
@@ -82,9 +82,13 @@ export function TripMap({ days }: Props) {
     <div className="flex flex-col gap-3">
       <DayFilter days={byDay} active={activeDay} onChange={setActiveDay} />
       <APIProvider apiKey={API_KEY}>
-        <div className="h-[500px] w-full overflow-hidden rounded-lg border">
+        <div
+          style={{ height: 500, width: "100%" }}
+          className="overflow-hidden rounded-lg border"
+        >
           <Map
             mapId={MAP_ID}
+            style={{ width: "100%", height: "100%" }}
             defaultCenter={{
               lat: visiblePoints[0].lat,
               lng: visiblePoints[0].lng,
@@ -182,11 +186,13 @@ function Markers({ points }: { points: LocationPoint[] }) {
           key={p.activityId}
           position={{ lat: p.lat, lng: p.lng }}
           onClick={() => setOpenIdx(i)}
+          title={p.title}
         >
           <Pin
             background={colorForDay(p.dayNumber)}
             borderColor="#ffffff"
             glyphColor="#ffffff"
+            glyph={String(p.orderIndex + 1)}
           />
         </AdvancedMarker>
       ))}
