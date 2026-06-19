@@ -4,6 +4,45 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-19 — Session 14: Map View Live + Places Autocomplete + Activity Form Validation
+
+**Status**: Map renders with numbered, day-colored AdvancedMarkers on a real Cloud Console `mapId`. Location-type activities now use Google Places Autocomplete: search → auto-fill `location_name`, `address`, `lat`, `lng`, `google_place_id`. ActivityForm now blocks per-type required fields client-side instead of relying on the backend 400.
+
+### Completed
+- **Maps unblock end-to-end**:
+  - Diagnosed: `DEMO_MAP_ID` only works inside Google's own demo; with the project's own key it silently fails to render AdvancedMarker tiles. Cloud Console → Map Management produced a real `mapId = "cc475d9a8bf16e26f8975c02"`, wired into `TripMap.tsx`.
+  - Confirmed API restrictions side: Maps JavaScript API + Places API enabled on the key. Billing active (free $200/month tier).
+  - `ERR_BLOCKED_BY_CLIENT` on `gen_204` ping = ad blocker hitting Google analytics ping, harmless and ignored.
+  - Map container switched from `className="h-[500px]"` to inline `style={{ height: 500, width: "100%" }}` + `Map style={{ width:'100%', height:'100%' }}` after Tailwind arbitrary value wasn't reliably applied in production build.
+- **Per-day marker numbering** — `<Pin glyph={String(p.orderIndex + 1)} />` so each pin shows the activity's position within its day (matches the numbered circle in the Itinerary tab; drag-drop reorders flow through to the map).
+- **Google Places Autocomplete on activity location**:
+  - New component `features/activity/components/LocationAutocomplete.tsx` — wraps `APIProvider` (libraries=`["places"]`) and uses `useMapsLibrary("places")` to attach the legacy `google.maps.places.Autocomplete` widget to a ref'd `Input`. On `place_changed`, emits `{ location_name, address, lat, lng, google_place_id }` from the selected `PlaceResult`. `onPlaceSelect` stashed in a ref so the effect doesn't re-attach the widget on every parent render.
+  - `ActivityForm` rewires `location_name` from `register("location_name")` to `Controller` + `LocationAutocomplete`. On select, RHF `setValue` populates `lat`, `lng`, `address`, and the new `google_place_id` field with `shouldValidate: true` so the Zod refines clear.
+  - Added `google_place_id: z.string().optional()` to the schema; `buildPayload` now reads `v.google_place_id` (previously hard-coded `""`).
+- **`ActivityForm` per-type required-field validation** — wrapped the schema with `.superRefine` that:
+  - `location` type → requires non-empty `location_name`
+  - `note` type → requires non-empty `note_content`
+  - `todo` type → requires at least one item in `todo_items`
+  - Fixes the prior backend 400 (`location_name required: invalid activity payload`) by catching the missing field inline before submit. Refine paths target the right field so the error renders next to the input.
+
+### Key Decisions
+- **Keep straight polylines, not Directions** — pricing analysis: Directions API costs $5 per 1k requests on the basic tier with a $200/month free credit. For our usage one request per day filter change per trip view, that lands comfortably in the free tier. Still, straight lines visually communicate "next stop" cleanly without an extra API surface; revisit only when users ask for road-following routes.
+- **Real `mapId`, not `DEMO_MAP_ID`** — DEMO is only valid against Google's hosted samples. For our own key we always need a project-owned Map ID, otherwise `AdvancedMarker` silently refuses to render its pin layer.
+- **`LocationAutocomplete` wraps its own `APIProvider`** — vis.gl dedupes script loads when the same key is used. Two `APIProvider`s (one for the Map tab, one for the Activity form Dialog) cohabit fine and keep the form self-contained. If a third surface needs Maps we'll hoist `APIProvider` to `components/providers.tsx`.
+- **Legacy `Autocomplete`, not `PlaceAutocompleteElement`** — the web-component variant is new and still has rough edges with React refs and Dialog portal mounting. Legacy widget is stable, well-documented, and meets our spec.
+- **Pin numbering uses `orderIndex + 1`, not a local index over visible points** — so the numbers stay consistent even when the user toggles the "All days" filter (only Day N visible vs everything). Each pin's number always equals its position within its parent day.
+
+### Pending — must come back to
+- [ ] **Linked-expense lifecycle for Update + Delete** (Session 13 carryover). Currently only Create writes the linked expense; editing the entity's cost requires a manual Budget tab edit. Decide between schema FK + cascade, or leaving them independent.
+- [ ] **`google.maps.Marker` deprecation** — silenced now (we use `AdvancedMarker` everywhere). If we ever fall back to legacy Marker again, console will yell.
+- [ ] **Place photo / details enhancement (Phase 2)** — we already store `google_place_id`; Places Details API can later return photos / rating / website. Cost-aware.
+- [ ] **Phase 2** still open: share trip via link, collaborator invite, PDF export, mobile app.
+
+### Resume From
+**Decide linked-expense lifecycle** (carried from Session 13). Two options remain: schema migration that adds `transportation_id` + `accommodation_id` FK columns on `expenses` with `ON DELETE CASCADE` so the entity owns the expense lifecycle; or leave them independent and require manual cleanup. Option 1 better for data integrity, Option 2 cheaper to ship. After that: pick up the Phase 2 backlog (share-link is the smallest unit of work).
+
+---
+
 ## 2026-06-19 — Session 13: Map View, User Handler Tests, Atomic Auto-Expense
 
 **Status**: Map view scaffolded but blocked on Maps API key activation. User-domain handler covered. Transport + Accommodation extended with optional cost that creates a linked expense atomically (single DB transaction). ActivityForm lat/lng input hardened against comma/locale paste.
