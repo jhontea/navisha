@@ -1,8 +1,14 @@
 import type { Metadata } from "next"
+import { Inter } from "next/font/google"
 import localFont from "next/font/local"
 import { Providers } from "@/components/providers"
 import "./globals.css"
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+})
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -29,8 +35,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
+      <body
+        className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+      >
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        />
         <Providers>{children}</Providers>
       </body>
     </html>
