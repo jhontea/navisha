@@ -4,6 +4,56 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-20 — Session 15: Dashboard Redesign (Template Port)
+
+**Status**: Dashboard restyled to match `frontend/template/2-dashboard-overview.html`. Persistent sidebar + sticky top bar + mobile bottom nav. TripCard redesigned with cover image + frosted status badge. New StatsSection. Font + Tailwind tokens wired so `text-headline-lg` etc. resolve correctly.
+
+### Completed
+- **Skill install** — Taste Skill (Leonxlnx/taste-skill) added at `frontend/.agents/skills/` (14 sub-skills: design-taste-frontend v2, minimalist-ui, high-end-visual-design, brandkit, imagegen-frontend-web/mobile, redesign-existing-projects, …). Used as reference for the redesign.
+- **Layout split**:
+  - `app/(dashboard)/layout.tsx` — fixed `h-screen overflow-hidden`, Sidebar left + scrollable content column + MobileNav fixed bottom on `md:hidden`.
+  - `components/Sidebar.tsx` — width `w-72`, brand block `p-8 text-2xl`, items `rounded-xl px-4 py-3 text-sm`. Active = `bg-primary/10 text-primary`. "Explore" rendered as disabled stub. Footer row: notification bell (red dot indicator), settings, logout button + user card (avatar / name / email).
+  - `components/TopBar.tsx` — sticky `top-0 z-40 backdrop-blur-md`. Pill-shaped disabled search input + Help Center button (decorative for now).
+  - `components/MobileNav.tsx` — 4-item fixed bottom bar (Dashboard / Explore / Converter / Profile), highlight active path. Disabled stubs marked with muted/40 color.
+- **TripCard redesign**:
+  - `h-48` cover image area, `bg-cover bg-center group-hover:scale-105` on hover.
+  - Frosted-glass status badge: `absolute right-4 top-4 rounded-full bg-background/90 backdrop-blur-md px-3 py-1 text-label-sm` with text color from `STATUS_TEXT` (primary / emerald-600 / muted).
+  - Body: `p-6` block with description prefixed by MapPin + primary text, title in `font-heading text-headline-sm`, currency Badge top-right, CalendarDays + date range in `text-body-sm`.
+  - Card shadow: `shadow-[0px_12px_24px_rgba(0,0,0,0.03)] hover:shadow-[0px_16px_32px_rgba(0,88,188,0.06)] hover:-translate-y-1` (primary-tinted lift).
+  - **Cover fallback**: deterministic `https://picsum.photos/seed/<trip.id-slug>/800/400` so cards always have an image even when `cover_image_url` is empty. Same id → same image across renders.
+- **TripList empty state**: rounded `3xl border-2 border-dashed bg-muted/40`, circular `h-24 w-24 rounded-full bg-muted` with `Map` icon, headline "No trips planned yet", sub-copy + CTA.
+- **`features/trip/components/StatsSection.tsx`** — 4-col grid (`md:col-span-1 + 1 + 2`) below the trip list. Values derived from already-loaded `useTrips`:
+  - Trips completed (`tripStatus === past`)
+  - Currencies tracked (proxy for "countries visited" — distinct `base_currency` values)
+  - Traveler level card (mock Gold/Silver based on completed count, upcoming counter, progress bar)
+  - Icons: PlaneTakeoff / Globe / Award from `lucide-react`.
+- **`features/trip/lib/status.ts`** — `tripStatus(start, end)` derives `upcoming | active | past` from date strings, plus `STATUS_LABEL` and `STATUS_CLASSES` maps reusable elsewhere.
+- **Font + token wiring**:
+  - `app/layout.tsx` — Inter loaded via `next/font/google`, Geist + Geist Mono via existing `next/font/local`. Body has `${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans antialiased`.
+  - `tailwind.config.ts` — `fontFamily.sans = ['var(--font-inter)', 'Inter', 'sans-serif']`, `fontFamily.heading = ['var(--font-geist-sans)', 'Geist', 'sans-serif']`. All existing `text-headline-lg` / `text-body-sm` etc. tokens already in config now actually resolve to the correct font via CSS variable.
+  - Dashboard page uses `font-heading text-headline-lg-mobile md:text-headline-lg`, `text-body-lg`, `text-label-md` (template tokens), replacing generic `text-3xl` / `text-lg` shortcuts.
+
+### Key Decisions
+- **Keep generic shadcn HSL tokens, layer template tokens on top** — instead of swapping the project's color system to Material You (`on-surface`, `surface-container-*`), map template intents onto existing semantic tokens (`bg-card`, `text-muted-foreground`, `bg-primary/10`). Cheap to apply, doesn't break coss/shadcn components elsewhere.
+- **Sidebar at `w-72` (288px)** — matches template, but means content area gets ~288px less on desktop. Accept; content uses `max-w-[1200px]` so wide screens still center it.
+- **Single shared layout for all `(dashboard)` routes** — `/dashboard`, `/currency`, `/trips/[id]` all get the sidebar and top bar. Trip detail page keeps its own back link + tabs; double-chrome is acceptable cost for global nav consistency.
+- **Picsum for cover fallback, not Unsplash** — Unsplash needs an API key, has rate limits, and we don't want to negotiate cors / cache headers. Picsum returns a stable image per seed and works as a plain `<div bg-image>`.
+- **Skip "Search" + "Help Center" wiring** — those are template chrome we don't have endpoints for. Render disabled + placeholder copy to maintain the visual rhythm.
+- **Use `font-heading` (custom) instead of `font-display` / Tailwind defaults** — `font-display` already means something in Tailwind (font-display CSS property); `font-heading` is unambiguous and matches the template's intent that headlines = Geist.
+
+### Pending — must come back to
+- [ ] **Linked-expense lifecycle** (carried since Session 13) — still undecided.
+- [ ] **Search functionality** — top bar input is decorative. Backend would need a `/search?q=` endpoint across trips/places/contacts.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress bar + thresholds.
+- [ ] **Cover image upload** — TripForm accepts URL only; switch to file upload + S3/etc. eventually.
+- [ ] **Place photo / details enhancement** (carried from Session 14).
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export, mobile app.
+
+### Resume From
+**Decide linked-expense lifecycle** (third session carrying this). After that, the smallest-risk Phase 2 unit of work is **share trip via link** (backend: generate share token + public read route; frontend: `/shared/:token` page). Alternative: replace dashboard template chrome with real wiring — search endpoint + cover upload + notification feed.
+
+---
+
 ## 2026-06-19 — Session 14: Map View Live + Places Autocomplete + Activity Form Validation
 
 **Status**: Map renders with numbered, day-colored AdvancedMarkers on a real Cloud Console `mapId`. Location-type activities now use Google Places Autocomplete: search → auto-fill `location_name`, `address`, `lat`, `lng`, `google_place_id`. ActivityForm now blocks per-type required fields client-side instead of relying on the backend 400.

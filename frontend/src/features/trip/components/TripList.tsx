@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { Map } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTrips } from "../hooks/useTrips"
 import { TripCard } from "./TripCard"
@@ -30,18 +32,25 @@ export function TripList() {
 
   if (trips.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-8 text-center">
-        <p className="text-sm text-muted-foreground">No trips yet.</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Create your first trip to get started.
+      <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed bg-muted/40 px-6 py-24 text-center">
+        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
+          <Map className="h-12 w-12 text-muted-foreground/60" />
+        </div>
+        <h2 className="mb-2 text-2xl font-semibold">No trips planned yet</h2>
+        <p className="mb-8 max-w-sm text-muted-foreground">
+          The world is waiting for you. Start planning your first adventure with
+          Navisha today.
         </p>
+        <Link href="/trips/new">
+          <Button size="lg">Create my first trip</Button>
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {trips.map((t) => (
           <TripCard key={t.id} trip={t} />
         ))}
