@@ -17,6 +17,8 @@ const (
 type UsecaseInterface interface {
 	Create(ctx context.Context, userID string, in CreateInput) (*Trip, error)
 	List(userID, cursor string, limit int) (ListResult, error)
+	ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error)
+	ListUpcoming(userID string, limit int) ([]Trip, error)
 	Get(userID, tripID string) (*Trip, []Day, error)
 	Update(userID, tripID string, in UpdateInput) (*Trip, error)
 	Delete(userID, tripID string) error
@@ -102,6 +104,27 @@ func (u *Usecase) List(userID, cursor string, limit int) (ListResult, error) {
 		limit = maxListLimit
 	}
 	return u.repo.List(userID, cursor, limit)
+}
+
+// ListFiltered returns trips with optional date-range filter + cursor pagination.
+// from/to are YYYY-MM-DD strings; empty string means no bound.
+func (u *Usecase) ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error) {
+	if limit <= 0 {
+		limit = 12
+	}
+	if limit > maxListLimit {
+		limit = maxListLimit
+	}
+	return u.repo.ListFiltered(userID, cursor, limit, from, to)
+}
+
+// ListUpcoming returns trips whose end_date >= today (active + upcoming),
+// ordered by start_date ASC (soonest first), default and max 6.
+func (u *Usecase) ListUpcoming(userID string, limit int) ([]Trip, error) {
+	if limit <= 0 {
+		limit = 6
+	}
+	return u.repo.ListUpcoming(userID, limit)
 }
 
 // Get returns the trip with its days. Caller must own the trip.

@@ -21,6 +21,8 @@ func NewHandler(usecase UsecaseInterface) *Handler {
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	g.GET("/trips", h.List, authMiddleware)
+	g.GET("/trips/filter", h.ListFiltered, authMiddleware)
+	g.GET("/trips/upcoming", h.ListUpcoming, authMiddleware)
 	g.POST("/trips", h.Create, authMiddleware)
 	g.GET("/trips/:id", h.Get, authMiddleware)
 	g.PUT("/trips/:id", h.Update, authMiddleware)
@@ -62,6 +64,51 @@ func (h *Handler) Create(c echo.Context) error {
 		return mapErr(err)
 	}
 	return c.JSON(http.StatusCreated, toTripResponse(t))
+}
+
+func (h *Handler) ListFiltered(c echo.Context) error {
+	userID := c.Get(middleware.UserIDKey).(string)
+	cursor := c.QueryParam("cursor")
+	limit := 12
+	if v := c.QueryParam("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	from := c.QueryParam("from") // YYYY-MM-DD or empty
+	to := c.QueryParam("to")
+
+	out, err := h.usecase.ListFiltered(userID, cursor, limit, from, to)
+	if err != nil {
+		return mapErr(err)
+	}
+	items := make([]map[string]any, 0, len(out.Trips))
+	for _, t := range out.Trips {
+		items = append(items, toTripResponse(&t))
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"items":       items,
+		"next_cursor": out.NextCursor,
+	})
+}
+
+func (h *Handler) ListUpcoming(c echo.Context) error {
+	userID := c.Get(middleware.UserIDKey).(string)
+	limit := 5
+	if v := c.QueryParam("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	trips, err := h.usecase.ListUpcoming(userID, limit)
+	if err != nil {
+		return mapErr(err)
+	}
+	items := make([]map[string]any, 0, len(trips))
+	for _, t := range trips {
+		items = append(items, toTripResponse(&t))
+	}
+	return c.JSON(http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *Handler) List(c echo.Context) error {

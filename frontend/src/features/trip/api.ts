@@ -9,6 +9,18 @@ import type {
 } from "./types"
 
 export const tripApi = {
+  listUpcoming: (limit = 6) =>
+    api.get<{ items: Trip[] }>("/trips/upcoming", { params: { limit: String(limit) } }),
+
+  listFiltered: (params: { cursor?: string; limit?: number; from?: string; to?: string } = {}) => {
+    const query: Record<string, string> = {}
+    if (params.cursor) query.cursor = params.cursor
+    if (params.limit) query.limit = String(params.limit)
+    if (params.from) query.from = params.from
+    if (params.to) query.to = params.to
+    return api.get<TripListResponse>("/trips/filter", { params: query })
+  },
+
   list: (params: { cursor?: string; limit?: number } = {}) => {
     const query: Record<string, string> = {}
     if (params.cursor) query.cursor = params.cursor

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useTrips } from "../hooks/useTrips"
+import { useUpcomingTrips } from "../hooks/useTrips"
 import { TripCard } from "./TripCard"
 
 function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
@@ -17,15 +17,7 @@ function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?
 }
 
 export function TripList() {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useTrips()
+  const { data, isLoading, isError, error } = useUpcomingTrips(6)
 
   if (isLoading) {
     return (
@@ -52,11 +44,11 @@ export function TripList() {
     )
   }
 
-  const trips = data?.pages.flatMap((p) => p.items) ?? []
+  const trips = data?.items ?? []
 
   if (trips.length === 0) {
     return (
-      <div className="col-span-full flex flex-col items-center justify-center py-24 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant">
+      <div className="flex flex-col items-center justify-center py-24 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant">
         <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-surface-container-high">
           <MaterialIcon name="map" size={48} className="text-outline" />
         </div>
@@ -85,17 +77,15 @@ export function TripList() {
         ))}
       </section>
 
-      {hasNextPage && (
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="px-6 py-2.5 rounded-xl border border-outline-variant text-body-sm font-label-md text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-60"
-          >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
-          </button>
-        </div>
-      )}
+      <div className="mt-6 flex justify-end">
+        <Link
+          href="/trips"
+          className="inline-flex items-center gap-1.5 text-body-sm font-label-md text-primary hover:opacity-80 transition-colors"
+        >
+          View all trips
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+        </Link>
+      </div>
     </>
   )
 }

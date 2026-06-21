@@ -21,6 +21,7 @@ interface NavItem {
 
 const MAIN_NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "My Trips", href: "/trips", icon: Compass },
   { label: "Converter", href: "/currency", icon: ArrowLeftRight },
 ]
 

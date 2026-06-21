@@ -11,6 +11,24 @@ import type { CreateTripInput, UpdateTripInput } from "../types"
 
 const LIMIT = 20
 
+export function useUpcomingTrips(limit = 6) {
+  return useQuery({
+    queryKey: ["trips", "upcoming", limit],
+    queryFn: () => tripApi.listUpcoming(limit),
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+export function useFilteredTrips(from?: string, to?: string) {
+  return useInfiniteQuery({
+    queryKey: ["trips", "filtered", from ?? "", to ?? ""],
+    queryFn: ({ pageParam }) =>
+      tripApi.listFiltered({ cursor: pageParam, limit: 12, from, to }),
+    initialPageParam: "",
+    getNextPageParam: (last) => last.next_cursor || undefined,
+  })
+}
+
 export function useTrips() {
   return useInfiniteQuery({
     queryKey: ["trips", "list"],
