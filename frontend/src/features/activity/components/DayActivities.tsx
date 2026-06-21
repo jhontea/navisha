@@ -12,16 +12,27 @@ import {
 import {
   SortableContext,
   arrayMove,
+  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+  ArrowRight,
+  Bus,
+  Car,
+  GripVertical,
+  Hotel,
+  Plane,
+  Plus,
+  Ship,
+  Train,
+  TramFront,
+  Boxes,
+  LogIn,
+  LogOut,
+} from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { cn } from "@/lib/utils"
 import {
   useActivities,
   useCreateActivity,
@@ -29,139 +40,518 @@ import {
   useReorderActivities,
   useUpdateActivity,
 } from "../hooks/useActivities"
+import { useTransportations } from "@/features/transportation/hooks/useTransportations"
+import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
 import type { Activity, CreateActivityInput } from "../types"
+import type { Transportation } from "@/features/transportation/types"
+import type { Accommodation } from "@/features/accommodation/types"
+import { ActivityCard } from "./ActivityCard"
 import { ActivityForm } from "./ActivityForm"
-import { SortableActivityCard } from "./SortableActivityCard"
 
-interface Props {
-  dayId: string
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type TimelineItem =
+  | { kind: "activity"; data: Activity }
+  | { kind: "transport"; data: Transportation }
+  | { kind: "accommodation"; data: Accommodation; event: "check_in" | "check_out" }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function toSortKey(v: string | null | undefined): string {
+  if (!v) return "99:99"
+  if (v.includes("T")) {
+    const t = new Date(v)
+    if (!isNaN(t.getTime())) {
+      return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`
+    }
+  }
+  return v
 }
 
-export function DayActivities({ dayId }: Props) {
-  const { data, isLoading, isError } = useActivities(dayId)
-  const [editing, setEditing] = useState<Activity | null>(null)
-  const [creating, setCreating] = useState(false)
+function dateMatches(
+  datetimeStr: string | null | undefined,
+  date: string,
+): boolean {
+  if (!datetimeStr) return false
+  if (datetimeStr.length === 10) return datetimeStr === date
+  const d = new Date(datetimeStr)
+  if (isNaN(d.getTime())) return false
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}` === date
+}
+
+// ---------------------------------------------------------------------------
+// Transport icon map
+// ---------------------------------------------------------------------------
+
+const TRANSPORT_ICON: Record<string, typeof Plane> = {
+  flight: Plane,
+  bus: Bus,
+  train: Train,
+  ferry: TramFront,
+  ship: Ship,
+  car: Car,
+  other: Boxes,
+}
+
+// ---------------------------------------------------------------------------
+// Read-only timeline cards (transport & accommodation)
+// ---------------------------------------------------------------------------
+
+function TransportTimelineCard({ t }: { t: Transportation }) {
+  const Icon = TRANSPORT_ICON[t.type] ?? Boxes
+  const depTime = t.departure_datetime
+    ? new Date(t.departure_datetime).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+    : null
+  const arrTime = t.arrival_datetime
+    ? new Date(t.arrival_datetime).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+    : null
+
+  return (
+    <div className="rounded-xl border border-l-4 border-l-primary bg-[#DBEAFE]/40 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              Transport
+            </span>
+            {depTime && (
+              <span className="text-xs text-muted-foreground">· {depTime}</span>
+            )}
+          </div>
+          {(t.from_location || t.to_location) && (
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <span>{t.from_location || "—"}</span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span>{t.to_location || "—"}</span>
+            </div>
+          )}
+          {t.label && (
+            <p className="text-sm text-foreground/80">{t.label}</p>
+          )}
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+            {t.operator && <span>{t.operator}</span>}
+            {t.reference_number && <span>Ref: {t.reference_number}</span>}
+            {depTime && arrTime && (
+              <span>
+                {depTime} → {arrTime}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#DBEAFE] px-2 py-0.5 text-xs font-semibold capitalize text-primary">
+          <Icon className="h-3 w-3" />
+          {t.type}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AccommodationTimelineCard({
+  a,
+  event,
+}: {
+  a: Accommodation
+  event: "check_in" | "check_out"
+}) {
+  const isCheckin = event === "check_in"
+  const EventIcon = isCheckin ? LogIn : LogOut
+
+  return (
+    <div className="rounded-xl border border-l-4 border-l-[#8B5CF6] bg-[#EDE9FE]/40 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7C3AED]">
+              Stay
+            </span>
+            <span className="text-xs text-muted-foreground">
+              · {isCheckin ? "Check-in" : "Check-out"}
+            </span>
+          </div>
+          <h4 className="text-sm font-semibold text-foreground">{a.name}</h4>
+          {a.location_name && (
+            <p className="text-xs text-muted-foreground">{a.location_name}</p>
+          )}
+          {a.confirmation_number && (
+            <p className="text-xs text-muted-foreground">
+              Ref: {a.confirmation_number}
+            </p>
+          )}
+        </div>
+        <span
+          className={cn(
+            "flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+            isCheckin
+              ? "bg-[#EDE9FE] text-[#7C3AED]"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          <EventIcon className="h-3 w-3" />
+          {isCheckin ? "Check-in" : "Check-out"}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Timeline dot
+// ---------------------------------------------------------------------------
+
+function TimelineDot({
+  kind,
+  activityType,
+  transportType,
+}: {
+  kind: "activity" | "transport" | "accommodation"
+  activityType?: string
+  transportType?: string
+  accommodationEvent?: "check_in" | "check_out"
+}) {
+  if (kind === "transport") {
+    const Icon = TRANSPORT_ICON[transportType ?? "other"] ?? Boxes
+    return (
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background bg-[#DBEAFE] text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+    )
+  }
+  if (kind === "accommodation") {
+    return (
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background bg-[#EDE9FE] text-[#7C3AED]">
+        <Hotel className="h-4 w-4" />
+      </div>
+    )
+  }
+  const bgMap: Record<string, string> = {
+    location: "bg-[#DBEAFE] text-primary",
+    note: "bg-[#FEF9C3] text-amber-700",
+    todo: "bg-muted text-muted-foreground",
+  }
+  const bg = bgMap[activityType ?? "location"] ?? bgMap.location
+  if (activityType === "note") {
+    return (
+      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg)}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><polyline points="15 3 15 9 21 9"/></svg>
+      </div>
+    )
+  }
+  if (activityType === "todo") {
+    return (
+      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg)}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+      </div>
+    )
+  }
+  return (
+    <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg)}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Sortable activity row (drag-to-reorder)
+// ---------------------------------------------------------------------------
+
+interface SortableRowProps {
+  activity: Activity
+  isEditing: boolean
+  onEdit: () => void
+  onCancelEdit: () => void
+  onSave: (input: Parameters<typeof useCreateActivity>[0] extends string ? CreateActivityInput : CreateActivityInput) => Promise<void>
+  isSubmitting: boolean
+  onDelete: () => void
+  isDeleting: boolean
+}
+
+function SortableActivityRow({
+  activity,
+  isEditing,
+  onEdit,
+  onCancelEdit,
+  onSave,
+  isSubmitting,
+  onDelete,
+  isDeleting,
+}: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: activity.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("relative flex gap-3 pl-12", isDragging && "opacity-50 z-50")}
+    >
+      {/* Timeline dot */}
+      <div className="absolute left-0 top-5 -translate-y-1/2">
+        <TimelineDot kind="activity" activityType={activity.type} />
+      </div>
+
+      <div className="flex flex-1 items-start gap-2">
+        {/* Drag handle */}
+        <button
+          type="button"
+          aria-label="Drag to reorder"
+          className="mt-3 flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+
+        <div className="flex-1">
+          {isEditing ? (
+            <div className="rounded-2xl border bg-card p-5 shadow-lg">
+              <ActivityForm
+                initial={activity}
+                lockType
+                onCancel={onCancelEdit}
+                isSubmitting={isSubmitting}
+                onSubmit={onSave}
+              />
+            </div>
+          ) : (
+            <ActivityCard
+              activity={activity}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              isDeleting={isDeleting}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+interface Props {
+  tripId: string
+  dayId: string
+  date: string
+}
+
+export function DayActivities({ tripId, dayId, date }: Props) {
+  const { data: activitiesData, isLoading: loadingAct } = useActivities(dayId)
+  const { data: transData } = useTransportations(tripId)
+  const { data: accomData } = useAccommodations(tripId)
+
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Activity | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
 
   const createMut = useCreateActivity(dayId)
-  const updateMut = useUpdateActivity(editing?.id ?? "", dayId)
+  const updateMut = useUpdateActivity(editingId ?? "", dayId)
   const deleteMut = useDeleteActivity(dayId)
   const reorderMut = useReorderActivities(dayId)
 
-  // PointerSensor with distance constraint: tiny clicks don't start a drag,
-  // so the grip handle still works for taps and the rest of the card stays
-  // clickable for edit.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   )
 
-  if (isLoading) {
-    return <p className="text-xs text-muted-foreground">Loading…</p>
-  }
-  if (isError) {
-    return <p className="text-xs text-destructive">Failed to load activities.</p>
+  if (loadingAct) {
+    return (
+      <div className="space-y-3 py-2">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+        ))}
+      </div>
+    )
   }
 
-  const items = data?.items ?? []
+  const activities = activitiesData?.items ?? []
+  const transportations = transData?.items ?? []
+  const accommodations = accomData?.items ?? []
+
+  // Build non-activity timeline items
+  const staticItems: TimelineItem[] = []
+  for (const t of transportations) {
+    if (dateMatches(t.departure_datetime, date)) {
+      staticItems.push({ kind: "transport", data: t })
+    }
+  }
+  for (const a of accommodations) {
+    if (dateMatches(a.check_in, date)) {
+      staticItems.push({ kind: "accommodation", data: a, event: "check_in" })
+    }
+    if (dateMatches(a.check_out, date)) {
+      staticItems.push({ kind: "accommodation", data: a, event: "check_out" })
+    }
+  }
+  staticItems.sort((a, b) => {
+    const ta =
+      a.kind === "transport"
+        ? toSortKey(a.data.departure_datetime)
+        : a.kind === "accommodation" && a.event === "check_in"
+          ? "14:00"
+          : "12:00"
+    const tb =
+      b.kind === "transport"
+        ? toSortKey(b.data.departure_datetime)
+        : b.kind === "accommodation" && b.event === "check_in"
+          ? "14:00"
+          : "12:00"
+    return ta.localeCompare(tb)
+  })
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e
     if (!over || active.id === over.id) return
-    const oldIdx = items.findIndex((a) => a.id === active.id)
-    const newIdx = items.findIndex((a) => a.id === over.id)
+    const oldIdx = activities.findIndex((a) => a.id === active.id)
+    const newIdx = activities.findIndex((a) => a.id === over.id)
     if (oldIdx < 0 || newIdx < 0) return
-    const newOrder = arrayMove(items, oldIdx, newIdx).map((a) => a.id)
+    const newOrder = arrayMove(activities, oldIdx, newIdx).map((a) => a.id)
     reorderMut.mutate({ ids: newOrder })
   }
 
+  const hasContent = activities.length > 0 || staticItems.length > 0
+
   return (
-    <div className="flex flex-col gap-2">
-      {items.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          No activities yet for this day.
-        </p>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={onDragEnd}
-        >
-          <SortableContext
-            items={items.map((a) => a.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {items.map((a, i) => (
-              <SortableActivityCard
-                key={a.id}
-                activity={a}
-                index={i}
-                onEdit={() => setEditing(a)}
-                onDelete={() => setConfirmingDelete(a)}
-                isDeleting={
-                  deleteMut.isPending && deleteMut.variables === a.id
-                }
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
+    <div className="space-y-3">
+      {hasContent && (
+        <div className="relative">
+          {/* Connecting line */}
+          <div className="absolute left-[18px] top-5 h-[calc(100%-1.25rem)] w-px bg-border/50" />
+
+          {/* Static transport/accommodation items */}
+          {staticItems.map((item) => {
+            if (item.kind === "transport") {
+              const t = item.data as Transportation
+              return (
+                <div key={`trans-${t.id}`} className="relative mb-3 flex gap-3 pl-12">
+                  <div className="absolute left-0 top-5 -translate-y-1/2">
+                    <TimelineDot kind="transport" transportType={t.type} />
+                  </div>
+                  <div className="flex-1">
+                    <TransportTimelineCard t={t} />
+                  </div>
+                </div>
+              )
+            }
+            if (item.kind === "accommodation") {
+              const a = item.data as Accommodation
+              return (
+                <div
+                  key={`accom-${a.id}-${item.event}`}
+                  className="relative mb-3 flex gap-3 pl-12"
+                >
+                  <div className="absolute left-0 top-5 -translate-y-1/2">
+                    <TimelineDot kind="accommodation" />
+                  </div>
+                  <div className="flex-1">
+                    <AccommodationTimelineCard a={a} event={item.event} />
+                  </div>
+                </div>
+              )
+            }
+            return null
+          })}
+
+          {/* Sortable activity items */}
+          {activities.length > 0 && (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
+            >
+              <SortableContext
+                items={activities.map((a) => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {activities.map((a) => (
+                    <SortableActivityRow
+                      key={a.id}
+                      activity={a}
+                      isEditing={editingId === a.id}
+                      onEdit={() => setEditingId(a.id)}
+                      onCancelEdit={() => setEditingId(null)}
+                      isSubmitting={updateMut.isPending && editingId === a.id}
+                      onSave={async (input) => {
+                        await updateMut.mutateAsync({
+                          title: input.title,
+                          start_time: input.start_time,
+                          end_time: input.end_time,
+                          payload: input.payload,
+                        })
+                        setEditingId(null)
+                      }}
+                      onDelete={() => setConfirmingDelete(a)}
+                      isDeleting={
+                        deleteMut.isPending &&
+                        confirmingDelete?.id === a.id
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={() => setCreating(true)}
-      >
-        + Add activity
-      </Button>
+      {/* Inline Add Activity form */}
+      <div className="relative pl-12">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background bg-muted text-muted-foreground">
+          <Plus className="h-4 w-4" />
+        </div>
 
-      <Dialog
-        open={creating}
-        onOpenChange={(o) => !o && setCreating(false)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New activity</DialogTitle>
-          </DialogHeader>
-          <ActivityForm
-            onCancel={() => setCreating(false)}
-            isSubmitting={createMut.isPending}
-            onSubmit={async (input: CreateActivityInput) => {
-              await createMut.mutateAsync(input)
-              setCreating(false)
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={!!editing}
-        onOpenChange={(o) => !o && setEditing(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit activity</DialogTitle>
-          </DialogHeader>
-          {editing && (
+        {addOpen ? (
+          <div className="rounded-2xl border bg-card p-5 shadow-lg">
             <ActivityForm
-              initial={editing}
-              lockType
-              onCancel={() => setEditing(null)}
-              isSubmitting={updateMut.isPending}
-              onSubmit={async (input) => {
-                await updateMut.mutateAsync({
-                  title: input.title,
-                  start_time: input.start_time,
-                  end_time: input.end_time,
-                  payload: input.payload,
-                })
-                setEditing(null)
+              onCancel={() => setAddOpen(false)}
+              isSubmitting={createMut.isPending}
+              onSubmit={async (input: CreateActivityInput) => {
+                await createMut.mutateAsync(input)
+                setAddOpen(false)
               }}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Add activity
+          </button>
+        )}
+      </div>
 
+      {/* Confirm delete dialog */}
       <ConfirmDialog
         open={!!confirmingDelete}
         onOpenChange={(o) => !o && setConfirmingDelete(null)}

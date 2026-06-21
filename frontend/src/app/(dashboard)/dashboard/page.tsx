@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { useAuth } from "@/features/auth/hooks"
 import { TripList } from "@/features/trip/components/TripList"
 import { StatsSection } from "@/features/trip/components/StatsSection"

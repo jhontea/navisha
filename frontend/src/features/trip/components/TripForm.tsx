@@ -4,7 +4,7 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import type { CreateTripInput, Trip } from "../types"
 
@@ -59,24 +59,13 @@ interface Props {
   submitLabel?: string
 }
 
-function MaterialIcon({ name, className = "" }: { name: string; className?: string }) {
-  return (
-    <span
-      className={`material-symbols-outlined select-none ${className}`}
-      style={{ fontSize: 20, lineHeight: 1, verticalAlign: "middle" }}
-      aria-hidden="true"
-    >
-      {name}
-    </span>
-  )
-}
-
 const inputBase =
   "w-full px-4 py-3 rounded-lg border bg-surface-container-lowest font-body-md text-body-md text-on-surface transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/50"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  // coverPreview tracks the selected cover image; stored on submit
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [coverPreview, setCoverPreview] = useState<string | null>(
     initial?.cover_image_url ?? null
   )
@@ -111,14 +100,6 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       e.currentTarget.showPicker?.()
     } catch {
       // fallback to native calendar
-    }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setCoverPreview(url)
     }
   }
 

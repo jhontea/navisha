@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Navisha - Map View</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Geist:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "surface-variant": "#e0e2ed",
+                  "stay-purple": "#EDE9FE",
+                  "surface-dim": "#d8d9e5",
+                  "on-error-container": "#93000a",
+                  "on-tertiary-fixed": "#351000",
+                  "on-background": "#181c23",
+                  "secondary": "#50616b",
+                  "destructive-red": "#EF4444",
+                  "on-primary": "#ffffff",
+                  "on-primary-fixed": "#001a41",
+                  "error-container": "#ffdad6",
+                  "budget-green": "#DCFCE7",
+                  "on-secondary-fixed": "#0c1e26",
+                  "tertiary": "#9e3d00",
+                  "surface": "#f9f9ff",
+                  "secondary-fixed": "#d3e5f1",
+                  "transport-blue": "#DBEAFE",
+                  "primary-fixed-dim": "#adc6ff",
+                  "surface-container-lowest": "#ffffff",
+                  "on-tertiary-container": "#fffbff",
+                  "primary-fixed": "#d8e2ff",
+                  "secondary-container": "#d3e5f1",
+                  "on-surface": "#181c23",
+                  "on-secondary-container": "#566771",
+                  "note-yellow": "#FEF9C3",
+                  "surface-container-highest": "#e0e2ed",
+                  "on-secondary-fixed-variant": "#384953",
+                  "inverse-primary": "#adc6ff",
+                  "primary": "#0058bc",
+                  "secondary-fixed-dim": "#b7c9d5",
+                  "background": "#f9f9ff",
+                  "tertiary-container": "#c64f00",
+                  "surface-tint": "#005bc1",
+                  "outline-variant": "#c1c6d7",
+                  "error": "#ba1a1a",
+                  "on-tertiary": "#ffffff",
+                  "surface-container": "#ecedf9",
+                  "primary-container": "#0070eb",
+                  "on-tertiary-fixed-variant": "#7c2e00",
+                  "tertiary-fixed-dim": "#ffb595",
+                  "on-error": "#ffffff",
+                  "tertiary-fixed": "#ffdbcc",
+                  "on-surface-variant": "#414755",
+                  "surface-container-low": "#f1f3fe",
+                  "surface-bright": "#f9f9ff",
+                  "surface-container-high": "#e6e8f3",
+                  "outline": "#717786",
+                  "on-primary-container": "#fefcff",
+                  "on-primary-fixed-variant": "#004493",
+                  "inverse-surface": "#2d3039",
+                  "on-secondary": "#ffffff",
+                  "inverse-on-surface": "#eef0fc"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "unit": "4px",
+                  "margin-desktop": "2.5rem",
+                  "gutter": "1.5rem",
+                  "margin-mobile": "1rem",
+                  "max-width": "1200px"
+          },
+          "fontFamily": {
+                  "label-md": ["Inter"],
+                  "headline-sm": ["Geist"],
+                  "label-sm": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "body-sm": ["Inter"],
+                  "headline-lg": ["Geist"],
+                  "display": ["Geist"],
+                  "headline-md": ["Geist"],
+                  "headline-lg-mobile": ["Geist"],
+                  "body-md": ["Inter"]
+          },
+          "fontSize": {
+                  "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                  "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                  "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #e0e2ed;
+      border-radius: 10px;
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+    }
+    /* Simple Animation for Map Markers */
+    @keyframes pinDrop {
+      0% { transform: translateY(-10px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .animate-pin-drop {
+      animation: pinDrop 0.4s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-background font-body-md text-on-background overflow-hidden h-screen flex">
+<!-- SIDE NAVBAR (The Anchor) -->
+<aside class="flex flex-col h-full py-margin-desktop px-4 bg-surface-container-lowest dark:bg-surface-dim border-r border-outline-variant dark:border-outline shadow-sm dark:shadow-none w-64 fixed left-0 top-0 z-50">
+<div class="mb-10 px-4">
+<h1 class="font-display text-headline-md font-bold text-primary dark:text-inverse-primary">Navisha</h1>
+<p class="text-label-sm text-secondary">Trip Planner</p>
+</div>
+<nav class="flex-1 space-y-2">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container dark:hover:bg-surface-container-high transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md">Dashboard</span>
+</a>
+<!-- Itinerary (Active Mapping: Map/Itinerary) -->
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg font-semibold transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span class="font-label-md">Itinerary</span>
+</a>
+<!-- Transport -->
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container dark:hover:bg-surface-container-high transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+<span class="font-label-md">Transport</span>
+</a>
+<!-- Stay -->
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container dark:hover:bg-surface-container-high transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="hotel">hotel</span>
+<span class="font-label-md">Stay</span>
+</a>
+<!-- Budget -->
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container dark:hover:bg-surface-container-high transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-md">Budget</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</div>
+</aside>
+<!-- MAIN CONTENT CONTAINER -->
+<main class="ml-64 flex-1 flex flex-col relative h-full">
+<!-- TOP NAV BAR (The Blueprint) -->
+<header class="h-16 flex items-center justify-between px-8 w-full border-b border-outline-variant/30 bg-surface z-40">
+<div class="flex items-center gap-4">
+<h2 class="font-display text-headline-sm font-bold text-primary">Summer in Tokyo</h2>
+<div class="h-4 w-px bg-outline-variant"></div>
+<div class="flex items-center bg-surface-container px-1 py-1 rounded-full text-label-sm">
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-sm">Map View</button>
+<button class="px-3 py-1 rounded-full text-secondary hover:bg-surface-container-high transition-colors">List View</button>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/20">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="filter_list">filter_list</span>
+<span class="text-label-sm">All Days</span>
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+</div>
+</header>
+<!-- DUAL PANE LAYOUT -->
+<div class="flex-1 flex overflow-hidden">
+<!-- LEFT SIDEBAR (Activity List) -->
+<aside class="w-80 h-full border-r border-outline-variant/30 bg-surface flex flex-col z-30">
+<div class="p-6 border-b border-outline-variant/20">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-md font-bold text-on-surface">Daily Itinerary</span>
+<span class="text-label-sm text-secondary">July 12 - July 18</span>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 rounded-lg bg-primary text-on-primary font-bold text-label-sm">Day 1</button>
+<button class="whitespace-nowrap px-4 py-2 rounded-lg bg-surface-container-high text-secondary text-label-sm hover:bg-secondary-container transition-colors">Day 2</button>
+<button class="whitespace-nowrap px-4 py-2 rounded-lg bg-surface-container-high text-secondary text-label-sm hover:bg-secondary-container transition-colors">Day 3</button>
+<button class="whitespace-nowrap px-4 py-2 rounded-lg bg-surface-container-high text-secondary text-label-sm hover:bg-secondary-container transition-colors">Day 4</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+<!-- Activity Card 1 -->
+<div class="group p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-start gap-3">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary text-[10px] flex items-center justify-center font-bold">1</span>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-on-surface group-hover:text-primary transition-colors">TeamLab Borderless</h4>
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">09:00 AM</span>
+</div>
+<p class="text-body-sm text-secondary mt-1">Digital art museum with immersive installations.</p>
+<div class="mt-3 flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-stay-purple text-primary text-[10px] font-bold">ATTRACTION</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-secondary text-[10px] font-bold">2.5 hrs</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Card 2 -->
+<div class="group p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-transport-blue"></div>
+<div class="flex items-start gap-3">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary text-[10px] flex items-center justify-center font-bold">2</span>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-on-surface group-hover:text-primary transition-colors">Tsukiji Outer Market</h4>
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">12:30 PM</span>
+</div>
+<p class="text-body-sm text-secondary mt-1">Lunch and street food exploration.</p>
+<div class="mt-3 flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-budget-green text-on-tertiary-fixed-variant text-[10px] font-bold">FOOD</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-secondary text-[10px] font-bold">1.5 hrs</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Card 3 -->
+<div class="group p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-start gap-3">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary text-[10px] flex items-center justify-center font-bold">3</span>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-on-surface group-hover:text-primary transition-colors">Ginza District</h4>
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">03:00 PM</span>
+</div>
+<p class="text-body-sm text-secondary mt-1">Shopping and high-end street architecture.</p>
+<div class="mt-3 flex gap-2">
+<span class="px-2 py-0.5 rounded-md bg-stay-purple text-primary text-[10px] font-bold">SHOPPING</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-secondary text-[10px] font-bold">3.0 hrs</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Card 4 -->
+<div class="group p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer relative overflow-hidden opacity-60">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-fixed"></div>
+<div class="flex items-start gap-3">
+<span class="w-6 h-6 rounded-full bg-outline text-on-primary text-[10px] flex items-center justify-center font-bold">4</span>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-on-surface">Return to Hotel</h4>
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">07:00 PM</span>
+</div>
+<p class="text-body-sm text-secondary mt-1">Evening rest at Shinjuku Prince Hotel.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant/20 bg-surface-container-low">
+<button class="w-full py-3 bg-primary text-on-primary rounded-lg font-bold text-label-md shadow-sm active:scale-[0.98] transition-transform">
+            Add Activity
+          </button>
+</div>
+</aside>
+<!-- MAIN AREA (Map Visualization) -->
+<section class="flex-1 relative bg-surface-dim overflow-hidden">
+<!-- Map Placeholder Background -->
+<div class="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700" data-alt="A high-fidelity minimalist digital map of Tokyo, Japan, showing Shinjuku and Ginza areas. The map uses a clean light-mode aesthetic with soft greys for streets, subtle greens for parks, and a soft blue for water bodies. There are vibrant blue route lines connecting several numbered circular markers. The style is professional and modern, resembling a premium travel application's interactive map interface. Soft lighting and a vast, organized feel define the atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBNYMZNWh2KQ8aDPWQ9q8T0xZ4YwKCOJoRhrm5IbREihy5x9AAKKcrjwjBb8xc9jXMbgd5O1yR-yHGAaMu_JuKvlRxbH9LR5EBe8WGuG7Swk2Ys2FAtEvC9bLYafpt8xZMYhfSakdUkm7MlBM2GXTTbtkYMtW8wz896FCmlgPunzEVey0ldoncNL4GPAAX-Tpm8vT_iSRYJWKMvkEciNpYDGxLD4NyzQ2MRlHFVlUKAsOGCccsYecY1UzeAufY_YRVuKhDCjvprGf8')">
+</div>
+<!-- Interactive Overlay: Map Markers & Polylines -->
+<div class="absolute inset-0 z-10 pointer-events-none">
+<svg class="w-full h-full" viewbox="0 0 1000 800">
+<!-- Route Polyline (Day 1) -->
+<path class="opacity-80" d="M200,450 L400,380 L650,420 L550,600" fill="none" stroke="#005bc1" stroke-dasharray="10 5" stroke-linecap="round" stroke-width="4"></path>
+<!-- Route Polyline (Day 2 - Dimmed) -->
+<path class="opacity-30" d="M300,200 L500,150 L750,220" fill="none" stroke="#50616b" stroke-dasharray="8 8" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+<!-- Marker 1 -->
+<div class="absolute top-[430px] left-[180px] pointer-events-auto cursor-pointer animate-pin-drop" style="animation-delay: 0.1s">
+<div class="flex flex-col items-center">
+<div class="bg-primary text-on-primary w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-white ring-4 ring-primary/10">1</div>
+<div class="mt-2 glass-panel px-3 py-1.5 rounded-lg border border-outline-variant/30 shadow-md">
+<span class="text-[12px] font-bold text-on-surface whitespace-nowrap">TeamLab Borderless</span>
+</div>
+</div>
+</div>
+<!-- Marker 2 -->
+<div class="absolute top-[360px] left-[380px] pointer-events-auto cursor-pointer animate-pin-drop" style="animation-delay: 0.2s">
+<div class="flex flex-col items-center">
+<div class="bg-primary text-on-primary w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-white ring-4 ring-primary/10">2</div>
+<div class="mt-2 glass-panel px-3 py-1.5 rounded-lg border border-outline-variant/30 shadow-md">
+<span class="text-[12px] font-bold text-on-surface whitespace-nowrap">Tsukiji Market</span>
+</div>
+</div>
+</div>
+<!-- Marker 3 -->
+<div class="absolute top-[400px] left-[630px] pointer-events-auto cursor-pointer animate-pin-drop" style="animation-delay: 0.3s">
+<div class="flex flex-col items-center">
+<div class="bg-primary text-on-primary w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-white ring-4 ring-primary/10">3</div>
+<div class="mt-2 glass-panel px-3 py-1.5 rounded-lg border border-outline-variant/30 shadow-md">
+<span class="text-[12px] font-bold text-on-surface whitespace-nowrap">Ginza District</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Controls -->
+<div class="absolute right-6 top-6 flex flex-col gap-2 z-20">
+<button class="w-12 h-12 bg-surface text-on-surface rounded-lg shadow-lg flex items-center justify-center hover:bg-surface-container transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<button class="w-12 h-12 bg-surface text-on-surface rounded-lg shadow-lg flex items-center justify-center hover:bg-surface-container transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<div class="h-px bg-outline-variant/20 mx-2"></div>
+<button class="w-12 h-12 bg-surface text-primary rounded-lg shadow-lg flex items-center justify-center hover:bg-surface-container transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="my_location" style="font-variation-settings: 'FILL' 1;">my_location</span>
+</button>
+</div>
+<!-- Map Floating Legend -->
+<div class="absolute left-6 bottom-6 glass-panel p-4 rounded-xl border border-outline-variant/30 shadow-lg z-20 max-w-xs">
+<h5 class="text-label-md font-bold mb-3 text-on-surface">Route Statistics</h5>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-[10px] text-secondary uppercase font-bold tracking-tight">Total Distance</p>
+<p class="text-label-md font-bold text-primary">12.4 km</p>
+</div>
+<div>
+<p class="text-[10px] text-secondary uppercase font-bold tracking-tight">Est. Travel Time</p>
+<p class="text-label-md font-bold text-primary">45 mins</p>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-body-sm text-secondary">Optimal Train Route</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- FAB Overlay (Suppressed on Detailed Pages as per rule, but if this is considered a dashboard-level map view, it might stay. Following instructions: "Suppress FAB on Details and Transactional screens". This is a specific map view screen, so we will omit the FAB to focus on the map.) -->
+<script>
+    // Simple micro-interactions for the activity cards
+    document.querySelectorAll('.group').forEach(card => {
+      card.addEventListener('click', () => {
+        // Logic to "pan" would go here
+        console.log('Panning to location...');
+        // Visual feedback
+        document.querySelectorAll('.group').forEach(c => {
+          c.classList.remove('ring-2', 'ring-primary');
+          c.classList.add('opacity-60');
+        });
+        card.classList.add('ring-2', 'ring-primary');
+        card.classList.remove('opacity-60');
+      });
+    });
+
+    // Toggle between "All Days" and "Single Day"
+    const filterToggle = document.querySelector('[data-icon="filter_list"]').parentElement;
+    filterToggle.addEventListener('click', () => {
+      alert('Toggling between All Days and Selected Day view');
+    });
+  </script>
+</body></html>

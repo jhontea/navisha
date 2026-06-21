@@ -4,13 +4,16 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   ArrowLeftRight,
-  Bell,
-  Compass,
+  CalendarDays,
   LayoutDashboard,
-  Settings,
+  Plane,
+  Hotel,
+  Wallet,
+  Compass,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth, useLogout } from "@/features/auth/hooks"
+import { useTrip } from "@/features/trip/hooks/useTrips"
 
 interface NavItem {
   label: string
@@ -25,12 +28,26 @@ const MAIN_NAV: NavItem[] = [
   { label: "Converter", href: "/currency", icon: ArrowLeftRight },
 ]
 
+const TRIP_NAV = [
+  { label: "Itinerary", href: "", icon: CalendarDays },
+  { label: "Transport", href: "/transport", icon: Plane },
+  { label: "Stay", href: "/stay", icon: Hotel },
+  { label: "Budget", href: "/budget", icon: Wallet },
+]
+
 export function Sidebar() {
   const pathname = usePathname()
   const { user, isLoading } = useAuth()
   const { mutate: logout, isPending: loggingOut } = useLogout()
 
-  // Show "Add New Trip" sub-item only when on the /trips/new route
+  // Extract tripId from /trips/[id] or /trips/[id]/* paths
+  const tripMatch = pathname.match(/^\/trips\/([^/]+)/)
+  const tripId = tripMatch ? tripMatch[1] : null
+  const isOnTripPage = !!tripId && tripId !== "new"
+
+  // Fetch trip detail only when on a trip page (for trip name)
+  const { data: trip } = useTrip(tripId ?? "")
+
   const isNewTrip = pathname === "/trips/new"
 
   return (
@@ -43,7 +60,7 @@ export function Sidebar() {
       </div>
 
       {/* Main nav */}
-      <div className="flex-1 space-y-8 overflow-y-auto px-4">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4">
         <nav className="space-y-1">
           <p className="mb-2 px-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
             Main
@@ -107,6 +124,52 @@ export function Sidebar() {
             )
           })}
         </nav>
+
+        {/* Active Trip navigation — only when on /trips/[id] */}
+        {isOnTripPage && (
+          <nav className="space-y-1">
+            <div className="mb-2 px-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Active Trip
+              </p>
+              {trip && (
+                <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
+                  {trip.title}
+                </p>
+              )}
+            </div>
+
+            {TRIP_NAV.map((item) => {
+              const fullHref = `/trips/${tripId}${item.href}`
+              // Itinerary is active when exactly on /trips/[id] or /trips/[id]/
+              const active =
+                item.href === ""
+                  ? pathname === `/trips/${tripId}` || pathname === `/trips/${tripId}/`
+                  : pathname.startsWith(fullHref)
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.label}
+                  href={fullHref}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                    active
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "h-4 w-4",
+                      !active && "group-hover:text-primary",
+                    )}
+                  />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+        )}
       </div>
 
       {/* Footer: user info + logout only */}
