@@ -101,6 +101,106 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	return out, nil
 }
 
+func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error) {
+	cursorDate, cursorID, hasCursor, err := decodeCursor(cursor)
+	if err != nil {
+		return ListResult{}, err
+	}
+
+	// Build optional date conditions
+	var extraWhere string
+	var args []any
+	args = append(args, userID)
+	if from != "" {
+		args = append(args, from)
+		extraWhere += fmt.Sprintf(" AND start_date >= $%d", len(args))
+	}
+	if to != "" {
+		args = append(args, to)
+		extraWhere += fmt.Sprintf(" AND end_date <= $%d", len(args))
+	}
+
+	var rows pgx.Rows
+	var qErr error
+	if hasCursor {
+		args = append(args, cursorDate, cursorID, limit+1)
+		rows, qErr = r.db.Query(context.Background(),
+			fmt.Sprintf(
+				`SELECT id, user_id, title, description, start_date, end_date,
+				 base_currency, cover_image_url, notes, created_at, updated_at
+				 FROM trips
+				 WHERE user_id = $1%s AND (start_date, id) < ($%d, $%d)
+				 ORDER BY start_date DESC, id DESC
+				 LIMIT $%d`,
+				extraWhere, len(args)-2, len(args)-1, len(args),
+			),
+			args...)
+	} else {
+		args = append(args, limit+1)
+		rows, qErr = r.db.Query(context.Background(),
+			fmt.Sprintf(
+				`SELECT id, user_id, title, description, start_date, end_date,
+				 base_currency, cover_image_url, notes, created_at, updated_at
+				 FROM trips
+				 WHERE user_id = $1%s
+				 ORDER BY start_date DESC, id DESC
+				 LIMIT $%d`,
+				extraWhere, len(args),
+			),
+			args...)
+	}
+	if qErr != nil {
+		return ListResult{}, fmt.Errorf("trip.ListFiltered: %w", qErr)
+	}
+	defer rows.Close()
+
+	trips := []Trip{}
+	for rows.Next() {
+		var t Trip
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.CoverImageURL,
+			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return ListResult{}, fmt.Errorf("trip.ListFiltered scan: %w", err)
+		}
+		trips = append(trips, t)
+	}
+
+	out := ListResult{Trips: trips}
+	if len(trips) > limit {
+		last := trips[limit-1]
+		out.Trips = trips[:limit]
+		out.NextCursor = encodeCursor(last.StartDate, last.ID)
+	}
+	return out, nil
+}
+
+func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, error) {
+	rows, err := r.db.Query(context.Background(),
+		`SELECT id, user_id, title, description, start_date, end_date,
+		        base_currency, cover_image_url, notes, created_at, updated_at
+		 FROM trips
+		 WHERE user_id = $1 AND end_date >= CURRENT_DATE
+		 ORDER BY start_date ASC
+		 LIMIT $2`,
+		userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("trip.ListUpcoming: %w", err)
+	}
+	defer rows.Close()
+
+	trips := []Trip{}
+	for rows.Next() {
+		var t Trip
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.CoverImageURL,
+			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("trip.ListUpcoming scan: %w", err)
+		}
+		trips = append(trips, t)
+	}
+	return trips, nil
+}
+
 func (r *postgresRepository) FindByID(id string) (*Trip, error) {
 	t := &Trip{}
 	err := r.db.QueryRow(context.Background(),

@@ -29,6 +29,10 @@ type Repository interface {
 	Rollback(ctx context.Context, tx pgx.Tx) error
 
 	List(userID, cursor string, limit int) (ListResult, error)
+	// ListFiltered returns trips with optional date-range filter + cursor pagination.
+	ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error)
+	// ListUpcoming returns trips whose end_date >= today, ordered by start_date ASC.
+	ListUpcoming(userID string, limit int) ([]Trip, error)
 	FindByID(id string) (*Trip, error)
 	InsertTrip(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error)
 	InsertDays(ctx context.Context, tx pgx.Tx, days []Day) error

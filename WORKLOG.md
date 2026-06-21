@@ -4,6 +4,47 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-21 — Session 17: Trip List Page, Pagination & Date Filter
+
+**Status**: My Trips page (`/trips`) now has full cursor pagination (12/page) and a date range filter. Dashboard shows 6 upcoming trips. Backend has two new dedicated endpoints.
+
+### Completed
+- **Backend `GET /trips/upcoming`** — returns trips where `end_date >= CURRENT_DATE`, ordered `start_date ASC`, default 6. Added `ListUpcoming` to `Repository` interface, `repository_pg`, `Usecase`, handler, and `mocks_test.go`.
+- **Backend `GET /trips/filter`** — returns all trips with optional `?from=YYYY-MM-DD&to=YYYY-MM-DD` date filter + cursor pagination, ordered `start_date DESC`, default 12/page. Added `ListFiltered` to all layers.
+- **Frontend `tripApi.listUpcoming` + `tripApi.listFiltered`** — new API client methods.
+- **Frontend `useUpcomingTrips(6)`** — replaces the old infinite-query `useTrips` on the dashboard; fetches only the 6 soonest active/upcoming trips.
+- **Frontend `useFilteredTrips(from?, to?)`** — `useInfiniteQuery` consuming `/trips/filter`; cache key includes filter values so changing filters re-fetches from page 1.
+- **Dashboard `TripList`** — switched to `useUpcomingTrips`, shows max 6 cards + "View all trips →" link.
+- **`/trips` page** — full redesign:
+  - Date filter bar (From/To date inputs + Apply/Clear buttons); filter only activates on Apply click.
+  - `auto-fill minmax(280px, 1fr)` grid, responsive 1→2→3 cols.
+  - "Load more" button with spinner when `hasNextPage`.
+  - "All N trips shown" footer when fully loaded.
+  - Different empty state for active filter vs no data.
+- **TripCard**:
+  - Placeholder color changed to `#d8e2ff` (primary-fixed, matches Trips Completed card).
+  - Status badge uses full inline style (`position: absolute, top: 16, right: 16`) with per-status colors.
+- **Sidebar** — added "My Trips" → `/trips` between Dashboard and Converter.
+- **MobileNav** — added "My Trips" item.
+- **Backend restarted** with all new endpoints.
+
+### Key Decisions
+- **Separate `/trips/upcoming` and `/trips/filter` endpoints** — dashboard needs a simple sorted-ASC slice; the full list page needs filtered DESC pagination. Combining them with flags would complicate the query.
+- **Apply-on-click filter** — avoids re-fetching on every keystroke while user types a date. Clear resets both display and applied state in one click.
+- **`useFilteredTrips` cache key includes filter values** — `["trips", "filtered", from, to]` ensures changing filters starts a fresh infinite query rather than appending to the previous result set.
+- **Dynamic SQL `fmt.Sprintf` in `ListFiltered`** — builds `WHERE` clause incrementally using positional `$N` params. Input is user-provided dates passed as bind params (not interpolated), so no SQL injection risk.
+
+### Pending
+- [ ] **Linked-expense lifecycle** (carried since Session 13).
+- [ ] **Cover image upload** — form has no upload UI until file storage is ready.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export.
+
+### Resume From
+Decide **linked-expense lifecycle** or pick up smallest Phase 2 item: **share trip via link**.
+
+---
+
 ## 2026-06-21 — Session 16: Dashboard & Add Trip UI Polish
 
 **Status**: Dashboard and Add New Trip pages fully aligned with HTML template designs. Design system tokens properly wired. All major UI discrepancies resolved.

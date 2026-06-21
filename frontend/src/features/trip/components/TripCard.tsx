@@ -19,10 +19,11 @@ function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?
   )
 }
 
-const STATUS_TEXT: Record<TripStatus, string> = {
-  upcoming: "text-primary",
-  active: "text-emerald-600",
-  past: "text-on-surface-variant",
+// Badge background + text per status — matches template style
+const STATUS_BADGE: Record<TripStatus, { bg: string; text: string }> = {
+  upcoming: { bg: 'rgba(255,255,255,0.9)', text: '#0058bc' },
+  active: { bg: 'rgba(255,255,255,0.9)', text: '#059669' },
+  past: { bg: 'rgba(255,255,255,0.9)', text: '#717786' },
 }
 
 export function TripCard({ trip }: { trip: Trip }) {
@@ -38,14 +39,26 @@ export function TripCard({ trip }: { trip: Trip }) {
     >
       {/* Cover image / gradient placeholder */}
       <div className="relative h-48 overflow-hidden">
-        <span
-          className={cn(
-            "absolute right-4 top-4 z-10 rounded-full bg-surface/90 backdrop-blur-md px-3 py-1 font-label-sm text-label-sm",
-            STATUS_TEXT[status],
-          )}
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 10,
+            borderRadius: 9999,
+            backgroundColor: 'rgba(249,249,255,0.9)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            padding: '4px 12px',
+            fontSize: 12,
+            fontWeight: 500,
+            lineHeight: '16px',
+            letterSpacing: '0.02em',
+            color: STATUS_BADGE[status].text,
+          }}
         >
           {STATUS_LABEL[status]}
-        </span>
+        </div>
         <div
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"
           style={{
@@ -56,8 +69,7 @@ export function TripCard({ trip }: { trip: Trip }) {
                   backgroundPosition: 'center',
                 }
               : {
-                  background:
-                    'linear-gradient(135deg, #0058bc 0%, #4d94eb 35%, #adc6ff 65%, #d8e2ff 100%)',
+                  backgroundColor: '#d8e2ff',
                 }),
           }}
         />

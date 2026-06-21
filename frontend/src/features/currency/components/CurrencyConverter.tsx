@@ -12,13 +12,33 @@ import {
 } from "@/components/ui/select"
 import { useConvert, useSupportedCurrencies } from "../hooks/useCurrency"
 
+// Fallback names matching TripForm
+const CURRENCY_NAMES: Record<string, string> = {
+  IDR: "Indonesian Rupiah",
+  USD: "US Dollar",
+  JPY: "Japanese Yen",
+  SGD: "Singapore Dollar",
+  KRW: "South Korean Won",
+  EUR: "Euro",
+  GBP: "British Pound",
+  AUD: "Australian Dollar",
+  MYR: "Malaysian Ringgit",
+  THB: "Thai Baht",
+  CNY: "Chinese Yuan",
+}
+
+function getCurrencyLabel(code: string, name?: string): string {
+  const resolvedName = name || CURRENCY_NAMES[code] || code
+  return `${code} - ${resolvedName}`
+}
+
 // Material Symbols icon component
 function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
   return (
     <span
       className={`material-symbols-outlined ${className}`}
       style={{ fontSize: size }}
-      data-icon={name}
+      aria-hidden="true"
     >
       {name}
     </span>
@@ -43,18 +63,12 @@ export function CurrencyConverter() {
     setTo(from)
   }
 
-  // Debug: log when result changes
-  if (result) {
-    console.log("Result updated:", result)
-  }
-
   if (loadingList) {
     return <p className="text-sm text-muted-foreground">Loading currencies…</p>
   }
 
   const options = supported?.supported ?? []
 
-  // Show error if conversion fails
   if (isError) {
     return (
       <div className="text-center text-sm text-destructive">
@@ -89,7 +103,7 @@ export function CurrencyConverter() {
               <SelectContent>
                 {options.map((o) => (
                   <SelectItem key={o.code} value={o.code}>
-                    {o.code}
+                    {getCurrencyLabel(o.code, o.name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -104,7 +118,7 @@ export function CurrencyConverter() {
             className="w-full bg-transparent border-none text-display font-display text-on-surface focus:ring-0 p-0"
           />
           <p className="text-label-md font-label-md text-outline mt-2">
-            {options.find(o => o.code === from)?.name || from}
+            {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
           </p>
         </div>
 
@@ -135,7 +149,7 @@ export function CurrencyConverter() {
               <SelectContent>
                 {options.map((o) => (
                   <SelectItem key={o.code} value={o.code}>
-                    {o.code}
+                    {getCurrencyLabel(o.code, o.name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -155,7 +169,7 @@ export function CurrencyConverter() {
             )}
           </div>
           <p className="text-label-md font-label-md text-outline mt-2">
-            {options.find(o => o.code === to)?.name || to}
+            {getCurrencyLabel(to, options.find(o => o.code === to)?.name)}
           </p>
         </div>
       </div>

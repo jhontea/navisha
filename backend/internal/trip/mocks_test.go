@@ -57,6 +57,12 @@ func (m *mockRepo) Rollback(_ context.Context, _ pgx.Tx) error {
 func (m *mockRepo) List(_, _ string, _ int) (ListResult, error) {
 	return m.listResult, m.listErr
 }
+func (m *mockRepo) ListFiltered(_, _ string, _ int, _, _ string) (ListResult, error) {
+	return m.listResult, m.listErr
+}
+func (m *mockRepo) ListUpcoming(_ string, _ int) ([]Trip, error) {
+	return m.listResult.Trips, m.listErr
+}
 func (m *mockRepo) FindByID(id string) (*Trip, error) {
 	if m.findErr != nil {
 		return nil, m.findErr

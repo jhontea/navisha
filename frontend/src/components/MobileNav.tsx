@@ -9,6 +9,7 @@ import { useAuth, useLogout } from "@/features/auth/hooks"
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "My Trips", href: "/trips", icon: ArrowLeftRight },
   { label: "Converter", href: "/currency", icon: ArrowLeftRight },
 ]
 
