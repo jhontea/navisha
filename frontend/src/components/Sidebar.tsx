@@ -22,13 +22,15 @@ interface NavItem {
 const MAIN_NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Converter", href: "/currency", icon: ArrowLeftRight },
-  { label: "Explore", href: "#", icon: Compass, disabled: true },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { user, isLoading } = useAuth()
   const { mutate: logout, isPending: loggingOut } = useLogout()
+
+  // Show "Add New Trip" sub-item only when on the /trips/new route
+  const isNewTrip = pathname === "/trips/new"
 
   return (
     <aside className="z-50 hidden h-screen w-72 shrink-0 flex-col border-r bg-background md:flex">
@@ -46,7 +48,10 @@ export function Sidebar() {
             Main
           </p>
           {MAIN_NAV.map((item) => {
-            const active = pathname === item.href
+            // Dashboard is active when on /dashboard OR /trips/new
+            const active =
+              pathname === item.href ||
+              (item.href === "/dashboard" && isNewTrip)
             const Icon = item.icon
             const baseClasses =
               "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all"
@@ -68,57 +73,47 @@ export function Sidebar() {
               )
             }
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(baseClasses, stateClasses)}
-              >
-                <Icon
-                  className={cn(
-                    "h-5 w-5",
-                    !active && "group-hover:text-primary",
-                  )}
-                />
-                {item.label}
-              </Link>
+              <div key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(baseClasses, stateClasses)}
+                >
+                  <Icon
+                    className={cn(
+                      "h-5 w-5",
+                      !active && "group-hover:text-primary",
+                    )}
+                  />
+                  {item.label}
+                </Link>
+
+                {/* Sub-item: Add New Trip — only under Dashboard, only when on /trips/new */}
+                {item.href === "/dashboard" && isNewTrip && (
+                  <Link
+                    href="/trips/new"
+                    className="ml-8 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary bg-primary/5 transition-colors"
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: 16 }}
+                    >
+                      add_circle
+                    </span>
+                    Add New Trip
+                  </Link>
+                )}
+              </div>
             )
           })}
         </nav>
       </div>
 
-      {/* Footer */}
-      <div className="border-t p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative rounded-full p-2 transition-colors hover:bg-muted/60"
-          >
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-background bg-destructive" />
-          </button>
-          <button
-            type="button"
-            aria-label="Settings"
-            className="rounded-full p-2 transition-colors hover:bg-muted/60"
-          >
-            <Settings className="h-5 w-5 text-muted-foreground" />
-          </button>
-          <button
-            type="button"
-            aria-label="Log out"
-            onClick={() => logout()}
-            disabled={loggingOut}
-            className="rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
-          >
-            {loggingOut ? "…" : "Logout"}
-          </button>
-        </div>
-
+      {/* Footer: user info + logout only */}
+      <div className="border-t p-4">
         {isLoading ? (
           <div className="h-14 animate-pulse rounded-xl bg-muted" />
         ) : user ? (
-          <div className="flex cursor-pointer items-center gap-3 rounded-xl p-2 transition-colors hover:bg-muted/60">
+          <div className="flex items-center gap-3 rounded-xl p-2">
             {user.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -131,12 +126,22 @@ export function Sidebar() {
                 {user.name.charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{user.name}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {user.email}
               </p>
             </div>
+            <button
+              type="button"
+              aria-label="Log out"
+              onClick={() => logout()}
+              disabled={loggingOut}
+              className="shrink-0 rounded-lg p-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+              title="Logout"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
+            </button>
           </div>
         ) : null}
       </div>

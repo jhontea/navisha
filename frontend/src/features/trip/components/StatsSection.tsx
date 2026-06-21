@@ -1,10 +1,20 @@
 "use client"
 
-import { Award, Globe, PlaneTakeoff } from "lucide-react"
 import { useTrips } from "../hooks/useTrips"
 import { tripStatus } from "../lib/status"
 
-// Derived counts from already-fetched trips. No new endpoint required.
+function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
+  return (
+    <span
+      className={`material-symbols-outlined ${className}`}
+      style={{ fontSize: size }}
+      aria-hidden="true"
+    >
+      {name}
+    </span>
+  )
+}
+
 export function StatsSection() {
   const { data } = useTrips()
   const trips = data?.pages.flatMap((p) => p.items) ?? []
@@ -15,57 +25,74 @@ export function StatsSection() {
   const upcoming = trips.filter(
     (t) => tripStatus(t.start_date, t.end_date) === "upcoming",
   ).length
-  // Use distinct base currencies as a stand-in for "countries visited" until
-  // we have proper country metadata on the trip.
   const currencies = new Set(trips.map((t) => t.base_currency)).size
 
-  // Hardcoded gold-level mock — real loyalty math TBD.
   const milesToNext = 250
   const progressPct = 75
+  const level = completed > 5 ? "Gold" : "Silver"
 
   return (
-    <section className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-4">
-      <div className="flex h-40 flex-col justify-between rounded-2xl bg-primary/10 p-6 md:col-span-1">
-        <PlaneTakeoff className="h-8 w-8 text-primary" />
+    <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+      {/* Trips Completed */}
+      <div className="p-6 rounded-2xl flex flex-col justify-between h-40" style={{ backgroundColor: '#d8e2ff' }}>
+        <MaterialIcon name="flight_takeoff" size={32} className="text-primary" />
         <div>
-          <p className="font-heading text-headline-md text-foreground">
+          <p className="text-headline-md font-headline-md text-on-primary-fixed">
             {completed}
           </p>
-          <p className="text-label-md text-muted-foreground">
-            Trips completed
+          <p className="text-label-md font-label-md text-on-primary-fixed-variant">
+            Trips Completed
           </p>
         </div>
       </div>
 
-      <div className="flex h-40 flex-col justify-between rounded-2xl bg-purple-100 p-6 dark:bg-purple-500/15 md:col-span-1">
-        <Globe className="h-8 w-8 text-purple-700 dark:text-purple-300" />
+      {/* Countries Visited */}
+      <div className="p-6 rounded-2xl flex flex-col justify-between h-40" style={{ backgroundColor: '#EDE9FE' }}>
+        <MaterialIcon name="public" size={32} className="text-on-secondary-fixed" />
         <div>
-          <p className="font-heading text-headline-md text-foreground">
+          <p className="text-headline-md font-headline-md text-on-secondary-fixed">
             {currencies}
           </p>
-          <p className="text-label-md text-muted-foreground">
-            Currencies tracked
+          <p className="text-label-md font-label-md text-on-secondary-fixed-variant">
+            Countries Visited
           </p>
         </div>
       </div>
 
-      <div className="flex h-40 items-center gap-6 rounded-2xl bg-muted/60 p-6 md:col-span-2">
+      {/* Traveler Level */}
+      <div className="p-6 bg-surface-container rounded-2xl flex items-center gap-8 h-40" style={{ gridColumn: 'span 2', minWidth: 0 }}>
         <div className="flex-1">
-          <p className="mb-1 font-heading text-headline-sm">
-            Traveler level: {completed > 5 ? "Gold" : "Silver"}
+          <p className="text-headline-sm font-headline-sm text-on-surface mb-1">
+            Traveler Level: {level}
           </p>
-          <p className="text-body-sm text-muted-foreground">
-            {upcoming} upcoming · {milesToNext} miles until next status
+          <p className="text-body-sm font-body-sm text-on-surface-variant">
+            {upcoming > 0 ? `${upcoming} upcoming · ` : ""}{milesToNext} miles until Platinum status
           </p>
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-background">
+          <div className="w-full h-2 bg-surface-container-high rounded-full mt-4 overflow-hidden">
             <div
-              className="h-full bg-primary transition-all duration-1000"
+              className="h-full bg-primary transition-all duration-1000 rounded-full"
               style={{ width: `${progressPct}%` }}
             />
           </div>
         </div>
-        <div className="hidden h-20 w-20 items-center justify-center rounded-full bg-primary/5 sm:flex">
-          <Award className="h-10 w-10 text-primary" />
+        <div
+          className="shrink-0"
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 88, 188, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 40, color: '#0058bc' }}
+          >
+            military_tech
+          </span>
         </div>
       </div>
     </section>

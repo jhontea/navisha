@@ -29,10 +29,37 @@ var symbols = map[string]string{
 	"JPY": "¥",
 	"SGD": "S$",
 	"KRW": "₩",
+	"EUR": "€",
+	"GBP": "£",
+	"AUD": "A$",
+	"MYR": "RM",
+	"THB": "฿",
+	"CNY": "¥",
+}
+
+var names = map[string]string{
+	"IDR": "Indonesian Rupiah",
+	"USD": "US Dollar",
+	"JPY": "Japanese Yen",
+	"SGD": "Singapore Dollar",
+	"KRW": "South Korean Won",
+	"EUR": "Euro",
+	"GBP": "British Pound",
+	"AUD": "Australian Dollar",
+	"MYR": "Malaysian Ringgit",
+	"THB": "Thai Baht",
+	"CNY": "Chinese Yuan",
 }
 
 func Symbol(code string) string {
 	return symbols[code]
+}
+
+func Name(code string) string {
+	if n, ok := names[code]; ok {
+		return n
+	}
+	return code
 }
 
 func IsSupported(code string) bool {

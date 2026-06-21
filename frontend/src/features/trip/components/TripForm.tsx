@@ -4,27 +4,36 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { useRef, useState } from "react"
+import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import type { CreateTripInput, Trip } from "../types"
 
-const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW"] as const
-
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+// Fallback names for when backend doesn't return name field yet
+const CURRENCY_NAMES: Record<string, string> = {
+  IDR: "Indonesian Rupiah",
+  USD: "US Dollar",
+  JPY: "Japanese Yen",
+  SGD: "Singapore Dollar",
+  KRW: "South Korean Won",
+  EUR: "Euro",
+  GBP: "British Pound",
+  AUD: "Australian Dollar",
+  MYR: "Malaysian Ringgit",
+  THB: "Thai Baht",
+  CNY: "Chinese Yuan",
+}
+
+function getCurrencyLabel(code: string, name?: string): string {
+  const resolvedName = name || CURRENCY_NAMES[code] || code
+  return `${code} - ${resolvedName}`
+}
 
 const schema = z
   .object({
     title: z.string().min(1, { message: "Title is required" }).max(120),
-    description: z.string().max(500).optional(),
+    destination: z.string().max(200).optional(),
     start_date: z
       .string()
       .min(1, { message: "Start date is required" })
@@ -33,10 +42,7 @@ const schema = z
       .string()
       .min(1, { message: "End date is required" })
       .regex(ISO_DATE, { message: "Use the date picker (YYYY-MM-DD)" }),
-    base_currency: z.enum(SUPPORTED_CURRENCIES),
-    cover_image_url: z
-      .union([z.literal(""), z.url({ message: "Must be a valid URL" })])
-      .optional(),
+    base_currency: z.string().min(1, { message: "Currency is required" }),
     notes: z.string().max(2000).optional(),
   })
   .refine((d) => new Date(d.end_date) >= new Date(d.start_date), {
@@ -53,13 +59,31 @@ interface Props {
   submitLabel?: string
 }
 
-export function TripForm({
-  initial,
-  onSubmit,
-  isSubmitting,
-  submitLabel,
-}: Props) {
+function MaterialIcon({ name, className = "" }: { name: string; className?: string }) {
+  return (
+    <span
+      className={`material-symbols-outlined select-none ${className}`}
+      style={{ fontSize: 20, lineHeight: 1, verticalAlign: "middle" }}
+      aria-hidden="true"
+    >
+      {name}
+    </span>
+  )
+}
+
+const inputBase =
+  "w-full px-4 py-3 rounded-lg border bg-surface-container-lowest font-body-md text-body-md text-on-surface transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/50"
+
+export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(
+    initial?.cover_image_url ?? null
+  )
+
+  const { data: currencyData, isLoading: currenciesLoading } = useSupportedCurrencies()
+  const currencies = currencyData?.supported ?? []
+
   const {
     register,
     handleSubmit,
@@ -73,98 +97,186 @@ export function TripForm({
   const submit = async (values: FormValues) => {
     await onSubmit({
       title: values.title,
-      description: values.description ?? "",
+      description: values.destination ?? "",
       start_date: values.start_date,
       end_date: values.end_date,
       base_currency: values.base_currency,
-      cover_image_url: values.cover_image_url ?? "",
+      cover_image_url: coverPreview && !coverPreview.startsWith("blob:") ? coverPreview : "",
       notes: values.notes ?? "",
     })
   }
 
-  // showPicker requires a user gesture; onClick only, swallow NotAllowedError.
   const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
     try {
       e.currentTarget.showPicker?.()
     } catch {
-      // ignore — falls back to native calendar icon click
+      // fallback to native calendar
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setCoverPreview(url)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
-      <Field label="Title" error={errors.title?.message}>
-        <Input placeholder="Bali Trip" {...register("title")} />
-      </Field>
-
-      <Field label="Description" error={errors.description?.message}>
-        <Textarea
-          rows={2}
-          placeholder="Short summary"
-          {...register("description")}
+    <form onSubmit={handleSubmit(submit)} className="space-y-6">
+      {/* Trip Title */}
+      <div className="space-y-2">
+        <label className="font-label-md text-label-md text-on-surface" htmlFor="trip-title">
+          Trip Title
+        </label>
+        <input
+          id="trip-title"
+          className={`${inputBase} ${errors.title ? "border-error" : "border-outline-variant"}`}
+          placeholder="e.g., Summer in Tokyo"
+          {...register("title")}
         />
-      </Field>
+        {errors.title && <p className="text-xs text-error">{errors.title.message}</p>}
+      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Start date" error={errors.start_date?.message}>
-          <Input
+      {/* Destination */}
+      <div className="space-y-2">
+        <label className="font-label-md text-label-md text-on-surface" htmlFor="destination">
+          Destination
+        </label>
+        <div className="flex items-center rounded-lg border bg-surface-container-lowest transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
+          style={{ borderColor: errors.destination ? 'hsl(var(--error))' : undefined }}
+        >
+          {/* Icon area */}
+          <div className="flex items-center justify-center px-4 shrink-0">
+            <span
+              className="material-symbols-outlined text-outline pointer-events-none"
+              style={{ fontSize: 20 }}
+              aria-hidden="true"
+            >
+              location_on
+            </span>
+          </div>
+          {/* Divider */}
+          <span className="h-6 w-px bg-outline-variant shrink-0" />
+          {/* Input */}
+          <input
+            id="destination"
+            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
+            placeholder="Search city or country"
+            {...register("destination")}
+          />
+        </div>
+        {errors.destination && (
+          <p className="text-xs text-error">{errors.destination.message}</p>
+        )}
+      </div>
+
+      {/* Date Range — side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="space-y-2">
+          <label className="font-label-md text-label-md text-on-surface" htmlFor="start-date">
+            Start Date
+          </label>
+          <input
+            id="start-date"
             type="date"
+            className={`${inputBase} ${errors.start_date ? "border-error" : "border-outline-variant"}`}
             onClick={openPicker}
             {...register("start_date")}
           />
-        </Field>
-        <Field label="End date" error={errors.end_date?.message}>
-          <Input
+          {errors.start_date && (
+            <p className="text-xs text-error">{errors.start_date.message}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="font-label-md text-label-md text-on-surface" htmlFor="end-date">
+            End Date
+          </label>
+          <input
+            id="end-date"
             type="date"
+            className={`${inputBase} ${errors.end_date ? "border-error" : "border-outline-variant"}`}
             onClick={openPicker}
             {...register("end_date")}
           />
-        </Field>
+          {errors.end_date && (
+            <p className="text-xs text-error">{errors.end_date.message}</p>
+          )}
+        </div>
       </div>
 
-      <Field label="Base currency" error={errors.base_currency?.message}>
-        <Controller
-          name="base_currency"
-          control={control}
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SUPPORTED_CURRENCIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Base Currency — from backend */}
+      <div className="space-y-2">
+        <label className="font-label-md text-label-md text-on-surface" htmlFor="currency">
+          Base Currency
+        </label>
+        <div className="relative">
+          <Controller
+            name="base_currency"
+            control={control}
+            render={({ field }) => (
+              <select
+                id="currency"
+                value={field.value}
+                onChange={field.onChange}
+                disabled={currenciesLoading}
+                className={`${inputBase} appearance-none pr-10 ${
+                  errors.base_currency ? "border-error" : "border-outline-variant"
+                } disabled:opacity-60`}
+              >
+                {currenciesLoading ? (
+                  <option value="">Loading currencies...</option>
+                ) : (
+                  currencies.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {getCurrencyLabel(c.code, c.name)}
+                    </option>
+                  ))
+                )}
+              </select>
+            )}
+          />
+          <span
+            className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline"
+            style={{ fontSize: 20 }}
+          >
+            expand_more
+          </span>
+        </div>
+        {errors.base_currency && (
+          <p className="text-xs text-error">{errors.base_currency.message}</p>
+        )}
+      </div>
+
+      {/* Form Actions */}
+      <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full sm:w-auto px-8 py-3 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:opacity-90 transition-all active:scale-95 shadow-md shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <span
+                className="material-symbols-outlined animate-spin"
+                style={{ fontSize: 18 }}
+              >
+                progress_activity
+              </span>
+              Creating...
+            </>
+          ) : (
+            submitLabel ?? (initial ? "Save changes" : "Create Trip")
           )}
-        />
-      </Field>
-
-      <Field label="Cover image URL" error={errors.cover_image_url?.message}>
-        <Input placeholder="https://…" {...register("cover_image_url")} />
-      </Field>
-
-      <Field label="Notes" error={errors.notes?.message}>
-        <Textarea rows={3} {...register("notes")} />
-      </Field>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button
+        </button>
+        <button
           type="button"
-          variant="outline"
           onClick={() => router.back()}
           disabled={isSubmitting}
+          className="w-full sm:w-auto px-8 py-3 text-on-surface-variant font-label-md text-label-md text-center hover:text-primary transition-colors disabled:opacity-60"
         >
           Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting
-            ? "Saving…"
-            : submitLabel ?? (initial ? "Save changes" : "Create trip")}
-        </Button>
+        </button>
       </div>
     </form>
   )
@@ -174,40 +286,19 @@ function buildDefaults(initial?: Trip): FormValues {
   if (!initial) {
     return {
       title: "",
-      description: "",
+      destination: "",
       start_date: "",
       end_date: "",
       base_currency: "IDR",
-      cover_image_url: "",
       notes: "",
     }
   }
   return {
     title: initial.title,
-    description: initial.description ?? "",
+    destination: initial.description ?? "",
     start_date: initial.start_date,
     end_date: initial.end_date,
-    base_currency:
-      (initial.base_currency as FormValues["base_currency"]) ?? "IDR",
-    cover_image_url: initial.cover_image_url ?? "",
+    base_currency: initial.base_currency ?? "IDR",
     notes: initial.notes ?? "",
   }
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label>{label}</Label>
-      {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
-  )
 }
