@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import {
-  ChevronDown,
-  ChevronUp,
   ListChecks,
   MapPin,
   StickyNote,
+  Pencil,
   Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,62 +22,82 @@ interface Props {
   isDeleting: boolean
 }
 
-const TYPE_ICON = {
-  location: MapPin,
-  note: StickyNote,
-  todo: ListChecks,
+const TYPE_CONFIG = {
+  location: {
+    Icon: MapPin,
+    iconBg: "bg-[#DBEAFE]",
+    iconColor: "text-primary",
+    borderColor: "border-l-primary",
+    label: "Location",
+    labelColor: "text-primary",
+  },
+  note: {
+    Icon: StickyNote,
+    iconBg: "bg-[#FEF9C3]",
+    iconColor: "text-amber-700",
+    borderColor: "border-l-amber-400",
+    label: "Note",
+    labelColor: "text-amber-700",
+  },
+  todo: {
+    Icon: ListChecks,
+    iconBg: "bg-muted",
+    iconColor: "text-muted-foreground",
+    borderColor: "border-l-muted-foreground/30",
+    label: "Todo",
+    labelColor: "text-muted-foreground",
+  },
 }
 
 export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) {
-  const [expanded, setExpanded] = useState(true)
-  const Icon = TYPE_ICON[activity.type]
+  const config = TYPE_CONFIG[activity.type]
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onEdit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onEdit()
-        }
-      }}
       className={cn(
-        "group relative cursor-pointer rounded-lg border bg-card p-3 transition-colors",
-        "hover:border-primary/40 hover:bg-accent/30",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group relative rounded-xl border border-l-4 bg-card p-5 shadow-sm transition-all",
+        "hover:translate-x-0.5 hover:shadow-md",
+        config.borderColor,
       )}
     >
-      <div className="flex items-start gap-3">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium">{activity.title}</h3>
+      <div className="flex items-start gap-4">
+        <div className="flex-1 space-y-1.5">
+          {/* Type label + time */}
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-wider",
+                config.labelColor,
+              )}
+            >
+              {config.label}
+            </span>
             {activity.type === "location" && activity.start_time && (
               <span className="text-xs text-muted-foreground">
-                {activity.start_time}
+                · {activity.start_time}
                 {activity.end_time ? ` – ${activity.end_time}` : ""}
               </span>
             )}
           </div>
-          {expanded && <ActivityBody activity={activity} />}
+
+          {/* Title */}
+          <h4 className="text-base font-semibold text-foreground">
+            {activity.title}
+          </h4>
+
+          {/* Type-specific body */}
+          <ActivityBody activity={activity} />
         </div>
+
+        {/* Actions — always visible */}
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            aria-label={expanded ? "Collapse" : "Expand"}
-            onClick={(e) => {
-              e.stopPropagation()
-              setExpanded((v) => !v)
-            }}
+            aria-label="Edit activity"
+            onClick={onEdit}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           >
-            {expanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+            <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
@@ -89,9 +107,9 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
               e.stopPropagation()
               onDelete()
             }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive opacity-0 transition-opacity hover:bg-destructive/10 focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 disabled:opacity-50"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -106,17 +124,21 @@ function ActivityBody({ activity }: { activity: Activity }) {
     case "location": {
       const p = activity.payload as LocationPayload
       return (
-        <div className="text-sm text-muted-foreground">
-          {p.location_name && <p>{p.location_name}</p>}
+        <div className="space-y-0.5 text-sm text-muted-foreground">
+          {p.location_name && (
+            <p className="font-medium text-foreground/80">{p.location_name}</p>
+          )}
           {p.address && <p className="text-xs">{p.address}</p>}
-          {p.notes && <p className="mt-1 whitespace-pre-wrap">{p.notes}</p>}
+          {p.notes && (
+            <p className="mt-1 whitespace-pre-wrap text-sm">{p.notes}</p>
+          )}
         </div>
       )
     }
     case "note": {
       const p = activity.payload as NotePayload
       return (
-        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+        <p className="whitespace-pre-wrap text-sm italic text-muted-foreground">
           {p.content}
         </p>
       )
@@ -124,19 +146,21 @@ function ActivityBody({ activity }: { activity: Activity }) {
     case "todo": {
       const p = activity.payload as TodoPayload
       return (
-        <ul className="text-sm">
+        <ul className="space-y-1">
           {p.items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2">
+            <li key={item.id} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={item.completed}
                 readOnly
-                className="h-3 w-3"
+                className="h-3.5 w-3.5 rounded border-muted-foreground/30 accent-primary"
               />
               <span
-                className={
-                  item.completed ? "line-through text-muted-foreground" : ""
-                }
+                className={cn(
+                  item.completed
+                    ? "line-through text-muted-foreground"
+                    : "text-foreground/80",
+                )}
               >
                 {item.text}
               </span>

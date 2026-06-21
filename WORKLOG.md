@@ -4,6 +4,51 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-21 — Session 18: Itinerary Detail Revamp
+
+**Status**: Trip detail page fully revamped with new layout, inline editing, timeline activities, drag-to-reorder, map view, and various UX improvements.
+
+### Completed
+- **Sidebar** — conditional "Active Trip" section appears when user is on `/trips/[id]`. Shows trip name + menu: Itinerary, Transport, Stay, Budget. Disappears when back on dashboard. MobileNav icon for "My Trips" fixed to `Compass` (was `ArrowLeftRight`).
+- **Trip detail page (`/trips/[id]`)** — full revamp:
+  - Header: badge "Active Trip", date range, currency (`IDR — Indonesian Rupiah`) below description, responsive layout (stacked on mobile).
+  - Inline title edit on click — or full edit form via Edit button (title, description/location, start/end dates inline in header).
+  - List/Map view toggle moved to row with "Back to Dashboard" link.
+  - "Back to Dashboard" link added. Removed Share button.
+  - Delete button remains in header actions.
+- **DayPanel** — expand/collapse per day. Day 1 defaults expanded, rest collapsed. Header shows number badge + full date.
+- **DayActivities** — timeline with connecting vertical line:
+  - Transport cards (read-only, blue) show on `departure_datetime` date.
+  - Accommodation cards (read-only, purple) show on `check_in`/`check_out` date.
+  - Activity cards sorted by time alongside transport/stay.
+  - Drag-to-reorder via `dnd-kit` (grip handle visible on each activity row).
+  - Inline add form (toggle via "+ Add activity" button, no dialog).
+  - Edit activity opens inline form in place of card (no dialog).
+- **ActivityCard** — redesigned: colored left border per type (blue/yellow/muted), type label + time, action buttons (Edit/Delete) always visible.
+- **ActivityForm** — redesigned: tab switcher (Location/Note/Todo), inline mode. Location: title + Google Places autocomplete + start/end time + notes. Note: title + textarea. Todo: title + dynamic list.
+- **Map view** (`TripMap`) — dual-pane layout: left panel (day tabs + activity list with color-coded cards + route info stats), right panel (Google Maps with numbered pins + polylines + InfoWindow). Responsive: stacks vertically on mobile, activity list hidden on mobile.
+- **My Trips page** — added "Back to Dashboard" link.
+- **Currency Converter page** — added "Back to Dashboard" link.
+- **Navigation** — list activities container full width (matches Add New Trip page margin).
+
+### Key Decisions
+- **Transport/Stay in timeline as read-only** — no inline edit from itinerary view; user goes to sidebar Transport/Stay pages to manage them. Keeps timeline clean.
+- **Inline edit replaces dialog** — edit form appears directly in the timeline row, reducing modal overhead.
+- **Drag handle always visible** — grip icon shown left of each activity card. Activates drag only after 5px movement (avoids conflicts with click-to-edit).
+- **Map panel left sidebar hides on mobile** — shows only day filter tabs + map on small screens to maximize map area.
+- **List/Map toggle moved below header** — placed in same row as "Back to Dashboard" for cleaner header; header focuses on trip identity + edit/delete actions only.
+
+### Pending
+- [ ] **Linked-expense lifecycle** (carried since Session 13).
+- [ ] **Cover image upload** — form has no upload UI until file storage is ready.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export.
+
+### Resume From
+Pick up **linked-expense lifecycle** or smallest Phase 2 item: **share trip via link**.
+
+---
+
 ## 2026-06-21 — Session 17: Trip List Page, Pagination & Date Filter
 
 **Status**: My Trips page (`/trips`) now has full cursor pagination (12/page) and a date range filter. Dashboard shows 6 upcoming trips. Backend has two new dedicated endpoints.

@@ -24,7 +24,7 @@ export default function NewTripPage() {
             </Link>
             <h3 className="font-headline-md text-headline-md mb-1">Trip Details</h3>
             <p className="font-body-md text-on-surface-variant">
-              Let's start planning your next great adventure.
+              Let&apos;s start planning your next great adventure.
             </p>
           </div>
 

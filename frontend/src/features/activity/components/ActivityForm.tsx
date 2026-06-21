@@ -3,7 +3,7 @@
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { MapPin, StickyNote, ListChecks, X } from "lucide-react"
+import { MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -21,14 +21,15 @@ import type {
 
 const TYPES = ["location", "note", "todo"] as const
 
-const TYPE_META: Record<ActivityType, { label: string; Icon: typeof MapPin }> = {
+const TYPE_META: Record<
+  ActivityType,
+  { label: string; Icon: typeof MapPin }
+> = {
   location: { label: "Location", Icon: MapPin },
   note: { label: "Note", Icon: StickyNote },
   todo: { label: "Todo", Icon: ListChecks },
 }
 
-// Accepts dot or comma as decimal separator; trims trailing junk after first
-// number prefix (e.g. paste of "108.2631914, 21" → 108.2631914).
 function parseCoord(s: string): number {
   if (!s) return NaN
   const cleaned = s.replace(",", ".").trim()
@@ -47,11 +48,17 @@ const schema = z
     lat: z
       .string()
       .optional()
-      .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid latitude"),
+      .refine(
+        (v) => !v || Number.isFinite(parseCoord(v)),
+        "Invalid latitude",
+      ),
     lng: z
       .string()
       .optional()
-      .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid longitude"),
+      .refine(
+        (v) => !v || Number.isFinite(parseCoord(v)),
+        "Invalid longitude",
+      ),
     address: z.string().optional(),
     google_place_id: z.string().optional(),
     location_notes: z.string().optional(),
@@ -59,12 +66,16 @@ const schema = z
     note_content: z.string().optional(),
     // todo
     todo_items: z
-      .array(z.object({ id: z.string(), text: z.string(), completed: z.boolean() }))
+      .array(
+        z.object({
+          id: z.string(),
+          text: z.string(),
+          completed: z.boolean(),
+        }),
+      )
       .optional(),
   })
   .superRefine((d, ctx) => {
-    // Required field per activity type. Validated up front so the user sees
-    // the error inline instead of the backend's 400.
     if (d.type === "location" && !d.location_name?.trim()) {
       ctx.addIssue({
         code: "custom",
@@ -91,6 +102,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 
 interface Props {
+  /** When provided, renders as an edit form (type locked). */
   initial?: Activity
   lockType?: boolean
   onSubmit: (input: CreateActivityInput) => Promise<unknown>
@@ -98,6 +110,11 @@ interface Props {
   isSubmitting: boolean
 }
 
+/**
+ * ActivityForm — used in two contexts:
+ * 1. Inline add form in the timeline (no `initial`, all 3 type tabs visible)
+ * 2. Edit dialog (pass `initial` + `lockType=true`)
+ */
 export function ActivityForm({
   initial,
   lockType,
@@ -131,88 +148,80 @@ export function ActivityForm({
     })
   }
 
-  // Open native time picker on click — same pattern as TripForm dates.
   const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
     try {
       e.currentTarget.showPicker?.()
     } catch {
-      // strict browsers reject non-gesture calls — fall back to native icon
+      // ignore
     }
   }
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
-      <Field label="Type" error={errors.type?.message}>
-        <Controller
-          control={control}
-          name="type"
-          render={({ field }) => {
-            // Edit mode: render only the selected type as a static chip.
-            // Add mode: render all 3 as togglable buttons.
-            const visible = lockType
-              ? TYPES.filter((t) => t === field.value)
-              : TYPES
-            return (
-              <div
-                className={cn(
-                  "grid gap-2",
-                  lockType ? "grid-cols-1" : "grid-cols-3",
-                )}
-              >
-                {visible.map((t) => {
-                  const meta = TYPE_META[t]
-                  const selected = field.value === t
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => !lockType && field.onChange(t)}
-                      disabled={lockType}
-                      className={cn(
-                        "flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-xs transition-colors",
-                        selected
-                          ? "border-primary bg-primary/5 text-foreground"
-                          : "border-input text-muted-foreground hover:border-ring",
-                        lockType && "cursor-default",
-                      )}
-                    >
-                      <meta.Icon className="h-5 w-5" />
-                      <span>{meta.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )
-          }}
-        />
-      </Field>
+      {/* Type switcher */}
+      <div className="flex rounded-xl border border-outline-variant/30 bg-muted/40 p-1">
+        {TYPES.filter((t) => (lockType ? t === type : true)).map((t) => {
+          const meta = TYPE_META[t]
+          const selected = type === t
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => !lockType && setValue("type", t)}
+              disabled={lockType && t !== type}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+                selected
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+                lockType && t !== type && "hidden",
+              )}
+            >
+              <meta.Icon className="h-4 w-4" />
+              {meta.label}
+            </button>
+          )
+        })}
+      </div>
 
+      {/* Title — always visible */}
       <Field label="Title" error={errors.title?.message}>
         <Input
-          placeholder="Kuta Beach / Reminders / Packing list"
+          placeholder={
+            type === "location"
+              ? "e.g. Kuta Beach"
+              : type === "note"
+                ? "e.g. Reminders"
+                : "e.g. Packing checklist"
+          }
           {...register("title")}
         />
       </Field>
 
-      {/* Times only meaningful for location activities. */}
-      {type === "location" && (
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Start time" error={errors.start_time?.message}>
-            <Input
-              type="time"
-              onClick={openPicker}
-              {...register("start_time")}
-            />
-          </Field>
-          <Field label="End time" error={errors.end_time?.message}>
-            <Input type="time" onClick={openPicker} {...register("end_time")} />
-          </Field>
-        </div>
-      )}
-
+      {/* Location fields */}
       {type === "location" && (
         <>
-          <Field label="Location name" error={errors.location_name?.message}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Start time" error={errors.start_time?.message}>
+              <Input
+                type="time"
+                onClick={openPicker}
+                {...register("start_time")}
+              />
+            </Field>
+            <Field label="End time" error={errors.end_time?.message}>
+              <Input
+                type="time"
+                onClick={openPicker}
+                {...register("end_time")}
+              />
+            </Field>
+          </div>
+
+          <Field
+            label="Location name"
+            error={errors.location_name?.message}
+          >
             <Controller
               control={control}
               name="location_name"
@@ -232,65 +241,69 @@ export function ActivityForm({
               )}
             />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Latitude">
-              <Input placeholder="-8.7184" {...register("lat")} />
-            </Field>
-            <Field label="Longitude">
-              <Input placeholder="115.1686" {...register("lng")} />
-            </Field>
-          </div>
+
+          {/* lat/lng stored silently — hidden inputs, editable but not prominent */}
+          <input type="hidden" {...register("lat")} />
+          <input type="hidden" {...register("lng")} />
+          <input type="hidden" {...register("google_place_id")} />
+
           <Field label="Address">
-            <Input {...register("address")} />
+            <Input
+              placeholder="Auto-filled from location search"
+              {...register("address")}
+            />
           </Field>
+
           <Field label="Notes">
-            <Textarea rows={2} {...register("location_notes")} />
+            <Textarea
+              rows={2}
+              placeholder="Any notes about this place…"
+              {...register("location_notes")}
+            />
           </Field>
         </>
       )}
 
+      {/* Note fields */}
       {type === "note" && (
-        <Field label="Content" error={errors.note_content?.message}>
-          <Textarea rows={4} {...register("note_content")} />
+        <Field label="Note" error={errors.note_content?.message}>
+          <Textarea
+            rows={4}
+            placeholder="Write your notes here…"
+            {...register("note_content")}
+          />
         </Field>
       )}
 
+      {/* Todo fields */}
       {type === "todo" && (
         <div className="flex flex-col gap-2">
-          <Label>Items</Label>
+          <Label>Todo items</Label>
           {todoArr.fields.map((field, i) => (
             <div key={field.id} className="flex items-center gap-2">
-              <Controller
-                control={control}
-                name={`todo_items.${i}.completed`}
-                render={({ field: cb }) => (
-                  <input
-                    type="checkbox"
-                    checked={!!cb.value}
-                    onChange={(e) => cb.onChange(e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                )}
-              />
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
               <Input
                 placeholder="Item text"
+                className="flex-1"
                 {...register(`todo_items.${i}.text`)}
               />
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => todoArr.remove(i)}
                 aria-label="Remove item"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
               >
-                <X className="h-4 w-4" />
-              </Button>
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           ))}
-          <Button
+          {errors.todo_items?.message && (
+            <p className="text-xs text-destructive">
+              {errors.todo_items.message}
+            </p>
+          )}
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={() =>
               todoArr.append({
                 id: crypto.randomUUID(),
@@ -298,23 +311,26 @@ export function ActivityForm({
                 completed: false,
               })
             }
+            className="flex w-fit items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
           >
-            + Add item
-          </Button>
+            <Plus className="h-3.5 w-3.5" />
+            Add item
+          </button>
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2 pt-1">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : initial ? "Save" : "Add activity"}
+        <Button type="submit" size="sm" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : initial ? "Save changes" : "Add activity"}
         </Button>
       </div>
     </form>

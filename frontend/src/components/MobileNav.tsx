@@ -3,13 +3,13 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { ArrowLeftRight, LayoutDashboard } from "lucide-react"
+import { ArrowLeftRight, Compass, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth, useLogout } from "@/features/auth/hooks"
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "My Trips", href: "/trips", icon: ArrowLeftRight },
+  { label: "My Trips", href: "/trips", icon: Compass },
   { label: "Converter", href: "/currency", icon: ArrowLeftRight },
 ]
 
