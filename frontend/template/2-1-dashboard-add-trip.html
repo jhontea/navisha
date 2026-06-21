@@ -1,0 +1,322 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Navisha - Add New Trip</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "on-tertiary": "#ffffff",
+                    "note-yellow": "#FEF9C3",
+                    "surface-variant": "#e0e2ed",
+                    "primary": "#0058bc",
+                    "on-primary": "#ffffff",
+                    "on-primary-container": "#fefcff",
+                    "inverse-on-surface": "#eef0fc",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e6e8f3",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#2d3039",
+                    "inverse-primary": "#adc6ff",
+                    "on-secondary-container": "#566771",
+                    "on-error": "#ffffff",
+                    "surface": "#f9f9ff",
+                    "secondary-fixed": "#d3e5f1",
+                    "on-primary-fixed-variant": "#004493",
+                    "secondary-fixed-dim": "#b7c9d5",
+                    "tertiary": "#9e3d00",
+                    "surface-tint": "#005bc1",
+                    "outline": "#717786",
+                    "on-background": "#181c23",
+                    "on-primary-fixed": "#001a41",
+                    "outline-variant": "#c1c6d7",
+                    "on-surface": "#181c23",
+                    "transport-blue": "#DBEAFE",
+                    "tertiary-container": "#c64f00",
+                    "secondary-container": "#d3e5f1",
+                    "on-secondary-fixed": "#0c1e26",
+                    "surface-container-low": "#f1f3fe",
+                    "on-tertiary-fixed": "#351000",
+                    "destructive-red": "#EF4444",
+                    "on-secondary-fixed-variant": "#384953",
+                    "surface-bright": "#f9f9ff",
+                    "primary-fixed": "#d8e2ff",
+                    "background": "#f9f9ff",
+                    "stay-purple": "#EDE9FE",
+                    "on-surface-variant": "#414755",
+                    "budget-green": "#DCFCE7",
+                    "surface-container": "#ecedf9",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "secondary": "#50616b",
+                    "tertiary-fixed": "#ffdbcc",
+                    "on-tertiary-container": "#fffbff",
+                    "primary-fixed-dim": "#adc6ff",
+                    "primary-container": "#0070eb",
+                    "surface-dim": "#d8d9e5",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#e0e2ed"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "1.5rem",
+                    "margin-desktop": "2.5rem",
+                    "unit": "4px",
+                    "margin-mobile": "1rem",
+                    "max-width": "1200px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Geist"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display": ["Geist"],
+                    "body-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-sm": ["Geist"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Geist"],
+                    "headline-md": ["Geist"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #f9f9ff;
+            color: #181c23;
+        }
+        .form-input-focus:focus {
+            outline: none;
+            border-color: #0058bc;
+            box-shadow: 0 0 0 1px #0058bc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e0e2ed;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-hidden">
+<!-- Sidebar Navigation Shell -->
+<aside class="bg-surface dark:bg-inverse-surface shadow-sm h-screen w-64 fixed left-0 top-0 z-50 flex flex-col py-8 px-4">
+<div class="mb-10 px-4">
+<h1 class="text-headline-md font-bold text-primary dark:text-inverse-primary font-display">Navisha</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Travel Planner</p>
+</div>
+<nav class="flex-1 space-y-2">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-inverse-primary font-bold dark:border-inverse-primary hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors active:scale-95 transition-transform bg-secondary-container" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span class="font-label-md text-label-md">Itinerary</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+<span class="font-label-md text-label-md">Transport</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="hotel">hotel</span>
+<span class="font-label-md text-label-md">Stay</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-md text-label-md">Budget</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-4 border-t border-outline-variant/30 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, professional headshot of a young millennial traveler with a friendly expression, set against a blurred urban background with soft evening lighting. The image maintains a high-key, modern aesthetic with crisp details and a warm, inviting atmosphere consistent with the Navisha brand colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDh_KNAD1R3qrBbVv4GkuuSctA9QxVJXJFAIOo2oav8co1kSgpBhGU7Z3K4qLdqWS7W6cvxmKY7CZRz-G2fugoo6rYNuV885p7GhcmabmsKJ_d0O5W98fut1PdBlmtloVcL3ELqxyTCvqHmgg8wUAlm6TysGHyMKZttj3QA9b47lYgQQqQngF4597-JY5AKzdwJ7PlfYjd9jWlBmmEpHyYe_lCOfa-BHyJL3vtc1_XwzpWsSC05CvaO6SFYopCiDPGU8L5bJdlCFNU">
+</div>
+<div>
+<p class="font-label-md text-label-md font-bold">Alex Rivera</p>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant">Premium Member</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 h-screen overflow-y-auto custom-scrollbar bg-background">
+<!-- Top Navbar Shell -->
+<header class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md sticky top-0 z-40 flex justify-between items-center w-full px-10 py-6">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors group" onclick="window.history.back()">
+<span class="material-symbols-outlined text-on-surface group-hover:text-primary">arrow_back</span>
+</button>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Add New Trip</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full border border-outline-variant/30">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm w-48 font-body-sm" placeholder="Search trips..." type="text">
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+</div>
+</div>
+</header>
+<!-- Form Content -->
+<div class="max-w-[1200px] mx-auto px-10 py-12">
+<div class="block">
+<!-- Left: Form Controls -->
+<div class="lg:col-span-12 max-w-2xl mx-auto">
+<div class="bg-white rounded-xl shadow-sm border border-[#F1F5F9] p-8 space-y-8">
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">Trip Details</h3>
+<p class="font-body-md text-on-surface-variant">Let's start planning your next great adventure.</p>
+</div>
+<form class="space-y-6" id="tripForm">
+<!-- Trip Title -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface" for="trip-title">Trip Title</label>
+<input class="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md form-input-focus transition-all" id="trip-title" placeholder="e.g., Summer in Tokyo" type="text">
+</div>
+<!-- Destination -->
+<div class="space-y-2 relative">
+<label class="font-label-md text-label-md text-on-surface" for="destination">Destination</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">location_on</span>
+<input class="w-full pl-12 pr-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md form-input-focus transition-all" id="destination" placeholder="Search city or country" type="text">
+</div>
+</div><div class="space-y-4 pt-4"><label class="font-label-md text-label-md text-on-surface">Cover Photo</label><div class="relative group"><div class="w-full h-48 border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-lowest flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:bg-surface-container transition-all group"><div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined">cloud_upload</span></div><div class="text-center"><p class="font-label-md text-label-md text-on-surface">Click to upload or drag and drop</p><p class="text-body-sm text-on-surface-variant opacity-70">PNG, JPG or WEBP (max. 5MB)</p></div><input accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" type="file" id="cover-upload"></div></div></div>
+<!-- Date Range -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface" for="start-date">Start Date</label>
+<input class="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md form-input-focus transition-all" id="start-date" type="date">
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface" for="end-date">End Date</label>
+<input class="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md form-input-focus transition-all" id="end-date" type="date">
+</div>
+</div>
+<!-- Base Currency -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface" for="currency">Base Currency</label>
+<div class="relative">
+<select class="w-full appearance-none px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md form-input-focus transition-all" id="currency">
+<option value="USD">USD - US Dollar</option>
+<option value="JPY">JPY - Japanese Yen</option>
+<option value="EUR">EUR - Euro</option>
+<option value="GBP">GBP - British Pound</option>
+<option value="IDR">IDR - Indonesian Rupiah</option>
+<option value="AUD">AUD - Australian Dollar</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+<!-- Form Actions -->
+<div class="pt-6 flex flex-col sm:flex-row items-center gap-4">
+<button class="w-full sm:w-auto px-8 py-3 bg-primary text-white font-label-md text-label-md rounded-lg hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/20" type="submit">
+                                    Create Trip
+                                </button>
+<a class="w-full sm:w-auto px-8 py-3 text-on-surface-variant font-label-md text-label-md text-center hover:text-primary transition-colors" href="#">
+                                    Cancel
+                                </a>
+</div>
+</form>
+</div>
+</div><div class="mt-8 bg-primary-fixed text-on-primary-fixed p-6 rounded-xl space-y-3 max-w-2xl mx-auto"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">lightbulb</span><span class="font-label-md text-label-md">Pro Tip</span></div><p class="text-body-sm opacity-90 leading-relaxed">Organizing by destination helps Navisha suggest the best transport routes and local currency tips automatically.</p></div>
+<!-- Right: Visual Preview/Selection -->
+</div>
+</div>
+</main>
+<script>
+        // Micro-interactions for form live update
+        const titleInput = document.getElementById('trip-title');
+        const previewTitle = document.getElementById('preview-title');
+
+        titleInput.addEventListener('input', (e) => {
+            previewTitle.textContent = e.target.value || 'Your Trip Title';
+        });
+
+        function changePreview(element) {
+            const preview = document.getElementById('cover-preview');
+            const newImg = element.querySelector('img');
+            
+            // Remove border from others
+            document.querySelectorAll('.aspect-square').forEach(el => {
+                el.classList.remove('border-primary');
+                el.classList.add('border-transparent');
+            });
+
+            if (newImg) {
+                // This is a mockup of the visual change
+                // In a real app we'd swap the background image
+                element.classList.remove('border-transparent');
+                element.classList.add('border-primary');
+                
+                // Add a small scale animation
+                preview.style.opacity = '0.5';
+                setTimeout(() => {
+                    preview.style.opacity = '1';
+                }, 200);
+            }
+        }
+
+        // Form submission prevention for demo
+        document.getElementById('tripForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Creating...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                alert('Trip created successfully! Redirecting to your itinerary...');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 1500);
+        });
+
+        // Simple parallax effect on scroll
+        const main = document.querySelector('main');
+        main.addEventListener('scroll', () => {
+            const preview = document.getElementById('cover-preview');
+            const scrolled = main.scrollTop;
+            preview.style.transform = `scale(1.05) translateY(${scrolled * 0.05}px)`;
+        });
+    </script>
+
+
+
+
+</body></html>

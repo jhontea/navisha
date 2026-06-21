@@ -1,7 +1,7 @@
 export interface SupportedCurrency {
   code: string
   symbol: string
-  name: string
+  name: string  // e.g. "Indonesian Rupiah"
 }
 
 export interface SupportedResponse {

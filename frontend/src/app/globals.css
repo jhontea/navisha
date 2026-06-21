@@ -4,7 +4,9 @@
 
 @layer base {
   .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-style: normal;
     display: inline-block;
     line-height: 1;
     text-transform: none;
@@ -12,12 +14,51 @@
     word-wrap: normal;
     white-space: nowrap;
     direction: ltr;
+    vertical-align: middle;
+    user-select: none;
   }
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', var(--font-inter), sans-serif;
+    background-color: #f9f9ff;
+    color: #181c23;
   }
   .font-geist {
-    font-family: 'Geist', sans-serif;
+    font-family: 'Geist', var(--font-geist-sans), sans-serif;
+  }
+
+  /* Form input focus ring matching design system */
+  .form-input-focus:focus {
+    outline: none;
+    border-color: #0058bc;
+    box-shadow: 0 0 0 1px #0058bc;
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar,
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb,
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: #e0e2ed;
+    border-radius: 10px;
+  }
+
+  /* Native date input — remove default calendar icon overlap */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+  }
+
+  /* Select — remove default OS arrow, we render our own */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
   }
 }
 
@@ -128,6 +169,10 @@
   .text-balance {
     text-wrap: balance;
   }
+  /* Trip card placeholder gradient */
+  .trip-cover-gradient {
+    background: linear-gradient(135deg, #0058bc 0%, #4d94eb 40%, #adc6ff 70%, #d8e2ff 100%);
+  }
 }
 
 /* Custom styles from template */
@@ -136,6 +181,23 @@
 }
 .soft-shadow {
   box-shadow: 0px 12px 24px rgba(0, 88, 188, 0.04);
+}
+.trip-card-shadow {
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.03);
+}
+.trip-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 16px 32px rgba(0, 88, 188, 0.06);
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #e0e2ed;
+  border-radius: 10px;
 }
 .glass-bg {
   backdrop-filter: blur(8px);

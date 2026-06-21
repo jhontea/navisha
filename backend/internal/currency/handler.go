@@ -78,6 +78,7 @@ func (h *Handler) Supported(c echo.Context) error {
 		items = append(items, map[string]string{
 			"code":   code,
 			"symbol": Symbol(code),
+			"name":   Name(code),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"supported": items})

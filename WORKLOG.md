@@ -4,6 +4,64 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-21 — Session 16: Dashboard & Add Trip UI Polish
+
+**Status**: Dashboard and Add New Trip pages fully aligned with HTML template designs. Design system tokens properly wired. All major UI discrepancies resolved.
+
+### Completed
+- **globals.css** — added `font-family` to `.material-symbols-outlined`, `vertical-align: middle`, `user-select: none`. Added global `select { appearance: none }` reset. Added `.form-input-focus` utility. Added `.trip-cover-gradient` for card placeholder. Custom scrollbar consolidated.
+- **tailwind.config.ts** — added `src/features/**` and `src/lib/**` to content paths (was causing Tailwind to purge feature-component classes). Added `borderRadius` tokens (`xl`, `2xl`, `full`). Added `safelist` for responsive grid classes. Added `gap-gutter` spacing token.
+- **layout.tsx** — moved Material Symbols `<link>` to `<head>` with `preconnect` hints and `display=block` to prevent FOIC.
+- **src/global.d.ts** — added `declare module '*.css'` to fix `ts(2882)` error on `import './globals.css'`.
+- **TopBar** — removed (search bar + Help Center were decorative; not wired to any endpoint).
+- **Sidebar**:
+  - Removed "Explore" menu item.
+  - Footer simplified to user avatar + name + email + logout icon button only.
+  - Shows "Add New Trip" sub-item under Dashboard only when on `/trips/new` route.
+- **MobileNav**:
+  - Removed "Explore" item.
+  - Profile button opens a popover above the bar showing user info + Logout button.
+- **TripList** — grid uses `gridTemplateColumns: repeat(auto-fill, minmax(280px, 1fr))` inline style to guarantee responsive 3→2→1 col behavior without Tailwind purging. Skeleton loading state added (3 animated placeholder cards).
+- **TripCard** — cover image placeholder replaced with blue gradient `linear-gradient(135deg, #0058bc → #4d94eb → #adc6ff → #d8e2ff)` using inline spread style when `cover_image_url` is empty. Removed picsum fallback.
+- **StatsSection** — grid uses `repeat(auto-fit, minmax(200px, 1fr))` inline style. Trips Completed and Countries Visited card colors applied via inline `backgroundColor` (bypasses Tailwind purge). Traveler Level icon rendered via inline style. Spacer `<div style={{ height: '4rem' }} />` added between TripList and StatsSection in dashboard page.
+- **Dashboard page** — "New Trip" button replaced shadcn `<Button>` with native `<button>` matching template class exactly.
+- **Add New Trip page (`/trips/new`)**:
+  - Removed sticky header with arrow_back + "Add New Trip" title.
+  - Added "← Back to Dashboard" link inside the card.
+  - Page uses same margin/padding as dashboard: `px-margin-mobile md:px-margin-desktop pt-8 pb-24`.
+  - Form card is full width (removed `max-w-2xl` wrapper).
+  - Pro Tip callout below the card.
+- **TripForm** — full redesign to match template:
+  - Trip Title: clean input with `border-outline-variant` focus ring.
+  - Destination: composite input with `location_on` icon + vertical divider + text input.
+  - Cover photo upload section removed per review.
+  - Start/End Date: always `grid-cols-2` side by side via inline style.
+  - Base Currency: native `<select>` with `expand_more` chevron, populated from `useSupportedCurrencies()` API hook.
+  - Currency labels display as `CODE - Full Name` (e.g. "IDR - Indonesian Rupiah") with frontend fallback map for when backend returns no `name` field.
+  - Create Trip button with spinner during submit.
+- **Backend currency** (`internal/currency/`):
+  - Added `names` map and `Name(code)` function to `model.go`.
+  - `Supported` handler now includes `"name"` field in response so frontend can display full currency names.
+
+### Key Decisions
+- **Inline styles over Tailwind for dynamic/critical values** — Tailwind's JIT can purge classes that only appear in feature components if content paths aren't perfectly configured. For grid layout and colors critical to visual correctness, inline styles are used directly. Tailwind classes are used for typography, spacing, and non-critical styling.
+- **`repeat(auto-fill, minmax(280px, 1fr))` for trip grid** — more resilient than `grid-cols-3` breakpoints because it naturally adapts to container width without relying on viewport breakpoints being picked up correctly.
+- **Frontend currency name fallback** — backend didn't previously return `name` in `/currency/supported`. Added `CURRENCY_NAMES` map on frontend as fallback. Backend updated to also return `name` field, but frontend remains resilient if backend is not restarted.
+- **Cover upload removed from form** — file upload requires backend storage (S3/etc.) not yet implemented. Removed the UI affordance to avoid user confusion. Card placeholder uses gradient instead.
+- **Spacer div between sections** — `mt-16` on StatsSection was being overridden or not applying. Added an explicit `<div style={{ height: '4rem' }} />` spacer element between TripList and StatsSection in the page to guarantee visual separation.
+
+### Pending
+- [ ] **Linked-expense lifecycle** (carried since Session 13) — still undecided.
+- [ ] **Cover image upload** — TripForm no longer has upload UI. When file storage is ready, re-add upload section.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress bar + thresholds.
+- [ ] **Search functionality** — TopBar removed; search not wired.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export, mobile app.
+
+### Resume From
+Decide **linked-expense lifecycle** (third session carrying this). Alternatively, pick up the smallest Phase 2 item: **share trip via link** (backend: generate share token + public read route; frontend: `/shared/:token` page).
+
+---
+
 ## 2026-06-20 — Session 15: Dashboard Redesign (Template Port)
 
 **Status**: Dashboard restyled to match `frontend/template/2-dashboard-overview.html`. Persistent sidebar + sticky top bar + mobile bottom nav. TripCard redesigned with cover image + frosted status badge. New StatsSection. Font + Tailwind tokens wired so `text-headline-lg` etc. resolve correctly.
