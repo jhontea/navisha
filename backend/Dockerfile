@@ -3,8 +3,11 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Use direct proxy to avoid proxy.golang.org (which may be blocked on some VPS)
-ENV GOPROXY=direct
+# Force IPv4-only DNS resolution.
+# Some VPS have IPv6 addresses configured but no actual IPv6 connectivity,
+# causing Go's default DNS resolver to try AAAA records and fail.
+# Using GOPROXY=https://goproxy.io as fallback avoids direct IPv6 lookups.
+ENV GOPROXY=https://goproxy.io,direct
 ENV GONOSUMCHECK=*
 
 # Download dependencies first (cache layer)
