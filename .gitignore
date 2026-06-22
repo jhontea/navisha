@@ -5,6 +5,7 @@ frontend/.env.local
 # Go
 backend/bin/
 backend/*.exe
+backend/vendor/
 
 # Node
 frontend/node_modules/
