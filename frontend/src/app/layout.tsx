@@ -1,10 +1,17 @@
 import type { Metadata } from "next"
+import { Inter } from "next/font/google"
 import localFont from "next/font/local"
 import { Providers } from "@/components/providers"
 import "./globals.css"
 
 // Inter font is loaded via <link> tag in <head> to avoid build-time network access
 // See the preconnect and stylesheet links below
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -47,7 +54,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
       </body>
