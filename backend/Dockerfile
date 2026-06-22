@@ -6,11 +6,13 @@ WORKDIR /app
 # Force IPv4-only DNS resolution.
 # Some VPS have IPv6 addresses configured but no actual IPv6 connectivity,
 # causing Go's default DNS resolver to try AAAA records and fail.
-ENV GOPROXY=https://goproxy.io,direct
-ENV GONOSUMCHECK=*
+# goproxy.io + goproxy.cn = reliable mirrors without IPv6 dependency.
+# 'direct' as last resort only. GONOSUMDB=* skips checksum DB DNS lookups.
+ENV GOPROXY=https://goproxy.io,https://goproxy.cn,direct
+ENV GONOSUMDB=*
 
 # Install git — required by go mod download for some VCS-based modules
-RUN apk add --no-cache git
+RUN apk add --no-cache git ca-certificates
 
 # Download dependencies with cache mount (BuildKit)
 COPY go.mod go.sum ./
