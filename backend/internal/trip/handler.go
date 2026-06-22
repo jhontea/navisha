@@ -31,13 +31,14 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 }
 
 type tripRequest struct {
-	Title         string `json:"title"`
-	Description   string `json:"description"`
-	StartDate     string `json:"start_date"` // YYYY-MM-DD
-	EndDate       string `json:"end_date"`
-	BaseCurrency  string `json:"base_currency"`
-	CoverImageURL string `json:"cover_image_url"`
-	Notes         string `json:"notes"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	StartDate     string   `json:"start_date"` // YYYY-MM-DD
+	EndDate       string   `json:"end_date"`
+	BaseCurrency  string   `json:"base_currency"`
+	Budget        *float64 `json:"budget"` // optional, 0 = no budget set
+	CoverImageURL string   `json:"cover_image_url"`
+	Notes         string   `json:"notes"`
 }
 
 func (h *Handler) Create(c echo.Context) error {
@@ -51,12 +52,17 @@ func (h *Handler) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date format (expect YYYY-MM-DD)")
 	}
 
+	var budget float64
+	if req.Budget != nil {
+		budget = *req.Budget
+	}
 	t, err := h.usecase.Create(c.Request().Context(), userID, CreateInput{
 		Title:         req.Title,
 		Description:   req.Description,
 		StartDate:     start,
 		EndDate:       end,
 		BaseCurrency:  req.BaseCurrency,
+		Budget:        budget,
 		CoverImageURL: req.CoverImageURL,
 		Notes:         req.Notes,
 	})
@@ -162,12 +168,17 @@ func (h *Handler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date format (expect YYYY-MM-DD)")
 	}
 
+	var updateBudget float64
+	if req.Budget != nil {
+		updateBudget = *req.Budget
+	}
 	t, err := h.usecase.Update(userID, tripID, UpdateInput{
 		Title:         req.Title,
 		Description:   req.Description,
 		StartDate:     start,
 		EndDate:       end,
 		BaseCurrency:  req.BaseCurrency,
+		Budget:        updateBudget,
 		CoverImageURL: req.CoverImageURL,
 		Notes:         req.Notes,
 	})
@@ -231,6 +242,7 @@ func toTripResponse(t *Trip) map[string]any {
 		"start_date":      t.StartDate.Format("2006-01-02"),
 		"end_date":        t.EndDate.Format("2006-01-02"),
 		"base_currency":   t.BaseCurrency,
+		"budget":          t.Budget,
 		"cover_image_url": t.CoverImageURL,
 		"notes":           t.Notes,
 		"created_at":      t.CreatedAt,

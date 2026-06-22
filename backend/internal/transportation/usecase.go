@@ -22,6 +22,7 @@ type ExpenseCreator interface {
 	CreateLinkedExpenseTx(
 		ctx context.Context, tx pgx.Tx,
 		userID, tripID, title, currency, category string, amount float64,
+		expenseDate string,
 	) error
 }
 
@@ -113,9 +114,14 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	if title == "" {
 		title = string(created.Type)
 	}
+	// Use departure date as the expense date so it groups by travel day
+	var departureDate string
+	if created.DepartureDatetime != nil {
+		departureDate = created.DepartureDatetime.Format("2006-01-02")
+	}
 	if err := u.expenseCreator.CreateLinkedExpenseTx(
 		ctx, tx, userID, tripID, title,
-		in.Cost.Currency, "transport", in.Cost.Amount,
+		in.Cost.Currency, "transport", in.Cost.Amount, departureDate,
 	); err != nil {
 		return nil, fmt.Errorf("transportation.Create linked expense: %w", err)
 	}

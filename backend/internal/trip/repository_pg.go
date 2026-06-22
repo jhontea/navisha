@@ -60,7 +60,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	if hasCursor {
 		rows, qErr = r.db.Query(context.Background(),
 			`SELECT id, user_id, title, description, start_date, end_date,
-			        base_currency, cover_image_url, notes, created_at, updated_at
+			        base_currency, budget, cover_image_url, notes, created_at, updated_at
 			 FROM trips
 			 WHERE user_id = $1 AND (start_date, id) < ($2, $3)
 			 ORDER BY start_date DESC, id DESC
@@ -69,7 +69,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	} else {
 		rows, qErr = r.db.Query(context.Background(),
 			`SELECT id, user_id, title, description, start_date, end_date,
-			        base_currency, cover_image_url, notes, created_at, updated_at
+			        base_currency, budget, cover_image_url, notes, created_at, updated_at
 			 FROM trips
 			 WHERE user_id = $1
 			 ORDER BY start_date DESC, id DESC
@@ -85,7 +85,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	for rows.Next() {
 		var t Trip
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
-			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.CoverImageURL,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &t.CoverImageURL,
 			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return ListResult{}, fmt.Errorf("trip.List scan: %w", err)
 		}
@@ -127,7 +127,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 		rows, qErr = r.db.Query(context.Background(),
 			fmt.Sprintf(
 				`SELECT id, user_id, title, description, start_date, end_date,
-				 base_currency, cover_image_url, notes, created_at, updated_at
+				 base_currency, budget, cover_image_url, notes, created_at, updated_at
 				 FROM trips
 				 WHERE user_id = $1%s AND (start_date, id) < ($%d, $%d)
 				 ORDER BY start_date DESC, id DESC
@@ -140,7 +140,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 		rows, qErr = r.db.Query(context.Background(),
 			fmt.Sprintf(
 				`SELECT id, user_id, title, description, start_date, end_date,
-				 base_currency, cover_image_url, notes, created_at, updated_at
+				 base_currency, budget, cover_image_url, notes, created_at, updated_at
 				 FROM trips
 				 WHERE user_id = $1%s
 				 ORDER BY start_date DESC, id DESC
@@ -158,7 +158,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 	for rows.Next() {
 		var t Trip
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
-			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.CoverImageURL,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &t.CoverImageURL,
 			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return ListResult{}, fmt.Errorf("trip.ListFiltered scan: %w", err)
 		}
@@ -177,7 +177,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, error) {
 	rows, err := r.db.Query(context.Background(),
 		`SELECT id, user_id, title, description, start_date, end_date,
-		        base_currency, cover_image_url, notes, created_at, updated_at
+		        base_currency, budget, cover_image_url, notes, created_at, updated_at
 		 FROM trips
 		 WHERE user_id = $1 AND end_date >= CURRENT_DATE
 		 ORDER BY start_date ASC
@@ -192,7 +192,7 @@ func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, err
 	for rows.Next() {
 		var t Trip
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
-			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.CoverImageURL,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &t.CoverImageURL,
 			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("trip.ListUpcoming scan: %w", err)
 		}
@@ -205,10 +205,10 @@ func (r *postgresRepository) FindByID(id string) (*Trip, error) {
 	t := &Trip{}
 	err := r.db.QueryRow(context.Background(),
 		`SELECT id, user_id, title, description, start_date, end_date,
-		        base_currency, cover_image_url, notes, created_at, updated_at
+		        base_currency, budget, cover_image_url, notes, created_at, updated_at
 		 FROM trips WHERE id = $1`, id).
 		Scan(&t.ID, &t.UserID, &t.Title, &t.Description, &t.StartDate, &t.EndDate,
-			&t.BaseCurrency, &t.CoverImageURL, &t.Notes, &t.CreatedAt, &t.UpdatedAt)
+			&t.BaseCurrency, &t.Budget, &t.CoverImageURL, &t.Notes, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
@@ -222,14 +222,14 @@ func (r *postgresRepository) InsertTrip(ctx context.Context, tx pgx.Tx, t *Trip)
 	out := &Trip{}
 	err := tx.QueryRow(ctx,
 		`INSERT INTO trips (user_id, title, description, start_date, end_date,
-		                    base_currency, cover_image_url, notes)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		                    base_currency, budget, cover_image_url, notes)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		 RETURNING id, user_id, title, description, start_date, end_date,
-		           base_currency, cover_image_url, notes, created_at, updated_at`,
+		           base_currency, budget, cover_image_url, notes, created_at, updated_at`,
 		t.UserID, t.Title, t.Description, t.StartDate, t.EndDate,
-		t.BaseCurrency, t.CoverImageURL, t.Notes).
+		t.BaseCurrency, t.Budget, t.CoverImageURL, t.Notes).
 		Scan(&out.ID, &out.UserID, &out.Title, &out.Description, &out.StartDate, &out.EndDate,
-			&out.BaseCurrency, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
+			&out.BaseCurrency, &out.Budget, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("trip.InsertTrip: %w", err)
 	}
@@ -254,14 +254,14 @@ func (r *postgresRepository) Update(t *Trip) (*Trip, error) {
 	err := r.db.QueryRow(context.Background(),
 		`UPDATE trips
 		    SET title = $2, description = $3, start_date = $4, end_date = $5,
-		        base_currency = $6, cover_image_url = $7, notes = $8, updated_at = NOW()
+		        base_currency = $6, budget = $7, cover_image_url = $8, notes = $9, updated_at = NOW()
 		  WHERE id = $1
 		  RETURNING id, user_id, title, description, start_date, end_date,
-		            base_currency, cover_image_url, notes, created_at, updated_at`,
+		            base_currency, budget, cover_image_url, notes, created_at, updated_at`,
 		t.ID, t.Title, t.Description, t.StartDate, t.EndDate,
-		t.BaseCurrency, t.CoverImageURL, t.Notes).
+		t.BaseCurrency, t.Budget, t.CoverImageURL, t.Notes).
 		Scan(&out.ID, &out.UserID, &out.Title, &out.Description, &out.StartDate, &out.EndDate,
-			&out.BaseCurrency, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
+			&out.BaseCurrency, &out.Budget, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound

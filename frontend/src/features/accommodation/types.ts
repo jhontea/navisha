@@ -1,6 +1,23 @@
+export type AccommodationType = "hotel" | "hostel" | "apartment" | "other"
+
+export const ACCOMMODATION_TYPES: AccommodationType[] = [
+  "hotel",
+  "hostel",
+  "apartment",
+  "other",
+]
+
+export const ACCOMMODATION_TYPE_LABELS: Record<AccommodationType, string> = {
+  hotel: "Hotel",
+  hostel: "Hostel",
+  apartment: "Apartment",
+  other: "Other",
+}
+
 export interface Accommodation {
   id: string
   trip_id: string
+  accommodation_type: AccommodationType
   name: string
   location_name: string
   lat: number | null
@@ -24,6 +41,7 @@ export interface CostInput {
 }
 
 export interface CreateAccommodationInput {
+  accommodation_type?: AccommodationType
   name: string
   location_name?: string
   lat?: number | null

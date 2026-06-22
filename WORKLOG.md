@@ -4,6 +4,46 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-22 — Session 19: Budget Page Revamp + Expense Features
+
+**Status**: Budget page fully revamped with new UI, budget planning with spending tracker, expense date/note fields, grouped-by-date list, and category improvements.
+
+### Completed
+- **Budget page UI revamp** (`frontend/template/8-dashboard-budget.html` reference):
+  - `BudgetSummary` — stacked bar chart for category distribution + donut ring showing % used vs budget. Ring turns red when over-budget. Shows Budget / Remaining breakdown when budget is set.
+  - `ExpenseForm` — category icon picker (pill buttons, no dropdown), icon prefix in title field, thousand-separator amount input, date picker, note textarea (optional).
+  - `ExpenseCard` — category-colored icon, note shown inline.
+  - `ExpenseSection` — inline edit form directly in list, set/edit budget button in header.
+  - `budget/page.tsx` — inline budget edit panel, passes `tripBudget` to section.
+- **Budget planning** (`trips.budget` column):
+  - Backend: migration `003_add_trip_budget.sql` — `budget NUMERIC(14,4) DEFAULT 0` on `trips` table. Model, all repository queries, usecase, handler updated.
+  - Frontend: `Trip` type, `CreateTripInput`, `TripForm` — all include optional `budget` field with number input + thousand separator.
+- **Category additions**: `souvenir` (Gift, icon `redeem`, pink) + `shopping` (Shopping, icon `shopping_cart`, yellow). DB constraints updated via migrations `004` + `005`.
+- **Expense date + note fields** (`expense_date`, `note` on expenses):
+  - Backend: migration `006_add_expense_date_note.sql`. Model, repository (all CRUD queries + `scan`), usecase (parses date, defaults to today), handler (accepts + returns both fields). `CreateLinkedExpenseTx` signature updated to accept `expenseDate` — accommodation passes `check_in`, transportation passes `departure_datetime`.
+  - Frontend: `Expense` and `CreateExpenseInput` types updated. `ExpenseForm` has date picker (defaults to today) + note textarea. `ExpenseSection` groups expenses by `expense_date` (newest first), each group shows date header + group total.
+- **Cache invalidation fix**: `useCreateAccommodation` now also invalidates `["expenses", "summary", tripId]` + `["expenses", "list", tripId]` so Budget page refreshes immediately after adding a stay.
+- **Stay form cost input**: thousand separator on cost field in `AccommodationForm`.
+- **UX improvements**: edit/delete buttons always visible (not hover-only), icon spacing fixed in title input.
+
+### Key Decisions
+- **`expense_date` separate from `created_at`** — lets user backdate an expense (e.g. logging yesterday's dinner today) and ensures transport/accommodation linked expenses are attributed to their travel date, not the data-entry date.
+- **`souvenir` kept as a DB category value, label changed to "Gift"** — avoids a migration to rename the value; display label is frontend-only.
+- **Budget stored on `trips` table** — simplest fit; budget is per-trip, single value, in the trip's base currency. No separate budget table needed for Phase 1.
+- **Linked expense date set by the caller** — accommodation → `check_in`, transportation → `departure_datetime`. Keeps expense timeline aligned with actual travel day without extra user input.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** — some old expenses may have `expense_date` field missing or empty string from the API response. Need to verify API payload and add defensive fallback.
+- [ ] **Linked-expense lifecycle** (carried since Session 13) — editing cost or deleting transport/stay does not affect linked expense.
+- [ ] **Cover image upload** — form has no upload UI until file storage is ready.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export.
+
+### Resume From
+Fix the "Unknown date" group bug (likely `expense_date` field is empty/null in old API response for expenses created before the migration). Then pick up **linked-expense lifecycle** or a Phase 2 item.
+
+---
+
 ## 2026-06-21 — Session 18: Itinerary Detail Revamp
 
 **Status**: Trip detail page fully revamped with new layout, inline editing, timeline activities, drag-to-reorder, map view, and various UX improvements.

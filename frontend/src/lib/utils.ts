@@ -13,9 +13,11 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   KRW: "₩",
 }
 
-export function formatCurrency(amount: number, currency: string): string {
+export function formatCurrency(amount: number, currency: string, compact = false): string {
   const symbol = CURRENCY_SYMBOLS[currency] ?? currency
-  return `${symbol} ${amount.toLocaleString()}`
+  // Round to whole number — no cents needed for travel budget display
+  const rounded = Math.round(amount)
+  return `${symbol} ${rounded.toLocaleString()}`
 }
 
 export function formatDate(dateStr: string): string {

@@ -27,7 +27,12 @@ export function useCreateAccommodation(tripId: string) {
   return useMutation({
     mutationFn: (input: CreateAccommodationInput) =>
       accommodationApi.create(tripId, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(tripId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: listKey(tripId) })
+      // Invalidate expense summary + list so budget page reflects new cost immediately
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId] })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId] })
+    },
   })
 }
 

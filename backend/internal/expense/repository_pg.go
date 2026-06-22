@@ -52,10 +52,10 @@ func (r *postgresRepository) FindExpenseOwner(expenseID string) (string, string,
 func (r *postgresRepository) List(tripID string) ([]Expense, error) {
 	rows, err := r.db.Query(context.Background(),
 		`SELECT id, trip_id, activity_id, title, amount, currency,
-		        converted_amount, base_currency, category, created_at, updated_at
+		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at
 		 FROM expenses
 		 WHERE trip_id = $1
-		 ORDER BY created_at DESC`, tripID)
+		 ORDER BY expense_date DESC, created_at DESC`, tripID)
 	if err != nil {
 		return nil, fmt.Errorf("expense.List: %w", err)
 	}
@@ -75,7 +75,7 @@ func (r *postgresRepository) List(tripID string) ([]Expense, error) {
 func (r *postgresRepository) FindByID(id string) (*Expense, error) {
 	row := r.db.QueryRow(context.Background(),
 		`SELECT id, trip_id, activity_id, title, amount, currency,
-		        converted_amount, base_currency, category, created_at, updated_at
+		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at
 		 FROM expenses WHERE id = $1`, id)
 	e, err := scan(row)
 	if err != nil {
@@ -90,12 +90,12 @@ func (r *postgresRepository) FindByID(id string) (*Expense, error) {
 func (r *postgresRepository) Create(e *Expense) (*Expense, error) {
 	row := r.db.QueryRow(context.Background(),
 		`INSERT INTO expenses (trip_id, activity_id, title, amount, currency,
-		                       converted_amount, base_currency, category)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		                       converted_amount, base_currency, category, expense_date, note)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		 RETURNING id, trip_id, activity_id, title, amount, currency,
-		           converted_amount, base_currency, category, created_at, updated_at`,
+		           converted_amount, base_currency, category, expense_date, note, created_at, updated_at`,
 		e.TripID, e.ActivityID, e.Title, e.Amount, e.Currency,
-		e.ConvertedAmount, e.BaseCurrency, string(e.Category))
+		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note)
 	out, err := scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("expense.Create: %w", err)
@@ -106,12 +106,12 @@ func (r *postgresRepository) Create(e *Expense) (*Expense, error) {
 func (r *postgresRepository) CreateTx(ctx context.Context, tx pgx.Tx, e *Expense) (*Expense, error) {
 	row := tx.QueryRow(ctx,
 		`INSERT INTO expenses (trip_id, activity_id, title, amount, currency,
-		                       converted_amount, base_currency, category)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		                       converted_amount, base_currency, category, expense_date, note)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		 RETURNING id, trip_id, activity_id, title, amount, currency,
-		           converted_amount, base_currency, category, created_at, updated_at`,
+		           converted_amount, base_currency, category, expense_date, note, created_at, updated_at`,
 		e.TripID, e.ActivityID, e.Title, e.Amount, e.Currency,
-		e.ConvertedAmount, e.BaseCurrency, string(e.Category))
+		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note)
 	out, err := scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("expense.CreateTx: %w", err)
@@ -124,12 +124,12 @@ func (r *postgresRepository) Update(e *Expense) (*Expense, error) {
 		`UPDATE expenses
 		    SET activity_id = $2, title = $3, amount = $4, currency = $5,
 		        converted_amount = $6, base_currency = $7, category = $8,
-		        updated_at = NOW()
+		        expense_date = $9, note = $10, updated_at = NOW()
 		  WHERE id = $1
 		  RETURNING id, trip_id, activity_id, title, amount, currency,
-		            converted_amount, base_currency, category, created_at, updated_at`,
+		            converted_amount, base_currency, category, expense_date, note, created_at, updated_at`,
 		e.ID, e.ActivityID, e.Title, e.Amount, e.Currency,
-		e.ConvertedAmount, e.BaseCurrency, string(e.Category))
+		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note)
 	out, err := scan(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -195,7 +195,7 @@ func scan(r row) (*Expense, error) {
 	var activity *string
 	err := r.Scan(
 		&e.ID, &e.TripID, &activity, &e.Title, &e.Amount, &e.Currency,
-		&e.ConvertedAmount, &e.BaseCurrency, &cat, &e.CreatedAt, &e.UpdatedAt,
+		&e.ConvertedAmount, &e.BaseCurrency, &cat, &e.ExpenseDate, &e.Note, &e.CreatedAt, &e.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err

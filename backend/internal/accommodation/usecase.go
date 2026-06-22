@@ -22,6 +22,7 @@ type ExpenseCreator interface {
 	CreateLinkedExpenseTx(
 		ctx context.Context, tx pgx.Tx,
 		userID, tripID, title, currency, category string, amount float64,
+		expenseDate string,
 	) error
 }
 
@@ -31,6 +32,7 @@ type Cost struct {
 }
 
 type CreateInput struct {
+	AccommodationType  AccommodationType
 	Name               string
 	LocationName       string
 	Lat                *float64
@@ -78,8 +80,13 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	if err := validate(in); err != nil {
 		return nil, err
 	}
+	accType := in.AccommodationType
+	if !accType.Valid() {
+		accType = TypeHotel
+	}
 	a := &Accommodation{
 		TripID:             tripID,
+		AccommodationType:  accType,
 		Name:               in.Name,
 		LocationName:       in.LocationName,
 		Lat:                in.Lat,
@@ -106,9 +113,11 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	if err != nil {
 		return nil, err
 	}
+	// Use check-in date as the expense date so it groups correctly on budget page
+	checkinDate := created.CheckIn.Format("2006-01-02")
 	if err := u.expenseCreator.CreateLinkedExpenseTx(
 		ctx, tx, userID, tripID, created.Name,
-		in.Cost.Currency, "accommodation", in.Cost.Amount,
+		in.Cost.Currency, "accommodation", in.Cost.Amount, checkinDate,
 	); err != nil {
 		return nil, fmt.Errorf("accommodation.Create linked expense: %w", err)
 	}
@@ -133,6 +142,11 @@ func (u *Usecase) Update(userID, id string, in UpdateInput) (*Accommodation, err
 	if err != nil {
 		return nil, err
 	}
+	accType := in.AccommodationType
+	if !accType.Valid() {
+		accType = existing.AccommodationType // keep existing type if not provided
+	}
+	existing.AccommodationType = accType
 	existing.Name = in.Name
 	existing.LocationName = in.LocationName
 	existing.Lat = in.Lat

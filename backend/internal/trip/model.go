@@ -10,6 +10,7 @@ type Trip struct {
 	StartDate     time.Time
 	EndDate       time.Time
 	BaseCurrency  string
+	Budget        float64
 	CoverImageURL string
 	Notes         string
 	CreatedAt     time.Time

@@ -3,6 +3,7 @@ package expense
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/jackc/pgx/v5"
@@ -31,23 +32,28 @@ type LinkedExpenseCreator interface {
 	CreateLinkedExpenseTx(
 		ctx context.Context, tx pgx.Tx,
 		userID, tripID, title, currency, category string, amount float64,
+		expenseDate string, // YYYY-MM-DD, pass "" to default to today
 	) error
 }
 
 type CreateInput struct {
-	Title      string
-	Amount     float64
-	Currency   string
-	Category   Category
-	ActivityID *string
+	Title       string
+	Amount      float64
+	Currency    string
+	Category    Category
+	ActivityID  *string
+	ExpenseDate string // YYYY-MM-DD, optional — defaults to today
+	Note        string
 }
 
 type UpdateInput struct {
-	Title      string
-	Amount     float64
-	Currency   string
-	Category   Category
-	ActivityID *string
+	Title       string
+	Amount      float64
+	Currency    string
+	Category    Category
+	ActivityID  *string
+	ExpenseDate string // YYYY-MM-DD, optional
+	Note        string
 }
 
 type Usecase struct {
@@ -69,6 +75,7 @@ var _ LinkedExpenseCreator = (*Usecase)(nil)
 func (u *Usecase) CreateLinkedExpenseTx(
 	ctx context.Context, tx pgx.Tx,
 	userID, tripID, title, currency, category string, amount float64,
+	expenseDate string,
 ) error {
 	owner, base, err := u.repo.FindTripOwner(tripID)
 	if err != nil {
@@ -87,6 +94,15 @@ func (u *Usecase) CreateLinkedExpenseTx(
 		return fmt.Errorf("expense.CreateLinkedExpenseTx convert: %w", err)
 	}
 
+	// Parse the caller-supplied date or default to today
+	var eDate time.Time
+	if expenseDate != "" {
+		eDate, _ = time.Parse("2006-01-02", expenseDate)
+	}
+	if eDate.IsZero() {
+		eDate = time.Now().UTC().Truncate(24 * time.Hour)
+	}
+
 	_, err = u.repo.CreateTx(ctx, tx, &Expense{
 		TripID:          tripID,
 		Title:           title,
@@ -95,6 +111,7 @@ func (u *Usecase) CreateLinkedExpenseTx(
 		ConvertedAmount: converted,
 		BaseCurrency:    base,
 		Category:        cat,
+		ExpenseDate:     eDate,
 	})
 	return err
 }
@@ -127,6 +144,15 @@ func (u *Usecase) Create(userID, tripID string, in CreateInput) (*Expense, error
 		return nil, fmt.Errorf("expense.Create convert: %w", err)
 	}
 
+	// Parse optional expense date; default to today
+	var expDate time.Time
+	if in.ExpenseDate != "" {
+		expDate, _ = time.Parse("2006-01-02", in.ExpenseDate)
+	}
+	if expDate.IsZero() {
+		expDate = time.Now().UTC().Truncate(24 * time.Hour)
+	}
+
 	e := &Expense{
 		TripID:          tripID,
 		ActivityID:      in.ActivityID,
@@ -136,6 +162,8 @@ func (u *Usecase) Create(userID, tripID string, in CreateInput) (*Expense, error
 		ConvertedAmount: converted,
 		BaseCurrency:    base,
 		Category:        in.Category,
+		ExpenseDate:     expDate,
+		Note:            in.Note,
 	}
 	return u.repo.Create(e)
 }
@@ -165,6 +193,13 @@ func (u *Usecase) Update(userID, expenseID string, in UpdateInput) (*Expense, er
 	if err != nil {
 		return nil, err
 	}
+	// Parse optional expense date
+	if in.ExpenseDate != "" {
+		if d, err := time.Parse("2006-01-02", in.ExpenseDate); err == nil {
+			existing.ExpenseDate = d
+		}
+	}
+
 	existing.ActivityID = in.ActivityID
 	existing.Title = in.Title
 	existing.Amount = in.Amount
@@ -172,6 +207,7 @@ func (u *Usecase) Update(userID, expenseID string, in UpdateInput) (*Expense, er
 	existing.Category = in.Category
 	existing.ConvertedAmount = converted
 	existing.BaseCurrency = base
+	existing.Note = in.Note
 
 	return u.repo.Update(existing)
 }

@@ -1,10 +1,49 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { formatCurrency, formatDate } from "@/lib/utils"
-import type { Expense } from "../types"
+import { Pencil, Trash2 } from "lucide-react"
+import { cn, formatCurrency, formatDate } from "@/lib/utils"
+import type { Expense, ExpenseCategory } from "../types"
+
+const CATEGORY_CONFIG: Record<
+  ExpenseCategory,
+  { bg: string; text: string; icon: string }
+> = {
+  accommodation: {
+    bg: "bg-stay-purple",
+    text: "text-[#7C3AED]",
+    icon: "hotel",
+  },
+  transport: {
+    bg: "bg-transport-blue",
+    text: "text-primary",
+    icon: "directions_subway",
+  },
+  food: {
+    bg: "bg-budget-green",
+    text: "text-emerald-700",
+    icon: "restaurant",
+  },
+  activity: {
+    bg: "bg-[#FFEDD5]",
+    text: "text-orange-700",
+    icon: "local_activity",
+  },
+  souvenir: {
+    bg: "bg-[#FCE7F3]",
+    text: "text-pink-600",
+    icon: "redeem",
+  },
+  shopping: {
+    bg: "bg-[#FEF9C3]",
+    text: "text-yellow-700",
+    icon: "shopping_cart",
+  },
+  other: {
+    bg: "bg-muted",
+    text: "text-muted-foreground",
+    icon: "receipt",
+  },
+}
 
 interface Props {
   expense: Expense
@@ -15,43 +54,70 @@ interface Props {
 
 export function ExpenseCard({ expense, onEdit, onDelete, isDeleting }: Props) {
   const sameCurrency = expense.currency === expense.base_currency
+  const cfg = CATEGORY_CONFIG[expense.category] ?? CATEGORY_CONFIG.other
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onEdit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onEdit()
-        }
-      }}
-      className={cn(
-        "group relative cursor-pointer rounded-lg border bg-card p-3 transition-colors",
-        "hover:border-primary/40 hover:bg-accent/30",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex-1 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium">{expense.title}</h3>
-            <Badge variant="secondary">{expense.category}</Badge>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {formatDate(expense.created_at)}
-          </div>
+    <div className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors group rounded-lg">
+      <div className="flex items-center gap-4">
+        {/* Category icon */}
+        <div
+          className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+            cfg.bg,
+            cfg.text,
+          )}
+        >
+          <span className="material-symbols-outlined text-[22px]">
+            {cfg.icon}
+          </span>
         </div>
-        <div className="text-right">
-          <p className="font-semibold tabular-nums">
+
+        {/* Info */}
+        <div>
+          <h5
+            role="button"
+            tabIndex={0}
+            onClick={onEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onEdit()
+              }
+            }}
+            className="font-label-md text-foreground group-hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:underline"
+          >
+            {expense.title}
+          </h5>
+          <p className="text-label-sm text-muted-foreground mt-0.5 capitalize">
+            {expense.category} · {formatDate(expense.created_at)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {/* Amounts */}
+        <div className="text-right mr-2">
+          <p className="font-display text-headline-sm text-foreground">
             {formatCurrency(expense.amount, expense.currency)}
           </p>
           {!sameCurrency && (
-            <p className="text-xs text-muted-foreground tabular-nums">
+            <p className="text-[10px] text-muted-foreground font-medium">
               ≈ {formatCurrency(expense.converted_amount, expense.base_currency)}
             </p>
           )}
         </div>
+
+        {/* Edit */}
+        <button
+          type="button"
+          aria-label="Edit expense"
+          onClick={onEdit}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+
+        {/* Delete */}
         <button
           type="button"
           aria-label="Delete expense"
@@ -60,7 +126,11 @@ export function ExpenseCard({ expense, onEdit, onDelete, isDeleting }: Props) {
             e.stopPropagation()
             onDelete()
           }}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive opacity-0 transition-opacity hover:bg-destructive/10 focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+            "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+            "opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50",
+          )}
         >
           <Trash2 className="h-4 w-4" />
         </button>

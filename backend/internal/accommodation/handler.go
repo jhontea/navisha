@@ -31,6 +31,7 @@ type costRequest struct {
 }
 
 type request struct {
+	AccommodationType  string       `json:"accommodation_type"`
 	Name               string       `json:"name"`
 	LocationName       string       `json:"location_name"`
 	Lat                *float64     `json:"lat"`
@@ -57,6 +58,7 @@ func (req *request) toInput() (CreateInput, error) {
 		cost = &Cost{Amount: req.Cost.Amount, Currency: req.Cost.Currency}
 	}
 	return CreateInput{
+		AccommodationType:  AccommodationType(req.AccommodationType),
 		Name:               req.Name,
 		LocationName:       req.LocationName,
 		Lat:                req.Lat,
@@ -133,6 +135,7 @@ func toResponse(a *Accommodation) map[string]any {
 	return map[string]any{
 		"id":                  a.ID,
 		"trip_id":             a.TripID,
+		"accommodation_type":  string(a.AccommodationType),
 		"name":                a.Name,
 		"location_name":       a.LocationName,
 		"lat":                 a.Lat,

@@ -1,12 +1,20 @@
+"use client"
+
 import { MobileNav } from "@/components/MobileNav"
 import { Sidebar } from "@/components/Sidebar"
 import { TopBar } from "@/components/TopBar"
+import { useTokenRefresh } from "@/features/auth/hooks"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Silently refresh the access token every 10 minutes while the user is
+  // active. Stops refreshing after 30 minutes of inactivity so the token
+  // can expire naturally in the background.
+  useTokenRefresh()
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />

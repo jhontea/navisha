@@ -1,118 +1,315 @@
 "use client"
 
 import { useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { Pencil, Trash2, X } from "lucide-react"
+import { cn, formatCurrency } from "@/lib/utils"
 import {
   useCreateExpense,
   useDeleteExpense,
   useExpenses,
   useUpdateExpense,
 } from "../hooks/useExpenses"
-import type { CreateExpenseInput, Expense } from "../types"
+import type { CreateExpenseInput, Expense, ExpenseCategory } from "../types"
 import { BudgetSummary } from "./BudgetSummary"
-import { ExpenseCard } from "./ExpenseCard"
 import { ExpenseForm } from "./ExpenseForm"
+
+const CATEGORY_CONFIG: Record<
+  ExpenseCategory,
+  { bg: string; text: string; icon: string; label: string }
+> = {
+  accommodation: { bg: "bg-stay-purple", text: "text-[#7C3AED]", icon: "hotel", label: "Stay" },
+  transport: { bg: "bg-transport-blue", text: "text-primary", icon: "directions_subway", label: "Transport" },
+  food: { bg: "bg-budget-green", text: "text-emerald-700", icon: "restaurant", label: "Food" },
+  activity: { bg: "bg-[#FFEDD5]", text: "text-orange-700", icon: "local_activity", label: "Activity" },
+  souvenir: { bg: "bg-[#FCE7F3]", text: "text-pink-600", icon: "redeem", label: "Gift" },
+  shopping: { bg: "bg-[#FEF9C3]", text: "text-yellow-700", icon: "shopping_cart", label: "Shopping" },
+  other: { bg: "bg-muted", text: "text-muted-foreground", icon: "receipt", label: "Other" },
+}
+
+function formatExpenseDate(dateStr: string): string {
+  if (!dateStr) return ""
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function formatGroupDate(dateStr: string): string {
+  if (!dateStr) return "Unknown date"
+  const d = new Date(dateStr + "T00:00:00")
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (d.getTime() === today.getTime()) return "Today"
+  if (d.getTime() === yesterday.getTime()) return "Yesterday"
+  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+}
 
 interface Props {
   tripId: string
   tripBaseCurrency: string
+  tripBudget?: number
+  onEditBudget?: () => void
 }
 
-export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
+export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBudget }: Props) {
   const { data, isLoading, isError } = useExpenses(tripId)
-  const [creating, setCreating] = useState(false)
-  const [editing, setEditing] = useState<Expense | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Expense | null>(null)
 
   const createMut = useCreateExpense(tripId)
-  const updateMut = useUpdateExpense(editing?.id ?? "", tripId)
+  const updateMut = useUpdateExpense(editingId ?? "", tripId)
   const deleteMut = useDeleteExpense(tripId)
 
   const items = data?.items ?? []
 
+  // Group expenses by expense_date (always set, defaults to today at create time)
+  const grouped: { date: string; expenses: Expense[] }[] = []
+  for (const e of items) {
+    const dateKey = e.expense_date
+    const group = grouped.find((g) => g.date === dateKey)
+    if (group) {
+      group.expenses.push(e)
+    } else {
+      grouped.push({ date: dateKey, expenses: [e] })
+    }
+  }
+  // Sort groups newest first
+  grouped.sort((a, b) => b.date.localeCompare(a.date))
+
   return (
-    <div className="flex flex-col gap-4">
-      <BudgetSummary tripId={tripId} />
+    <div className="space-y-10">
+      {/* Budget Overview */}
+      <section>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-display text-headline-md text-foreground mb-1">Budget Overview</h3>
+            <p className="text-muted-foreground font-body-md">Keep track of your expenses in real-time.</p>
+          </div>
+          {!tripBudget && onEditBudget && (
+            <button
+              type="button"
+              onClick={onEditBudget}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-label-md hover:border-primary hover:text-primary transition-colors flex-shrink-0"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Set Budget
+            </button>
+          )}
+          {tripBudget && onEditBudget && (
+            <button
+              type="button"
+              onClick={onEditBudget}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-label-md hover:border-primary hover:text-primary transition-colors flex-shrink-0"
+            >
+              <span className="material-symbols-outlined text-[16px]">edit</span>
+              Edit Budget
+            </button>
+          )}
+        </div>
+        <BudgetSummary tripId={tripId} tripBudget={tripBudget} />
+      </section>
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">
-          Expenses · {items.length}
-        </h3>
-        <Button size="sm" onClick={() => setCreating(true)}>
-          + Add expense
-        </Button>
-      </div>
+      {/* Add Expense Form */}
+      <section>
+        <div className="bg-card border border-border/40 shadow-sm rounded-xl p-8">
+          <h3 className="font-display text-headline-sm text-foreground mb-6">Add New Expense</h3>
 
-      {isLoading && (
-        <p className="text-xs text-muted-foreground">Loading expenses…</p>
-      )}
-      {isError && (
-        <p className="text-xs text-destructive">Failed to load expenses.</p>
-      )}
-      {!isLoading && items.length === 0 && (
-        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No expenses yet for this trip.
-        </p>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {items.map((e) => (
-          <ExpenseCard
-            key={e.id}
-            expense={e}
-            onEdit={() => setEditing(e)}
-            onDelete={() => setConfirmingDelete(e)}
-            isDeleting={
-              deleteMut.isPending && deleteMut.variables === e.id
-            }
-          />
-        ))}
-      </div>
-
-      <Dialog open={creating} onOpenChange={(o) => !o && setCreating(false)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New expense</DialogTitle>
-          </DialogHeader>
-          <ExpenseForm
-            tripBaseCurrency={tripBaseCurrency}
-            isSubmitting={createMut.isPending}
-            onCancel={() => setCreating(false)}
-            onSubmit={async (input: CreateExpenseInput) => {
-              await createMut.mutateAsync(input)
-              setCreating(false)
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit expense</DialogTitle>
-          </DialogHeader>
-          {editing && (
+          {addOpen ? (
             <ExpenseForm
-              initial={editing}
               tripBaseCurrency={tripBaseCurrency}
-              isSubmitting={updateMut.isPending}
-              onCancel={() => setEditing(null)}
-              onSubmit={async (input) => {
-                await updateMut.mutateAsync(input)
-                setEditing(null)
+              isSubmitting={createMut.isPending}
+              onCancel={() => setAddOpen(false)}
+              onSubmit={async (input: CreateExpenseInput) => {
+                await createMut.mutateAsync(input)
+                setAddOpen(false)
               }}
             />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                <span className="material-symbols-outlined text-primary text-[28px]">payments</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Log an expense</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Track food, transport, activities, and more
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="flex items-center gap-2 bg-primary text-primary-foreground font-label-md px-6 py-2.5 rounded-xl hover:opacity-90 transition-all active:scale-95 shadow-md shadow-primary/20"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" x2="12" y1="5" y2="19" />
+                  <line x1="5" x2="19" y1="12" y2="12" />
+                </svg>
+                Add Expense
+              </button>
+            </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      </section>
 
+      {/* Expenses List — grouped by date */}
+      {(isLoading || items.length > 0 || isError) && (
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-display text-headline-sm text-foreground">Recent Expenses</h3>
+            <span className="text-sm text-muted-foreground">
+              {items.length} {items.length === 1 ? "expense" : "expenses"}
+            </span>
+          </div>
+
+          {isLoading && (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
+              ))}
+            </div>
+          )}
+
+          {isError && (
+            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+              Failed to load expenses.
+            </p>
+          )}
+
+          {!isLoading && !isError && items.length === 0 && (
+            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+              No expenses logged yet.
+            </p>
+          )}
+
+          {!isLoading && !isError && grouped.length > 0 && (
+            <div className="space-y-6">
+              {grouped.map((group) => {
+                const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
+                const baseCurrency = group.expenses[0]?.base_currency ?? tripBaseCurrency
+
+                return (
+                  <div key={group.date}>
+                    {/* Date group header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-label-md text-foreground">{formatGroupDate(group.date)}</span>
+                        <span className="text-label-sm text-muted-foreground">· {formatExpenseDate(group.date)}</span>
+                      </div>
+                      <span className="text-label-sm text-muted-foreground font-medium">
+                        {formatCurrency(groupTotal, baseCurrency)}
+                      </span>
+                    </div>
+
+                    <div className="bg-card border border-border/40 shadow-sm overflow-hidden rounded-xl">
+                      <div className="divide-y divide-border/30">
+                        {group.expenses.map((e) => {
+                          const isEditing = editingId === e.id
+                          const cfg = CATEGORY_CONFIG[e.category] ?? CATEGORY_CONFIG.other
+                          const sameCurrency = e.currency === e.base_currency
+
+                          if (isEditing) {
+                            return (
+                              <div key={e.id} className="p-6 bg-accent/20">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-label-md text-foreground">Edit expense</h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingId(null)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                                <ExpenseForm
+                                  initial={e}
+                                  tripBaseCurrency={tripBaseCurrency}
+                                  isSubmitting={updateMut.isPending}
+                                  onCancel={() => setEditingId(null)}
+                                  onSubmit={async (input) => {
+                                    await updateMut.mutateAsync(input)
+                                    setEditingId(null)
+                                  }}
+                                />
+                              </div>
+                            )
+                          }
+
+                          return (
+                            <div
+                              key={e.id}
+                              className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors group"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className={cn(
+                                    "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+                                    cfg.bg, cfg.text,
+                                  )}
+                                >
+                                  <span className="material-symbols-outlined text-[22px]">{cfg.icon}</span>
+                                </div>
+                                <div>
+                                  <h5 className="font-label-md text-foreground">{e.title}</h5>
+                                  <p className="text-label-sm text-muted-foreground mt-0.5">
+                                    {cfg.label}
+                                    {e.note && (
+                                      <span className="ml-1 text-muted-foreground/70">· {e.note}</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <div className="text-right mr-2">
+                                  <p className="font-display text-headline-sm text-foreground">
+                                    {formatCurrency(e.amount, e.currency)}
+                                  </p>
+                                  {!sameCurrency && (
+                                    <p className="text-[10px] text-muted-foreground font-medium">
+                                      ≈ {formatCurrency(e.converted_amount, e.base_currency)}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  aria-label="Edit expense"
+                                  onClick={() => setEditingId(e.id)}
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label="Delete expense"
+                                  disabled={deleteMut.isPending && deleteMut.variables === e.id}
+                                  onClick={() => setConfirmingDelete(e)}
+                                  className={cn(
+                                    "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+                                    "text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50",
+                                  )}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Confirm Delete */}
       <ConfirmDialog
         open={!!confirmingDelete}
         onOpenChange={(o) => !o && setConfirmingDelete(null)}
