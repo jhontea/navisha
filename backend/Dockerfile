@@ -3,6 +3,10 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
+# Use direct proxy to avoid proxy.golang.org (which may be blocked on some VPS)
+ENV GOPROXY=direct
+ENV GONOSUMCHECK=*
+
 # Download dependencies first (cache layer)
 COPY go.mod go.sum ./
 RUN go mod download
