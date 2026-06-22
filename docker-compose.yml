@@ -1,33 +1,66 @@
-name: navisha-dev
-
 services:
-  postgres-navisha:
-    container_name: postgres-navisha
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: navisha
-      POSTGRES_PASSWORD: navisha
-      POSTGRES_DB: navisha
-    ports:
-      - "5439:5432"
+  postgres:
+    image: postgres:17-alpine
+    env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - navisha-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis-navisha:
-    container_name: redis-navisha
-    image: redis:7-alpine
-    ports:
-      - "6389:6379"
+  redis:
+    image: redis:8-alpine
     volumes:
       - redis_data:/data
-    networks:
-      - navisha-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-networks:
-  navisha-dev-network:
-    driver: bridge
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      cache_from:
+        - type=local,src=/tmp/.buildcache/backend
+      cache_to:
+        - type=local,dest=/tmp/.buildcache/backend,mode=max
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      cache_from:
+        - type=local,src=/tmp/.buildcache/frontend
+      cache_to:
+        - type=local,dest=/tmp/.buildcache/frontend,mode=max
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    develop:
+      watch:
+        - action: rebuild
+          path: ./frontend/src
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
 
 volumes:
   postgres_data:

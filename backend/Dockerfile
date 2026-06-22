@@ -1,4 +1,4 @@
-# Build stage
+# syntax=docker/dockerfile:1.7
 FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
@@ -6,23 +6,30 @@ WORKDIR /app
 # Force IPv4-only DNS resolution.
 # Some VPS have IPv6 addresses configured but no actual IPv6 connectivity,
 # causing Go's default DNS resolver to try AAAA records and fail.
-# Using GOPROXY=https://goproxy.io as fallback avoids direct IPv6 lookups.
 ENV GOPROXY=https://goproxy.io,direct
 ENV GONOSUMCHECK=*
 
 # Install git — required by go mod download for some VCS-based modules
 RUN apk add --no-cache git
 
-# Download dependencies first (cache layer)
+# Download dependencies with cache mount (BuildKit)
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy source and build
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags='-w -s' -o server ./cmd/server
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build \
+      -ldflags='-s -w' \
+      -trimpath \
+      -o server \
+      ./cmd/server
 
-# Runtime stage — use distroless for minimal secure image
-# No apk needed, no shell, just the binary
+# Runtime stage — distroless: no shell, minimal attack surface
 FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app

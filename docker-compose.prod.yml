@@ -2,58 +2,97 @@
 # Usage: docker compose -f docker-compose.prod.yml up -d --build
 #
 # Prerequisites:
-#   - backend/.env filled with production values
-#   - frontend/.env.local filled with production values
+#   - ./backend/.env filled with production values (DATABASE_URL points to Neon)
+#   - NEXT_PUBLIC_API_URL and NEXT_PUBLIC_GOOGLE_MAPS_API_KEY set in shell or export before running
 #   - Nginx configured to proxy :3000 and :8090
 
 name: navisha-prod
 
 services:
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: redis-navisha
     restart: unless-stopped
     volumes:
       - redis_data:/data
     networks:
       - navisha_net
-    # No port exposed to host — backend reaches it via Docker network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: "1"
     container_name: navisha-backend
     restart: unless-stopped
     env_file:
       - ./backend/.env
     ports:
-      - "127.0.0.1:8090:8090"  # Only accessible from localhost (Nginx proxies)
+      - "127.0.0.1:8090:8090"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - navisha_net
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # NEXT_PUBLIC_ vars are baked in at build time
+        BUILDKIT_INLINE_CACHE: "1"
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.navisha.cloud/api/v1}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
     container_name: navisha-frontend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"  # Only accessible from localhost (Nginx proxies)
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - backend
     networks:
       - navisha_net
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   redis_data:
