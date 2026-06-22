@@ -32,13 +32,16 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 // and redirects the user to Google's consent screen.
 func (h *Handler) GoogleRedirect(c echo.Context) error {
 	state := randomState()
+	// SameSite=None + Secure required for cross-domain OAuth flow:
+	// frontend is on navisha.cloud, backend/callback is on api.navisha.cloud
 	c.SetCookie(&http.Cookie{
 		Name:     "oauth_state",
 		Value:    state,
 		Path:     "/",
 		MaxAge:   300,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	})
 	return c.Redirect(http.StatusTemporaryRedirect, h.usecase.GoogleAuthURL(state))
 }
@@ -114,7 +117,7 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string) {
 		Name:     "access_token",
 		Value:    accessToken,
 		Path:     "/",
-		MaxAge:   3600,  // 1 hour
+		MaxAge:   3600, // 1 hour
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
