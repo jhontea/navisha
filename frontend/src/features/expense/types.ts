@@ -3,6 +3,8 @@ export type ExpenseCategory =
   | "transport"
   | "food"
   | "activity"
+  | "souvenir"
+  | "shopping"
   | "other"
 
 export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
@@ -10,6 +12,8 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   "transport",
   "food",
   "activity",
+  "souvenir",
+  "shopping",
   "other",
 ]
 
@@ -23,6 +27,8 @@ export interface Expense {
   converted_amount: number
   base_currency: string
   category: ExpenseCategory
+  expense_date: string // YYYY-MM-DD
+  note: string
   created_at: string
   updated_at: string
 }
@@ -48,6 +54,8 @@ export interface CreateExpenseInput {
   currency: string
   category: ExpenseCategory
   activity_id?: string | null
+  expense_date?: string // YYYY-MM-DD, optional
+  note?: string
 }
 
 export type UpdateExpenseInput = CreateExpenseInput

@@ -1,9 +1,9 @@
 "use client"
 
 import {
-  ArrowRight,
   Bus,
   Car,
+  Pencil,
   Plane,
   Ship,
   Train,
@@ -11,11 +11,10 @@ import {
   Boxes,
   Trash2,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { Transportation } from "../types"
 
-const TYPE_ICON = {
+const TYPE_ICON: Record<string, typeof Plane> = {
   flight: Plane,
   bus: Bus,
   train: Train,
@@ -23,6 +22,17 @@ const TYPE_ICON = {
   ship: Ship,
   car: Car,
   other: Boxes,
+}
+
+// Background + text color per type
+const TYPE_COLOR: Record<string, string> = {
+  flight: "bg-[#DBEAFE] text-primary",
+  bus: "bg-muted text-muted-foreground",
+  train: "bg-secondary/10 text-secondary",
+  ferry: "bg-[#EDE9FE] text-[#7C3AED]",
+  ship: "bg-[#EDE9FE] text-[#7C3AED]",
+  car: "bg-muted text-muted-foreground",
+  other: "bg-muted text-muted-foreground",
 }
 
 interface Props {
@@ -38,65 +48,92 @@ export function TransportationCard({
   onDelete,
   isDeleting,
 }: Props) {
-  const Icon = TYPE_ICON[t.type]
+  const Icon = TYPE_ICON[t.type] ?? Boxes
+  const iconBg = TYPE_COLOR[t.type] ?? TYPE_COLOR.other
+
+  const depTime = t.departure_datetime
+    ? new Date(t.departure_datetime).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onEdit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onEdit()
-        }
-      }}
-      className={cn(
-        "group relative cursor-pointer rounded-lg border bg-card p-3 transition-colors",
-        "hover:border-primary/40 hover:bg-accent/30",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{t.type}</Badge>
-            {t.label && <h3 className="font-medium">{t.label}</h3>}
-            {t.operator && (
-              <span className="text-xs text-muted-foreground">
-                {t.operator}
+    <div className="group bg-card border-l-4 border-l-primary rounded-xl p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
+      {/* Left: icon + route */}
+      <div className="flex items-center gap-5">
+        <div
+          className={cn(
+            "flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
+            iconBg,
+          )}
+        >
+          <Icon className="h-7 w-7" />
+        </div>
+        <div>
+          {(t.from_location || t.to_location) ? (
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-foreground">
+                {t.from_location || "—"}
               </span>
-            )}
-          </div>
-          {(t.from_location || t.to_location) && (
-            <div className="flex items-center gap-2 text-sm">
-              <span>{t.from_location || "—"}</span>
-              <ArrowRight className="h-3 w-3 text-muted-foreground" />
-              <span>{t.to_location || "—"}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              <span className="text-lg font-bold text-foreground">
+                {t.to_location || "—"}
+              </span>
             </div>
+          ) : (
+            <span className="text-lg font-bold text-foreground capitalize">
+              {t.type}
+            </span>
           )}
-          {(t.departure_datetime || t.arrival_datetime) && (
-            <p className="text-xs text-muted-foreground">
-              {t.departure_datetime
-                ? new Date(t.departure_datetime).toLocaleString()
-                : "?"}
-              {" → "}
-              {t.arrival_datetime
-                ? new Date(t.arrival_datetime).toLocaleString()
-                : "?"}
+          {t.label && (
+            <p className="text-sm font-medium text-foreground/80 mt-0.5">
+              {t.label}
             </p>
           )}
-          {t.reference_number && (
-            <p className="text-xs text-muted-foreground">
-              Ref: {t.reference_number}
-            </p>
-          )}
-          {t.notes && (
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              {t.notes}
+          {t.operator && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t.operator}
             </p>
           )}
         </div>
+      </div>
+
+      {/* Departure */}
+      {depTime && (
+        <div className="flex flex-col">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Departure
+          </p>
+          <p className="text-sm font-semibold text-foreground mt-0.5">{depTime}</p>
+        </div>
+      )}
+
+      {/* Label display */}
+      {t.label && (
+        <div className="flex flex-col">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Label
+          </p>
+          <p className="text-sm font-semibold text-primary font-mono mt-0.5">
+            {t.label}
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Edit transportation"
+          onClick={onEdit}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
         <button
           type="button"
           aria-label="Delete transportation"
@@ -105,7 +142,7 @@ export function TransportationCard({
             e.stopPropagation()
             onDelete()
           }}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive opacity-0 transition-opacity hover:bg-destructive/10 focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
         >
           <Trash2 className="h-4 w-4" />
         </button>

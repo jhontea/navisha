@@ -9,12 +9,14 @@ const (
 	CategoryTransport     Category = "transport"
 	CategoryFood          Category = "food"
 	CategoryActivity      Category = "activity"
+	CategorySouvenir      Category = "souvenir"
+	CategoryShopping      Category = "shopping"
 	CategoryOther         Category = "other"
 )
 
 func (c Category) Valid() bool {
 	switch c {
-	case CategoryAccommodation, CategoryTransport, CategoryFood, CategoryActivity, CategoryOther:
+	case CategoryAccommodation, CategoryTransport, CategoryFood, CategoryActivity, CategorySouvenir, CategoryShopping, CategoryOther:
 		return true
 	}
 	return false
@@ -30,6 +32,8 @@ type Expense struct {
 	ConvertedAmount float64
 	BaseCurrency    string
 	Category        Category
+	ExpenseDate     time.Time // date of the expense (YYYY-MM-DD), user-editable
+	Note            string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

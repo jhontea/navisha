@@ -8,6 +8,7 @@ import {
   Car,
   Plane,
   Ship,
+  Ticket,
   Train,
   TramFront,
   Boxes,
@@ -15,7 +16,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
 import {
   TRANSPORTATION_TYPES,
   type CreateTransportationInput,
@@ -72,11 +73,9 @@ type FormValues = z.infer<typeof schema>
 
 interface Props {
   initial?: Transportation
-  // tripBaseCurrency used as the default `currency` when the cost field renders.
+  /** When true, the type selector is shown as a read-only chip (no changing type on edit). */
+  lockType?: boolean
   tripBaseCurrency?: string
-  // When true, render the optional cost field; on submit the value is included
-  // in `input.cost` and the backend creates the linked expense atomically.
-  // Defaults to false for edit dialogs.
   withCost?: boolean
   onSubmit: (input: CreateTransportationInput) => Promise<unknown>
   onCancel: () => void
@@ -85,6 +84,7 @@ interface Props {
 
 export function TransportationForm({
   initial,
+  lockType,
   tripBaseCurrency,
   withCost,
   onSubmit,
@@ -97,6 +97,7 @@ export function TransportationForm({
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -107,7 +108,6 @@ export function TransportationForm({
       reference_number: initial?.reference_number ?? "",
       from_location: initial?.from_location ?? "",
       to_location: initial?.to_location ?? "",
-      // <input type="datetime-local"> wants "YYYY-MM-DDTHH:mm"; trim seconds.
       departure_datetime: toLocalInput(initial?.departure_datetime),
       arrival_datetime: toLocalInput(initial?.arrival_datetime),
       notes: initial?.notes ?? "",
@@ -115,6 +115,9 @@ export function TransportationForm({
       currency: defaultCurrency,
     },
   })
+
+  // watch type for potential future conditional rendering
+  void watch("type")
 
   const submit = async (v: FormValues) => {
     const amount = v.amount ? Number(v.amount) : 0
@@ -126,7 +129,8 @@ export function TransportationForm({
       type: v.type,
       label: v.label,
       operator: v.operator,
-      reference_number: v.reference_number,
+      // Save label value to reference_number as well so it’s stored on both fields
+      reference_number: v.label,
       from_location: v.from_location,
       to_location: v.to_location,
       departure_datetime: fromLocalInput(v.departure_datetime),
@@ -141,94 +145,172 @@ export function TransportationForm({
     try {
       e.currentTarget.showPicker?.()
     } catch {
-      // ignore — browser may refuse non-gesture calls
+      // ignore
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
-      <Field label="Type" error={errors.type?.message}>
+    <form onSubmit={handleSubmit(submit)} className="space-y-8">
+      {/* Transportation Type */}
+      <div>
+        <label className="block text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
+          Transportation Type
+        </label>
         <Controller
           control={control}
           name="type"
           render={({ field }) => (
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-              {TRANSPORTATION_TYPES.map((t) => {
-                const meta = TYPE_META[t]
-                const selected = field.value === t
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => field.onChange(t)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-xs transition-colors",
-                      selected
-                        ? "border-primary bg-primary/5 text-foreground"
-                        : "border-input text-muted-foreground hover:border-ring",
-                    )}
-                  >
-                    <meta.Icon className="h-4 w-4" />
-                    <span className="leading-none">{meta.label}</span>
-                  </button>
-                )
-              })}
+            <div className="flex flex-wrap gap-3">
+              {TRANSPORTATION_TYPES
+                .filter((t) => (lockType ? t === field.value : true))
+                .map((t) => {
+                  const meta = TYPE_META[t]
+                  const selected = field.value === t
+                  const Icon = meta.Icon
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => !lockType && field.onChange(t)}
+                      disabled={lockType}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all w-[5.5rem]",
+                        selected
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary",
+                        lockType && "cursor-default",
+                      )}
+                    >
+                      <Icon className="h-6 w-6" />
+                      <span className="text-xs font-semibold">{meta.label}</span>
+                    </button>
+                  )
+                })}
             </div>
           )}
         />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Label" error={errors.label?.message}>
-          <Input placeholder="GA 420" {...register("label")} />
-        </Field>
-        <Field label="Operator" error={errors.operator?.message}>
-          <Input placeholder="Garuda Indonesia" {...register("operator")} />
-        </Field>
+        {errors.type && (
+          <p className="mt-1 text-xs text-destructive">{errors.type.message}</p>
+        )}
       </div>
 
-      <Field label="Reference number" error={errors.reference_number?.message}>
-        <Input placeholder="ABC123" {...register("reference_number")} />
-      </Field>
+      {/* Input Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* From Location — Google Places Autocomplete */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-muted-foreground">
+            From Location
+          </label>
+          <Controller
+            control={control}
+            name="from_location"
+            render={({ field }) => (
+              <LocationAutocomplete
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                placeholder="e.g. Jakarta Airport"
+                onPlaceSelect={(p) => {
+                  field.onChange(p.location_name || p.address)
+                }}
+              />
+            )}
+          />
+          {errors.from_location && (
+            <p className="text-xs text-destructive">{errors.from_location.message}</p>
+          )}
+        </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="From" error={errors.from_location?.message}>
-          <Input placeholder="CGK" {...register("from_location")} />
-        </Field>
-        <Field label="To" error={errors.to_location?.message}>
-          <Input placeholder="DPS" {...register("to_location")} />
-        </Field>
-      </div>
+        {/* To Location — Google Places Autocomplete */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-muted-foreground">
+            To Location
+          </label>
+          <Controller
+            control={control}
+            name="to_location"
+            render={({ field }) => (
+              <LocationAutocomplete
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                placeholder="e.g. Bali Airport"
+                onPlaceSelect={(p) => {
+                  field.onChange(p.location_name || p.address)
+                }}
+              />
+            )}
+          />
+          {errors.to_location && (
+            <p className="text-xs text-destructive">{errors.to_location.message}</p>
+          )}
+        </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field
-          label="Departure"
-          error={errors.departure_datetime?.message}
-        >
-          <Input
+        {/* Label / Flight Number */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-muted-foreground">
+            Label / Flight Number
+          </label>
+          <div className="relative">
+            <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              placeholder="e.g. GA 420"
+              {...register("label")}
+            />
+          </div>
+          {errors.label && (
+            <p className="text-xs text-destructive">{errors.label.message}</p>
+          )}
+        </div>
+
+        {/* Departure */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-muted-foreground">
+            Departure Time
+          </label>
+          <input
             type="datetime-local"
+            className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
             onClick={openPicker}
             {...register("departure_datetime")}
           />
-        </Field>
-        <Field
-          label="Arrival"
-          error={errors.arrival_datetime?.message}
-        >
-          <Input
+          {errors.departure_datetime && (
+            <p className="text-xs text-destructive">{errors.departure_datetime.message}</p>
+          )}
+        </div>
+
+        {/* Arrival */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-muted-foreground">
+            Arrival Time
+          </label>
+          <input
             type="datetime-local"
+            className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
             onClick={openPicker}
             {...register("arrival_datetime")}
           />
-        </Field>
+          {errors.arrival_datetime && (
+            <p className="text-xs text-destructive">{errors.arrival_datetime.message}</p>
+          )}
+        </div>
+
       </div>
 
+      {/* Operator */}
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-muted-foreground">
+          Operator (optional)
+        </label>
+        <Input placeholder="e.g. Garuda Indonesia" {...register("operator")} />
+      </div>
+
+      {/* Cost field */}
       {withCost && (
-        <div className="rounded-lg border border-dashed bg-muted/30 p-3">
-          <Label className="text-xs text-muted-foreground">
+        <div className="rounded-xl border border-dashed bg-muted/30 p-4">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Cost (optional — adds an expense to the trip budget)
           </Label>
-          <div className="mt-2 grid grid-cols-[1fr_6rem] gap-2">
+          <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
             <Input
               type="number"
               inputMode="decimal"
@@ -260,22 +342,44 @@ export function TransportationForm({
         </div>
       )}
 
-      <Field label="Notes" error={errors.notes?.message}>
-        <Textarea rows={2} {...register("notes")} />
-      </Field>
+      {/* Notes */}
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-muted-foreground">
+          Notes (optional)
+        </label>
+        <Textarea rows={2} placeholder="Any additional details…" {...register("notes")} />
+      </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button
+      {/* Form actions */}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex items-center justify-center gap-2 bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 disabled:opacity-60"
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving…
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              {initial ? "Save Changes" : "Save Transport"}
+            </>
+          )}
+        </button>
+        <button
           type="button"
-          variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
+          className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
         >
           Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : initial ? "Save" : "Add transport"}
-        </Button>
+        </button>
       </div>
     </form>
   )
@@ -296,22 +400,4 @@ function fromLocalInput(local: string | undefined): string | null {
   const d = new Date(local)
   if (isNaN(d.getTime())) return null
   return d.toISOString()
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label>{label}</Label>
-      {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
-  )
 }

@@ -31,6 +31,7 @@ type CreateInput struct {
 	StartDate     time.Time
 	EndDate       time.Time
 	BaseCurrency  string
+	Budget        float64
 	CoverImageURL string
 	Notes         string
 }
@@ -41,6 +42,7 @@ type UpdateInput struct {
 	StartDate     time.Time
 	EndDate       time.Time
 	BaseCurrency  string
+	Budget        float64
 	CoverImageURL string
 	Notes         string
 }
@@ -70,6 +72,7 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 		StartDate:     in.StartDate,
 		EndDate:       in.EndDate,
 		BaseCurrency:  in.BaseCurrency,
+		Budget:        in.Budget,
 		CoverImageURL: in.CoverImageURL,
 		Notes:         in.Notes,
 	}
@@ -165,6 +168,7 @@ func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 	existing.StartDate = in.StartDate
 	existing.EndDate = in.EndDate
 	existing.BaseCurrency = in.BaseCurrency
+	existing.Budget = in.Budget
 	existing.CoverImageURL = in.CoverImageURL
 	existing.Notes = in.Notes
 

@@ -27,11 +27,13 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 }
 
 type expenseRequest struct {
-	Title      string  `json:"title"`
-	Amount     float64 `json:"amount"`
-	Currency   string  `json:"currency"`
-	Category   string  `json:"category"`
-	ActivityID *string `json:"activity_id"`
+	Title       string  `json:"title"`
+	Amount      float64 `json:"amount"`
+	Currency    string  `json:"currency"`
+	Category    string  `json:"category"`
+	ActivityID  *string `json:"activity_id"`
+	ExpenseDate string  `json:"expense_date"` // YYYY-MM-DD, optional
+	Note        string  `json:"note"`
 }
 
 func (h *Handler) List(c echo.Context) error {
@@ -56,11 +58,13 @@ func (h *Handler) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
 	e, err := h.usecase.Create(userID, tripID, CreateInput{
-		Title:      req.Title,
-		Amount:     req.Amount,
-		Currency:   strings.ToUpper(req.Currency),
-		Category:   Category(req.Category),
-		ActivityID: req.ActivityID,
+		Title:       req.Title,
+		Amount:      req.Amount,
+		Currency:    strings.ToUpper(req.Currency),
+		Category:    Category(req.Category),
+		ActivityID:  req.ActivityID,
+		ExpenseDate: req.ExpenseDate,
+		Note:        req.Note,
 	})
 	if err != nil {
 		return mapErr(err)
@@ -76,11 +80,13 @@ func (h *Handler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
 	e, err := h.usecase.Update(userID, id, UpdateInput{
-		Title:      req.Title,
-		Amount:     req.Amount,
-		Currency:   strings.ToUpper(req.Currency),
-		Category:   Category(req.Category),
-		ActivityID: req.ActivityID,
+		Title:       req.Title,
+		Amount:      req.Amount,
+		Currency:    strings.ToUpper(req.Currency),
+		Category:    Category(req.Category),
+		ActivityID:  req.ActivityID,
+		ExpenseDate: req.ExpenseDate,
+		Note:        req.Note,
 	})
 	if err != nil {
 		return mapErr(err)
@@ -129,6 +135,8 @@ func toResponse(e *Expense) map[string]any {
 		"converted_amount": e.ConvertedAmount,
 		"base_currency":    e.BaseCurrency,
 		"category":         string(e.Category),
+		"expense_date":     e.ExpenseDate.Format("2006-01-02"),
+		"note":             e.Note,
 		"created_at":       e.CreatedAt,
 		"updated_at":       e.UpdatedAt,
 	}

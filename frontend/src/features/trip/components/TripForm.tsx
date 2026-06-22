@@ -43,6 +43,10 @@ const schema = z
       .min(1, { message: "End date is required" })
       .regex(ISO_DATE, { message: "Use the date picker (YYYY-MM-DD)" }),
     base_currency: z.string().min(1, { message: "Currency is required" }),
+    budget: z
+      .string()
+      .optional()
+      .refine((v) => !v || Number(v) >= 0, "Budget must be 0 or more"),
     notes: z.string().max(2000).optional(),
   })
   .refine((d) => new Date(d.end_date) >= new Date(d.start_date), {
@@ -90,6 +94,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       start_date: values.start_date,
       end_date: values.end_date,
       base_currency: values.base_currency,
+      budget: values.budget ? Number(values.budget) : 0,
       cover_image_url: coverPreview && !coverPreview.startsWith("blob:") ? coverPreview : "",
       notes: values.notes ?? "",
     })
@@ -186,6 +191,44 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         </div>
       </div>
 
+      {/* Budget (optional) */}
+      <div className="space-y-2">
+        <label className="font-label-md text-label-md text-on-surface" htmlFor="budget">
+          Budget{" "}
+          <span className="text-on-surface-variant font-normal text-xs">(optional)</span>
+        </label>
+        <div className="flex items-center rounded-lg border bg-surface-container-lowest transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
+          style={{ borderColor: errors.budget ? 'hsl(var(--error))' : undefined }}
+        >
+          <div className="flex items-center justify-center px-4 shrink-0">
+            <span
+              className="material-symbols-outlined text-outline pointer-events-none"
+              style={{ fontSize: 20 }}
+              aria-hidden="true"
+            >
+              payments
+            </span>
+          </div>
+          <span className="h-6 w-px bg-outline-variant shrink-0" />
+          <input
+            id="budget"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="1000"
+            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
+            placeholder="e.g., 10000000"
+            {...register("budget")}
+          />
+        </div>
+        <p className="text-xs text-on-surface-variant">
+          Set a total budget to track how much you&apos;ve spent vs remaining.
+        </p>
+        {errors.budget && (
+          <p className="text-xs text-error">{errors.budget.message}</p>
+        )}
+      </div>
+
       {/* Base Currency — from backend */}
       <div className="space-y-2">
         <label className="font-label-md text-label-md text-on-surface" htmlFor="currency">
@@ -271,6 +314,7 @@ function buildDefaults(initial?: Trip): FormValues {
       start_date: "",
       end_date: "",
       base_currency: "IDR",
+      budget: "",
       notes: "",
     }
   }
@@ -280,6 +324,7 @@ function buildDefaults(initial?: Trip): FormValues {
     start_date: initial.start_date,
     end_date: initial.end_date,
     base_currency: initial.base_currency ?? "IDR",
+    budget: initial.budget ? String(initial.budget) : "",
     notes: initial.notes ?? "",
   }
 }
