@@ -1,0 +1,57 @@
+# Production Docker Compose
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+#
+# Prerequisites:
+#   - backend/.env filled with production values
+#   - frontend/.env.local filled with production values
+#   - Nginx configured to proxy :3000 and :8090
+
+name: navisha-prod
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis-navisha
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - navisha_net
+    # No port exposed to host — backend reaches it via Docker network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: navisha-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "127.0.0.1:8090:8090"  # Only accessible from localhost (Nginx proxies)
+    depends_on:
+      - redis
+    networks:
+      - navisha_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_ vars are baked in at build time
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.navisha.cloud/api/v1}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    container_name: navisha-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"  # Only accessible from localhost (Nginx proxies)
+    networks:
+      - navisha_net
+
+volumes:
+  redis_data:
+
+networks:
+  navisha_net:
+    driver: bridge
