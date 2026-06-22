@@ -3,29 +3,19 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Force IPv4-only DNS resolution.
-# Some VPS have IPv6 addresses configured but no actual IPv6 connectivity,
-# causing Go's default DNS resolver to try AAAA records and fail.
-# goproxy.io + goproxy.cn = reliable mirrors without IPv6 dependency.
-# 'direct' as last resort only. GONOSUMDB=* skips checksum DB DNS lookups.
-ENV GOPROXY=https://goproxy.io,https://goproxy.cn,direct
-ENV GONOSUMDB=*
-
-# Install git — required by go mod download for some VCS-based modules
+# Install git and ca-certificates
 RUN apk add --no-cache git ca-certificates
 
-# Download dependencies with cache mount (BuildKit)
+# Copy vendored dependencies first (no network needed)
+# Run `go mod vendor` locally before building
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+COPY vendor/ ./vendor/
 
-# Copy source and build
+# Copy source and build using vendor (fully offline)
 COPY . .
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build \
+      -mod=vendor \
       -ldflags='-s -w' \
       -trimpath \
       -o server \
