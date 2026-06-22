@@ -2,7 +2,7 @@
 
 VPS: `202.155.13.11`  
 Domain: `navisha.cloud` (frontend), `api.navisha.cloud` (backend API)  
-Database: Supabase (external)
+Database: Neon (external, serverless PostgreSQL)
 
 ## Architecture
 
@@ -15,7 +15,7 @@ Nginx (SSL termination, reverse proxy)
     └── api.navisha.cloud  ─────────► Docker: navisha-backend  (port 8090)
                                               │
                                               ├── Docker: redis-navisha (internal)
-                                              └── Supabase PostgreSQL (external)
+                                              └── Neon PostgreSQL (external)
 ```
 
 ---
@@ -40,6 +40,11 @@ sudo apt install docker-compose-plugin -y
 sudo apt install nginx certbot python3-certbot-nginx -y
 ```
 
+> **BuildKit** sudah aktif by default di Docker Engine 23+. Kalau pakai versi lama, enable dengan:
+> ```bash
+> export DOCKER_BUILDKIT=1
+> ```
+
 ---
 
 ## 2. DNS Configuration
@@ -63,7 +68,6 @@ Agar VPS bisa clone/pull via SSH (lebih aman daripada HTTPS + token):
 ### 3a. Generate SSH Key di VPS
 
 ```bash
-# Generate key (tekan Enter untuk semua prompt, atau isi passphrase jika mau)
 ssh-keygen -t ed25519 -C "navisha-vps-deploy"
 ```
 
@@ -74,7 +78,6 @@ Ini akan membuat dua file:
 ### 3b. Tambahkan Public Key ke GitHub
 
 ```bash
-# Tampilkan public key
 cat ~/.ssh/id_ed25519.pub
 ```
 
@@ -95,11 +98,13 @@ ssh -T git@github.com
 # Output: Hi username! You've successfully authenticated...
 ```
 
+---
+
 ## 4. Clone Repository
 
 ```bash
 mkdir -p /opt/navisha
-git clone git@github.com:yourusername/navisha.git /opt/navisha
+git clone git@github.com:jhontea/navisha.git /opt/navisha
 cd /opt/navisha
 ```
 
@@ -117,7 +122,7 @@ nano backend/.env
 Isi dengan nilai production:
 
 ```env
-DATABASE_URL=postgres://user:password@db.supabase.co:5432/postgres?sslmode=require
+DATABASE_URL=postgres://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 REDIS_URL=redis://redis:6379
 JWT_SECRET=<random string panjang, minimal 32 karakter>
 JWT_REFRESH_SECRET=<random string lain, minimal 32 karakter>
@@ -129,6 +134,7 @@ CURRENCYFREAKS_API_KEY=45205f...
 ```
 
 > **Penting:** `REDIS_URL` pakai `redis://redis:6379` (service name Docker), bukan `localhost`.
+> `DATABASE_URL` adalah connection string dari Neon dashboard, pastikan sudah include `?sslmode=require`.
 
 Generate JWT secret yang aman:
 ```bash
@@ -137,14 +143,19 @@ openssl rand -base64 48
 
 ### Frontend
 
-Buat file `.env.prod` untuk menyimpan build args:
+`NEXT_PUBLIC_*` vars harus di-pass sebagai build args saat `docker compose ... --build` karena Next.js embed nilainya langsung ke dalam JS bundle. Buat file `.env.prod` di root project:
 
 ```bash
 cat > /opt/navisha/.env.prod << 'EOF'
 NEXT_PUBLIC_API_URL=https://api.navisha.cloud/api/v1
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSy...
 EOF
+
+# Tambahkan ke .gitignore jika belum ada
+echo ".env.prod" >> /opt/navisha/.gitignore
 ```
+
+> File ini tidak perlu untuk runtime — hanya dipakai saat build.
 
 ---
 
@@ -212,12 +223,12 @@ sudo certbot renew --dry-run
 
 ---
 
-## 10. Build & Run
+## 10. Build & Run (First Deploy)
 
 ```bash
 cd /opt/navisha
 
-# Load env vars untuk build args frontend
+# Load frontend build args
 export $(cat .env.prod | xargs)
 
 # Build dan jalankan semua service
@@ -231,6 +242,9 @@ docker compose -f docker-compose.prod.yml logs backend
 docker compose -f docker-compose.prod.yml logs frontend
 ```
 
+> **Catatan BuildKit cache:** Build pertama akan mengunduh semua dependency. Build berikutnya
+> jauh lebih cepat karena Go module cache dan npm cache disimpan oleh Docker BuildKit.
+
 ---
 
 ## 11. Deploy Update (Subsequent Deployments)
@@ -241,11 +255,23 @@ cd /opt/navisha
 # Pull latest code
 git pull origin main
 
-# Load env vars
+# Load frontend build args
 export $(cat .env.prod | xargs)
 
-# Rebuild dan restart (zero-downtime tidak otomatis, ada brief downtime)
+# Rebuild dan restart
+# --no-deps hanya rebuild service yang berubah (opsional)
 docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Jika hanya backend yang berubah:
+```bash
+docker compose -f docker-compose.prod.yml up -d --build backend
+```
+
+Jika hanya frontend yang berubah:
+```bash
+export $(cat .env.prod | xargs)
+docker compose -f docker-compose.prod.yml up -d --build frontend
 ```
 
 ---
@@ -275,16 +301,30 @@ docker compose -f docker-compose.prod.yml ps redis
 # Pastikan REDIS_URL=redis://redis:6379 (bukan localhost)
 ```
 
-**Backend tidak bisa connect ke Supabase:**
+**Backend tidak bisa connect ke Neon:**
 ```bash
 # Cek DATABASE_URL format, pastikan ada ?sslmode=require
+# Cek koneksi keluar dari container
 docker compose -f docker-compose.prod.yml logs backend
+docker exec navisha-backend wget -qO- https://neon.tech 2>&1 | head -5
 ```
 
-**Frontend build gagal:**
+**Frontend menampilkan API URL kosong / salah:**
 ```bash
-# Cek apakah NEXT_PUBLIC_ env vars sudah di-export sebelum docker compose up
+# NEXT_PUBLIC_ vars harus sudah di-export SEBELUM docker compose up --build
+# Verifikasi sebelum build:
+echo $NEXT_PUBLIC_API_URL
 echo $NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+
+# Jika salah, rebuild frontend dengan nilai yang benar:
+export $(cat .env.prod | xargs)
+docker compose -f docker-compose.prod.yml up -d --build frontend
+```
+
+**Frontend build gagal (npm ci):**
+```bash
+# Cek apakah package-lock.json sinkron dengan package.json
+# Jalankan `npm install` lokal lalu commit package-lock.json yang baru
 ```
 
 **Nginx 502 Bad Gateway:**
@@ -293,6 +333,14 @@ echo $NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 docker compose -f docker-compose.prod.yml ps
 # Cek port binding
 sudo ss -tlnp | grep -E '3000|8090'
+```
+
+**Resource limit OOM (container restart loop):**
+```bash
+# Cek memory usage
+docker stats --no-stream
+# Lihat alasan restart
+docker inspect navisha-backend | jq '.[0].State'
 ```
 
 **View logs:**
