@@ -4,7 +4,49 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 26: Destination Autocomplete (Google Places)
+
+**Status**: Field Destination di TripForm sekarang pakai Google Places Autocomplete yang dibatasi ke city/province/country saja.
+
+### Completed
+- **`DestinationAutocomplete.tsx` baru** (`frontend/src/features/trip/components/`):
+  - Pola sama dengan `LocationAutocomplete` (activity) — wrap `APIProvider` + `useMapsLibrary("places")` + legacy `Autocomplete` widget
+  - **`types: ["(regions)"]`** — membatasi hasil hanya ke city, province/state, dan country (tidak ada street address atau business POI)
+  - `fields: ["name", "formatted_address", "address_components"]`
+  - On select: emit `{ description, name, countryCode }` — `description` pakai `formatted_address` (e.g. "Tokyo, Japan"), `countryCode` dari address component bertipe `country`
+  - Pakai native `<input>` dengan `className`/`id` passthrough agar cocok dengan styling composite input TripForm (icon + divider)
+- **Integrasi ke `TripForm.tsx`**:
+  - Field `destination` diganti dari `register()` ke `Controller` + `DestinationAutocomplete`
+  - Hapus dead code `formatBudgetDisplay` (sudah tidak terpakai)
+  - Tambah hint text di bawah field
+- TypeScript + ESLint lolos tanpa error
+
+### Key Decisions
+- **`types: ["(regions)"]` bukan `["(cities)"]`** — `(regions)` mencakup city + province + country (lebih fleksibel), sedangkan `(cities)` hanya city. User minta city/province/country jadi `(regions)` paling pas.
+- **Destination disimpan sebagai string biasa** — tidak perlu lat/lng/place_id seperti activity location, karena destination trip hanya label deskriptif. Backend `description` field tidak berubah.
+- **Base currency tetap default IDR** — sempat dibuat auto-suggest currency dari country yang dipilih, tapi per permintaan user di-revert. Base currency default IDR dan hanya berubah kalau user ganti manual via dropdown.
+- **Pakai legacy `Autocomplete` widget (sama seperti `LocationAutocomplete` activity)** — sempat dicoba `AutocompleteSuggestion` (Places API New) tapi key project melempar 403 karena "Places API (New)" belum di-enable. Legacy widget pakai Places API klasik yang sudah enabled di key, jadi langsung jalan. Warning "not available to new customers" hanya peringatan; widget tetap berfungsi.
+
+
+### Catatan Konfigurasi (bukan bug kode)
+- **`GET /api/v1/trips/new 500`** — error backend terpisah; ada kode yang memperlakukan "new" sebagai trip ID. Tidak terkait perubahan ini, perlu dicek terpisah.
+
+
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Cover image upload**
+- [ ] **Real loyalty math**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Deploy ke VPS, test destination autocomplete di production (pastikan Places API key allow domain production). Kemudian tackle "Unknown date" expense bug.
+
+---
+
 ## 2026-06-23 — Session 25: Trip Overview Page + Navigation UX
+
 
 **Status**: Halaman Trip Overview baru dibuat dari template, dengan stat cards real data, progress tracking, dan navigasi konsisten antar halaman trip.
 
