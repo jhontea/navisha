@@ -17,12 +17,18 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   VND: "₫",
 }
 
-export function formatCurrency(amount: number, currency: string, compact = false): string {
+export function formatCurrency(amount: number, currency: string): string {
+
   const symbol = CURRENCY_SYMBOLS[currency] ?? currency
-  // Round to whole number — no cents needed for travel budget display
-  const rounded = Math.round(amount)
-  return `${symbol} ${rounded.toLocaleString()}`
+  // Preserve up to 2 decimal places (e.g. USD 2.5 should not become 3),
+  // but drop trailing zeros so whole amounts stay clean (e.g. IDR 10,000,000).
+  const formatted = amount.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+  return `${symbol} ${formatted}`
 }
+
 
 export function formatDate(dateStr: string): string {
   // Append T00:00:00 so bare YYYY-MM-DD strings are parsed as local time,

@@ -31,8 +31,9 @@ export function TripCard({ trip }: { trip: Trip }) {
   const hasCover = Boolean(trip.cover_image_url)
   return (
     <Link
-      href={`/trips/${trip.id}`}
+      href={`/trips/${trip.id}/overview`}
       className={cn(
+
         "group block overflow-hidden rounded-xl border border-[#F1F5F9] bg-surface-container-lowest",
         "trip-card-shadow trip-card-hover transition-all duration-300 cursor-pointer",
       )}

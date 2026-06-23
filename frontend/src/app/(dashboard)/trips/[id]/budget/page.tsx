@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
+
 import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { formatDateRange } from "@/lib/utils"
@@ -72,7 +74,17 @@ export default function TripBudgetPage() {
 
       {/* Content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
+        <div className="mb-6">
+          <Link
+            href={`/trips/${id}/overview`}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Trip Overview
+          </Link>
+        </div>
         {/* Inline budget edit panel */}
+
         {editingBudget && (
           <div className="mb-8 bg-card border border-primary/30 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
@@ -92,8 +104,8 @@ export default function TripBudgetPage() {
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-              <div className="flex-1 min-w-0">
+            <div className="flex flex-col gap-3">
+              <div className="w-full">
                 <label className="font-label-md text-muted-foreground block mb-1.5">
                   Total Budget
                 </label>
@@ -122,11 +134,11 @@ export default function TripBudgetPage() {
                   />
                 </div>
               </div>
-              <div className="flex gap-2 sm:pb-0.5 w-full sm:w-auto">
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setEditingBudget(false)}
-                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg border border-border text-foreground font-label-md hover:bg-muted transition-colors"
+                  className="hidden sm:inline-flex sm:w-auto px-4 py-2.5 rounded-lg border-border text-foreground font-label-md hover:bg-muted transition-colors"
                 >
                   Cancel
                 </button>
@@ -135,7 +147,7 @@ export default function TripBudgetPage() {
                   onClick={handleSaveBudget}
                   disabled={updateTripMut.isPending || !rawBudget}
                   className={cn(
-                    "flex-1 sm:flex-none px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-label-md whitespace-nowrap",
+                    "w-full sm:w-auto px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-label-md whitespace-nowrap",
                     "shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-60",
                   )}
                 >
@@ -143,6 +155,7 @@ export default function TripBudgetPage() {
                 </button>
               </div>
             </div>
+
           </div>
         )}
 

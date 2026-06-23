@@ -41,12 +41,13 @@ export default function TripStayPage() {
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
         <div className="mb-6">
           <Link
-            href={`/trips/${id}`}
+            href={`/trips/${id}/overview`}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline"><path d="m15 18-6-6 6-6"/></svg>
-            Back to Itinerary
+            Back to Trip Overview
           </Link>
+
         </div>
         <AccommodationSection
           tripId={id}

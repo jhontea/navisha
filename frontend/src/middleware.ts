@@ -29,5 +29,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Exclude API proxy, Next.js internals, and any auto-generated icon assets
+  // (favicon.ico, icon.svg, apple-icon, etc.) from auth checks so they are
+  // served publicly even to unauthenticated visitors on the landing page.
+  matcher: ["/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon|manifest\\.webmanifest).*)"],
 }
