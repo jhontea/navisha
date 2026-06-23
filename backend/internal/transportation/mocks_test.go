@@ -119,17 +119,17 @@ func (m *mockRepo) InsertTx(_ context.Context, _ pgx.Tx, t *Transportation) (*Tr
 
 // mockExpenseCreator satisfies ExpenseCreator. Records last call args.
 type mockExpenseCreator struct {
-	calls    int
-	lastUser string
-	lastTrip string
-	lastTitle string
+	calls      int
+	lastUser   string
+	lastTrip   string
+	lastTitle  string
 	lastAmount float64
-	err      error
+	err        error
 }
 
 func (m *mockExpenseCreator) CreateLinkedExpenseTx(
 	_ context.Context, _ pgx.Tx,
-	userID, tripID, title, _, _ string, amount float64,
+	userID, tripID, title, _, _ string, amount float64, _ string,
 ) error {
 	m.calls++
 	m.lastUser = userID

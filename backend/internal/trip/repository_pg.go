@@ -249,6 +249,16 @@ func (r *postgresRepository) InsertDays(ctx context.Context, tx pgx.Tx, days []D
 	return nil
 }
 
+// DeleteDays deletes all days for a trip within the provided transaction.
+// Used when regenerating days after a date-range change.
+func (r *postgresRepository) DeleteDays(ctx context.Context, tx pgx.Tx, tripID string) error {
+	_, err := tx.Exec(ctx, `DELETE FROM days WHERE trip_id = $1`, tripID)
+	if err != nil {
+		return fmt.Errorf("trip.DeleteDays: %w", err)
+	}
+	return nil
+}
+
 func (r *postgresRepository) Update(t *Trip) (*Trip, error) {
 	out := &Trip{}
 	err := r.db.QueryRow(context.Background(),

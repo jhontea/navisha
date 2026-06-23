@@ -90,6 +90,11 @@ func (m *mockRepo) InsertDays(_ context.Context, _ pgx.Tx, days []Day) error {
 	m.insertedDays = append(m.insertedDays, days...)
 	return nil
 }
+func (m *mockRepo) DeleteDays(_ context.Context, _ pgx.Tx, _ string) error {
+	// Reset inserted days so tests can verify regenerated days.
+	m.insertedDays = nil
+	return nil
+}
 func (m *mockRepo) Update(_ *Trip) (*Trip, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr

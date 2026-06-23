@@ -4,6 +4,47 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 23: Bug Fixes — Trip List Cache, Day Regeneration, Form Validation
+
+**Status**: Tiga bug diperbaiki: trip list tidak refresh setelah create, activity days tidak regenerasi saat tanggal diedit, dan form transport bisa disubmit kosong.
+
+### Completed
+- **Fix trip list tidak update setelah create** (`frontend/src/features/trip/hooks/useTrips.ts`):
+  - `useCreateTrip`, `useUpdateTrip`, `useDeleteTrip` sekarang invalidate `["trips"]` (semua sub-keys) bukan hanya `["trips", "list"]`
+  - Memastikan `upcoming`, `filtered`, `list`, dan `detail` semua di-refresh setelah mutasi
+- **Fix activity days tidak regenerasi saat tanggal diedit** (backend):
+  - `backend/internal/trip/repository.go` — tambah `DeleteDays(ctx, tx, tripID)` ke `Repository` interface
+  - `backend/internal/trip/repository_pg.go` — implementasi `DeleteDays` (DELETE days WHERE trip_id = $1 dalam tx)
+  - `backend/internal/trip/usecase.go` — `Update()` sekarang cek `datesChanged`; kalau tanggal berubah: jalankan tx `DeleteDays → InsertDays` dengan tanggal baru atomically
+  - `backend/internal/trip/mocks_test.go` — tambah `DeleteDays` ke mock
+  - `backend/internal/accommodation/mocks_test.go` + `backend/internal/transportation/mocks_test.go` — fix signature `mockExpenseCreator.CreateLinkedExpenseTx` (tambah `_ string` untuk `expenseDate` param)
+  - Semua 116+ tests hijau
+- **Fix TransportationForm bisa submit kosong**:
+  - `from_location` sekarang required (min 1)
+  - `to_location` sekarang required (min 1)
+  - `departure_datetime` sekarang required (min 1)
+  - Error message muncul di bawah field yang kosong
+- **Redis cache fix untuk currency baru** (VPS):
+  - Hapus Redis cache `rates:USD` agar backend fetch ulang dengan currency list baru (MYR, THB, EUR, VND)
+  - ```docker exec redis-navisha redis-cli DEL rates:USD```
+
+### Key Decisions
+- **Invalidate `["trips"]` bukan `["trips", "list"]`** — TanStack Query `invalidateQueries` dengan prefix `["trips"]` meng-invalidate semua query yang key-nya dimulai dengan `"trips"`, termasuk `upcoming`, `filtered`, `detail`. Ini lebih safe daripada enumerate setiap variant.
+- **Atomic day regeneration** — delete + insert dalam satu transaction sehingga kalau insert gagal, delete juga di-rollback. Tidak ada state inconsistent di mana trip punya tanggal baru tapi days masih lama.
+- **Dates changed check** — kalau tanggal tidak berubah, gunakan update biasa tanpa transaction (lebih efisien). Hanya buka transaction kalau diperlukan.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Cover image upload**
+- [ ] **Real loyalty math**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Deploy ke VPS lalu verify: (1) trip baru langsung muncul di dashboard, (2) edit tanggal trip regenerasi day panels. Kemudian tackle "Unknown date" expense bug.
+
+---
+
 ## 2026-06-23 — Session 22: Mobile Nav Trip Sub-Menu + Currency Expansion
 
 **Status**: Mobile bottom nav now shows trip sub-menu when on trip pages. Added MYR, THB, EUR, VND to backend + frontend.
