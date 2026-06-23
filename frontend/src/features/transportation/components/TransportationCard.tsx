@@ -51,14 +51,20 @@ export function TransportationCard({
   const Icon = TYPE_ICON[t.type] ?? Boxes
   const iconBg = TYPE_COLOR[t.type] ?? TYPE_COLOR.other
 
+  // departure_datetime is stored as UTC but represents the user's intended local time.
+  // Strip timezone suffix and parse as local to avoid double-shifting.
   const depTime = t.departure_datetime
-    ? new Date(t.departure_datetime).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+    ? (() => {
+        const bare = t.departure_datetime!.replace(/Z$|[+-]\d{2}:\d{2}$/, "")
+        const d = new Date(bare)
+        return isNaN(d.getTime()) ? null : d.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      })()
     : null
 
   return (

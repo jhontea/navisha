@@ -151,7 +151,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
               const Icon = TYPE_ICON[t.type] ?? Boxes
               const iconBg = TYPE_COLOR[t.type] ?? TYPE_COLOR.other
               const depTime = t.departure_datetime
-                ? new Date(t.departure_datetime).toLocaleString("en-US", {
+                ? new Date(t.departure_datetime.replace(/Z$|[+-]\d{2}:\d{2}$/, "")).toLocaleString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",

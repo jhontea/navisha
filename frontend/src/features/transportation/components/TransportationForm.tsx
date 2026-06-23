@@ -385,19 +385,29 @@ export function TransportationForm({
   )
 }
 
-// Convert ISO 8601 from API to <input type="datetime-local"> shape.
+// Convert ISO 8601 from API (UTC) to <input type="datetime-local"> shape.
+// The API stores datetime as UTC; we display it as-is (treating stored time
+// as the "intended" local departure time, not converting to browser timezone).
 function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return ""
-  const d = new Date(iso)
+  // Strip the Z/offset so the datetime is treated as local, not UTC
+  // e.g. "2026-07-01T06:30:00Z" → "2026-07-01T06:30"
+  const bare = iso.replace(/Z$|[+-]\d{2}:\d{2}$/, "")
+  const d = new Date(bare)
   if (isNaN(d.getTime())) return ""
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // Convert datetime-local value back to RFC3339 for the API; empty → null.
+// We send the time as UTC+00:00 (appending Z) so the backend stores the
+// time exactly as entered by the user, without any timezone conversion.
 function fromLocalInput(local: string | undefined): string | null {
   if (!local) return null
-  const d = new Date(local)
-  if (isNaN(d.getTime())) return null
-  return d.toISOString()
+  // local is "YYYY-MM-DDTHH:mm" — treat as UTC by appending Z
+  // This preserves the intended time value without shifting it.
+  if (!/Z$|[+-]\d{2}:\d{2}$/.test(local)) {
+    return local + ":00Z"
+  }
+  return local
 }

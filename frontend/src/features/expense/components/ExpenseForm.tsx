@@ -13,6 +13,13 @@ import {
   type ExpenseCategory,
 } from "../types"
 
+// Returns today's date as YYYY-MM-DD in the user's local timezone.
+function localDateString(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW"] as const
 
 const CATEGORY_OPTIONS: {
@@ -74,7 +81,7 @@ export function ExpenseForm({
             ? (tripBaseCurrency as FormValues["currency"])
             : "IDR"),
         category: initial?.category ?? "food",
-        expense_date: initial?.expense_date ?? new Date().toISOString().slice(0, 10),
+        expense_date: initial?.expense_date ?? localDateString(),
         note: initial?.note ?? "",
       },
     })
