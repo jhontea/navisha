@@ -33,9 +33,6 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Navisha",
   description: "Plan your journey. Own your adventure.",
-  icons: {
-    icon: "/favicon.ico",
-  },
 }
 
 export default function RootLayout({
