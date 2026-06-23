@@ -92,8 +92,8 @@ export default function TripBudgetPage() {
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
-            <div className="flex gap-3 items-end">
-              <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex-1 min-w-0">
                 <label className="font-label-md text-muted-foreground block mb-1.5">
                   Total Budget
                 </label>
@@ -116,17 +116,17 @@ export default function TripBudgetPage() {
                       setRawBudget(stripped)
                     }}
                     placeholder="e.g., 10,000,000"
-                    className="flex-1 px-4 py-2.5 bg-transparent border-0 outline-none font-body-md text-foreground placeholder:text-muted-foreground/60"
+                    className="min-w-0 flex-1 px-4 py-2.5 bg-transparent border-0 outline-none font-body-md text-foreground placeholder:text-muted-foreground/60"
                     onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
                     autoFocus
                   />
                 </div>
               </div>
-              <div className="flex gap-2 pb-0.5">
+              <div className="flex gap-2 sm:pb-0.5 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setEditingBudget(false)}
-                  className="px-4 py-2.5 rounded-lg border border-border text-foreground font-label-md hover:bg-muted transition-colors"
+                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg border border-border text-foreground font-label-md hover:bg-muted transition-colors"
                 >
                   Cancel
                 </button>
@@ -135,7 +135,7 @@ export default function TripBudgetPage() {
                   onClick={handleSaveBudget}
                   disabled={updateTripMut.isPending || !rawBudget}
                   className={cn(
-                    "px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-label-md",
+                    "flex-1 sm:flex-none px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-label-md whitespace-nowrap",
                     "shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-60",
                   )}
                 >
