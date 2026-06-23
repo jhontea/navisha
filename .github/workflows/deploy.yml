@@ -1,0 +1,51 @@
+name: Deploy to VPS
+
+# Runs on merge to main (a merged PR pushes a commit to main).
+# Also allows a manual run from the Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # Never run two deploys at once; cancel an in-progress one if a newer
+  # commit lands on main.
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          # Stop on first error, fail on unset vars, fail piped commands.
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/navisha
+
+            echo "==> Pulling latest code"
+            git fetch --prune origin main
+            git reset --hard origin/main
+
+            echo "==> Loading frontend build args"
+            # NEXT_PUBLIC_* values are baked into the bundle at build time.
+            set -a
+            source .env.prod
+            set +a
+
+            echo "==> Building and restarting containers"
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "==> Pruning dangling images"
+            docker image prune -f
+
+            echo "==> Deployed containers:"
+            docker compose -f docker-compose.prod.yml ps

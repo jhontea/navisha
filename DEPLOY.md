@@ -294,7 +294,64 @@ docker compose -f docker-compose.prod.yml up -d --build frontend
 
 ---
 
+## 13. Auto-Deploy via GitHub Actions (CI/CD)
+
+Workflow `.github/workflows/deploy.yml` otomatis men-deploy ke VPS setiap ada
+commit baru di branch `main` (termasuk hasil **merge pull request**). Workflow
+ini SSH ke VPS lalu menjalankan langkah deploy yang sama seperti Bagian 12.
+
+### 13a. Daftarkan Secrets di GitHub
+
+Buka repo di GitHub → **Settings** → **Secrets and variables** → **Actions** →
+**New repository secret**, lalu tambahkan:
+
+| Secret          | Nilai                                                        |
+|-----------------|-------------------------------------------------------------|
+| `VPS_HOST`      | `202.155.13.11`                                             |
+| `VPS_USER`      | User SSH di VPS (mis. `root` atau user deploy)              |
+| `VPS_SSH_KEY`   | **Private key** SSH (isi lengkap file, termasuk header/footer) |
+| `VPS_SSH_PORT`  | (Opsional) Port SSH, default `22`                          |
+
+### 13b. Siapkan SSH Key untuk GitHub Actions
+
+Sebaiknya buat key khusus untuk CI (jangan pakai key personal). Di VPS:
+
+```bash
+# Generate key khusus CI (tanpa passphrase agar bisa non-interactive)
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/gh_actions -N ""
+
+# Izinkan key ini login ke VPS
+cat ~/.ssh/gh_actions.pub >> ~/.ssh/authorized_keys
+
+# Tampilkan PRIVATE key — copy seluruh output ke secret VPS_SSH_KEY
+cat ~/.ssh/gh_actions
+```
+
+> Pastikan `git` di VPS sudah bisa `git fetch origin main` tanpa prompt (lihat
+> Bagian 3 — SSH key VPS → GitHub). Workflow melakukan `git reset --hard origin/main`
+> sehingga perubahan lokal yang tidak ter-commit di VPS akan ditimpa.
+
+### 13c. Cara Kerja
+
+1. PR di-merge ke `main` → event `push` pada branch `main` memicu workflow.
+2. GitHub Actions SSH ke VPS, `git reset --hard origin/main`, load `.env.prod`,
+   lalu `docker compose -f docker-compose.prod.yml up -d --build`.
+3. `concurrency` memastikan hanya satu deploy berjalan dalam satu waktu.
+4. Bisa juga dijalankan manual lewat tab **Actions** → **Deploy to VPS** →
+   **Run workflow** (`workflow_dispatch`).
+
+### 13d. Catatan Keamanan
+
+- Workflow hanya jalan saat push ke `main`. Karena hanya merge ke `main` yang
+  memicu deploy, lindungi branch `main` dengan **branch protection rule** (wajib
+  PR + review) agar tidak ada yang push langsung tanpa review.
+- `VPS_SSH_KEY` adalah kredensial sensitif — disimpan sebagai encrypted secret,
+  tidak pernah muncul di log. Jangan pernah commit private key ke repo.
+
+---
+
 ## Deploy App Lain di VPS yang Sama
+
 
 Masing-masing app punya direktori dan compose file sendiri:
 
