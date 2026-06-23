@@ -8,6 +8,13 @@ import { useState } from "react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import type { CreateTripInput, Trip } from "../types"
 
+function formatBudgetDisplay(raw: string): string {
+  if (!raw) return ""
+  const num = Number(raw.replace(/,/g, ""))
+  if (isNaN(num)) return raw
+  return num.toLocaleString()
+}
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 // Fallback names for when backend doesn't return name field yet
@@ -213,13 +220,20 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           <span className="h-6 w-px bg-outline-variant shrink-0" />
           <input
             id="budget"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="1000"
+            type="text"
+            inputMode="numeric"
             className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
-            placeholder="e.g., 10000000"
-            {...register("budget")}
+            placeholder="e.g., 10,000,000"
+            {...register("budget", {
+              onChange: (e) => {
+                // Strip non-numeric, format with thousand separators for display
+                const raw = e.target.value.replace(/[^0-9]/g, "")
+                e.target.value = raw ? Number(raw).toLocaleString() : ""
+                // Store raw number in form
+                return raw
+              },
+              setValueAs: (v) => v ? String(Number(String(v).replace(/[^0-9]/g, ""))) : "",
+            })}
           />
         </div>
         <p className="text-xs text-on-surface-variant">

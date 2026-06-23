@@ -4,6 +4,48 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 24: Smoke Test + UI/UX Fixes
+
+**Status**: Full smoke test via Playwright MCP. Numeric separator fixes dan currency symbol expansion.
+
+### Completed
+- **Playwright MCP setup** — install `@playwright/mcp@0.0.76` secara global, konfigurasi di MCP settings untuk browser automation smoke test
+- **Smoke test lengkap** — test semua halaman di desktop (1440px) dan mobile (390px):
+  - Landing page: tampil benar, Google button teks terlihat
+  - Login page: flow benar
+  - Dashboard: user info, trip cards, stats section (1 trip, 1 countries visited)
+  - My Trips: filter, pagination, status badges (Upcoming/Past)
+  - Trip detail: header, day panels, inline form, mobile bottom nav contextual
+  - Transport: form validasi (from/to/departure required), type selector
+  - Stay: form dengan type selector, name/location/dates required
+  - Budget: real data 85 expenses, Rp 68,273,470 dari budget Rp 65,000,000, 105% used (merah)
+  - Expense list: grouped by date, icon per category, thousand separator
+- **Fix budget input TripForm** (`frontend/src/features/trip/components/TripForm.tsx`):
+  - Ubah dari `type="number"` ke `type="text" inputMode="numeric"`
+  - Tambah `onChange` handler untuk auto-format thousand separator
+  - `setValueAs` untuk strip comma sebelum disimpan ke RHF
+  - Placeholder diupdate: `e.g., 10,000,000`
+- **Fix currency symbols** (`frontend/src/lib/utils.ts`):
+  - Tambah EUR (`€`), MYR (`RM`), THB (`฿`), VND (`₫`) ke `CURRENCY_SYMBOLS` map
+  - `formatCurrency()` sekarang menampilkan simbol yang benar untuk semua 9 currency
+
+### Key Decisions
+- **`type="text"` over `type="number"` for budget** — `type="number"` tidak bisa diformat dengan thousand separator. `type="text" inputMode="numeric"` memberi UX mobile keyboard numerik tapi tetap bisa diformat.
+- **Smoke test via Playwright MCP** — menggunakan browser automation untuk visual verification lebih efektif daripada hanya membaca kode. Menemukan bug separator dan currency symbol yang tidak terdeteksi dari code review.
+- **Local JWT untuk testing** — token dari production tidak valid di local backend (different JWT_SECRET). Solusi: generate JWT manual dengan local secret menggunakan Node.js crypto.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Cover image upload**
+- [ ] **Real loyalty math**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Deploy semua changes ke VPS. Kemudian tackle "Unknown date" expense bug atau linked-expense lifecycle.
+
+---
+
 ## 2026-06-23 — Session 23: Bug Fixes — Trip List Cache, Day Regeneration, Form Validation
 
 **Status**: Tiga bug diperbaiki: trip list tidak refresh setelah create, activity days tidak regenerasi saat tanggal diedit, dan form transport bisa disubmit kosong.

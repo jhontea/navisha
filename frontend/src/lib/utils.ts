@@ -11,6 +11,10 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   JPY: "¥",
   SGD: "S$",
   KRW: "₩",
+  EUR: "€",
+  MYR: "RM",
+  THB: "฿",
+  VND: "₫",
 }
 
 export function formatCurrency(amount: number, currency: string, compact = false): string {
