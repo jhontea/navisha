@@ -6,16 +6,12 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
+import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import type { CreateTripInput, Trip } from "../types"
 
-function formatBudgetDisplay(raw: string): string {
-  if (!raw) return ""
-  const num = Number(raw.replace(/,/g, ""))
-  if (isNaN(num)) return raw
-  return num.toLocaleString()
-}
-
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+
 
 // Fallback names for when backend doesn't return name field yet
 const CURRENCY_NAMES: Record<string, string> = {
@@ -91,9 +87,11 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     control,
     formState: { errors },
   } = useForm<FormValues>({
+
     resolver: zodResolver(schema),
     defaultValues: buildDefaults(initial),
   })
+
 
   const submit = async (values: FormValues) => {
     await onSubmit({
@@ -152,18 +150,31 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           </div>
           {/* Divider */}
           <span className="h-6 w-px bg-outline-variant shrink-0" />
-          {/* Input */}
-          <input
-            id="destination"
-            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
-            placeholder="Search city or country"
-            {...register("destination")}
+          {/* Input — Google Places autocomplete (city/province/country only) */}
+          <Controller
+            name="destination"
+            control={control}
+            render={({ field }) => (
+              <DestinationAutocomplete
+                id="destination"
+                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
+                placeholder="Search city, province, or country"
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onSelect={(place) => field.onChange(place.description)}
+              />
+            )}
           />
         </div>
         {errors.destination && (
           <p className="text-xs text-error">{errors.destination.message}</p>
         )}
+        <p className="text-xs text-on-surface-variant">
+          Pick a city, province, or country.
+        </p>
+
       </div>
+
 
       {/* Date Range — side by side */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
