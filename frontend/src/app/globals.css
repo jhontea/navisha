@@ -216,3 +216,29 @@
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
+/* Google Places Autocomplete dropdown — ensure it's above everything */
+.pac-container {
+  z-index: 9999 !important;
+  font-family: 'Inter', var(--font-inter), sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+}
+.pac-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-top: 1px solid #e5e7eb;
+}
+.pac-item:hover {
+  background-color: #f3f4f6;
+}
+.pac-item-query {
+  font-size: 14px;
+  font-weight: 500;
+  color: #181c23;
+}
+.pac-icon {
+  margin-right: 8px;
+}
+

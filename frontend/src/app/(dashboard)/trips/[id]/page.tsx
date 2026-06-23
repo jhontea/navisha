@@ -15,7 +15,9 @@ import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { formatDateRange } from "@/lib/utils"
 import { useTrip, useDeleteTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
+import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
 import { DayPanel } from "@/features/activity/components/DayPanel"
+
 import { TripMap } from "@/features/map/components/TripMap"
 import { cn } from "@/lib/utils"
 
@@ -60,6 +62,9 @@ export default function TripDetailPage() {
   const [editStartDate, setEditStartDate] = useState("")
   const [editEndDate, setEditEndDate] = useState("")
   const [editDescription, setEditDescription] = useState("")
+  // Cover photo auto-fetched from the destination's Google Places photo.
+  const [editCover, setEditCover] = useState("")
+
 
   if (isLoading) {
     return (
@@ -102,6 +107,7 @@ export default function TripDetailPage() {
     setEditDescription(trip.description ?? "")
     setEditStartDate(trip.start_date)
     setEditEndDate(trip.end_date)
+    setEditCover(trip.cover_image_url ?? "")
     setIsEditing(true)
   }
 
@@ -114,12 +120,13 @@ export default function TripDetailPage() {
         start_date: editStartDate,
         end_date: editEndDate,
         base_currency: trip.base_currency,
-        cover_image_url: trip.cover_image_url,
+        cover_image_url: editCover,
         notes: trip.notes,
       },
       { onSettled: () => setIsEditing(false) },
     )
   }
+
 
   const cancelEditing = () => setIsEditing(false)
 
@@ -151,14 +158,38 @@ export default function TripDetailPage() {
                   className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-xl font-bold tracking-tight text-foreground focus:outline-none md:text-2xl"
                   disabled={isUpdating}
                 />
-                {/* Location / description */}
-                <input
+                {/* Location / destination — Google Places autocomplete */}
+                <DestinationAutocomplete
                   value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="Location / description (optional)"
+                  onChange={setEditDescription}
+                  onSelect={(place) => {
+                    setEditDescription(place.description)
+                    // Refresh the cover photo from the new destination.
+                    setEditCover(place.photoUrl || "")
+                  }}
+                  placeholder="Search city, province, or country"
                   className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                  disabled={isUpdating}
                 />
+                {/* Cover preview — auto-fetched destination photo */}
+                {editCover && (
+                  <div className="relative h-28 w-full overflow-hidden rounded-lg border border-input">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editCover}
+                      alt="Trip cover preview"
+                      className="h-full w-full object-cover"
+                      onError={() => setEditCover("")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditCover("")}
+                      className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+
                 {/* Dates */}
                 <div className="flex gap-2">
                   <div className="flex flex-1 flex-col gap-1">
