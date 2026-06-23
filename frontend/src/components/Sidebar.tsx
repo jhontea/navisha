@@ -6,11 +6,13 @@ import {
   ArrowLeftRight,
   CalendarDays,
   LayoutDashboard,
+  LayoutGrid,
   Plane,
   Hotel,
   Wallet,
   Compass,
 } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 import { useAuth, useLogout } from "@/features/auth/hooks"
 import { useTrip } from "@/features/trip/hooks/useTrips"
@@ -29,8 +31,10 @@ const MAIN_NAV: NavItem[] = [
 ]
 
 const TRIP_NAV = [
+  { label: "Overview", href: "/overview", icon: LayoutGrid },
   { label: "Itinerary", href: "", icon: CalendarDays },
   { label: "Transport", href: "/transport", icon: Plane },
+
   { label: "Stay", href: "/stay", icon: Hotel },
   { label: "Budget", href: "/budget", icon: Wallet },
 ]

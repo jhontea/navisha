@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Navisha | Itinerary Overview - Summer in Tokyo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-primary-fixed": "#001a41",
+          "on-secondary-fixed": "#0c1e26",
+          "surface-container-highest": "#e0e2ed",
+          "surface-container": "#ecedf9",
+          "secondary": "#50616b",
+          "on-surface-variant": "#414755",
+          "tertiary": "#9e3d00",
+          "surface-dim": "#d8d9e5",
+          "tertiary-container": "#c64f00",
+          "tertiary-fixed": "#ffdbcc",
+          "on-primary-fixed-variant": "#004493",
+          "budget-green": "#DCFCE7",
+          "stay-purple": "#EDE9FE",
+          "inverse-surface": "#2d3039",
+          "tertiary-fixed-dim": "#ffb595",
+          "error-container": "#ffdad6",
+          "on-secondary-container": "#566771",
+          "error": "#ba1a1a",
+          "surface": "#f9f9ff",
+          "secondary-fixed": "#d3e5f1",
+          "inverse-on-surface": "#eef0fc",
+          "primary-container": "#0070eb",
+          "on-secondary": "#ffffff",
+          "surface-container-high": "#e6e8f3",
+          "secondary-fixed-dim": "#b7c9d5",
+          "on-background": "#181c23",
+          "secondary-container": "#d3e5f1",
+          "transport-blue": "#DBEAFE",
+          "on-error": "#ffffff",
+          "on-error-container": "#93000a",
+          "on-surface": "#181c23",
+          "primary": "#0058bc",
+          "note-yellow": "#FEF9C3",
+          "on-secondary-fixed-variant": "#384953",
+          "surface-container-low": "#f1f3fe",
+          "destructive-red": "#EF4444",
+          "on-tertiary-container": "#fffbff",
+          "primary-fixed": "#d8e2ff",
+          "inverse-primary": "#adc6ff",
+          "on-tertiary-fixed-variant": "#7c2e00",
+          "on-primary-container": "#fefcff",
+          "outline-variant": "#c1c6d7",
+          "primary-fixed-dim": "#adc6ff",
+          "surface-container-lowest": "#ffffff",
+          "on-primary": "#ffffff",
+          "outline": "#717786",
+          "surface-variant": "#e0e2ed",
+          "surface-tint": "#005bc1",
+          "on-tertiary-fixed": "#351000",
+          "on-tertiary": "#ffffff",
+          "surface-bright": "#f9f9ff",
+          "background": "#f9f9ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "max-width": "1200px",
+          "margin-mobile": "1rem",
+          "margin-desktop": "2.5rem",
+          "unit": "4px",
+          "gutter": "1.5rem"
+        },
+        "fontFamily": {
+          "label-sm": ["Inter"],
+          "body-sm": ["Inter"],
+          "headline-md": ["Geist"],
+          "body-md": ["Inter"],
+          "display": ["Geist"],
+          "headline-sm": ["Geist"],
+          "body-lg": ["Inter"],
+          "label-md": ["Inter"],
+          "headline-lg": ["Geist"],
+          "headline-lg-mobile": ["Geist"]
+        },
+        "fontSize": {
+          "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+          "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+          "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+          "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+          "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+          "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+          "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+          "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+          "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+        }
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e0e2ed;
+    border-radius: 10px;
+  }
+  .trip-card {
+    box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.03);
+    border: 1px solid #F1F5F9;
+  }
+  .day-card {
+    transition: all 0.3s ease;
+  }
+  .day-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0px 16px 32px rgba(0, 88, 188, 0.08);
+  }
+</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md overflow-hidden">
+<div class="flex h-screen w-full">
+  <!-- SideNavBar -->
+  <aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col p-4 gap-2 z-50 overflow-y-auto">
+    <div class="mb-8 px-2">
+      <h1 class="text-headline-sm font-headline-sm font-bold text-primary">Navisha</h1>
+      <p class="text-label-sm font-label-sm text-outline mt-1">Travel Planning</p>
+    </div>
+    
+    <!-- Global Navigation -->
+    <div class="mb-6 space-y-1">
+      <h2 class="px-2 text-label-sm font-label-sm text-outline uppercase tracking-wider mb-2">Global</h2>
+      <button class="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" onclick="location.href='#'">
+        <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+        <span class="text-label-md font-label-md">Dashboard</span>
+      </button>
+      <button class="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" onclick="location.href='#'">
+        <span class="material-symbols-outlined" data-icon="currency_exchange">currency_exchange</span>
+        <span class="text-label-md font-label-md">Converter</span>
+      </button>
+    </div>
+    
+    <!-- Active Trip Navigation -->
+    <div class="mb-6 space-y-1">
+      <div class="px-2 mb-2">
+        <h2 class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Active Trip</h2>
+        <p class="text-body-sm font-body-sm text-on-surface font-bold truncate">Summer in Tokyo</p>
+      </div>
+      <nav class="space-y-1">
+        <!-- Itinerary Tab (Active) -->
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 bg-secondary-container text-on-secondary-container rounded-lg font-bold translate-x-1 transition-transform duration-200" onclick="switchTab('itinerary')">
+          <span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+          <span class="text-label-md font-label-md">Itinerary</span>
+        </button>
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" onclick="switchTab('transport')">
+          <span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+          <span class="text-label-md font-label-md">Transport</span>
+        </button>
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" onclick="switchTab('stay')">
+          <span class="material-symbols-outlined" data-icon="hotel">hotel</span>
+          <span class="text-label-md font-label-md">Stay</span>
+        </button>
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all" onclick="switchTab('budget')">
+          <span class="material-symbols-outlined" data-icon="payments">payments</span>
+          <span class="text-label-md font-label-md">Budget</span>
+        </button>
+      </nav>
+    </div>
+    
+    <div class="mt-auto pt-4 border-t border-outline-variant space-y-1">
+      <button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-md hover:opacity-90 transition-opacity mb-4 shadow-lg shadow-primary/20">
+        Add Activity
+      </button>
+      <button class="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all">
+        <span class="material-symbols-outlined" data-icon="settings">settings</span>
+        <span class="text-label-md font-label-md">Settings</span>
+      </button>
+      <button class="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all">
+        <span class="material-symbols-outlined" data-icon="help">help</span>
+        <span class="text-label-md font-label-md">Support</span>
+      </button>
+    </div>
+  </aside>
+  
+  <!-- Main Content Canvas -->
+  <main class="ml-64 flex-1 flex flex-col h-screen overflow-y-auto">
+    <!-- Top Header -->
+    <header class="sticky top-0 bg-surface/80 backdrop-blur-md z-40 px-margin-desktop py-6 flex justify-between items-end border-b border-surface-container-high">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2 py-0.5 bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm rounded">ACTIVE TRIP</span>
+          <span class="text-outline text-body-sm font-body-sm">• July 15 - July 28, 2024</span>
+        </div>
+        <h2 class="text-headline-lg font-headline-lg text-on-background tracking-tight">Summer in Tokyo</h2>
+      </div>
+      <div class="flex gap-3">
+        <button class="p-2 rounded-full border border-outline-variant hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined" data-icon="share">share</span>
+        </button>
+        <button class="p-2 rounded-full border border-outline-variant hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+        </button>
+      </div>
+    </header>
+    
+    <div class="px-margin-desktop py-10 max-w-max-width mx-auto w-full">
+      <!-- Hero Summary Section -->
+      <section class="mb-12">
+        <div class="bg-gradient-to-br from-primary-fixed to-surface-container-low p-8 rounded-2xl mb-8">
+          <div class="flex items-start justify-between mb-6">
+            <div>
+              <h3 class="text-headline-lg font-headline-lg text-on-surface mb-2">Trip Overview</h3>
+              <p class="text-body-md text-on-surface-variant">Your complete journey at a glance</p>
+            </div>
+            <div class="text-right">
+              <p class="text-label-sm text-outline uppercase tracking-wider">Duration</p>
+              <p class="text-headline-md font-headline-md text-primary">14 Days</p>
+            </div>
+          </div>
+          
+          <!-- Bento Stat Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-surface-container-lowest p-4 rounded-xl trip-card">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 bg-transport-blue rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[18px]">event_note</span>
+                </div>
+                <span class="text-label-sm text-outline uppercase">Activities</span>
+              </div>
+              <p class="text-headline-md font-headline-md text-on-surface">42</p>
+            </div>
+            
+            <div class="bg-surface-container-lowest p-4 rounded-xl trip-card">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 bg-stay-purple rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-secondary-fixed-variant text-[18px]">hotel</span>
+                </div>
+                <span class="text-label-sm text-outline uppercase">Stays</span>
+              </div>
+              <p class="text-headline-md font-headline-md text-on-surface">3</p>
+            </div>
+            
+            <div class="bg-surface-container-lowest p-4 rounded-xl trip-card">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 bg-transport-blue rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[18px]">directions_bus</span>
+                </div>
+                <span class="text-label-sm text-outline uppercase">Transport</span>
+              </div>
+              <p class="text-headline-md font-headline-md text-on-surface">8</p>
+            </div>
+            
+            <div class="bg-surface-container-lowest p-4 rounded-xl trip-card">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 bg-budget-green rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-secondary-fixed text-[18px]">payments</span>
+                </div>
+                <span class="text-label-sm text-outline uppercase">Budget</span>
+              </div>
+              <p class="text-headline-md font-headline-md text-on-surface">$1,240</p>
+              <p class="text-label-sm text-outline">/ $3,000</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Trip Progress -->
+        <div class="bg-surface-container-lowest p-6 rounded-xl trip-card mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-label-md font-label-md text-on-surface">Trip Progress</h4>
+            <span class="text-body-sm text-on-surface-variant">Day 3 of 14</span>
+          </div>
+          <div class="w-full h-3 bg-surface-container rounded-full overflow-hidden mb-2">
+            <div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 21%"></div>
+          </div>
+          <div class="flex justify-between text-label-sm text-outline">
+            <span>July 15</span>
+            <span>July 28</span>
+          </div>
+        </div>
+        
+        <!-- Budget Distribution -->
+        <div class="bg-surface-container-lowest p-6 rounded-xl trip-card">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-label-md font-label-md text-on-surface">Budget Distribution</h4>
+            <button class="text-primary text-label-md hover:underline">View Details</button>
+          </div>
+          <div class="h-8 w-full flex rounded-full overflow-hidden bg-surface-variant mb-4">
+            <div class="h-full bg-primary" style="width: 45%" title="Stay: 45%"></div>
+            <div class="h-full bg-secondary" style="width: 30%" title="Transport: 30%"></div>
+            <div class="h-full bg-tertiary" style="width: 15%" title="Food: 15%"></div>
+            <div class="h-full bg-outline-variant" style="width: 10%" title="Others: 10%"></div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-primary"></div>
+              <span class="text-body-sm">Stay ($558)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-secondary"></div>
+              <span class="text-body-sm">Transport ($372)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-tertiary"></div>
+              <span class="text-body-sm">Food ($186)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+              <span class="text-body-sm">Others ($124)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Day Overview Cards -->
+      <section class="mb-12">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-headline-md font-headline-md">Daily Itinerary</h3>
+          <div class="flex gap-2">
+            <button class="px-4 py-2 text-primary font-label-md border border-primary rounded-lg hover:bg-primary/5 transition-colors">
+              <span class="material-symbols-outlined text-[18px] align-middle mr-1">add</span>
+              Add Day
+            </button>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Day 1 Card -->
+          <div class="day-card bg-surface-container-lowest p-6 rounded-xl trip-card cursor-pointer">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h4 class="text-headline-sm font-headline-sm text-on-surface mb-1">Day 1</h4>
+                <p class="text-body-sm text-on-surface-variant">Monday, July 15</p>
+              </div>
+              <span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm rounded">4 activities</span>
+            </div>
+            
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">flight_takeoff</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">NRT → Tokyo City Center</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Shibuya Crossing</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-stay-purple rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-secondary-fixed-variant text-[14px]">hotel</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Hotel Park Side</span>
+              </div>
+            </div>
+            
+            <button class="w-full py-2 text-primary font-label-md border border-primary rounded-lg hover:bg-primary/5 transition-colors">
+              View Day
+            </button>
+          </div>
+          
+          <!-- Day 2 Card -->
+          <div class="day-card bg-surface-container-lowest p-6 rounded-xl trip-card cursor-pointer">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h4 class="text-headline-sm font-headline-sm text-on-surface mb-1">Day 2</h4>
+                <p class="text-body-sm text-on-surface-variant">Tuesday, July 16</p>
+              </div>
+              <span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm rounded">5 activities</span>
+            </div>
+            
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Senso-ji Temple</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Tokyo Skytree</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-note-yellow rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-tertiary-fixed-variant text-[14px]">sticky_note_2</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Try local ramen shop</span>
+              </div>
+            </div>
+            
+            <button class="w-full py-2 text-primary font-label-md border border-primary rounded-lg hover:bg-primary/5 transition-colors">
+              View Day
+            </button>
+          </div>
+          
+          <!-- Day 3 Card (Current Day) -->
+          <div class="day-card bg-surface-container-lowest p-6 rounded-xl trip-card cursor-pointer border-2 border-primary">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <h4 class="text-headline-sm font-headline-sm text-on-surface">Day 3</h4>
+                  <span class="px-2 py-0.5 bg-primary text-on-primary text-[10px] font-bold rounded">TODAY</span>
+                </div>
+                <p class="text-body-sm text-on-surface-variant">Wednesday, July 17</p>
+              </div>
+              <span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm rounded">3 activities</span>
+            </div>
+            
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Meiji Shrine</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Harajuku Takeshita Street</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-budget-green rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-secondary-fixed text-[14px]">restaurant</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Dinner at Ichiran Ramen</span>
+              </div>
+            </div>
+            
+            <button class="w-full py-2 bg-primary text-on-primary font-label-md rounded-lg hover:bg-primary-container transition-colors">
+              View Day
+            </button>
+          </div>
+          
+          <!-- Day 4 Card -->
+          <div class="day-card bg-surface-container-lowest p-6 rounded-xl trip-card cursor-pointer">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h4 class="text-headline-sm font-headline-sm text-on-surface mb-1">Day 4</h4>
+                <p class="text-body-sm text-on-surface-variant">Thursday, July 18</p>
+              </div>
+              <span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm rounded">4 activities</span>
+            </div>
+            
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">directions_subway</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Day trip to Kamakura</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Great Buddha Statue</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Hasedera Temple</span>
+              </div>
+            </div>
+            
+            <button class="w-full py-2 text-primary font-label-md border border-primary rounded-lg hover:bg-primary/5 transition-colors">
+              View Day
+            </button>
+          </div>
+          
+          <!-- Day 5 Card -->
+          <div class="day-card bg-surface-container-lowest p-6 rounded-xl trip-card cursor-pointer">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h4 class="text-headline-sm font-headline-sm text-on-surface mb-1">Day 5</h4>
+                <p class="text-body-sm text-on-surface-variant">Friday, July 19</p>
+              </div>
+              <span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm rounded">2 activities</span>
+            </div>
+            
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-transport-blue rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-[14px]">location_on</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Tsukiji Outer Market</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-note-yellow rounded flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-tertiary-fixed-variant text-[14px]">sticky_note_2</span>
+                </div>
+                <span class="text-body-sm text-on-surface truncate">Free day for shopping</span>
+              </div>
+            </div>
+            
+            <button class="w-full py-2 text-primary font-label-md border border-primary rounded-lg hover:bg-primary/5 transition-colors">
+              View Day
+            </button>
+          </div>
+          
+          <!-- Add Day Card -->
+          <div class="day-card bg-surface-container-low p-6 rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-surface-container transition-all min-h-[280px]">
+            <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-4">
+              <span class="material-symbols-outlined text-outline text-[32px]">add</span>
+            </div>
+            <p class="text-label-md text-on-surface-variant text-center">Add New Day</p>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Quick Sections -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+        <!-- Upcoming Next -->
+        <div class="bg-surface-container-lowest p-6 rounded-xl trip-card">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-label-md font-label-md text-on-surface">Upcoming Next</h4>
+            <span class="material-symbols-outlined text-primary">schedule</span>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+              <div class="w-10 h-10 bg-transport-blue rounded-lg flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">location_on</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-body-md font-label-md text-on-surface">Meiji Shrine</p>
+                <p class="text-label-sm text-on-surface-variant">Today • 10:00 AM</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+              <div class="w-10 h-10 bg-transport-blue rounded-lg flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">location_on</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-body-md font-label-md text-on-surface">Harajuku Takeshita Street</p>
+                <p class="text-label-sm text-on-surface-variant">Today • 2:00 PM</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Expenses -->
+        <div class="bg-surface-container-lowest p-6 rounded-xl trip-card">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-label-md font-label-md text-on-surface">Recent Expenses</h4>
+            <button class="text-primary text-label-md hover:underline">View All</button>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-stay-purple rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-on-secondary-fixed-variant">hotel</span>
+                </div>
+                <div>
+                  <p class="text-body-md font-label-md text-on-surface">Hotel Park Side</p>
+                  <p class="text-label-sm text-on-surface-variant">July 15</p>
+                </div>
+              </div>
+              <p class="text-body-md font-label-md text-on-surface">$240.00</p>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-transport-blue rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary">directions_bus</span>
+                </div>
+                <div>
+                  <p class="text-body-md font-label-md text-on-surface">Suica Card Top-up</p>
+                  <p class="text-label-sm text-on-surface-variant">July 15</p>
+                </div>
+              </div>
+              <p class="text-body-md font-label-md text-on-surface">$50.00</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    
+    <footer class="mt-auto py-10 px-margin-desktop border-t border-surface-container-high text-center">
+      <p class="text-body-sm font-body-sm text-outline">© 2024 Navisha. Organized adventure awaits.</p>
+    </footer>
+  </main>
+</div>
+
+<!-- Micro-interaction Script -->
+<script>
+  function switchTab(tabId) {
+    console.log('Switching to tab:', tabId);
+    const buttons = document.querySelectorAll('nav button');
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'font-bold', 'translate-x-1');
+      btn.classList.add('text-on-surface-variant', 'hover:bg-surface-container');
+    });
+    
+    event.currentTarget.classList.add('bg-secondary-container', 'text-on-secondary-container', 'font-bold', 'translate-x-1');
+    event.currentTarget.classList.remove('text-on-surface-variant', 'hover:bg-surface-container');
+  }
+  
+  // Animate cards on load
+  document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.day-card');
+    cards.forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        card.style.transition = 'all 0.5s ease-out';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 100 * index);
+    });
+  });
+</script>
+</body>
+</html>

@@ -4,7 +4,53 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 25: Trip Overview Page + Navigation UX
+
+**Status**: Halaman Trip Overview baru dibuat dari template, dengan stat cards real data, progress tracking, dan navigasi konsisten antar halaman trip.
+
+### Completed
+- **Halaman Trip Overview baru** (`frontend/src/app/(dashboard)/trips/[id]/overview/page.tsx`):
+  - Dibuat dari template `9-dashboard-itinerary-overview.html`
+  - Menampilkan header sticky dengan status trip dan tanggal
+  - **Bento Stat Cards**: Activities (total dari semua hari), Stays (jumlah akomodasi), Transport (jumlah transportasi), Spent (total pengeluaran vs budget)
+  - Semua stat card menggunakan data real dari API (hooks: `useAccommodations`, `useTransportations`, `useQueries` untuk activities per day)
+  - **Trip Progress bar**: 0% jika trip belum dimulai, progress sesuai hari berjalan, clamped di 100% setelah trip selesai
+  - **Daily Itinerary**: dibatasi 3 hari (hari berjalan + berikutnya) dengan link "View all N days" ke halaman Itinerary lengkap
+  - **Recent Expenses**: 5 transaksi terakhir sorted by date
+  - **Budget overflow handling**: warna merah (`text-destructive`) saat pengeluaran melebihi budget
+- **Fix formatCurrency rounding** (`frontend/src/lib/utils.ts`):
+  - Preserved hingga 2 desimal (USD 2.5 tetap 2.5, tidak di-round ke 3)
+  - Hapus parameter `compact` yang tidak terpakai
+- **Trip Card navigation** (`frontend/src/features/trip/components/TripCard.tsx`):
+  - Klik trip card sekarang mengarah ke `/trips/[id]/overview` (bukan langsung ke itinerary)
+- **Navigasi konsisten di semua halaman trip**:
+  - **Overview**: "Back to Dashboard" (posisi di content area, setelah header)
+  - **Itinerary** (`page.tsx`): "Back to Itinerary Overview" (ke `/trips/[id]/overview`)
+  - **Transport** (`transport/page.tsx`): "Back to Itinerary Overview"
+  - **Stay** (`stay/page.tsx`): "Back to Itinerary Overview"
+  - **Budget** (`budget/page.tsx`): "Back to Itinerary Overview" (sebelumnya tidak ada back link)
+- **Fix responsive overflow**: Spent amount menggunakan `truncate text-lg md:text-xl` dengan `title` attribute agar tidak keluar dari card di mobile
+
+### Key Decisions
+- **Overview sebagai landing page trip** — user sekarang melihat ringkasan terlebih dahulu sebelum masuk ke detail itinerary, transport, stay, atau budget
+- **Activities aggregated via `useQueries`** — karena tidak ada endpoint untuk total activities across days, kita fetch per-day dan aggregate di client
+- **Daily Itinerary dibatasi 3 hari** — untuk menjaga performa dan UX, hanya hari relevan yang ditampilkan di overview; full list ada di halaman Itinerary
+- **Back link konsisten** — semua halaman sub-trip (itinerary, transport, stay, budget) navigasi balik ke overview, bukan ke dashboard. Overview navigasi balik ke dashboard.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Cover image upload**
+- [ ] **Real loyalty math**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Deploy semua changes ke VPS. Kemudian tackle "Unknown date" expense bug atau linked-expense lifecycle.
+
+---
+
 ## 2026-06-23 — Session 24: Smoke Test + UI/UX Fixes
+
 
 **Status**: Full smoke test via Playwright MCP. Numeric separator fixes dan currency symbol expansion.
 
