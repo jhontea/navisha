@@ -32,7 +32,7 @@ import {
   type CreateAccommodationInput,
 } from "../types"
 
-const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW"] as const
+const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW", "MYR", "THB", "EUR", "VND"] as const
 
 const TYPE_ICON: Record<AccommodationType, typeof Hotel> = {
   hotel: Hotel,

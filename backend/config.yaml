@@ -8,7 +8,7 @@ redis:
   pool_size: 10
 
 currency:
-  supported: [IDR, USD, JPY, SGD, KRW]
+  supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
   cache_ttl: 3600
 
 jwt:

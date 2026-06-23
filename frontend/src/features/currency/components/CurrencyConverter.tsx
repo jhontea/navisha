@@ -25,6 +25,7 @@ const CURRENCY_NAMES: Record<string, string> = {
   MYR: "Malaysian Ringgit",
   THB: "Thai Baht",
   CNY: "Chinese Yuan",
+  VND: "Vietnamese Dong",
 }
 
 function getCurrencyLabel(code: string, name?: string): string {

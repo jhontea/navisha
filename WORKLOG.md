@@ -4,6 +4,45 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 22: Mobile Nav Trip Sub-Menu + Currency Expansion
+
+**Status**: Mobile bottom nav now shows trip sub-menu when on trip pages. Added MYR, THB, EUR, VND to backend + frontend.
+
+### Completed
+- **Mobile nav trip context** (`frontend/src/components/MobileNav.tsx`):
+  - Bottom nav sekarang deteksi apakah user sedang di `/trips/[id]/*`
+  - Kalau di trip page, tampil trip sub-menu: Trips (back), Itinerary, Transport, Stay, Budget, Profile
+  - Kalau di luar trip page, tampil nav utama seperti biasa: Dashboard, My Trips, Converter, Profile
+  - Active state di-highlight per route
+- **Currency expansion**:
+  - `backend/config.yaml` — supported currencies diupdate ke `[IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]`
+  - `backend/internal/currency/model.go` — tambah VND (`₫`, "Vietnamese Dong"). MYR, THB, EUR sudah ada di `symbols` dan `names` map.
+  - Frontend — `SUPPORTED_CURRENCIES` diupdate di semua form:
+    - `features/transportation/components/TransportationForm.tsx`
+    - `features/accommodation/components/AccommodationForm.tsx`
+    - `features/expense/components/ExpenseForm.tsx`
+  - Frontend — `CURRENCY_NAMES` fallback map diupdate di:
+    - `features/currency/components/CurrencyConverter.tsx`
+    - `features/trip/components/TripForm.tsx`
+    - `app/(dashboard)/trips/[id]/page.tsx`
+
+### Key Decisions
+- **Context-aware bottom nav** — mengganti seluruh bottom nav saat di trip page lebih baik daripada menambahkan sub-menu dropdown. Bottom nav space sangat terbatas di mobile; 4-5 icon cukup tanpa perlu scroll atau collapse.
+- **MYR, THB, EUR, VND dipilih** — mewakili destinasi travel Asia Tenggara yang paling umum dikunjungi (Malaysia, Thailand, Vietnam) plus Euro untuk Eropa.
+- **VND ditambah ke model** — simbol `₫` (Vietnamese Dong) dan nama "Vietnamese Dong" sudah tersedia. Backend `/currency/supported` akan return VND setelah restart.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Cover image upload**
+- [ ] **Real loyalty math**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Deploy changes ke VPS, lalu cek apakah currency VND/MYR/THB sudah muncul di dropdown. Kemudian tackle "Unknown date" expense bug atau linked-expense lifecycle.
+
+---
+
 ## 2026-06-23 — Session 21: Timezone Fix + Landing Page Polish + Email Whitelist
 
 **Status**: Timezone display issues fixed across all date/datetime fields. Landing page cleaned up. Email whitelist added for testing access control.
