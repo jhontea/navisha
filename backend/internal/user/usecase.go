@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,9 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
 	gooauth2 "golang.org/x/oauth2"
 )
+
+// ErrNotAllowed is returned when an email is not in the whitelist.
+var ErrNotAllowed = errors.New("email not allowed")
 
 type Tokens struct {
 	AccessToken  string
@@ -27,18 +31,33 @@ type UsecaseInterface interface {
 }
 
 type Usecase struct {
-	repo        Repository
-	jwtSvc      *jwt.Service
-	oauthConfig *gooauth2.Config
+	repo          Repository
+	jwtSvc        *jwt.Service
+	oauthConfig   *gooauth2.Config
+	allowedEmails []string // if non-empty, only these emails can log in
 }
 
-func NewUsecase(repo Repository, jwtSvc *jwt.Service, oauthConfig *gooauth2.Config) *Usecase {
-	return &Usecase{repo: repo, jwtSvc: jwtSvc, oauthConfig: oauthConfig}
+func NewUsecase(repo Repository, jwtSvc *jwt.Service, oauthConfig *gooauth2.Config, allowedEmails []string) *Usecase {
+	return &Usecase{repo: repo, jwtSvc: jwtSvc, oauthConfig: oauthConfig, allowedEmails: allowedEmails}
 }
 
 // GoogleAuthURL returns the Google consent URL the user should be redirected to.
 func (u *Usecase) GoogleAuthURL(state string) string {
 	return u.oauthConfig.AuthCodeURL(state, gooauth2.AccessTypeOnline)
+}
+
+// isEmailAllowed returns true when the whitelist is empty (open access)
+// or the email is explicitly listed.
+func (u *Usecase) isEmailAllowed(email string) bool {
+	if len(u.allowedEmails) == 0 {
+		return true
+	}
+	for _, allowed := range u.allowedEmails {
+		if allowed == email {
+			return true
+		}
+	}
+	return false
 }
 
 // GoogleLogin exchanges the OAuth code for a Google user, upserts the user in
@@ -52,6 +71,11 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 	info, err := fetchGoogleUserInfo(ctx, u.oauthConfig, token)
 	if err != nil {
 		return nil, nil, fmt.Errorf("user.GoogleLogin: fetch userinfo: %w", err)
+	}
+
+	// Whitelist check — reject before touching the DB.
+	if !u.isEmailAllowed(info.Email) {
+		return nil, nil, ErrNotAllowed
 	}
 
 	usr, err := u.repo.Upsert(&User{

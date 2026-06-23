@@ -63,6 +63,9 @@ func (h *Handler) GoogleCallback(c echo.Context) error {
 
 	_, tokens, err := h.usecase.GoogleLogin(c.Request().Context(), code)
 	if err != nil {
+		if errors.Is(err, ErrNotAllowed) {
+			return c.Redirect(http.StatusTemporaryRedirect, h.frontendURL+"/login?error=not_allowed")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "login failed")
 	}
 
