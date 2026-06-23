@@ -128,7 +128,7 @@ type mockExpenseCreator struct {
 
 func (m *mockExpenseCreator) CreateLinkedExpenseTx(
 	_ context.Context, _ pgx.Tx,
-	userID, tripID, title, _, _ string, amount float64,
+	userID, tripID, title, _, _ string, amount float64, _ string,
 ) error {
 	m.calls++
 	m.lastUser = userID

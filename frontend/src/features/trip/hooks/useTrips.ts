@@ -51,7 +51,10 @@ export function useCreateTrip() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateTripInput) => tripApi.create(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips", "list"] }),
+    onSuccess: () => {
+      // Invalidate all trip list variants so dashboard + trips page update immediately
+      qc.invalidateQueries({ queryKey: ["trips"] })
+    },
   })
 }
 
@@ -60,8 +63,7 @@ export function useUpdateTrip(id: string) {
   return useMutation({
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips", "list"] })
-      qc.invalidateQueries({ queryKey: ["trips", "detail", id] })
+      qc.invalidateQueries({ queryKey: ["trips"] })
     },
   })
 }
@@ -70,7 +72,9 @@ export function useDeleteTrip() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => tripApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips", "list"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips"] })
+    },
   })
 }
 

@@ -146,8 +146,8 @@ func (u *Usecase) Get(userID, tripID string) (*Trip, []Day, error) {
 	return t, days, nil
 }
 
-// Update mutates trip metadata only. Date-range changes do NOT currently
-// regenerate days — deferred until itinerary builder is implemented.
+// Update mutates trip metadata. When the date range changes, days are
+// regenerated atomically: old days deleted, new days inserted.
 func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 	existing, err := u.repo.FindByID(tripID)
 	if err != nil {
@@ -163,6 +163,8 @@ func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 		return nil, ErrInvalidCurrency
 	}
 
+	datesChanged := !existing.StartDate.Equal(in.StartDate) || !existing.EndDate.Equal(in.EndDate)
+
 	existing.Title = in.Title
 	existing.Description = in.Description
 	existing.StartDate = in.StartDate
@@ -172,7 +174,37 @@ func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 	existing.CoverImageURL = in.CoverImageURL
 	existing.Notes = in.Notes
 
-	return u.repo.Update(existing)
+	if !datesChanged {
+		return u.repo.Update(existing)
+	}
+
+	// Dates changed: update trip + regenerate days in a single transaction.
+	ctx := context.Background()
+	tx, err := u.repo.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer u.repo.Rollback(ctx, tx)
+
+	// Update trip row first
+	updated, err := u.repo.Update(existing)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete old days, insert new ones
+	if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
+		return nil, err
+	}
+	newDays := generateDays(tripID, in.StartDate, in.EndDate)
+	if err := u.repo.InsertDays(ctx, tx, newDays); err != nil {
+		return nil, err
+	}
+
+	if err := u.repo.Commit(ctx, tx); err != nil {
+		return nil, err
+	}
+	return updated, nil
 }
 
 func (u *Usecase) Delete(userID, tripID string) error {
