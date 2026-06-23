@@ -4,6 +4,50 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 21: Timezone Fix + Landing Page Polish + Email Whitelist
+
+**Status**: Timezone display issues fixed across all date/datetime fields. Landing page cleaned up. Email whitelist added for testing access control.
+
+### Completed
+- **Timezone fix — date-only strings (YYYY-MM-DD)**:
+  - `frontend/src/lib/utils.ts` — `formatDate()` dan `formatDateRange()` sekarang append `T00:00:00` saat parse, mencegah tanggal bergeser 1 hari ke belakang di timezone UTC+7
+  - `frontend/src/features/expense/components/ExpenseSection.tsx` — `formatExpenseDate()` dan `formatGroupDate()` sudah pakai `T00:00:00` (sudah benar sebelumnya)
+  - `frontend/src/features/expense/components/ExpenseForm.tsx` — default `expense_date` sekarang pakai `localDateString()` (local timezone) bukan `new Date().toISOString()` (UTC)
+- **Timezone fix — datetime with timezone (departure/arrival)**:
+  - Root cause: backend simpan datetime sebagai UTC (`2026-07-01T06:30:00Z`), browser konversi ke WIB jadi `13:30`. Solusi: strip suffix `Z` saat parse sehingga tidak ada konversi.
+  - `frontend/src/features/transportation/components/TransportationForm.tsx` — `toLocalInput()` strip `Z` sebelum parse; `fromLocalInput()` append `Z` langsung tanpa konversi
+  - `frontend/src/features/transportation/components/TransportationCard.tsx` — strip `Z` sebelum display
+  - `frontend/src/features/transportation/components/TransportationSection.tsx` — strip `Z` sebelum display di inline list
+  - `frontend/src/features/activity/components/DayActivities.tsx` — tambah `stripTz()` helper, dipakai di `toSortKey()`, `dateMatches()`, dan `TransportTimelineCard`
+- **Landing page cleanup**:
+  - `HeroSection.tsx` — hapus tombol "View Demo"; Google button diubah ke `bg-white text-gray-800 border border-gray-200` agar teks selalu terlihat
+  - `CTASection.tsx` — Google button disamakan dengan style yang sama
+- **Email whitelist (temporary for testing)**:
+  - `backend/config/config.go` — tambah `AllowedEmails []string` di `AppConfig`; parse `ALLOWED_EMAILS` env var (comma-separated) secara manual
+  - `backend/internal/user/usecase.go` — tambah `ErrNotAllowed`, `isEmailAllowed()`, whitelist check di `GoogleLogin()` sebelum upsert ke DB
+  - `backend/internal/user/handler.go` — `ErrNotAllowed` redirect ke `/login?error=not_allowed`
+  - `backend/cmd/server/main.go` — pass `cfg.App.AllowedEmails` ke `NewUsecase`
+  - `backend/.env.example` — tambah `ALLOWED_EMAILS=`
+  - `frontend/src/app/(auth)/login/page.tsx` — baca `searchParams.error`, tampilkan banner "Access restricted" kalau `error=not_allowed`
+
+### Key Decisions
+- **Strip `Z` instead of using `timeZone: "UTC"`** — stripping the suffix makes `new Date()` treat the value as local time. Using `timeZone: "UTC"` in `toLocaleString` would show the UTC value (which is wrong for the user's intended local time).
+- **`ALLOWED_EMAILS` parsed manually** — Viper's `AutomaticEnv` + `mapstructure` slice unmarshaling doesn't reliably split comma-separated env var strings. Manual `strings.Split` after `Unmarshal` is more predictable.
+- **Redirect to `/login?error=not_allowed` on whitelist block** — better UX than a 403 HTTP error; user sees a clear message and can try a different account.
+- **Whitelist is opt-in** — if `ALLOWED_EMAILS` is empty, all emails can log in (no breaking change for existing installs).
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19) — some old expenses may have `expense_date` field missing.
+- [ ] **Linked-expense lifecycle** (carried since Session 13).
+- [ ] **Cover image upload** — form has no upload UI until file storage is ready.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export.
+
+### Resume From
+Remove whitelist once testing is done (set `ALLOWED_EMAILS=` or remove it). Then fix the "Unknown date" expense grouping bug or pick up linked-expense lifecycle.
+
+---
+
 ## 2026-06-23 — Session 20: Dozzle Setup + OAuth Cookie Cross-Domain Fix
 
 **Status**: Dozzle integrated for Docker log viewing at `dozzle.navisha.cloud`. Fixed critical OAuth bug where cross-subdomain cookies prevented login from working.

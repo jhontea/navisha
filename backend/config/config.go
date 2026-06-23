@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -52,8 +53,9 @@ type GoogleConfig struct {
 }
 
 type AppConfig struct {
-	FrontendURL  string `mapstructure:"frontend_url"`
-	CookieDomain string `mapstructure:"cookie_domain"`
+	FrontendURL   string   `mapstructure:"frontend_url"`
+	CookieDomain  string   `mapstructure:"cookie_domain"`
+	AllowedEmails []string `mapstructure:"allowed_emails"`
 }
 
 func Load() (*Config, error) {
@@ -96,6 +98,18 @@ func Load() (*Config, error) {
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("config.Load: unmarshal: %w", err)
+	}
+
+	// ALLOWED_EMAILS is a comma-separated list: "a@b.com,c@d.com"
+	// Viper doesn't reliably split CSV env vars into slices, so parse manually.
+	if raw := os.Getenv("ALLOWED_EMAILS"); raw != "" {
+		var emails []string
+		for _, e := range strings.Split(raw, ",") {
+			if trimmed := strings.TrimSpace(e); trimmed != "" {
+				emails = append(emails, trimmed)
+			}
+		}
+		cfg.App.AllowedEmails = emails
 	}
 
 	return &cfg, nil

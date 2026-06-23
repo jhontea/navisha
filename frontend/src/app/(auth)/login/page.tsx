@@ -1,7 +1,14 @@
 import Link from "next/link"
 import { LoginButton } from "@/features/auth/components/LoginButton"
 
-export default function LoginPage() {
+interface Props {
+  searchParams: Promise<{ error?: string }>
+}
+
+export default async function LoginPage({ searchParams }: Props) {
+  const params = await searchParams
+  const isNotAllowed = params.error === "not_allowed"
+
   return (
     <main className="flex min-h-screen flex-col bg-surface-container-low">
       {/* Background Decoration */}
@@ -29,6 +36,19 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Access denied error */}
+          {isNotAllowed && (
+            <div className="mb-5 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+              <span className="material-symbols-outlined text-destructive text-[18px] mt-0.5 shrink-0">block</span>
+              <div>
+                <p className="text-sm font-semibold text-destructive">Access restricted</p>
+                <p className="text-xs text-destructive/80 mt-0.5">
+                  Your account is not on the allowed list. Please contact the administrator.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Social Login */}
           <LoginButton />
          
@@ -39,7 +59,7 @@ export default function LoginPage() {
       <footer className="w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 border-t border-outline-variant/20 relative z-10 text-center">
         <div className="flex items-center gap-2">
           <span className="font-display font-bold text-label-md text-primary">Navisha</span>
-          <span className="font-body-sm text-outline">© 2024 Navisha Travel. All rights reserved.</span>
+          <span className="font-body-sm text-outline">&copy; 2024 Navisha Travel. All rights reserved.</span>
         </div>
         <div className="flex gap-6 flex-wrap justify-center">
           <a

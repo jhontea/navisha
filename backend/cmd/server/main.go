@@ -74,7 +74,7 @@ func main() {
 
 	// User domain
 	userRepo := user.NewPostgresRepository(db)
-	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg)
+	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg, cfg.App.AllowedEmails)
 	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL, cfg.App.CookieDomain)
 
 	// Trip domain
