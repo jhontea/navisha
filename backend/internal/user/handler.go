@@ -12,12 +12,13 @@ import (
 )
 
 type Handler struct {
-	usecase     UsecaseInterface
-	frontendURL string // redirect destination after successful OAuth callback
+	usecase      UsecaseInterface
+	frontendURL  string // redirect destination after successful OAuth callback
+	cookieDomain string // cookie domain for cross-subdomain auth (.navisha.cloud)
 }
 
-func NewHandler(usecase UsecaseInterface, frontendURL string) *Handler {
-	return &Handler{usecase: usecase, frontendURL: frontendURL}
+func NewHandler(usecase UsecaseInterface, frontendURL, cookieDomain string) *Handler {
+	return &Handler{usecase: usecase, frontendURL: frontendURL, cookieDomain: cookieDomain}
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
@@ -65,13 +66,13 @@ func (h *Handler) GoogleCallback(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "login failed")
 	}
 
-	setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken)
+	h.setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken)
 	return c.Redirect(http.StatusTemporaryRedirect, h.frontendURL+"/auth/callback")
 }
 
 // Logout clears auth cookies.
 func (h *Handler) Logout(c echo.Context) error {
-	clearTokenCookies(c)
+	h.clearTokenCookies(c)
 	return c.JSON(http.StatusOK, map[string]string{"message": "logged out"})
 }
 
@@ -84,11 +85,11 @@ func (h *Handler) Refresh(c echo.Context) error {
 
 	tokens, err := h.usecase.RefreshTokens(cookie.Value)
 	if err != nil {
-		clearTokenCookies(c)
+		h.clearTokenCookies(c)
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid refresh token")
 	}
 
-	setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken)
+	h.setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken)
 	return c.JSON(http.StatusOK, map[string]string{"message": "refreshed"})
 }
 
@@ -112,33 +113,40 @@ func (h *Handler) Me(c echo.Context) error {
 	})
 }
 
-func setTokenCookies(c echo.Context, accessToken, refreshToken string) {
+func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken string) {
 	c.SetCookie(&http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
 		Path:     "/",
+		Domain:   h.cookieDomain,
 		MaxAge:   3600, // 1 hour
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   h.cookieDomain != "",
+		SameSite: http.SameSiteNoneMode,
 	})
 	c.SetCookie(&http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		Path:     "/",
+		Domain:   h.cookieDomain,
 		MaxAge:   604800, // 7 days
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   h.cookieDomain != "",
+		SameSite: http.SameSiteNoneMode,
 	})
 }
 
-func clearTokenCookies(c echo.Context) {
+func (h *Handler) clearTokenCookies(c echo.Context) {
 	for _, name := range []string{"access_token", "refresh_token"} {
 		c.SetCookie(&http.Cookie{
-			Name:    name,
-			Value:   "",
-			Path:    "/",
-			Expires: time.Unix(0, 0),
-			MaxAge:  -1,
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			Domain:   h.cookieDomain,
+			Expires:  time.Unix(0, 0),
+			MaxAge:   -1,
+			Secure:   h.cookieDomain != "",
+			SameSite: http.SameSiteNoneMode,
 		})
 	}
 }

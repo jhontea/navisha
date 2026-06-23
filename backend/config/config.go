@@ -39,10 +39,10 @@ type CurrencyConfig struct {
 }
 
 type JWTConfig struct {
-	Secret         string
-	RefreshSecret  string `mapstructure:"refresh_secret"`
-	AccessTTL      int    `mapstructure:"access_ttl"`
-	RefreshTTL     int    `mapstructure:"refresh_ttl"`
+	Secret        string
+	RefreshSecret string `mapstructure:"refresh_secret"`
+	AccessTTL     int    `mapstructure:"access_ttl"`
+	RefreshTTL    int    `mapstructure:"refresh_ttl"`
 }
 
 type GoogleConfig struct {
@@ -52,7 +52,8 @@ type GoogleConfig struct {
 }
 
 type AppConfig struct {
-	FrontendURL string `mapstructure:"frontend_url"`
+	FrontendURL  string `mapstructure:"frontend_url"`
+	CookieDomain string `mapstructure:"cookie_domain"`
 }
 
 func Load() (*Config, error) {
@@ -84,6 +85,7 @@ func Load() (*Config, error) {
 		"google.client_secret": "GOOGLE_CLIENT_SECRET",
 		"google.redirect_url":  "GOOGLE_REDIRECT_URL",
 		"app.frontend_url":     "FRONTEND_URL",
+		"app.cookie_domain":    "COOKIE_DOMAIN",
 		"currency.api_key":     "CURRENCYFREAKS_API_KEY",
 	} {
 		if err := v.BindEnv(key, envVar); err != nil {

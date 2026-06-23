@@ -4,6 +4,57 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-23 — Session 20: Dozzle Setup + OAuth Cookie Cross-Domain Fix
+
+**Status**: Dozzle integrated for Docker log viewing at `dozzle.navisha.cloud`. Fixed critical OAuth bug where cross-subdomain cookies prevented login from working.
+
+### Completed
+- **Dozzle service** added to `docker-compose.prod.yml`:
+  - Binds to `127.0.0.1:8888`, mounts `/var/run/docker.sock` read-only
+  - Resource limit: 0.2 CPU, 64MB RAM
+  - No authentication (security note documented)
+- **Nginx config** (`deploy/nginx/navisha.conf`):
+  - Added server block for `dozzle.navisha.cloud` → proxy to port 8888
+  - WebSocket support + 3600s timeout for live log streaming
+  - SSL certificate command updated to include dozzle subdomain
+- **DEPLOY.md** updated:
+  - Architecture diagram includes Dozzle
+  - Section 9: Dozzle setup steps + DNS record instructions
+  - `COOKIE_DOMAIN=.navisha.cloud` added to production env vars
+- **Fixed OAuth redirect_uri_mismatch**:
+  - `.env` on VPS had `GOOGLE_REDIRECT_URL=https://navisha.cloud/...` instead of `https://api.navisha.cloud/...`
+  - Backend subdomain is `api.navisha.cloud`, must match Google Console config exactly
+- **Fixed cross-domain cookie issue** (root cause of "stuck on login page"):
+  - Backend was setting cookies with `SameSite=Strict` without `Domain` attribute
+  - Cookies set at `api.navisha.cloud` were not visible to `navisha.cloud` (frontend)
+  - Next.js middleware checks `access_token` cookie → always false → redirect loop
+  - Solution: `Domain=.navisha.cloud` (dot prefix) + `SameSite=None; Secure` for cross-subdomain sharing
+- **Made cookie domain configurable**:
+  - `backend/config/config.go` — added `App.CookieDomain` field + `COOKIE_DOMAIN` env binding
+  - `backend/internal/user/handler.go` — `cookieDomain` passed to constructor, used in `setTokenCookies` + `clearTokenCookies`
+  - `backend/internal/user/handler_test.go` — test helper updated with empty cookieDomain for localhost
+  - `backend/cmd/server/main.go` — passes `cfg.App.CookieDomain` to handler
+  - `backend/.env.example` — added `COOKIE_DOMAIN=` (empty for localhost dev, `.navisha.cloud` for production)
+
+### Key Decisions
+- **Dozzle without auth** — quick setup for internal monitoring. Documented security caveat in DEPLOY.md; can add nginx basic auth later if needed.
+- **`Domain=.navisha.cloud` with leading dot** — standard cross-subdomain cookie pattern. Browser shares cookie between `navisha.cloud`, `www.navisha.cloud`, and `api.navisha.cloud`.
+- **`SameSite=None` required for cross-subdomain** — `Strict` or `Lax` won't send cookies from `api.navisha.cloud` to `navisha.cloud`. `None` requires `Secure=true` (HTTPS only).
+- **Configurable via `COOKIE_DOMAIN` env var** — avoids hardcoding `.navisha.cloud` in code. Localhost dev uses empty string (same-origin cookies), production uses `.navisha.cloud`.
+- **Method receivers for cookie helpers** — `setTokenCookies` and `clearTokenCookies` now methods on `*Handler` so they can access `h.cookieDomain`. Cleaner than passing domain as a parameter to every call.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19) — some old expenses may have `expense_date` field missing.
+- [ ] **Linked-expense lifecycle** (carried since Session 13).
+- [ ] **Cover image upload** — form has no upload UI until file storage is ready.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export.
+
+### Resume From
+OAuth is now working end-to-end. VPS deployment steps documented. Next session can focus on fixing the "Unknown date" expense grouping bug or picking up linked-expense lifecycle work.
+
+---
+
 ## 2026-06-22 — Session 19: Budget Page Revamp + Expense Features
 
 **Status**: Budget page fully revamped with new UI, budget planning with spending tracker, expense date/note fields, grouped-by-date list, and category improvements.
