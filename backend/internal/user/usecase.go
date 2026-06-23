@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
@@ -53,7 +54,7 @@ func (u *Usecase) isEmailAllowed(email string) bool {
 		return true
 	}
 	for _, allowed := range u.allowedEmails {
-		if allowed == email {
+		if strings.EqualFold(allowed, email) {
 			return true
 		}
 	}
