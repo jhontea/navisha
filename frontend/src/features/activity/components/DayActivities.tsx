@@ -61,10 +61,17 @@ type TimelineItem =
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Strip timezone suffix so the stored datetime is treated as local time,
+// matching the convention used in TransportationForm.
+function stripTz(iso: string): string {
+  return iso.replace(/Z$|[+-]\d{2}:\d{2}$/, "")
+}
+
 function toSortKey(v: string | null | undefined): string {
   if (!v) return "99:99"
   if (v.includes("T")) {
-    const t = new Date(v)
+    const bare = stripTz(v)
+    const t = new Date(bare)
     if (!isNaN(t.getTime())) {
       return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`
     }
@@ -78,7 +85,8 @@ function dateMatches(
 ): boolean {
   if (!datetimeStr) return false
   if (datetimeStr.length === 10) return datetimeStr === date
-  const d = new Date(datetimeStr)
+  const bare = stripTz(datetimeStr)
+  const d = new Date(bare)
   if (isNaN(d.getTime())) return false
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, "0")
@@ -107,14 +115,14 @@ const TRANSPORT_ICON: Record<string, typeof Plane> = {
 function TransportTimelineCard({ t }: { t: Transportation }) {
   const Icon = TRANSPORT_ICON[t.type] ?? Boxes
   const depTime = t.departure_datetime
-    ? new Date(t.departure_datetime).toLocaleTimeString("en-US", {
+    ? new Date(stripTz(t.departure_datetime)).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
       })
     : null
   const arrTime = t.arrival_datetime
-    ? new Date(t.arrival_datetime).toLocaleTimeString("en-US", {
+    ? new Date(stripTz(t.arrival_datetime)).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
