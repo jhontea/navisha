@@ -94,6 +94,30 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: navisha-dozzle
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:8888:8080"
+    environment:
+      DOZZLE_BASE: /
+      DOZZLE_NO_ANALYTICS: "true"
+    networks:
+      - navisha_net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
 volumes:
   redis_data:
 

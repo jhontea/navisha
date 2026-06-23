@@ -12,10 +12,11 @@ Internet
     ▼
 Nginx (SSL termination, reverse proxy)
     ├── navisha.cloud  ─────────────► Docker: navisha-frontend (port 3000)
-    └── api.navisha.cloud  ─────────► Docker: navisha-backend  (port 8090)
-                                              │
-                                              ├── Docker: redis-navisha (internal)
-                                              └── Neon PostgreSQL (external)
+    ├── api.navisha.cloud  ─────────► Docker: navisha-backend  (port 8090)
+    │                                         │
+    │                                         ├── Docker: redis-navisha (internal)
+    │                                         └── Neon PostgreSQL (external)
+    └── dozzle.navisha.cloud  ──────► Docker: navisha-dozzle   (port 8888)
 ```
 
 ---
@@ -208,10 +209,26 @@ sudo systemctl reload nginx
 
 ---
 
-## 9. SSL Certificate (Let's Encrypt)
+## 9. Setup Dozzle (Docker Log Viewer)
+
+Dozzle berjalan sebagai container dan diakses via `dozzle.navisha.cloud`. Sudah ditambahkan di `docker-compose.prod.yml` pada port `127.0.0.1:8888`.
+
+> **Catatan:** Dozzle berjalan tanpa autentikasi. Pastikan domain ini tidak dishare ke publik, atau pertimbangkan untuk menambahkan basic auth di masa depan.
+
+### 9a. Tambahkan DNS Record
+
+| Type | Name                  | Value         |
+|------|-----------------------|---------------|
+| A    | dozzle.navisha.cloud  | 202.155.13.11 |
+
+Tunggu propagasi DNS, lalu jalankan Dozzle bersama service lainnya via `docker compose` (langkah 10).
+
+---
+
+## 10. SSL Certificate (Let's Encrypt)
 
 ```bash
-sudo certbot --nginx -d navisha.cloud -d www.navisha.cloud -d api.navisha.cloud
+sudo certbot --nginx -d navisha.cloud -d www.navisha.cloud -d api.navisha.cloud -d dozzle.navisha.cloud
 ```
 
 Certbot otomatis mengupdate nginx config dengan SSL dan setup auto-renewal.
@@ -223,7 +240,7 @@ sudo certbot renew --dry-run
 
 ---
 
-## 10. Build & Run (First Deploy)
+## 11. Build & Run (First Deploy)
 
 ```bash
 cd /opt/navisha
@@ -247,7 +264,7 @@ docker compose -f docker-compose.prod.yml logs frontend
 
 ---
 
-## 11. Deploy Update (Subsequent Deployments)
+## 12. Deploy Update (Subsequent Deployments)
 
 ```bash
 cd /opt/navisha
