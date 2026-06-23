@@ -4,7 +4,48 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 27: Auto Cover Photo dari Google Places + CI/CD Deploy
+
+**Status**: Cover image trip kini otomatis diambil dari Google Maps saat memilih destination, plus auto-deploy ke VPS via GitHub Actions.
+
+### Completed
+- **Auto cover photo dari Google Places** (Opsi A — legacy Places, tanpa enable API baru):
+  - **`DestinationAutocomplete.tsx`**: tambah `photos` ke `fields` autocomplete; interface `DestinationData` ditambah field `photoUrl`
+  - Saat destination dipilih: kalau region punya foto langsung pakai `photo.getUrl({ maxWidth: 800 })`
+  - **Fallback Text Search**: region (city/country) sering tidak punya foto, jadi jalankan `PlacesService.textSearch` untuk nama tempat dan ambil foto landmark teratas. Kalau tetap kosong → `photoUrl` = ""
+  - **`TripForm.tsx`**: `onSelect` mengisi `coverPreview` dari `photoUrl`, disimpan ke `cover_image_url` saat submit. Tambah preview thumbnail cover + tombol Remove, dengan `onError` fallback ke null kalau gambar gagal load
+  - `TripCard.tsx` tidak diubah — sudah menampilkan foto kalau `cover_image_url` ada, atau gradient biru `#d8e2ff` kalau kosong
+- **Fix autocomplete dropdown z-index** (`globals.css`):
+  - Tambah styling `.pac-container` dengan `z-index: 9999 !important` supaya dropdown saran Google Places tampil di atas elemen lain — sebelumnya tidak muncul/terpotong di halaman Edit Trip
+  - Styling `.pac-item`, hover state, font, border-radius, shadow agar sesuai design system
+- **CI/CD auto-deploy** (`.github/workflows/deploy.yml`):
+  - Trigger `push` ke `main` (hasil merge PR) + `workflow_dispatch` manual
+  - SSH ke VPS pakai `appleboy/ssh-action`: `git reset --hard origin/main` → load `.env.prod` → `docker compose -f docker-compose.prod.yml up -d --build` → prune dangling images
+  - `concurrency` guard supaya tidak ada dua deploy bersamaan
+  - **`DEPLOY.md` Bagian 13**: dokumentasi secrets (`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, opsional `VPS_SSH_PORT`), cara generate SSH key khusus CI, cara kerja, dan catatan keamanan
+- TypeScript + ESLint lolos tanpa error
+
+### Key Decisions
+- **Opsi A (legacy Places) bukan Places API New** — konsisten dengan autocomplete yang sudah jalan, dan menghindari error 403 karena "Places API (New)" belum di-enable di key project
+- **Fallback Text Search untuk region tanpa foto** — kota/negara jarang punya photo di Places, jadi cari foto landmark lewat text search supaya mayoritas destination tetap dapat cover
+- **Gradient biru sebagai fallback akhir** — kalau Google tidak punya foto atau gambar gagal load, card pakai gradient `#d8e2ff` seperti sebelumnya
+- **Deploy langsung tanpa test gate** — workflow belum menjalankan test sebelum deploy; bisa ditambahkan job test (Go test + frontend lint/build) sebagai gate di masa depan
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Real loyalty math**
+- [ ] **Manual cover image upload** (saat ini cover hanya dari Google Places auto-fetch)
+- [ ] **Test gate di CI sebelum deploy**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Daftarkan secrets GitHub Actions di repo + aktifkan branch protection di `main`. Test auto cover photo di production (pastikan Places API key allow domain production). Kemudian tackle "Unknown date" expense bug.
+
+---
+
 ## 2026-06-23 — Session 26: Destination Autocomplete (Google Places)
+
 
 **Status**: Field Destination di TripForm sekarang pakai Google Places Autocomplete yang dibatasi ke city/province/country saja.
 

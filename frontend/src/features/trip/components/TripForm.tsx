@@ -72,11 +72,12 @@ const inputBase =
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
-  // coverPreview tracks the selected cover image; stored on submit
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // coverPreview tracks the selected cover image; stored on submit. Auto-filled
+  // from the destination's Google Places photo when the user picks one.
   const [coverPreview, setCoverPreview] = useState<string | null>(
     initial?.cover_image_url ?? null
   )
+
 
   const { data: currencyData, isLoading: currenciesLoading } = useSupportedCurrencies()
   const currencies = currencyData?.supported ?? []
@@ -161,7 +162,12 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
-                onSelect={(place) => field.onChange(place.description)}
+                onSelect={(place) => {
+                  field.onChange(place.description)
+                  // Use the destination's Google Places photo as the cover.
+                  // Falls back to the gradient placeholder when none is found.
+                  setCoverPreview(place.photoUrl || null)
+                }}
               />
             )}
           />
@@ -170,10 +176,30 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           <p className="text-xs text-error">{errors.destination.message}</p>
         )}
         <p className="text-xs text-on-surface-variant">
-          Pick a city, province, or country.
+          Pick a city, province, or country. We&apos;ll grab a cover photo automatically.
         </p>
 
+        {/* Cover preview — shows the auto-fetched destination photo */}
+        {coverPreview && (
+          <div className="relative mt-2 h-32 w-full overflow-hidden rounded-lg border border-outline-variant">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={coverPreview}
+              alt="Trip cover preview"
+              className="h-full w-full object-cover"
+              onError={() => setCoverPreview(null)}
+            />
+            <button
+              type="button"
+              onClick={() => setCoverPreview(null)}
+              className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
+            >
+              Remove
+            </button>
+          </div>
+        )}
       </div>
+
 
 
       {/* Date Range — side by side */}
