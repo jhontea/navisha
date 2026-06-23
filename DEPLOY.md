@@ -131,6 +131,7 @@ GOOGLE_CLIENT_ID=<>
 GOOGLE_CLIENT_SECRET=GOCSPX-...
 GOOGLE_REDIRECT_URL=https://api.navisha.cloud/api/v1/auth/google/callback
 FRONTEND_URL=https://navisha.cloud
+COOKIE_DOMAIN=.navisha.cloud
 CURRENCYFREAKS_API_KEY=45205f...
 ```
 

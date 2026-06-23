@@ -18,9 +18,9 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
+	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
-	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -75,7 +75,7 @@ func main() {
 	// User domain
 	userRepo := user.NewPostgresRepository(db)
 	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg)
-	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL)
+	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL, cfg.App.CookieDomain)
 
 	// Trip domain
 	tripRepo := trip.NewPostgresRepository(db)
