@@ -83,6 +83,14 @@ func mapErr(err error) error {
 		return echo.NewHTTPError(http.StatusNotFound, "summary not found")
 	case errors.Is(err, ErrForbidden), errors.Is(err, apperr.ErrForbidden):
 		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
+	case errors.Is(err, ErrLLMUnavailable):
+		// Transient LLM failure (timeout, client disconnect, upstream error).
+		// 503 lets the frontend show a clear "try again" message rather than
+		// a generic server error. The full cause is already logged in the usecase.
+		return echo.NewHTTPError(http.StatusServiceUnavailable, map[string]any{
+			"code":    "LLM_UNAVAILABLE",
+			"message": "Couldn't generate the summary right now. Please try again in a moment.",
+		})
 	default:
 		log.Printf("summary: internal error: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")

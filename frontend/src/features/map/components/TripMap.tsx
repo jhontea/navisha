@@ -9,7 +9,9 @@ import {
   Pin,
   useMap,
 } from "@vis.gl/react-google-maps"
+import { ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { buildMapsDirectionsUrl, hasValidCoords, MAX_WAYPOINTS } from "@/features/trip/lib/mapsUrl"
 import type { Day } from "@/features/trip/types"
 import {
   useTripLocations,
@@ -39,6 +41,24 @@ export function TripMap({ days }: Props) {
   const { isLoading, isError, byDay, flat } = useTripLocations(days)
   // null = "All days"
   const [activeDay, setActiveDay] = useState<string | null>(null)
+
+  // Build Open in Maps URL for the currently visible points.
+  const handleOpenInMaps = () => {
+    const visiblePoints =
+      activeDay === null
+        ? flat
+        : byDay.find((d) => d.dayId === activeDay)?.points ?? []
+
+    const points = visiblePoints
+      .filter((p) => hasValidCoords(p.lat, p.lng))
+      .slice(0, MAX_WAYPOINTS)
+
+    // When there are no coordinate-bearing points, fall back to opening
+    // Google Maps without a route.
+    const url = buildMapsDirectionsUrl(points) ?? "https://www.google.com/maps/"
+
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
 
   if (!API_KEY) {
     return (
@@ -182,6 +202,20 @@ export function TripMap({ days }: Props) {
             ))
           )}
         </div>
+
+        {/* Open in Maps button — visible when there are points */}
+        {totalPoints > 0 && (
+          <div className="hidden border-t bg-muted/30 p-3 md:block">
+            <button
+              type="button"
+              onClick={handleOpenInMaps}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open in Google Maps
+            </button>
+          </div>
+        )}
 
         {/* Stats panel — hidden on mobile */}
         {totalPoints > 0 && (

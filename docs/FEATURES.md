@@ -60,6 +60,15 @@
 - [x] Cross-domain data assembled by `internal/integration` adapter (keeps domains isolated)
 - [x] Frontend: `TripSummaryCard` on the Overview page — "Generate Summary" is the focal CTA, with regenerate + clear actions and markdown rendering
 
+### Open in Google Maps
+- [x] "Open in Google Maps" button in Itinerary Map View panel — opens Google Maps with trip locations as a directions route
+- [x] Per-day support: respects the active day filter (single day or "All days")
+- [x] Aggregates location-type activities with valid coordinates, filters (0,0) sentinels
+- [x] Max 10 waypoints per URL (Google Maps limit)
+- [x] Fallback: opens generic Google Maps when no valid coordinates exist
+- [x] Pure frontend — no backend changes required
+
+
 ### Collaboration
 
 - [ ] Share trip via link (view-only)

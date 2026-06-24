@@ -506,7 +506,7 @@ export default function TripOverviewPage() {
 
           {/* Right: actions */}
           {!isEditing && (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
