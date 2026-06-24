@@ -14,3 +14,14 @@ currency:
 jwt:
   access_ttl: 3600     # 1 hour
   refresh_ttl: 604800  # 7 days
+
+openrouter:
+  model: openrouter/owl-alpha
+  base_url: https://openrouter.ai/api/v1
+  # Soft rate-limit in seconds between summary (re)generations.
+  # Set to 0 to disable the rate-limit check entirely.
+  summary_rate_limit_seconds: 0
+  # HTTP timeout (seconds) for OpenRouter calls. Some models are slow, so keep
+  # this generous. Set to 0 to use the client default (120s).
+  timeout_seconds: 180
+

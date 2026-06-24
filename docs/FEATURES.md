@@ -52,7 +52,16 @@
 
 ## Phase 2 — Enhancement
 
+### AI Trip Summary (OpenRouter)
+- [x] Generate an AI summary of a trip via OpenRouter LLM
+- [x] Aggregates trip info, itinerary, stays, transport, and budget into one narrative
+- [x] One summary per trip, cached in `trip_summaries` (regenerate overwrites)
+- [x] Soft rate limit: regenerate allowed once per 5 minutes per trip (429 with `retry_after_seconds`)
+- [x] Cross-domain data assembled by `internal/integration` adapter (keeps domains isolated)
+- [x] Frontend: `TripSummaryCard` on the Overview page — "Generate Summary" is the focal CTA, with regenerate + clear actions and markdown rendering
+
 ### Collaboration
+
 - [ ] Share trip via link (view-only)
 - [ ] Invite collaborator (can edit)
 

@@ -10,13 +10,14 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	DB       DBConfig
-	Redis    RedisConfig
-	Currency CurrencyConfig
-	JWT      JWTConfig
-	Google   GoogleConfig
-	App      AppConfig
+	Server     ServerConfig
+	DB         DBConfig
+	Redis      RedisConfig
+	Currency   CurrencyConfig
+	JWT        JWTConfig
+	Google     GoogleConfig
+	App        AppConfig
+	OpenRouter OpenRouterConfig
 }
 
 type ServerConfig struct {
@@ -58,6 +59,18 @@ type AppConfig struct {
 	AllowedEmails []string `mapstructure:"allowed_emails"`
 }
 
+type OpenRouterConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	Model   string `mapstructure:"model"`
+	BaseURL string `mapstructure:"base_url"`
+	// SummaryRateLimitSeconds is the soft window between summary (re)generations
+	// for a trip. When 0 (or unset) the rate-limit check is disabled.
+	SummaryRateLimitSeconds int `mapstructure:"summary_rate_limit_seconds"`
+	// TimeoutSeconds is the HTTP timeout for OpenRouter calls. When 0 (or unset)
+	// the client default is used.
+	TimeoutSeconds int `mapstructure:"timeout_seconds"`
+}
+
 func Load() (*Config, error) {
 	// Load .env if present (dev only — ignored in prod)
 	_ = godotenv.Load()
@@ -89,7 +102,10 @@ func Load() (*Config, error) {
 		"app.frontend_url":     "FRONTEND_URL",
 		"app.cookie_domain":    "COOKIE_DOMAIN",
 		"currency.api_key":     "CURRENCYFREAKS_API_KEY",
+		"openrouter.api_key":   "OPENROUTER_API_KEY",
+		"openrouter.model":     "OPENROUTER_MODEL",
 	} {
+
 		if err := v.BindEnv(key, envVar); err != nil {
 			return nil, fmt.Errorf("config.Load: bind env %s: %w", envVar, err)
 		}
