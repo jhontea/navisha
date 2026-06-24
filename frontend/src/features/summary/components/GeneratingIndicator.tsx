@@ -47,11 +47,11 @@ export function GeneratingIndicator({ compact = false }: GeneratingIndicatorProp
   if (compact) {
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-muted-foreground"
+        className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:text-xs"
         aria-live="polite"
       >
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        <span key={message} className="animate-in fade-in duration-500">
+        <Loader2 className="h-3.5 w-3.5 flex-shrink-0 animate-spin" />
+        <span key={message} className="animate-in fade-in truncate duration-500">
           {message}
         </span>
       </span>

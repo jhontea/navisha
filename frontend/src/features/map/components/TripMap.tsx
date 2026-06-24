@@ -245,7 +245,21 @@ export function TripMap({ days }: Props) {
 
       {/* Right panel: map — takes remaining height on mobile */}
       <div className="relative min-h-[300px] flex-1">
+        {/* Mobile-only "Open in Maps" button — anchored at the bottom so it
+            doesn't cover the default map controls (compass, fullscreen) which
+            sit at the top-right. */}
+        {totalPoints > 0 && (
+          <button
+            type="button"
+            onClick={handleOpenInMaps}
+            className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition-colors hover:bg-primary/90 md:hidden"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Open in Google Maps
+          </button>
+        )}
         {visiblePoints.length === 0 ? (
+
           <div className="flex h-full flex-col items-center justify-center bg-muted/20 text-center">
             <svg
               className="mb-4 h-16 w-16 text-muted-foreground/30"
