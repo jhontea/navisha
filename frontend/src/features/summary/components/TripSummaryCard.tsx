@@ -37,7 +37,6 @@ function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: str
             AI Summary
           </span>
           <span>· Generated {new Date(summary.updated_at).toLocaleString()}</span>
-          {summary.model && <span className="hidden sm:inline">· {summary.model}</span>}
         </div>
         <div className="flex items-center gap-2">
           <Button
