@@ -23,5 +23,5 @@ openrouter:
   summary_rate_limit_seconds: 0
   # HTTP timeout (seconds) for OpenRouter calls. Some models are slow, so keep
   # this generous. Set to 0 to use the client default (120s).
-  timeout_seconds: 180
+  timeout_seconds: 300
 

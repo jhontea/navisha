@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/openrouter"
@@ -12,6 +13,12 @@ import (
 // ErrForbidden is returned when the user does not own the trip.
 
 var ErrForbidden = errors.New("forbidden")
+
+// ErrLLMUnavailable is returned when the LLM call fails (network error,
+// upstream timeout, client disconnect / context canceled, decode failure).
+// The handler maps this to 503 so the frontend can show a "try again" message
+// instead of a generic 500.
+var ErrLLMUnavailable = errors.New("summary generation is temporarily unavailable")
 
 // RateLimitError carries how long the caller must wait before retrying.
 type RateLimitError struct {
@@ -94,7 +101,17 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("summary.Generate: llm: %w", err)
+		// LLM failures (network, upstream timeout, client disconnect /
+		// context canceled, decode error) are transient and not a server
+		// bug — surface them as ErrLLMUnavailable so the handler returns
+		// 503 instead of 500. The original error is logged for debugging.
+		log.Printf("summary.Generate: llm failed for trip %s: %v", tripID, err)
+		return nil, fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
+	}
+
+	if content == "" {
+		log.Printf("summary.Generate: llm returned empty content for trip %s", tripID)
+		return nil, fmt.Errorf("%w: empty response", ErrLLMUnavailable)
 	}
 
 	return u.repo.Save(tripID, content, u.model)

@@ -299,8 +299,8 @@ export default function TripDetailPage() {
 
       {/* Main content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-        {/* Top bar: back + view toggle */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* Back link */}
+        <div className="mb-4">
           <Link
             href={`/trips/${id}/overview`}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -308,39 +308,40 @@ export default function TripDetailPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             Back to Trip Overview
           </Link>
+        </div>
 
-
-          {/* View mode toggle */}
-          <div className="flex rounded-lg border bg-muted/40 p-0.5">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
-                viewMode === "list"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-label="List view"
-            >
-              <List className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">List</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("map")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
-                viewMode === "map"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-label="Map view"
-            >
-              <Map className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Map</span>
-            </button>
-          </div>
+        {/* View mode toggle — prominent segmented control, full width on mobile */}
+        <div className="mb-6 flex w-full rounded-xl border bg-muted/40 p-1 sm:w-auto sm:max-w-xs">
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all sm:px-6",
+              viewMode === "list"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-label="List view"
+            aria-pressed={viewMode === "list"}
+          >
+            <List className="h-4 w-4" />
+            List View
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("map")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all sm:px-6",
+              viewMode === "map"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-label="Map view"
+            aria-pressed={viewMode === "map"}
+          >
+            <Map className="h-4 w-4" />
+            Map View
+          </button>
         </div>
         {viewMode === "list" ? (
           trip.days.length === 0 ? (

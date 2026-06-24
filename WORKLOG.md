@@ -4,6 +4,44 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 31: F2 Open in Google Maps + Review Fixes (Phase 2)
+
+**Status**: Fitur Phase 2 **F2 — Open in Google Maps** selesai (pure frontend). Dibuat docs breakdown `docs/F2_OPEN_IN_GOOGLE_MAPS.md` + utility URL builder. Setelah review, tombol dipindah dari header Overview ke **Map View halaman Itinerary** (open-in-maps per hari), toggle List/Map View dibuat lebih prominent, dan error handling AI Summary diperbaiki (503 + UI error state) agar tidak lagi 500 saat LLM gagal.
+
+### Completed
+- **Docs breakdown** (`docs/F2_OPEN_IN_GOOGLE_MAPS.md`): F2 dipecah jadi 4 unit kerja (F2-A utility, F2-B aggregation, F2-C tombol Map View, F2-D reposisi toggle) + acceptance criteria. Tiap task ditandai selesai.
+- **Utility `mapsUrl.ts`** (`frontend/src/features/trip/lib/mapsUrl.ts`, baru):
+  - `MapPoint`, `MAX_WAYPOINTS = 10`, `buildMapsDirectionsUrl`, `buildMapsSearchUrl`, `hasValidCoords` (tolak null/NaN/(0,0)).
+- **Tombol "Open in Google Maps" di Map View** (`features/map/components/TripMap.tsx`) — **(revisi dari review)**:
+  - Awalnya di header Overview; dipindah ke panel kiri Map View di halaman Itinerary supaya bisa **open-in-maps per hari** sesuai filter hari aktif (`activeDay`). "All days" → semua titik; pilih hari → titik hari itu saja.
+  - Klik → agregasi titik visible → filter valid → potong ke 10 → `buildMapsDirectionsUrl` → buka tab baru. Fallback buka `google.com/maps/` kalau tidak ada koordinat.
+- **Reposisi toggle List/Map View** (`trips/[id]/page.tsx`) — **(revisi dari review)**:
+  - Toggle dipindah ke baris sendiri di bawah back link, jadi segmented control besar (full-width di mobile, `max-w-xs` di desktop), tombol aktif `bg-primary text-white` + label penuh + `aria-pressed`.
+  - Tombol "Open in Maps" + kode agregasi + banner truncation dihapus dari `overview/page.tsx`.
+- **Fix AI Summary error handling** — **(revisi dari review)**:
+  - Backend `internal/summary/usecase.go`: tambah sentinel `ErrLLMUnavailable`. Saat `ChatCompletion` gagal (termasuk `context canceled`/timeout/decode) atau balikan kosong, log penyebab + return `ErrLLMUnavailable` (bukan error mentah).
+  - Backend `internal/summary/handler.go`: `mapErr` map `ErrLLMUnavailable` → **503** dengan body `{ code: "LLM_UNAVAILABLE", message }` (bukan 500 generic lagi).
+  - Frontend `TripSummaryCard.tsx`: `isGenerateError` (semua error selain 429) tampilkan banner merah "Couldn't generate/regenerate summary — try again". Di empty state tombol jadi "Try Again"; di state existing, ringkasan lama tetap tampil + banner.
+- **Verifikasi**: `go build ./...` + `go test ./internal/summary/...` hijau; `npm run lint` bersih (2 warning google-font lama); `npm run build` sukses (11/11 halaman).
+
+### Key Decisions
+- **Open in Maps di Map View, bukan header Overview** — per review user: lokasinya logis di dekat peta, dan menghormati filter hari aktif jadi bisa open-in-maps per day, bukan cuma seluruh trip.
+- **Toggle View jadi segmented control besar** — per review user: View toggle adalah aksi utama di halaman itinerary, jadi dibuat lebih prominent (label penuh + warna primary aktif) dan dipisah ke barisnya sendiri.
+- **503 `ErrLLMUnavailable`, bukan 500** — kegagalan LLM (timeout, client disconnect, upstream error) bersifat transient, bukan bug server. 503 + kode `LLM_UNAVAILABLE` membuat frontend bisa kasih pesan "coba lagi" yang jelas. Penyebab asli tetap di-log untuk debugging.
+- **Directions URL, bukan Maps JS API** — F2 cukup buka tab Google Maps publik; pure frontend, zero biaya API.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Manual cover image upload**
+- [ ] **AI Summary streaming (SSE)**
+- [ ] **Phase 2 sisanya**: F3 (KML export), F4 (Calendar export), F5 (auto-generate trip)
+
+### Resume From
+Smoke test: (1) Map View → Open in Google Maps untuk "All days" & per-hari, (2) trigger AI Summary saat LLM gagal/timeout → harus muncul banner error + tombol Try Again (bukan 500). Lalu lanjut item Phase 2 berikutnya — F3 (KML export) atau F5 (auto-generate).
+
+---
+
 ## 2026-06-24 — Session 30: CI Test Gate + Carried-Over UI Fixes + AI Summary Responsive
 
 **Status**: Menambahkan test gate sebelum deploy di workflow CI, memperbaiki dua bug UI yang tertunda (grouping "Unknown date" pada expenses + loyalty math hardcoded di StatsSection), memastikan `package-lock.json` benar-benar sinkron lewat regenerasi bersih, serta tiga perbaikan UX dari review (redirect setelah create, AI Summary responsive, shimmer pada card saat regenerate).

@@ -65,9 +65,10 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
   const { data: summary, isLoading } = useTripSummary(tripId)
   const generate = useGenerateSummary(tripId)
 
-  const isRateLimited =
-    generate.isError &&
-    (generate.error as { status?: number })?.status === 429
+  const errStatus = (generate.error as { status?: number })?.status
+  const isRateLimited = generate.isError && errStatus === 429
+  // Any non-rate-limit failure (503 LLM unavailable, network, 500, etc.)
+  const isGenerateError = generate.isError && !isRateLimited
 
   if (isLoading) {
     return (
@@ -96,9 +97,20 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
             <p className="mb-6 text-sm text-muted-foreground">
               Generate a personalized AI summary of your trip, itinerary, stays, transport, and budget.
             </p>
+            {isGenerateError && (
+              <div className="mx-auto mb-4 flex max-w-md items-start gap-2 rounded-lg bg-destructive/10 p-3 text-left text-xs text-destructive sm:text-sm">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-medium">Couldn&apos;t generate summary</p>
+                  <p className="opacity-90">
+                    Something went wrong while generating. Please try again in a moment.
+                  </p>
+                </div>
+              </div>
+            )}
             <Button onClick={() => generate.mutate()} className="gap-2">
               <Sparkles className="h-4 w-4" />
-              Generate Summary
+              {isGenerateError ? "Try Again" : "Generate Summary"}
             </Button>
           </>
         )}
@@ -147,6 +159,18 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
             <p className="font-medium">Please wait a moment</p>
             <p className="text-[10px] opacity-90 sm:text-xs">
               You can regenerate a summary once every 5 minutes. Come back shortly!
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isGenerateError && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-2.5 text-xs text-destructive sm:mb-4 sm:p-3 sm:text-sm">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+          <div>
+            <p className="font-medium">Couldn&apos;t regenerate summary</p>
+            <p className="text-[10px] opacity-90 sm:text-xs">
+              Something went wrong. The previous summary is still shown below — try regenerating again in a moment.
             </p>
           </div>
         </div>
