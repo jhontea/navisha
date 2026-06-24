@@ -59,7 +59,7 @@ export default async function LoginPage({ searchParams }: Props) {
       <footer className="w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 border-t border-outline-variant/20 relative z-10 text-center">
         <div className="flex items-center gap-2">
           <span className="font-display font-bold text-label-md text-primary">Navisha</span>
-          <span className="font-body-sm text-outline">&copy; 2024 Navisha Travel. All rights reserved.</span>
+          <span className="font-body-sm text-outline">&copy; 2026 Navisha Travel. All rights reserved.</span>
         </div>
         <div className="flex gap-6 flex-wrap justify-center">
           <a

@@ -29,9 +29,18 @@ Progress log for Navisha development. Update at the start and end of each sessio
   - `ShimmerOverlay` kini membungkus seluruh card (bukan hanya konten teks) sehingga efek kilau muncul di card utuh saat regenerate.
   - `GeneratingIndicator compact` (rotating messages + spinner) tetap tampil di header card di sebelah tombol Regenerate selama proses berlangsung — bukan sebagai banner teks terpisah di atas konten.
 
+- **CI dipecah jadi job paralel** (`.github/workflows/deploy.yml`):
+  - Job `test` tunggal dipecah menjadi `test-backend` (Go build+test) dan `test-frontend` (npm ci+lint+build) yang jalan bersamaan. `deploy` sekarang `needs: [test-backend, test-frontend]`.
+  - Total durasi CI lebih singkat karena backend & frontend tidak lagi antri di satu runner.
+- **Fix lint error yang menggagalkan CI** (terdeteksi oleh test gate baru):
+  - `AccommodationForm.tsx` — hapus import `Input` yang tidak terpakai.
+  - `ExpenseForm.tsx` — hapus prop `compact` yang tidak terpakai (tidak ada caller yang mengoper prop ini).
+
 ### Key Decisions
 - **Shimmer + rotating messages berdampingan** — shimmer di seluruh card memberi feedback visual, sementara rotating messages di header tetap memberi konteks progres textual. Banner terpisah dihapus karena redundant dengan shimmer card.
 - **Redirect ke overview** — overview adalah landing page trip yang baru (Session 25); setelah create, masuk ke overview lebih masuk akal daripada langsung ke itinerary.
+- **CI paralel via dua job terpisah, bukan satu job berurutan** — backend dan frontend tidak saling bergantung, jadi menjalankannya di runner berbeda secara paralel memangkas waktu tunggu. Deploy tetap menunggu keduanya hijau (`needs`).
+- **Lint warning dibiarkan, error diperbaiki** — dua warning google-font di `layout.tsx` tidak menggagalkan `next lint` (hanya error yang exit 1). Fokus fix pada dua error unused-var yang sebenarnya memblokir CI.
 
 ---
 
