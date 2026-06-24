@@ -14,9 +14,19 @@ Berdasarkan detail sebuah trip, tulis ringkasan singkat dan menarik (3-5 paragra
 - Memberi komentar tentang status anggaran (di bawah/pas/melebihi anggaran)
 - Memberikan 1-2 tips atau saran praktis
 
+REKOMENDASI AKTIVITAS:
+Jika ada hari yang belum punya aktivitas, atau itinerary masih terasa kosong/minim,
+tambahkan SATU bagian markdown berjudul "## Rekomendasi Aktivitas" di akhir ringkasan.
+- Berikan saran aktivitas yang relevan dengan destinasi trip (tempat wisata, kuliner, atau pengalaman khas daerah tersebut).
+- Sebutkan hari mana yang masih kosong jika informasinya tersedia, lalu usulkan ide untuk mengisinya.
+- Beri 3-6 rekomendasi konkret dalam bentuk bullet list, ringkas dan praktis.
+- Tandai dengan jelas bahwa ini adalah SARAN/IDE (bukan bagian dari rencana yang sudah dibuat user).
+Jika semua hari sudah terisi penuh, BAGIAN INI BOLEH DILEWATI.
+
 PENTING: Tulis seluruh ringkasan dalam Bahasa Indonesia yang natural dan hangat.
 Gunakan format markdown. Buat terasa ramah dan membantu, jangan kaku.
-JANGAN mengarang tempat atau aktivitas yang tidak ada di data.
+JANGAN mengarang tempat atau aktivitas YANG SUDAH ADA di data trip (bagian ringkasan harus faktual).
+Rekomendasi aktivitas baru DIPERBOLEHKAN selama relevan dengan destinasi dan ditandai sebagai saran.
 Jika data minim, akui hal itu dan sarankan pengguna menambahkan detail lebih lanjut.`
 
 // BuildPrompt returns the system and user messages for the LLM call.
@@ -86,6 +96,18 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 	if len(days) > maxDays {
 		days = days[:maxDays]
 	}
+
+	// Count days without any activities and how many activities exist overall,
+	// so the model can decide whether to add an "Rekomendasi Aktivitas" section.
+	emptyDays := make([]int, 0)
+	totalActivities := 0
+	for _, day := range ctx.Days {
+		totalActivities += len(day.Activities)
+		if len(day.Activities) == 0 {
+			emptyDays = append(emptyDays, day.DayNumber)
+		}
+	}
+
 	if len(days) > 0 {
 		b.WriteString("\nDaily Itinerary:\n")
 		for _, day := range days {
@@ -121,6 +143,17 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 		if len(ctx.Days) > maxDays {
 			b.WriteString(fmt.Sprintf("  ... and %d more days\n", len(ctx.Days)-maxDays))
 		}
+	}
+
+	// Itinerary density signal — tells the model where to recommend activities.
+	b.WriteString(fmt.Sprintf("\nItinerary Density: %d/%d days have activities",
+		ctx.TotalDays-len(emptyDays), ctx.TotalDays))
+	if totalActivities == 0 {
+		b.WriteString(" — trip has no activities yet, please recommend some!\n")
+	} else if len(emptyDays) > 0 {
+		b.WriteString(fmt.Sprintf(" — empty days: %v\n", emptyDays))
+	} else {
+		b.WriteString("\n")
 	}
 
 	return systemPrompt, b.String()

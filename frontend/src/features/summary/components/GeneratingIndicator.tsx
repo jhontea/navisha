@@ -9,12 +9,21 @@ import { Loader2, Sparkles } from "lucide-react"
 const GENERATING_MESSAGES = [
   "Reading your itinerary…",
   "Reviewing stays and transport…",
-  "Crunching the budget…",
+  "Checking dates and timings…",
+  "Analyzing destinations…",
   "Spotting highlights of your trip…",
+  "Finding interesting patterns…",
   "Connecting the dots…",
+  "Calculating travel pace…",
+  "Crunching the budget…",
+  "Looking for trip insights…",
+  "Organizing key information…",
+  "Summarizing the essentials…",
+  "Preparing recommendations…",
   "Polishing the wording…",
+  "Adding the finishing touches…",
   "Almost there…",
-]
+];
 
 const ROTATE_INTERVAL_MS = 5000
 
