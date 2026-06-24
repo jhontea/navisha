@@ -14,13 +14,17 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/activity"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 	"github.com/ahmadhafizh/navisha/backend/internal/expense"
+	"github.com/ahmadhafizh/navisha/backend/internal/integration"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/internal/summary"
 	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
 	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
+	"github.com/ahmadhafizh/navisha/backend/pkg/openrouter"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -108,6 +112,21 @@ func main() {
 	accommodationUsecase := accommodation.NewUsecase(accommodationRepo, expenseUsecase)
 	accommodationHandler := accommodation.NewHandler(accommodationUsecase)
 
+	// Summary domain (AI trip summary via OpenRouter).
+	// Cross-domain data assembled by an adapter in internal/integration so the
+	// individual domain packages stay isolated.
+	openrouterClient := openrouter.NewClient(cfg.OpenRouter.APIKey, cfg.OpenRouter.Model).
+		WithTimeout(time.Duration(cfg.OpenRouter.TimeoutSeconds) * time.Second)
+
+	summaryRepo := summary.NewPostgresRepository(db)
+	tripContextProvider := integration.NewTripContextProvider(
+		tripUsecase, activityUsecase, accommodationUsecase, transportationUsecase, expenseUsecase,
+	)
+	summaryUsecase := summary.NewUsecase(summaryRepo, openrouterClient, tripContextProvider, cfg.OpenRouter.Model).
+		WithRateLimitWindow(time.Duration(cfg.OpenRouter.SummaryRateLimitSeconds) * time.Second)
+
+	summaryHandler := summary.NewHandler(summaryUsecase)
+
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
@@ -138,6 +157,7 @@ func main() {
 	expenseHandler.RegisterRoutes(api, authMiddleware)
 	transportationHandler.RegisterRoutes(api, authMiddleware)
 	accommodationHandler.RegisterRoutes(api, authMiddleware)
+	summaryHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown
 	go func() {

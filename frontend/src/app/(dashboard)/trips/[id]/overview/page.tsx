@@ -31,7 +31,9 @@ import { activityApi } from "@/features/activity/api"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
 import { useExpenseSummary, useExpenses } from "@/features/expense/hooks/useExpenses"
+import { TripSummaryCard } from "@/features/summary/components/TripSummaryCard"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
+
 import type { Day } from "@/features/trip/types"
 import type { Expense } from "@/features/expense/types"
 
@@ -681,6 +683,11 @@ export default function TripOverviewPage() {
           </div>
         </section>
 
+        {/* AI Trip Summary — generate is the focal CTA right under the hero */}
+        <section className="mb-8">
+          <TripSummaryCard tripId={tripId} />
+        </section>
+
         {/* Daily Itinerary */}
 
         <section className="mb-8">
@@ -688,6 +695,7 @@ export default function TripOverviewPage() {
             <h3 className="text-xl font-bold text-foreground md:text-2xl">
               Daily Itinerary
             </h3>
+
             <Link
               href={`/trips/${tripId}`}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"

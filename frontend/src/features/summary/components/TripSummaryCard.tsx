@@ -1,0 +1,152 @@
+"use client"
+
+import { useMemo } from "react"
+import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  useTripSummary,
+  useGenerateSummary,
+  useDeleteSummary,
+} from "../hooks/useTripSummary"
+import type { TripSummary } from "../types"
+
+function formatSimpleMarkdown(text: string) {
+  return text
+    .replace(/^### (.*$)/gim, "<h3 class='text-lg font-semibold mt-4 mb-2'>$1</h3>")
+    .replace(/^## (.*$)/gim, "<h2 class='text-xl font-semibold mt-5 mb-3'>$1</h2>")
+    .replace(/^# (.*$)/gim, "<h1 class='text-2xl font-bold mt-6 mb-4'>$1</h1>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/^- (.*$)/gim, "<li class='ml-5 list-disc'>$1</li>")
+    .replace(/\n/g, "<br />")
+}
+
+interface TripSummaryCardProps {
+  tripId: string
+}
+
+function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: string }) {
+  const deleteSummary = useDeleteSummary(tripId)
+  const html = useMemo(() => formatSimpleMarkdown(summary.content), [summary.content])
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+            AI Summary
+          </span>
+          <span>· Generated {new Date(summary.updated_at).toLocaleString()}</span>
+          {summary.model && <span className="hidden sm:inline">· {summary.model}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-destructive hover:text-destructive"
+            onClick={() => deleteSummary.mutate()}
+            disabled={deleteSummary.isPending}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Clear</span>
+          </Button>
+        </div>
+      </div>
+      <div
+        className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  )
+}
+
+export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
+  const { data: summary, isLoading } = useTripSummary(tripId)
+  const generate = useGenerateSummary(tripId)
+
+  const isRateLimited =
+    generate.isError &&
+    (generate.error as { status?: number })?.status === 429
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
+        <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+      </div>
+    )
+  }
+
+  if (!summary) {
+    return (
+      <div className="rounded-2xl border border-border/40 bg-card p-6 text-center shadow-sm md:p-8">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-6 w-6 text-primary" />
+        </div>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">
+          AI Trip Summary
+        </h3>
+        <p className="mb-6 text-sm text-muted-foreground">
+          Generate a personalized AI summary of your trip, itinerary, stays, transport, and budget.
+        </p>
+        <Button
+          onClick={() => generate.mutate()}
+          disabled={generate.isPending}
+          className="gap-2"
+        >
+          {generate.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Generate Summary
+            </>
+          )}
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-6 shadow-sm md:p-8">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold text-foreground md:text-xl">
+            AI Trip Summary
+          </h3>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => generate.mutate()}
+          disabled={generate.isPending}
+          className="shrink-0 gap-1.5"
+        >
+          {generate.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+          Regenerate
+        </Button>
+      </div>
+
+      {isRateLimited && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-medium">Please wait a moment</p>
+            <p className="text-xs opacity-90">
+              You can regenerate a summary once every 5 minutes. Come back shortly!
+            </p>
+          </div>
+        </div>
+      )}
+
+      <SummaryContent summary={summary} tripId={tripId} />
+    </div>
+  )
+}

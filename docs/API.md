@@ -378,7 +378,46 @@ Ownership chain `expense → trip → user` verified via JOIN. Currency conversi
 
 ---
 
+## AI Trip Summary
+
+LLM-generated trip summary (via OpenRouter). One summary per trip, cached. The summary
+aggregates trip info, itinerary, stays, transport, and budget into a friendly narrative.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/trips/:id/summary` | Yes | Get cached summary (404 if none) |
+| POST | `/trips/:id/summary` | Yes | Generate / regenerate summary |
+| DELETE | `/trips/:id/summary` | Yes | Clear cached summary |
+
+**Summary response:**
+```json
+{
+  "id": "uuid",
+  "trip_id": "uuid",
+  "content": "## Your Bali Adventure\n\n...markdown...",
+  "model": "openai/gpt-4o-mini",
+  "created_at": "2026-07-01T00:00:00Z",
+  "updated_at": "2026-07-01T00:00:00Z"
+}
+```
+
+**Rate limiting:** Generation is soft-limited to once per
+`openrouter.summary_rate_limit_seconds` (config.yaml, default 300s = 5 min) per trip.
+Set the value to `0` to disable the check entirely. If a summary was generated within
+the window, `POST` returns `429 Too Many Requests`:
+
+```json
+{
+  "code": "RATE_LIMITED",
+  "message": "summary was generated recently, try again later",
+  "retry_after_seconds": 213
+}
+```
+
+---
+
 ## Error Format
+
 
 ```json
 {
