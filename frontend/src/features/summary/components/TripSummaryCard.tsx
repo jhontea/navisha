@@ -121,17 +121,18 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
   return (
     <ShimmerOverlay
       active={generate.isPending}
-      className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-4 shadow-sm sm:p-6 md:p-8"
+      className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-4 shadow-sm md:p-6 lg:p-8"
     >
-      <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      {/* Header: icon + label | (generating indicator) | regenerate button */}
+      <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:mb-5">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
-          <h3 className="text-base font-bold text-foreground sm:text-lg md:text-xl">
+          <Sparkles className="h-4 w-4 flex-shrink-0 text-primary sm:h-5 sm:w-5" />
+          <h3 className="text-sm font-bold leading-tight text-foreground sm:text-base md:text-lg">
             AI Trip Summary
           </h3>
         </div>
         {generate.isPending && (
-          <div className="w-full sm:w-auto sm:shrink-0">
+          <div className="w-full shrink-0 sm:w-auto">
             <GeneratingIndicator compact />
           </div>
         )}
@@ -140,23 +141,23 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
           size="sm"
           onClick={() => generate.mutate()}
           disabled={generate.isPending}
-          className="shrink-0 gap-1.5 text-xs sm:text-sm"
+          className="w-full shrink-0 gap-1.5 text-xs sm:w-auto sm:text-sm md:gap-2 md:text-sm"
         >
           {generate.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin sm:h-3.5 sm:w-3.5" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
           )}
-          <span className="hidden sm:inline">Regenerate</span>
           <span className="sm:hidden">Regenerate</span>
+          <span className="hidden sm:inline">Regenerate</span>
         </Button>
       </div>
 
       {isRateLimited && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100 sm:mb-4 sm:p-3 sm:text-sm">
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+        <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100 sm:mb-4 sm:p-3 sm:text-sm">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
           <div>
-            <p className="font-medium">Please wait a moment</p>
+            <p className="font-medium text-[11px] sm:text-sm">Please wait a moment</p>
             <p className="text-[10px] opacity-90 sm:text-xs">
               You can regenerate a summary once every 5 minutes. Come back shortly!
             </p>
@@ -165,10 +166,10 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
       )}
 
       {isGenerateError && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-2.5 text-xs text-destructive sm:mb-4 sm:p-3 sm:text-sm">
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+        <div className="mb-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-2 text-xs text-destructive sm:mb-4 sm:p-3 sm:text-sm">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
           <div>
-            <p className="font-medium">Couldn&apos;t regenerate summary</p>
+            <p className="font-medium text-[11px] sm:text-sm">Couldn&apos;t regenerate summary</p>
             <p className="text-[10px] opacity-90 sm:text-xs">
               Something went wrong. The previous summary is still shown below — try regenerating again in a moment.
             </p>
