@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	gooauth2 "golang.org/x/oauth2"
 )
 
 type postgresRepository struct {
@@ -64,4 +66,60 @@ func (r *postgresRepository) Upsert(u *User) (*User, error) {
 		return nil, fmt.Errorf("user.Upsert: %w", err)
 	}
 	return out, nil
+}
+
+func (r *postgresRepository) UpdateGoogleTokens(userID string, token *gooauth2.Token, scopes []string) error {
+	var expiry *time.Time
+	if !token.Expiry.IsZero() {
+		e := token.Expiry
+		expiry = &e
+	}
+
+	tag, err := r.db.Exec(context.Background(),
+		`UPDATE users
+		    SET google_refresh_token = COALESCE(NULLIF($2, ''), google_refresh_token),
+		        google_access_token  = $3,
+		        google_token_expiry  = $4,
+		        google_scopes        = $5,
+		        updated_at           = NOW()
+		  WHERE id = $1`,
+		userID, token.RefreshToken, token.AccessToken, expiry, scopes)
+	if err != nil {
+		return fmt.Errorf("user.UpdateGoogleTokens: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *postgresRepository) GetGoogleToken(userID string) (*gooauth2.Token, []string, error) {
+	var (
+		refresh string
+		access  string
+		expiry  *time.Time
+		scopes  []string
+	)
+	err := r.db.QueryRow(context.Background(),
+		`SELECT COALESCE(google_refresh_token, ''),
+		        COALESCE(google_access_token, ''),
+		        google_token_expiry,
+		        google_scopes
+		   FROM users WHERE id = $1`, userID).
+		Scan(&refresh, &access, &expiry, &scopes)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil, ErrNotFound
+		}
+		return nil, nil, fmt.Errorf("user.GetGoogleToken: %w", err)
+	}
+
+	tok := &gooauth2.Token{
+		AccessToken:  access,
+		RefreshToken: refresh,
+	}
+	if expiry != nil {
+		tok.Expiry = *expiry
+	}
+	return tok, scopes, nil
 }

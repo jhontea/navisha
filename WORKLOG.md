@@ -4,6 +4,106 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 34: F4 CHUNK 3 — Calendar Export Review Fixes
+
+Tindak lanjut review user atas implementasi F4 (CHUNK 2). Tiga isu diperbaiki, build + test hijau.
+
+**R1 — Tombol "Remove" muncul padahal belum pernah export**
+- Backend: endpoint baru `GET /trips/:id/calendar-export` → `{ exported_count }`; repo tambah `CountByTrip`.
+- Frontend: `useCalendarExportStatus` (react-query); tombol Remove hanya render bila `exported_count > 0`. Tombol utama jadi "Re-sync" + subteks "N activities synced" saat sudah ada export.
+
+**R2 — Waktu dipaksa UTC (jam bergeser di Calendar)**
+- `parseDayTime` kini mengembalikan datetime naive wall-clock (mis. `2026-07-01T09:30:00`) tanpa konversi UTC, dikirim dengan `timeZone: "Asia/Jakarta"` (`defaultTimeZone`). Google menampilkan persis jam input.
+
+**R3 — Sudah export tidak bisa export lagi / hari berubah tidak ter-sync**
+- `ExportTrip` diubah dari sekali-jalan menjadi idempotent sync: aktivitas baru dibuat, aktivitas yang sudah dihapus (atau hari dikurangi) event-nya di-prune dari Google + baris mapping dihapus, yang sudah ada dibiarkan. Response `{ created, removed, total }`.
+- Repo tambah `DeleteByID`. Handler `Export` mengembalikan created/removed/total.
+
+**Keterbatasan tercatat**: edit waktu/judul activity yang sudah ter-export belum di-update in-place (event lama tidak diubah). Workaround MVP: hapus activity lalu Re-sync, atau Remove + Export ulang.
+
+**Verifikasi**
+- `go build ./...` + `go test ./...` hijau (`internal/calendarexport` lulus, test di-update untuk naive time + sync).
+- `npm run build` frontend sukses.
+
+**Files**
+- Backend: `internal/calendarexport/{usecase,handler,repository,repository_pg,usecase_test}.go`
+- Frontend: `features/calendar-export/{api.ts,hooks/useCalendarExport.ts,components/CalendarExportCard.tsx}`
+- Docs: `docs/F4_CALENDAR_EXPORT.md` (CHUNK 3)
+
+---
+
+## 2026-06-24 — Session 33: F4 CHUNK 2 — Calendar Export (Phase 2)
+
+**Status**: **F4 — Export to Google Calendar** selesai end-to-end (build + test hijau). Melanjutkan dari CHUNK 1 (P2, Session 32). User trip's location activities bisa di-export ke Google Calendar dan otomatis terhapus saat trip dihapus. Pakai Calendar REST API langsung (tanpa SDK berat) agar zero dependency baru.
+
+### Completed
+- **F4-A `pkg/googlecalendar/client.go`** (baru): wrapper REST tipis di atas Calendar API — `New(*oauth2.Config)`, `CreateEvent`, `DeleteEvent`. Pakai `oauthCfg.Client(ctx, token)` yang auto-refresh access token dari refresh token (pola sama `fetchGoogleUserInfo`). HTTP 401/403 → sentinel `ErrReauthRequired`; DELETE 404/410 dianggap sukses (idempotent). **Tidak menarik SDK `calendar/v3`** untuk menjaga vendor tree tetap kecil.
+- **F4-B migration** `009_add_calendar_exports.sql` (baru): tabel `calendar_exports(user_id FK, trip_id FK, source_type, source_id, google_event_id, google_calendar_id, ...)` + `UNIQUE(source_type, source_id)` + index trip/user.
+- **F4-C domain `internal/calendarexport/`** (baru): `model.go` (`CalendarItem`, interface `DataProvider` + `TokenProvider`), `repository.go` + `repository_pg.go` (`Insert` dengan `ON CONFLICT DO NOTHING`, `ListByTrip`, `DeleteByTrip`, `ExistsBySource`), `usecase.go` (`ExportTrip` idempotent skip yang sudah ada, `RemoveTrip` + `RemoveTripInternal` untuk cleanup). `buildEvent` map activity → event: timed (UTC) bila ada jam, all-day (end date eksklusif +1 hari) bila tanpa jam.
+- **Adapter**: `internal/integration/calendar_items.go` (baru) implement `DataProvider.GetCalendarItems` — flatten activity tipe `location` lintas hari (ownership via `trips.Get`). User usecase tambah `GoogleToken()` (implement `TokenProvider`) + sentinel `ErrNoGoogleToken`.
+- **F4-D delete hook**: `trip.Handler` tambah `SetOnDelete(fn)` yang dipanggil setelah delete sukses (fire-and-forget). `main.go` wire ke `calendarExportUsecase.RemoveTripInternal` — hapus event Calendar saat trip dihapus, error tidak membatalkan delete.
+- **F4-E handler** `internal/calendarexport/handler.go` (baru): `POST/DELETE /trips/:id/calendar-export`. `ErrReauthRequired` → 401 `{ code: "GOOGLE_REAUTH_REQUIRED" }`, forbidden → 403.
+- **F4-F frontend** `features/calendar-export/`: `api.ts`, `hooks/useCalendarExport.ts`, `components/CalendarExportCard.tsx` (tombol Export + Remove, 2 ConfirmDialog, banner sukses/error, banner reauth dengan tombol "Sign in with Google" → `/auth/google`). Di-mount di Trip Overview di bawah AI Summary.
+- **Tests**: `internal/calendarexport/usecase_test.go` — `buildEvent` timed/start-only/all-day, `locationString`, `parseDayTime`. `go build ./...` + `go test ./...` hijau; frontend `npm run build` sukses.
+- **Docs**: `docs/F4_CALENDAR_EXPORT.md` CHUNK 2 ditandai selesai + catatan verifikasi.
+
+### Key Decisions
+- **Calendar REST API langsung, bukan SDK `calendar/v3`** — backend pakai vendoring; SDK menambah ratusan paket. Kita cuma butuh create/delete event, jadi HTTP call via `oauthCfg.Client()` (auto-refresh) lebih ringan dan konsisten dengan pola user domain.
+- **Delete hook lewat handler, bukan trip usecase** — menjaga `trip.Usecase` tetap bebas dependency calendar. Hook `SetOnDelete` di-wire di `main.go`, error cleanup di-log (best-effort) supaya tidak membatalkan delete trip.
+- **`RemoveTripInternal` tanpa ownership check** — dipakai hook delete trip di mana ownership sudah diverifikasi oleh delete itu sendiri; endpoint publik `RemoveTrip` tetap cek ownership via `DataProvider`.
+- **Idempotensi berlapis** — `ExistsBySource` (skip sebelum create) + `UNIQUE(source_type, source_id)` + `ON CONFLICT DO NOTHING`. Export 2x tidak pernah duplikat.
+- **All-day end date eksklusif** — Google Calendar perlakukan `end.date` sebagai eksklusif, jadi all-day event pakai `date+1`.
+
+### Pending
+- [ ] **Smoke test F4 end-to-end** (manual, user): login ulang dengan akun test → export trip → cek event di Google Calendar (UTC) → hapus trip → cek event hilang.
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Manual cover image upload**
+- [ ] **AI Summary streaming (SSE)**
+- [ ] **Phase 2 sisanya**: F5 (auto-generate trip)
+
+### Resume From
+Smoke test F4 end-to-end di akun test (sudah punya refresh token + scope Calendar dari login ulang). Kalau lancar, lanjut F5 (auto-generate trip) atau bersihkan backlog (Unknown date grouping / linked-expense lifecycle).
+
+---
+
+## 2026-06-24 — Session 32: F4 CHUNK 1 — P2 OAuth Scopes + Refresh Token Storage (Phase 2)
+
+**Status**: Mulai Phase 2 **F4 — Export to Google Calendar**. Setelah diskusi, F3 (KML export) **di-skip** (UX import manual kurang baik, F2 sudah menutup use-case "lihat di maps"). F4 dipecah 2 chunk; **CHUNK 1 (P2 — OAuth scopes + refresh token storage)** selesai sesi ini sebagai fondasi auth. CHUNK 2 (Calendar export sebenarnya) menyusul sesi berikutnya. Dibuat docs breakdown `docs/F4_CALENDAR_EXPORT.md`.
+
+### Completed
+- **Docs breakdown** (`docs/F4_CALENDAR_EXPORT.md`, baru): F4 dipecah jadi CHUNK 1 (P2-A..E) + CHUNK 2 (F4-A..F) + acceptance criteria + instruksi setup Google Cloud Console + catatan biaya (Calendar API gratis). P2 ditandai selesai.
+- **P2-A OAuth scope + offline access**:
+  - `backend/pkg/oauth/google.go`: tambah konstanta `CalendarEventsScope` + scope `calendar.events` ke `NewGoogleConfig`.
+  - `backend/internal/user/usecase.go`: `GoogleAuthURL` pakai `AccessTypeOffline` + `ApprovalForce` (`prompt=consent`) supaya Google mengembalikan refresh token.
+- **P2-B Migration** (`backend/migrations/008_add_user_oauth_tokens.sql`, baru): `ALTER TABLE users` tambah `google_refresh_token`, `google_access_token`, `google_token_expiry`, `google_scopes` (idempotent `IF NOT EXISTS`).
+- **P2-C Model + Repository**:
+  - `internal/user/model.go`: tambah field `GoogleRefreshToken`, `GoogleAccessToken`, `GoogleTokenExpiry *time.Time`, `GoogleScopes []string`.
+  - `internal/user/repository.go` + `repository_pg.go`: method baru `UpdateGoogleTokens(userID, *oauth2.Token, scopes)` + `GetGoogleToken(userID)`. `UpdateGoogleTokens` pakai `COALESCE(NULLIF($2,''), google_refresh_token)` agar refresh token lama tidak tertimpa string kosong saat Google tidak mengirim ulang.
+- **P2-D Wire ke GoogleLogin** (`internal/user/usecase.go`): setelah `Exchange`, simpan token + `grantedScopes(token)` (parse field `scope`). Kegagalan simpan bersifat **non-fatal** (di-log, tidak membatalkan login).
+- **Verifikasi**: `go build ./...` hijau; `go test ./...` semua paket hijau.
+
+### Key Decisions
+- **Skip F3 (KML export)** — Google Saved Places tak punya write API; satu-satunya jalur KML butuh import manual user. UX kurang baik dan F2 (Open in Maps) sudah menutup kebutuhan "lihat lokasi di maps". Lompat ke F4.
+- **F4 dipecah: P2 dulu, baru Calendar export** — P2 menyentuh auth flow kritis, lebih aman diverifikasi terpisah sebelum bangun fitur di atasnya.
+- **Tidak ada endpoint re-auth terpisah** — session cuma 1 jam; user yang scope/token-nya kurang cukup login ulang (consent muncul lagi). Jadi cukup ubah flow login utama (`access_type=offline` + `prompt=consent`).
+- **Token disimpan plaintext (MVP)** — enkripsi at-rest ditunda; dicatat sebagai tech-debt di docs.
+- **Scope F4 dipersempit**: hanya activity tipe `location`, event UTC (keputusan user) — disimpan di docs untuk CHUNK 2.
+
+### Pending
+- [ ] **F4 CHUNK 2**: googlecalendar client + `calendar_exports` migration + domain `calendar_export` + delete hook + handler + frontend
+- [ ] **Setup Google Cloud Console** (manual, user): enable Calendar API + tambah scope `calendar.events` + test users
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Manual cover image upload**
+- [ ] **AI Summary streaming (SSE)**
+- [ ] **Phase 2 sisanya**: F5 (auto-generate trip)
+
+### Resume From
+Lanjut **F4 CHUNK 2** (Calendar export). Prasyarat: jalankan migration 008 di DB + setup Google Cloud Console (enable Calendar API, tambah scope, test users), lalu user login ulang sekali agar `users.google_refresh_token` terisi. Verifikasi refresh token tersimpan sebelum mulai bikin `pkg/googlecalendar`.
+
+---
+
 ## 2026-06-24 — Session 31: F2 Open in Google Maps + Review Fixes (Phase 2)
 
 **Status**: Fitur Phase 2 **F2 — Open in Google Maps** selesai (pure frontend). Dibuat docs breakdown `docs/F2_OPEN_IN_GOOGLE_MAPS.md` + utility URL builder. Setelah review, tombol dipindah dari header Overview ke **Map View halaman Itinerary** (open-in-maps per hari), toggle List/Map View dibuat lebih prominent, dan error handling AI Summary diperbaiki (503 + UI error state) agar tidak lagi 500 saat LLM gagal.
