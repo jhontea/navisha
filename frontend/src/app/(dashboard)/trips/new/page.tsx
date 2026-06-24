@@ -32,7 +32,7 @@ export default function NewTripPage() {
             isSubmitting={isPending}
             onSubmit={async (input) => {
               const trip = await mutateAsync(input)
-              router.push(`/trips/${trip.id}`)
+              router.push(`/trips/${trip.id}/overview`)
             }}
           />
       </div>

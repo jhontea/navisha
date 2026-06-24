@@ -27,9 +27,21 @@ export function StatsSection() {
   ).length
   const currencies = new Set(trips.map((t) => t.base_currency)).size
 
-  const milesToNext = 250
-  const progressPct = 75
-  const level = completed > 5 ? "Gold" : "Silver"
+  // Real loyalty math: each completed trip = 100 miles
+  const totalMiles = completed * 100
+  const levelThresholds = [
+    { name: "Bronze", min: 0 },
+    { name: "Silver", min: 300 },
+    { name: "Gold", min: 600 },
+    { name: "Platinum", min: 1000 },
+  ]
+  const currentLevel = [...levelThresholds].reverse().find((l) => totalMiles >= l.min) ?? levelThresholds[0]
+  const nextLevel = levelThresholds.find((l) => l.min > totalMiles)
+  const milesToNext = nextLevel ? nextLevel.min - totalMiles : 0
+  const progressPct = nextLevel
+    ? Math.min(100, Math.round(((totalMiles - currentLevel.min) / (nextLevel.min - currentLevel.min)) * 100))
+    : 100
+  const level = currentLevel.name
 
   return (
     <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
@@ -66,7 +78,10 @@ export function StatsSection() {
             Traveler Level: {level}
           </p>
           <p className="text-body-sm font-body-sm text-on-surface-variant">
-            {upcoming > 0 ? `${upcoming} upcoming · ` : ""}{milesToNext} miles until Platinum status
+            {upcoming > 0 ? `${upcoming} upcoming · ` : ""}
+            {nextLevel
+              ? `${milesToNext} miles until ${nextLevel.name} status`
+              : "Max level reached"}
           </p>
           <div className="w-full h-2 bg-surface-container-high rounded-full mt-4 overflow-hidden">
             <div

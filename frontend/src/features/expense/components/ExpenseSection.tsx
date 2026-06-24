@@ -39,6 +39,8 @@ function formatExpenseDate(dateStr: string): string {
 function formatGroupDate(dateStr: string): string {
   if (!dateStr) return "Unknown date"
   const d = new Date(dateStr + "T00:00:00")
+  // Guard against zero/invalid dates (e.g. old expenses before migration)
+  if (isNaN(d.getTime()) || d.getFullYear() < 2000) return "Unknown date"
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const yesterday = new Date(today)
