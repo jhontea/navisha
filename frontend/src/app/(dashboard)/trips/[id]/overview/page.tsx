@@ -32,6 +32,7 @@ import { useAccommodations } from "@/features/accommodation/hooks/useAccommodati
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
 import { useExpenseSummary, useExpenses } from "@/features/expense/hooks/useExpenses"
 import { TripSummaryCard } from "@/features/summary/components/TripSummaryCard"
+import { CalendarExportCard } from "@/features/calendar-export/components/CalendarExportCard"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
 
 import type { Day } from "@/features/trip/types"
@@ -686,6 +687,11 @@ export default function TripOverviewPage() {
         {/* AI Trip Summary — generate is the focal CTA right under the hero */}
         <section className="mb-8">
           <TripSummaryCard tripId={tripId} />
+        </section>
+
+        {/* Export trip to Google Calendar (F4) */}
+        <section className="mb-8">
+          <CalendarExportCard tripId={tripId} />
         </section>
 
         {/* Daily Itinerary */}

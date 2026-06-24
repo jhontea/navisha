@@ -13,10 +13,19 @@ import (
 
 type Handler struct {
 	usecase UsecaseInterface
+	// onDelete is an optional hook run after a trip is successfully deleted
+	// (e.g. cleaning up exported Google Calendar events). Best-effort: it runs
+	// synchronously but its errors must not affect the delete response.
+	onDelete func(userID, tripID string)
 }
 
 func NewHandler(usecase UsecaseInterface) *Handler {
 	return &Handler{usecase: usecase}
+}
+
+// SetOnDelete registers a post-delete cleanup hook. Wired in main.go.
+func (h *Handler) SetOnDelete(fn func(userID, tripID string)) {
+	h.onDelete = fn
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
@@ -189,6 +198,9 @@ func (h *Handler) Delete(c echo.Context) error {
 	tripID := c.Param("id")
 	if err := h.usecase.Delete(userID, tripID); err != nil {
 		return mapErr(err)
+	}
+	if h.onDelete != nil {
+		h.onDelete(userID, tripID)
 	}
 	return c.NoContent(http.StatusNoContent)
 }
