@@ -4,6 +4,58 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 28: Fix Budget Terhapus Saat Update Trip
+
+**Status**: Bug di mana budget trip ter-reset ke 0 (terhapus) saat trip di-update sudah diperbaiki, baik dari sisi frontend maupun backend. Root cause: dua inline-edit handler di frontend tidak mengirim field `budget`, dan backend meng-coerce `budget` yang absent menjadi `0`.
+
+### Completed
+- **Root cause analysis**:
+  - **Frontend (immediate cause):** Dua inline-edit `saveEdits` handler (Itinerary page `trips/[id]/page.tsx` dan Overview page `trips/[id]/overview/page.tsx`) mengirim `PUT /trips/:id` tanpa field `budget`. Edit title/dates/cover saja sudah cukup untuk menghapus budget.
+  - **Backend (root cause):** `tripRequest.Budget *float64` di handler di-coerce ke `float64` biasa via `var updateBudget float64; if req.Budget != nil { updateBudget = *req.Budget }` — jadi `budget` absent dari JSON → `nil` → `0` → tertulis ke DB.
+- **Frontend fix** (2 file, 1 baris masing-masing):
+  - `frontend/src/app/(dashboard)/trips/[id]/page.tsx:123` — tambah `budget: trip.budget` ke payload `saveEdits`
+  - `frontend/src/app/(dashboard)/trips/[id]/overview/page.tsx:367` — tambah `budget: trip.budget` ke payload `saveEdits`
+- **Backend fix (PATCH semantics untuk budget):**
+  - `backend/internal/trip/usecase.go` — `UpdateInput.Budget` dari `float64` jadi `*float64` (`nil = leave unchanged; &0.0 = explicitly clear`). Di `Update()`, hanya overwrite `existing.Budget` saat `in.Budget != nil`. `CreateInput.Budget` tetap `float64` (create-with-zero adalah konvensi yang sudah ada).
+  - `backend/internal/trip/handler.go` — pass `req.Budget` (sudah `*float64` dari request struct) langsung ke `UpdateInput`; hapus blok coercion `nil → 0`.
+- **Tests:**
+  - `backend/internal/trip/usecase_test.go` — tambah 2 regression test: `TestUsecase_Update_OmittedBudgetPreservesExisting` (budget nil → budget existing 5_000_000 dipertahankan) dan `TestUsecase_Update_ExplicitBudgetZero` (`&0.0` → budget jadi 0, membuktikan "clear budget" tetap works).
+  - `backend/internal/trip/mocks_test.go` — fix mock `Update` yang sebelumnya membuang `*Trip` input dan return `m.updateResult` (nil default). Sekarang persist + return trip yang sudah di-mutate (mirror `repository_pg.Update` `...RETURNING` behavior). Hapus field `updateResult` yang jadi dead code.
+- **Verification:**
+  - `go build ./...` — clean
+  - `go test ./...` — semua package hijau, termasuk 2 test baru
+  - `npm run build` — clean
+  - `graphify update .` — graph di-refresh (29045 nodes, 57756 edges)
+- **Cleanup:** Revert stray `*.json` yang sempat tertambah ke `.gitignore` (dari tooling graphify), supaya `.gitignore` kembali ke state original.
+
+### Key Decisions
+- **Budget-only PATCH semantics di PUT /trips/:id** — field `budget` yang omitted = "leave unchanged", `budget: 0` = "explicitly clear". Field lain tetap full-replacement. Ini exception yang sengaja didokumentasikan di comment `UpdateInput.Budget` karena hanya `budget` yang punya masalah `*float64 → 0` coercion; field lain tidak terdampak.
+- **`CreateInput.Budget` tetap `float64`** — create-with-zero adalah konvensi lama (trip tanpa budget = budget 0). Mengubahnya ke pointer membutuhkan refactor yang lebih luas dan tidak bagian dari bug ini.
+- **Mock `Update` diperbaiki, bukan di-workaround** — mock lama return `m.updateResult` (nil) dan membuang input, sehingga test tidak bisa meng-assert field assignment di usecase. Fix mock untuk persist + return trip yang di-mutate adalah cara yang benar; juga membuat mock lebih akurat mencerminkan `repository_pg.Update`.
+- **Frontend minimal fix (tidak tighten TS type)** — keputusan user: hanya tambah `budget: trip.budget` ke 2 payload yang buggy. Backend fix sudah mencegah runtime bug, jadi tighten `UpdateTripInput.budget` jadi required di TS adalah belt-and-suspenders yang tidak perlu.
+- **Tidak sentuh call site `edit/page.tsx` (TripForm) dan `budget/page.tsx`** — keduanya sudah mengirim `budget` dengan benar sebelumnya; tidak terdampak bug.
+
+### API Contract Nuance
+`PUT /trips/:id` sekarang punya semantics asymmetric untuk `budget`:
+- `budget` omitted dari JSON → budget trip tidak berubah
+- `budget: 0` → budget trip di-set ke 0 (explicit clear)
+- `budget: <number>` → budget trip di-set ke number tersebut
+
+Field lain (`title`, `description`, `start_date`, `end_date`, `base_currency`, `cover_image_url`, `notes`) tetap full-replacement (kosong/null di-overwrite). Jika nanti ingin PATCH semantics untuk semua field optional, itu refactor terpisah yang lebih besar.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Real loyalty math**
+- [ ] **Manual cover image upload** (saat ini cover hanya dari Google Places auto-fetch)
+- [ ] **Test gate di CI sebelum deploy**
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Deploy fix ke VPS lalu smoke test: (1) set trip budget dari Budget page, (2) edit title dari Overview page → budget harus tetap utuh, (3) edit title dari Itinerary page → budget tetap utuh, (4) clear budget (kirim 0) dari Budget page → budget jadi 0. Kemudian tackle "Unknown date" expense bug atau linked-expense lifecycle.
+
+---
+
 ## 2026-06-24 — Session 27: Auto Cover Photo dari Google Places + CI/CD Deploy
 
 **Status**: Cover image trip kini otomatis diambil dari Google Maps saat memilih destination, plus auto-deploy ke VPS via GitHub Actions.

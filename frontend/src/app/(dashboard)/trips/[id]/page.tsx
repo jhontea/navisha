@@ -120,6 +120,7 @@ export default function TripDetailPage() {
         start_date: editStartDate,
         end_date: editEndDate,
         base_currency: trip.base_currency,
+        budget: trip.budget,
         cover_image_url: editCover,
         notes: trip.notes,
       },

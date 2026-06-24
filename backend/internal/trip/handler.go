@@ -168,17 +168,13 @@ func (h *Handler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date format (expect YYYY-MM-DD)")
 	}
 
-	var updateBudget float64
-	if req.Budget != nil {
-		updateBudget = *req.Budget
-	}
 	t, err := h.usecase.Update(userID, tripID, UpdateInput{
 		Title:         req.Title,
 		Description:   req.Description,
 		StartDate:     start,
 		EndDate:       end,
 		BaseCurrency:  req.BaseCurrency,
-		Budget:        updateBudget,
+		Budget:        req.Budget,
 		CoverImageURL: req.CoverImageURL,
 		Notes:         req.Notes,
 	})

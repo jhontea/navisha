@@ -23,7 +23,6 @@ type mockRepo struct {
 	findErr        error
 	listResult     ListResult
 	listErr        error
-	updateResult   *Trip
 	updateErr      error
 	deleteErr      error
 	listDaysResult []Day
@@ -95,11 +94,17 @@ func (m *mockRepo) DeleteDays(_ context.Context, _ pgx.Tx, _ string) error {
 	m.insertedDays = nil
 	return nil
 }
-func (m *mockRepo) Update(_ *Trip) (*Trip, error) {
+func (m *mockRepo) Update(t *Trip) (*Trip, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr
 	}
-	return m.updateResult, nil
+	// Persist the mutated trip so tests can assert the usecase's field
+	// assignments (e.g. budget preservation). Mirrors repository_pg.Update
+	// which returns the row from ...RETURNING.
+	out := *t
+	out.UpdatedAt = time.Now()
+	m.trips[t.ID] = &out
+	return &out, nil
 }
 func (m *mockRepo) Delete(_ string) error {
 	return m.deleteErr
