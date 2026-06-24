@@ -4,6 +4,44 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 29: Fix Deploy npm ci + AI Summary Loading UX
+
+**Status**: Deployment yang gagal di tahap `npm ci` (frontend) sudah diperbaiki dengan regenerasi lock file yang universal lintas-platform. Selain itu, UX saat generate/regenerate AI Trip Summary ditingkatkan dengan rotating loading messages + efek shimmer pada card.
+
+### Completed
+- **Fix deploy gagal di `npm ci` (root cause)**:
+  - Error: `npm ci can only install packages when your package.json and package-lock.json ... are in sync` — `Missing: @emnapi/core`, `@emnapi/runtime`, `Invalid: @emnapi/wasi-threads`.
+  - **Root cause**: `frontend/package-lock.json` yang di-generate npm di Windows tidak menyertakan dependensi optional native/WASM (`@emnapi/*`) yang dibutuhkan saat `npm ci` berjalan di image `node:20-alpine` (Linux musl). npm 10.8.2 meresolusi optional deps berbeda per platform.
+  - **Fix**: regenerasi `package-lock.json` memakai **npm v11** di dalam container `node:20-alpine` (`npm install --package-lock-only`) agar lock file bersifat universal — memuat entri Linux (x64/arm64 musl+gnu), win32-x64, dan macOS sekaligus, plus `@emnapi/*`.
+  - **Verifikasi**: `npm ci --dry-run` di dalam Alpine (npm 10.8.2 default, sama dengan Dockerfile) lolos tanpa error EUSAGE/missing/invalid. Lock file mengandung `@next/swc-linux-*`, `@next/swc-win32-x64-msvc`, dan `@emnapi/*`.
+  - **Dockerfile tidak diubah** — `npm ci --prefer-offline` sudah benar untuk build reproducible; mengganti ke `npm install` hanya akan menyembunyikan error dan membuat build non-deterministik.
+- **AI Trip Summary loading UX**:
+  - **`GeneratingIndicator.tsx` (baru)** — pesan berganti tiap 2,5 detik ("Reading your itinerary…", "Reviewing stays and transport…", "Crunching the budget…", dst.) dengan animasi fade + ikon Sparkles berdenyut. `aria-live="polite"` untuk screen reader. Varian `compact` untuk state regenerate.
+  - **`ShimmerOverlay.tsx` (baru)** — membungkus konten card dan menampilkan lapisan kilau (gradient bergerak + pulse primary) saat `active`. Tanpa overhead saat tidak aktif.
+  - **`TripSummaryCard.tsx`** — rotating message + shimmer kini berlaku untuk **kedua** aksi: Generate pertama (indikator besar di tengah, card shimmer) dan Regenerate (banner compact + konten ringkasan lama tetap tampil dengan shimmer).
+  - **`tailwind.config.ts`** — tambah keyframe `shimmer` (translateX -100% → 100%) + animasi `shimmer: "shimmer 1.8s ease-in-out infinite"`.
+- **Verifikasi**: `npm run build` (frontend) clean, semua route terkompilasi termasuk `/trips/[id]/overview`.
+
+### Key Decisions
+- **Regenerasi lock file di Alpine + npm 11, bukan di Windows** — lock file yang dibuat npm Windows berulang kali kehilangan optional deps platform Linux. Membuatnya di image yang persis sama dengan deploy (`node:20-alpine`) dengan npm 11 (resolusi optional-deps lintas-platform lebih baik) menghasilkan satu lock file universal yang lolos `npm ci` di mana saja.
+- **Tetap pakai `npm ci`, bukan `npm install` di Dockerfile** — `npm ci` sengaja gagal saat lock tidak sinkron; itu perilaku yang benar untuk produksi. Memperbaiki lock file adalah fix yang tepat, bukan melonggarkan command build.
+- **Rotating message + shimmer murni UX** — durasi generate sebenarnya dari backend/OpenRouter tidak berubah. Untuk benar-benar terasa cepat, opsi lanjutan adalah streaming respons (SSE), yang butuh perubahan backend — di luar scope sesi ini.
+- **Komponen indikator dipisah & reusable** — `GeneratingIndicator` dan `ShimmerOverlay` berdiri sendiri sehingga bisa dipakai ulang dan mudah disetel (teks/interval di `GENERATING_MESSAGES`/`ROTATE_INTERVAL_MS`, kecepatan kilau di `animation.shimmer`).
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** (carried from Session 19)
+- [ ] **Linked-expense lifecycle** (carried since Session 13)
+- [ ] **Real loyalty math**
+- [ ] **Manual cover image upload** (saat ini cover hanya dari Google Places auto-fetch)
+- [ ] **Test gate di CI sebelum deploy**
+- [ ] **AI Summary streaming (SSE)** — agar teks muncul bertahap saat generate
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
+
+### Resume From
+Commit & push `frontend/package-lock.json` (versi universal hasil Alpine/npm 11) bersama komponen baru (`GeneratingIndicator.tsx`, `ShimmerOverlay.tsx`, `TripSummaryCard.tsx`, `tailwind.config.ts`), lalu jalankan ulang deployment — tahap `npm ci` harus lolos. Setelah itu smoke test generate & regenerate AI summary di production. Catatan: di local Windows, jalankan `npm install` sekali agar `node_modules` sinkron dengan lock file baru.
+
+---
+
 ## 2026-06-24 — Session 28: Fix Budget Terhapus Saat Update Trip
 
 **Status**: Bug di mana budget trip ter-reset ke 0 (terhapus) saat trip di-update sudah diperbaiki, baik dari sisi frontend maupun backend. Root cause: dua inline-edit handler di frontend tidak mengirim field `budget`, dan backend meng-coerce `budget` yang absent menjadi `0`.

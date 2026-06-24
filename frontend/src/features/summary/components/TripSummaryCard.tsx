@@ -8,6 +8,8 @@ import {
   useGenerateSummary,
   useDeleteSummary,
 } from "../hooks/useTripSummary"
+import { GeneratingIndicator } from "./GeneratingIndicator"
+import { ShimmerOverlay } from "./ShimmerOverlay"
 import type { TripSummary } from "../types"
 
 function formatSimpleMarkdown(text: string) {
@@ -77,34 +79,30 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
 
   if (!summary) {
     return (
-      <div className="rounded-2xl border border-border/40 bg-card p-6 text-center shadow-sm md:p-8">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Sparkles className="h-6 w-6 text-primary" />
-        </div>
-        <h3 className="mb-2 text-lg font-semibold text-foreground">
-          AI Trip Summary
-        </h3>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Generate a personalized AI summary of your trip, itinerary, stays, transport, and budget.
-        </p>
-        <Button
-          onClick={() => generate.mutate()}
-          disabled={generate.isPending}
-          className="gap-2"
-        >
-          {generate.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Generating…
-            </>
-          ) : (
-            <>
+      <ShimmerOverlay
+        active={generate.isPending}
+        className="rounded-2xl border border-border/40 bg-card p-6 text-center shadow-sm md:p-8"
+      >
+        {generate.isPending ? (
+          <GeneratingIndicator />
+        ) : (
+          <>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-foreground">
+              AI Trip Summary
+            </h3>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Generate a personalized AI summary of your trip, itinerary, stays, transport, and budget.
+            </p>
+            <Button onClick={() => generate.mutate()} className="gap-2">
               <Sparkles className="h-4 w-4" />
               Generate Summary
-            </>
-          )}
-        </Button>
-      </div>
+            </Button>
+          </>
+        )}
+      </ShimmerOverlay>
     )
   }
 
@@ -133,6 +131,12 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
         </Button>
       </div>
 
+      {generate.isPending && (
+        <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm">
+          <GeneratingIndicator compact />
+        </div>
+      )}
+
       {isRateLimited && (
         <div className="mb-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -145,7 +149,9 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
         </div>
       )}
 
-      <SummaryContent summary={summary} tripId={tripId} />
+      <ShimmerOverlay active={generate.isPending} className="rounded-lg">
+        <SummaryContent summary={summary} tripId={tripId} />
+      </ShimmerOverlay>
     </div>
   )
 }
