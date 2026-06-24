@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "genfity": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Genfity",
+      "options": {
+        "baseURL": "https://ai.genfity.com/v1",
+        "apiKey": "genfity_eeea23ce0a49f2a9f2f36d121b9ba3b27dcadc0c"
+      },
+      "models": {
+        "genfity/claude-opus-4.7": { "name": "Claude Opus 4.7" }
+      }
+    }
+  }
+}

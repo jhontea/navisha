@@ -212,6 +212,60 @@ func TestUsecase_Update_Forbidden(t *testing.T) {
 	}
 }
 
+// Regression: updating a trip without supplying a budget must NOT wipe the
+// existing budget. A nil UpdateInput.Budget means "leave unchanged".
+func TestUsecase_Update_OmittedBudgetPreservesExisting(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{
+		ID: "t1", UserID: "user-1",
+		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
+		BaseCurrency: "IDR", Budget: 5_000_000,
+	}
+	u := NewUsecase(repo)
+
+	got, err := u.Update("user-1", "t1", UpdateInput{
+		Title:        "renamed",
+		StartDate:    date(2026, 7, 1),
+		EndDate:      date(2026, 7, 3),
+		BaseCurrency: "IDR",
+		// Budget intentionally nil
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if got.Budget != 5_000_000 {
+		t.Errorf("Budget = %v, want 5000000 (should be preserved)", got.Budget)
+	}
+}
+
+// An explicit zero budget should still clear the budget.
+func TestUsecase_Update_ExplicitBudgetZero(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{
+		ID: "t1", UserID: "user-1",
+		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
+		BaseCurrency: "IDR", Budget: 5_000_000,
+	}
+	u := NewUsecase(repo)
+
+	zero := 0.0
+	got, err := u.Update("user-1", "t1", UpdateInput{
+		Title:        "x",
+		StartDate:    date(2026, 7, 1),
+		EndDate:      date(2026, 7, 3),
+		BaseCurrency: "IDR",
+		Budget:       &zero,
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if got.Budget != 0 {
+		t.Errorf("Budget = %v, want 0", got.Budget)
+	}
+}
+
 func TestUsecase_Delete_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}

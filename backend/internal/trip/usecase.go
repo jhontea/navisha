@@ -42,7 +42,7 @@ type UpdateInput struct {
 	StartDate     time.Time
 	EndDate       time.Time
 	BaseCurrency  string
-	Budget        float64
+	Budget        *float64 // nil = leave unchanged; &0.0 = explicitly clear
 	CoverImageURL string
 	Notes         string
 }
@@ -170,7 +170,9 @@ func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 	existing.StartDate = in.StartDate
 	existing.EndDate = in.EndDate
 	existing.BaseCurrency = in.BaseCurrency
-	existing.Budget = in.Budget
+	if in.Budget != nil {
+		existing.Budget = *in.Budget
+	}
 	existing.CoverImageURL = in.CoverImageURL
 	existing.Notes = in.Notes
 
