@@ -121,6 +121,15 @@ const config: Config = {
         "headline-lg": ["var(--font-geist-sans)", "Geist", "sans-serif"],
         "headline-lg-mobile": ["var(--font-geist-sans)", "Geist", "sans-serif"],
       },
+      keyframes: {
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+      },
+      animation: {
+        shimmer: "shimmer 1.8s ease-in-out infinite",
+      },
       fontSize: {
         "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
