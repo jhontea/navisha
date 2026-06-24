@@ -4,6 +4,37 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 30: CI Test Gate + Carried-Over UI Fixes + AI Summary Responsive
+
+**Status**: Menambahkan test gate sebelum deploy di workflow CI, memperbaiki dua bug UI yang tertunda (grouping "Unknown date" pada expenses + loyalty math hardcoded di StatsSection), memastikan `package-lock.json` benar-benar sinkron lewat regenerasi bersih, serta tiga perbaikan UX dari review (redirect setelah create, AI Summary responsive, shimmer pada card saat regenerate).
+
+### Completed
+- **CI test gate (`.github/workflows/deploy.yml`)**:
+  - Menambahkan job `test` yang harus lolos sebelum job `deploy` (`needs: test`).
+  - Backend: `go build ./...` + `go test ./...` (Go version diambil dari `backend/go.mod`).
+  - Frontend: `npm ci` + `npm run lint` + `npm run build` (Node 20, cache npm via `frontend/package-lock.json`).
+  - Manfaat: error seperti `npm ci` out-of-sync ketahuan di CI, bukan di tengah deploy SSH ke VPS.
+- **Fix "Unknown date" grouping (`ExpenseSection.tsx`)**:
+  - `formatGroupDate` sekarang guard terhadap tanggal zero/invalid (`isNaN` atau tahun < 2000) dan menampilkan "Unknown date" alih-alih tahun 0001 untuk expense lama sebelum migrasi `expense_date`.
+- **Fix loyalty math (`StatsSection.tsx`)**:
+  - Mengganti `milesToNext = 250` dan `progressPct = 75` yang hardcoded dengan perhitungan nyata: 100 mil per trip selesai, threshold Bronze/Silver/Gold/Platinum, level + progress + label "X miles until <next> status" dihitung dinamis, dengan fallback "Max level reached".
+- **Sinkronisasi `package-lock.json`**:
+  - Regenerasi bersih (hapus `node_modules` + lock, `npm install`) untuk menyelesaikan mismatch `@emnapi/*` yang menyebabkan deploy gagal.
+  - Verifikasi: `npm ci --dry-run` lolos tanpa error EUSAGE, dan `npm run build` sukses (11/11 halaman ter-generate).
+- **Redirect add new trip → trip overview** (`trips/new/page.tsx`):
+  - Setelah create, redirect diubah dari `/trips/{id}` (itinerary) ke `/trips/{id}/overview` agar user langsung mendarat di halaman overview.
+- **AI Summary responsive (`TripSummaryCard.tsx`)**:
+  - Ukuran teks, ikon, padding, dan tombol kini menyesuaikan breakpoint (mobile lebih kecil). Tombol Regenerate jadi "Regen" di mobile dan "Regenerate" di layar lebih besar; banner rate-limit juga responsif.
+- **Shimmer pada card saat regenerate** (`TripSummaryCard.tsx`):
+  - `ShimmerOverlay` kini membungkus seluruh card (bukan hanya konten teks) sehingga efek kilau muncul di card utuh saat regenerate.
+  - `GeneratingIndicator compact` (rotating messages + spinner) tetap tampil di header card di sebelah tombol Regenerate selama proses berlangsung — bukan sebagai banner teks terpisah di atas konten.
+
+### Key Decisions
+- **Shimmer + rotating messages berdampingan** — shimmer di seluruh card memberi feedback visual, sementara rotating messages di header tetap memberi konteks progres textual. Banner terpisah dihapus karena redundant dengan shimmer card.
+- **Redirect ke overview** — overview adalah landing page trip yang baru (Session 25); setelah create, masuk ke overview lebih masuk akal daripada langsung ke itinerary.
+
+---
+
 ## 2026-06-24 — Session 29: Fix Deploy npm ci + AI Summary Loading UX
 
 **Status**: Deployment yang gagal di tahap `npm ci` (frontend) sudah diperbaiki dengan regenerasi lock file yang universal lintas-platform. Selain itu, UX saat generate/regenerate AI Trip Summary ditingkatkan dengan rotating loading messages + efek shimmer pada card.
