@@ -215,6 +215,33 @@ func TestBuildPrompt_IncludesKeyFields(t *testing.T) {
 	}
 }
 
+func TestBuildPrompt_RecommendsWhenNoActivities(t *testing.T) {
+	ctx := newTripContext()
+	// No days/activities at all.
+	_, user := BuildPrompt(*ctx)
+	if !contains(user, "no activities yet") {
+		t.Errorf("expected no-activities recommendation signal\n---\n%s", user)
+	}
+}
+
+func TestBuildPrompt_FlagsEmptyDays(t *testing.T) {
+	ctx := newTripContext()
+	ctx.TotalDays = 2
+	ctx.Days = []DayContext{
+		{DayNumber: 1, Date: ctx.StartDate, Activities: []ActivityContext{
+			{Type: "location", Title: "Beach", LocationName: "Kuta"},
+		}},
+		{DayNumber: 2, Date: ctx.EndDate}, // empty
+	}
+	_, user := BuildPrompt(*ctx)
+	if !contains(user, "Itinerary Density: 1/2") {
+		t.Errorf("expected density 1/2\n---\n%s", user)
+	}
+	if !contains(user, "empty days: [2]") {
+		t.Errorf("expected empty days signal\n---\n%s", user)
+	}
+}
+
 func contains(s, sub string) bool {
 	return len(s) >= len(sub) && (indexOf(s, sub) >= 0)
 }

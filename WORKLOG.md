@@ -20,7 +20,11 @@ Progress log for Navisha development. Update at the start and end of each sessio
   - **`ShimmerOverlay.tsx` (baru)** — membungkus konten card dan menampilkan lapisan kilau (gradient bergerak + pulse primary) saat `active`. Tanpa overhead saat tidak aktif.
   - **`TripSummaryCard.tsx`** — rotating message + shimmer kini berlaku untuk **kedua** aksi: Generate pertama (indikator besar di tengah, card shimmer) dan Regenerate (banner compact + konten ringkasan lama tetap tampil dengan shimmer).
   - **`tailwind.config.ts`** — tambah keyframe `shimmer` (translateX -100% → 100%) + animasi `shimmer: "shimmer 1.8s ease-in-out infinite"`.
-- **Verifikasi**: `npm run build` (frontend) clean, semua route terkompilasi termasuk `/trips/[id]/overview`.
+- **AI Summary: rekomendasi aktivitas saat itinerary kosong/minim** (`backend/internal/summary/prompt.go`):
+  - System prompt ditambah bagian **"REKOMENDASI AKTIVITAS"** — saat ada hari kosong atau itinerary minim, LLM diminta menambahkan section markdown `## Rekomendasi Aktivitas` (3-6 ide konkret relevan dengan destinasi, ditandai jelas sebagai SARAN, bukan rencana user). Aturan "jangan mengarang" dipertegas hanya untuk bagian ringkasan faktual; rekomendasi baru diperbolehkan.
+  - User message ditambah sinyal **"Itinerary Density: X/Y days have activities"** + daftar `empty days: [...]` (atau "no activities yet, please recommend some!" bila benar-benar kosong) supaya model tahu persis hari mana yang perlu diisi.
+  - Test baru: `TestBuildPrompt_RecommendsWhenNoActivities` + `TestBuildPrompt_FlagsEmptyDays`.
+- **Verifikasi**: `npm run build` (frontend) clean; `go build ./...` + `go test ./internal/summary/...` hijau (termasuk 2 test prompt baru).
 
 ### Key Decisions
 - **Regenerasi lock file di Alpine + npm 11, bukan di Windows** — lock file yang dibuat npm Windows berulang kali kehilangan optional deps platform Linux. Membuatnya di image yang persis sama dengan deploy (`node:20-alpine`) dengan npm 11 (resolusi optional-deps lintas-platform lebih baik) menghasilkan satu lock file universal yang lolos `npm ci` di mana saja.
