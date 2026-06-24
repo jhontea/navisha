@@ -9,9 +9,14 @@ import {
   Pin,
   useMap,
 } from "@vis.gl/react-google-maps"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { buildMapsDirectionsUrl, hasValidCoords, MAX_WAYPOINTS } from "@/features/trip/lib/mapsUrl"
+import {
+  buildMapsDirectionsUrl,
+  buildMapsPinUrl,
+  hasValidCoords,
+  MAX_WAYPOINTS,
+} from "@/features/trip/lib/mapsUrl"
 import type { Day } from "@/features/trip/types"
 import {
   useTripLocations,
@@ -57,6 +62,14 @@ export function TripMap({ days }: Props) {
     // Google Maps without a route.
     const url = buildMapsDirectionsUrl(points) ?? "https://www.google.com/maps/"
 
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
+
+  // Open a single location's pin directly in Google Maps.
+  const openSingleInMaps = (p: LocationPoint) => {
+    const url = hasValidCoords(p.lat, p.lng)
+      ? buildMapsPinUrl(p.lat, p.lng, p.title)
+      : "https://www.google.com/maps/"
     window.open(url, "_blank", "noopener,noreferrer")
   }
 
@@ -181,6 +194,16 @@ export function TripMap({ days }: Props) {
                       <h4 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                         {p.title}
                       </h4>
+                      {/* Per-activity "Open this location in Google Maps" */}
+                      <button
+                        type="button"
+                        title="Open this location in Google Maps"
+                        aria-label={`Open ${p.title} in Google Maps`}
+                        onClick={() => openSingleInMaps(p)}
+                        className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                     {p.address && (
                       <p className="text-xs text-muted-foreground line-clamp-1">
@@ -294,7 +317,7 @@ export function TripMap({ days }: Props) {
               gestureHandling="greedy"
               disableDefaultUI={false}
             >
-              <Markers points={visiblePoints} />
+              <Markers points={visiblePoints} onOpenInMaps={openSingleInMaps} />
               {visibleByDay.map((d) => (
                 <Polyline
                   key={d.dayId}
@@ -311,7 +334,13 @@ export function TripMap({ days }: Props) {
   )
 }
 
-function Markers({ points }: { points: LocationPoint[] }) {
+function Markers({
+  points,
+  onOpenInMaps,
+}: {
+  points: LocationPoint[]
+  onOpenInMaps: (p: LocationPoint) => void
+}) {
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   return (
     <>
@@ -338,7 +367,7 @@ function Markers({ points }: { points: LocationPoint[] }) {
           }}
           onCloseClick={() => setOpenIdx(null)}
         >
-          <div className="space-y-0.5 pr-2">
+          <div className="space-y-1 pr-2">
             <p className="text-sm font-semibold">{points[openIdx].title}</p>
             <p className="text-xs text-muted-foreground">
               Day {points[openIdx].dayNumber}
@@ -346,6 +375,14 @@ function Markers({ points }: { points: LocationPoint[] }) {
             {points[openIdx].address && (
               <p className="text-xs">{points[openIdx].address}</p>
             )}
+            <button
+              type="button"
+              onClick={() => onOpenInMaps(points[openIdx])}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary/90"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              Open in Google Maps
+            </button>
           </div>
         </InfoWindow>
       )}

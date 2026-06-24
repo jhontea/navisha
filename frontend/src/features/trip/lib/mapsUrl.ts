@@ -66,3 +66,17 @@ export function buildMapsSearchUrl(query: string): string {
   const encoded = encodeURIComponent(query)
   return `https://www.google.com/maps/search/?api=1&query=${encoded}`
 }
+
+/**
+ * Build a Google Maps URL that centers on a single location (lat, lng)
+ * with an optional place name query for the marker label.
+ *
+ * Pattern: `https://www.google.com/maps?q=lat,lng&query=Name`
+ */
+export function buildMapsPinUrl(lat: number, lng: number, name?: string): string {
+  const base = `https://www.google.com/maps?q=${lat},${lng}`
+  if (name) {
+    return `${base}&query=${encodeURIComponent(name)}`
+  }
+  return base
+}
