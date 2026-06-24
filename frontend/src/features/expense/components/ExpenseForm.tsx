@@ -59,7 +59,6 @@ interface Props {
   onSubmit: (input: CreateExpenseInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
-  compact?: boolean
 }
 
 export function ExpenseForm({
@@ -68,7 +67,6 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   isSubmitting,
-  compact = false,
 }: Props) {
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } =
     useForm<FormValues>({
