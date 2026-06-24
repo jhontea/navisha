@@ -4,6 +4,29 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-24 — Session 35: F2 Open in Google Maps — Review Fixes
+
+Tindak lanjut review user atas fitur F2 (Open in Google Maps) dan AI Summary. Tiga isu diperbaiki, frontend build hijau.
+
+**R1 — AI Summary card belum responsif di mobile**
+- `TripSummaryCard.tsx`: header diperbaiki agar wrap dengan rapi di layar kecil — ikon `flex-shrink-0`, judul `text-sm` → `md:text-lg`, tombol Regenerate jadi full-width di mobile (`w-full sm:w-auto`), padding card pakai breakpoint `md`/`lg`.
+- Banner rate-limit & error: ukuran teks/ikon diturunkan untuk mobile, ikon `flex-shrink-0` agar tidak gepeng.
+- `GeneratingIndicator.tsx` (compact): teks `text-[11px] sm:text-xs`, `truncate` + `min-w-0` supaya pesan rotasi tidak overflow di header.
+
+**R2 — Tombol "Open in Google Maps" tidak terlihat di Map View mobile**
+- Tombol di sidebar disembunyikan pada mobile (`md:block`). Ditambahkan tombol floating khusus mobile (`md:hidden`) di atas peta.
+- Revisi: tombol dipindah ke bawah-tengah peta (`bottom-4 left-1/2 -translate-x-1/2`) karena posisi atas menutupi kontrol peta default (kompas, fullscreen).
+- **Open in Maps per single activity** (review lanjutan): utility baru `buildMapsPinUrl(lat,lng,name)` + helper `openSingleInMaps`. UI: ikon `ExternalLink` di tiap card sidebar (desktop) + tombol "Open in Google Maps" di marker InfoWindow popup (desktop + mobile). User bisa buka satu lokasi aktivitas tertentu, bukan hanya rute keseluruhan.
+
+**R3 — AI Summary gagal "context deadline" untuk trip panjang**
+- Root cause: nginx `proxy_read_timeout 60s` pada `api.navisha.cloud` memutus koneksi sebelum LLM (timeout backend 300s) selesai.
+- `deploy/nginx/navisha.conf`: ditambah location khusus `~ ^/api/v1/trips/[^/]+/summary$` dengan `proxy_read_timeout`/`proxy_send_timeout` 300s (selaras `openrouter.timeout_seconds`).
+- Prompt builder sudah membatasi hari (14) & aktivitas/hari (8), jadi ukuran input bukan bottleneck — perbaikan timeout sudah cukup.
+
+**Verifikasi:** `npm run build` → ✓ Compiled successfully.
+
+---
+
 ## 2026-06-24 — Session 34: F4 CHUNK 3 — Calendar Export Review Fixes
 
 Tindak lanjut review user atas implementasi F4 (CHUNK 2). Tiga isu diperbaiki, build + test hijau.

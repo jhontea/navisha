@@ -58,7 +58,26 @@ Kumpulkan `MapPoint[]` dari activities (tipe location) + accommodations, terurut
 - Tombol aktif pakai `bg-primary text-white` + label penuh ("List View" / "Map View") + `aria-pressed`, jadi lebih jadi fokus user.
 - [x] Selesai
 
+### F2-E — Tombol "Open in Maps" untuk mobile (review fix)
+**File:** `frontend/src/features/map/components/TripMap.tsx`
+- Masalah: tombol di panel kiri (sidebar) disembunyikan pada mobile (`md:block`), jadi user mobile tidak punya akses Open in Maps.
+- Ditambahkan tombol floating khusus mobile (`md:hidden`) yang di-overlay di atas peta, anchored di **bawah-tengah** (`bottom-4 left-1/2 -translate-x-1/2`).
+- Revisi posisi: awalnya di atas-tengah, tapi menutupi kontrol peta default (kompas, fullscreen) yang ada di pojok kanan-atas → dipindah ke bawah.
+- [x] Selesai
+
+### F2-F — Open in Maps per single activity location (review fix)
+**File:** `frontend/src/features/trip/lib/mapsUrl.ts`, `frontend/src/features/map/components/TripMap.tsx`
+- Kebutuhan: user ingin buka **satu lokasi aktivitas tertentu** di Google Maps, bukan hanya rute keseluruhan.
+- Utility baru `buildMapsPinUrl(lat, lng, name?)` → `https://www.google.com/maps?q=lat,lng&query=Name` (center ke satu pin + label nama tempat).
+- Helper `openSingleInMaps(point)` di `TripMap`: pakai `buildMapsPinUrl` kalau koordinat valid, fallback `google.com/maps/` kalau tidak.
+- Dua entry point UI:
+  1. **Sidebar activity list** (desktop): tiap card aktivitas punya ikon `ExternalLink` kecil di kanan judul → buka lokasi itu saja.
+  2. **Marker InfoWindow** (desktop + mobile): popup saat klik pin peta kini punya tombol "Open in Google Maps" (ikon `MapPin`) → buka lokasi pin tersebut. Ini jalur utama untuk mobile (sidebar list disembunyikan di mobile).
+- [x] Selesai
+
 ---
+
+
 
 ## Acceptance Criteria
 
@@ -67,6 +86,8 @@ Kumpulkan `MapPoint[]` dari activities (tipe location) + accommodations, terurut
 - [x] Tidak ada lokasi valid → fallback buka Google Maps.
 - [x] Toggle List/Map View lebih prominent & jadi fokus user.
 - [x] >10 lokasi → 10 pertama (limit Google Maps).
+- [x] User bisa Open in Maps untuk **satu lokasi aktivitas tertentu** (via sidebar list + marker popup).
+
 
 ## Verifikasi
 
