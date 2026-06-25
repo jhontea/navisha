@@ -11,42 +11,42 @@
 - [x] Convert any amount between supported currencies (backend only)
 - [x] Show live exchange rate (CurrencyFreaks API, USD-based; cross rates derived)
 - [x] USD-keyed rates cached in Redis for 1 hour
-- [x] Supported: IDR, USD, JPY, SGD, KRW
-- [ ] Frontend converter page accessible from nav bar — no trip required
+- [x] Supported: IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND
+- [x] Frontend converter page accessible from nav bar — no trip required
 
 ### Trip Management
 - [x] Create trip (title, description, date range, base currency, cover image, notes)
 - [x] List my trips on dashboard (cursor pagination)
 - [x] View trip detail with day list
 - [x] Delete trip (CASCADE deletes days/activities)
-- [ ] Edit trip page (backend ready, frontend page pending)
-- [ ] Add/edit/delete transportation records (flight, bus, train, ferry, ship, car)
-- [ ] Add/edit/delete accommodation records (name, dates, confirmation number)
+- [x] Edit trip page
+- [x] Add/edit/delete transportation records (flight, bus, train, ferry, ship, car)
+- [x] Add/edit/delete accommodation records (name, dates, confirmation number)
 
 ### Itinerary Builder
 - [x] Days auto-generated from trip date range
-- [x] Add activity to a day — choose type (backend only):
-  - **Location**: payload validated (location_name required); Google Maps autofill in frontend pending
+- [x] Add activity to a day — choose type:
+  - **Location**: payload validated (location_name required); Google Maps autofill enabled
   - **Note**: free-text content only
   - **Todo**: checklist with check/uncheck per item
-- [x] Edit / delete any activity (backend only)
-- [x] Reorder activities within a day — atomic, full-set required (backend only)
-- [ ] Frontend itinerary UI (DayView, ActivityCard, ActivityForm)
-- [ ] Day-level notes (backend column exists, no endpoint yet)
+- [x] Edit / delete any activity
+- [x] Reorder activities within a day — atomic, full-set required
+- [x] Frontend itinerary UI (DayView, ActivityCard, ActivityForm)
+- [x] Day-level notes (inline save-on-blur)
 
 ### Map View
-- [ ] Display location-type activities as markers on Google Maps per day
-- [ ] Draw route between markers in activity order
-- [ ] Click marker → show activity detail panel
-- [ ] Toggle between single-day view and full trip view
+- [x] Display location-type activities as markers on Google Maps per day
+- [x] Draw route between markers in activity order
+- [x] Click marker → show activity detail panel
+- [x] Toggle between single-day view and full trip view
 
 ### Budget Tracker
-- [x] Add expense (title, amount, currency, category, optional link to activity) — backend only
+- [x] Add expense (title, amount, currency, category, optional link to activity)
 - [x] Auto-convert to trip base currency via exchange rate (CurrencyFreaks)
-- [x] Expense list per trip (backend only)
-- [x] Summary: total spend + breakdown by category (backend only)
-- [x] No hard budget limit in MVP — tracking only
-- [ ] Frontend expense UI: form, list, summary card
+- [x] Expense list per trip
+- [x] Summary: total spend + breakdown by category
+- [x] Budget planning (set per-trip budget, spending tracker, over-budget warning)
+- [x] Frontend expense UI: form, list, summary card
 
 ---
 
@@ -89,11 +89,15 @@
 - [ ] Invite collaborator (can edit)
 
 ### Place Search Enhancement
-- [ ] Google Places Autocomplete when adding location activity
-- [ ] Show place photos from Google Places API
+- [x] Google Places Autocomplete when adding location activity
+- [x] Show cover photos from Google Places API (auto-fetch on destination select)
+- [ ] Place detail photos in activity cards (Phase 3)
 
 ### Export
+- [~] KML export — skipped (Google Saved Places has no write API)
+- [~] Calendar export — removed (2026-06-25)
 - [ ] Export itinerary as PDF
+
 
 ### Mobile
 - [ ] React Native app sharing same backend API

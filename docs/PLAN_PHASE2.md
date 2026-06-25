@@ -1,16 +1,22 @@
 # Phase 2 — Feature Plan
 
+> ✅ **COMPLETED — 2026-06-25**  
+> All planned Phase 2 features have been executed. This document is now **archival**.  
+> **F1** (AI Summary) ✅ | **F2** (Open in Maps) ✅ | **F3** (KML Export) ⏭️ skipped | **F4** (Calendar Export) ❌ removed | **F5** (Auto-Generate) ✅
+>
+> See individual feature docs in `docs/` and `WORKLOG.md` for implementation details.
+
 Rencana implementasi 5 fitur Phase 2. Memecah setiap fitur menjadi unit kerja independen agar bisa dikerjakan tuntas secara bertahap dan mengurangi kompleksitas.
 
 ## Daftar Fitur
 
-| #  | Fitur                                      | Kompleksitas | Prasyarat |
-|----|--------------------------------------------|--------------|-----------|
-| F1 | Generate trip summary (OpenRouter)         | Sedang       | P1        |
-| F2 | Open in Google Maps                        | Rendah       | —         |
-| F3 | Export to Google Maps bookmark (Saved Places) | Tinggi    | — (KML)  |
-| F4 | Export to Google Calendar + remove on delete | Tinggi     | P2        |
-| F5 | Auto-generate trip dari prompt (OpenRouter) ✅ | Tinggi   | P1        |
+| #  | Fitur                                      | Kompleksitas | Prasyarat | Status |
+|----|--------------------------------------------|--------------|-----------|--------|
+| F1 | Generate trip summary (OpenRouter)         | Sedang       | P1        | ✅ Done |
+| F2 | Open in Google Maps                        | Rendah       | —         | ✅ Done |
+| F3 | Export to Google Maps bookmark (Saved Places) | Tinggi    | — (KML)  | ⏭️ Skipped |
+| F4 | Export to Google Calendar + remove on delete | Tinggi     | P2        | ❌ Removed |
+| F5 | Auto-generate trip dari prompt (OpenRouter) | Tinggi   | P1        | ✅ Done |
 
 
 ---

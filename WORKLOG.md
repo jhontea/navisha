@@ -4,6 +4,48 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## Sessions
+
+| Date | Title |
+|------|-------|
+| 2026-06-25 | [Review Fixes: Responsive Forms, Loading UX, Casual Summary Language](#2026-06-25--review-fixes-responsive-forms-loading-ux-casual-summary-language) |
+| 2026-06-25 | [Rich AI Summary Rendering (react-markdown + Tailwind Typography)](#2026-06-25--rich-ai-summary-rendering-react-markdown--tailwind-typography) |
+| 2026-06-25 | [Remove Calendar Export Feature + Calendar OAuth Consent](#2026-06-25--remove-calendar-export-feature--calendar-oauth-consent) |
+| 2026-06-25 | [Auto Cover Image + Location Description for AI-Generated Trips](#2026-06-25--auto-cover-image--location-description-for-ai-generated-trips) |
+| 2026-06-25 | [Fix: DeepSeek json_schema Downgrade Missing Schema Injection](#2026-06-25--fix-deepseek-json_schema-downgrade-missing-schema-injection) |
+| 2026-06-25 | [Session 36: Multi-Provider LLM — DeepSeek + OpenRouter](#2026-06-25--session-36-multi-provider-llm--deepseek--openrouter) |
+| 2026-06-25 | [Fix AI-Generated Trip: Lokasi Muncul dari Negara Lain](#2026-06-25--fix-ai-generated-trip-lokasi-muncul-dari-negara-lain) |
+| 2026-06-24 | [Session 35: F2 Open in Google Maps — Review Fixes](#2026-06-24--session-35-f2-open-in-google-maps--review-fixes) |
+| 2026-06-24 | [Session 34: F4 CHUNK 3 — Calendar Export Review Fixes](#2026-06-24--session-34-f4-chunk-3--calendar-export-review-fixes) |
+| 2026-06-24 | [Session 33: F4 CHUNK 2 — Calendar Export (Phase 2)](#2026-06-24--session-33-f4-chunk-2--calendar-export-phase-2) |
+| 2026-06-24 | [Session 32: F4 CHUNK 1 — P2 OAuth Scopes + Refresh Token Storage](#2026-06-24--session-32-f4-chunk-1--p2-oauth-scopes--refresh-token-storage) |
+| 2026-06-24 | [Session 31: F2 Open in Google Maps + Review Fixes](#2026-06-24--session-31-f2-open-in-google-maps--review-fixes) |
+| 2026-06-24 | [Session 30: CI Test Gate + Carried-Over UI Fixes + AI Summary Responsive](#2026-06-24--session-30-ci-test-gate--carried-over-ui-fixes--ai-summary-responsive) |
+| 2026-06-24 | [Session 29: Fix Deploy npm ci + AI Summary Loading UX](#2026-06-24--session-29-fix-deploy-npm-ci--ai-summary-loading-ux) |
+| 2026-06-24 | [Session 28: Fix Budget Terhapus Saat Update Trip](#2026-06-24--session-28-fix-budget-terhapus-saat-update-trip) |
+| 2026-06-24 | [Session 27: Auto Cover Photo dari Google Places + CI/CD Deploy](#2026-06-24--session-27-auto-cover-photo-dari-google-places--cicd-deploy) |
+| 2026-06-23 | [Session 26: Destination Autocomplete (Google Places)](#2026-06-23--session-26-destination-autocomplete-google-places) |
+| 2026-06-23 | [Session 25: Trip Overview Page + Navigation UX](#2026-06-23--session-25-trip-overview-page--navigation-ux) |
+| 2026-06-23 | [Session 24: Smoke Test + UI/UX Fixes](#2026-06-23--session-24-smoke-test--uiux-fixes) |
+| 2026-06-23 | [Session 23: Bug Fixes — Trip List Cache, Day Regeneration, Form Validation](#2026-06-23--session-23-bug-fixes--trip-list-cache-day-regeneration-form-validation) |
+| 2026-06-23 | [Session 22: Mobile Nav Trip Sub-Menu + Currency Expansion](#2026-06-23--session-22-mobile-nav-trip-sub-menu--currency-expansion) |
+| 2026-06-23 | [Session 21: Timezone Fix + Landing Page Polish + Email Whitelist](#2026-06-23--session-21-timezone-fix--landing-page-polish--email-whitelist) |
+| 2026-06-23 | [Session 20: Dozzle Setup + OAuth Cookie Cross-Domain Fix](#2026-06-23--session-20-dozzle-setup--oauth-cookie-cross-domain-fix) |
+| 2026-06-23 | [Session 19: Budget Page Revamp + Expense Features](#2026-06-23--session-19-budget-page-revamp--expense-features) |
+| 2026-06-21 | [Session 18: Itinerary Detail Revamp](#2026-06-21--session-18-itinerary-detail-revamp) |
+| 2026-06-21 | [Session 17: Trip List Page, Pagination & Date Filter](#2026-06-21--session-17-trip-list-page-pagination--date-filter) |
+| 2026-06-21 | [Session 16: Dashboard & Add Trip UI Polish](#2026-06-21--session-16-dashboard--add-trip-ui-polish) |
+| 2026-06-20 | [Session 15: Dashboard Redesign (Template Port)](#2026-06-20--session-15-dashboard-redesign-template-port) |
+| 2026-06-19 | [Session 14: Map View Live + Places Autocomplete + Activity Form Validation](#2026-06-19--session-14-map-view-live--places-autocomplete--activity-form-validation) |
+| 2026-06-19 | [Session 13: Map View, User Handler Tests, Atomic Auto-Expense](#2026-06-19--session-13-map-view-user-handler-tests-atomic-auto-expense) |
+| 2026-06-15 | [Session 12: Day Notes + Transportation + Accommodation](#2026-06-15--session-12-day-notes--transportation--accommodation) |
+| 2026-06-14 | [Session 11: Frontend Currency + Expense UI, Tabs, Trip Edit, AlertDialog](#2026-06-14--session-11-frontend-currency--expense-ui-tabs-trip-edit-alertdialog) |
+| 2026-06-13 | [Session 10: Currency + Expense Backend](#2026-06-13--session-10-currency--expense-backend) |
+| 2026-06-12 | [Session 9: Frontend Activity UI](#2026-06-12--session-9-frontend-activity-ui) |
+| 2026-06-11 | [Session 8: Activity Domain Backend + Graphify + coss Skill](#2026-06-11--session-8-activity-domain-backend--graphify--coss-skill) |
+
+---
+
 ## 2026-06-25 — Review Fixes: Responsive Forms, Loading UX, Casual Summary Language
 
 Six review items addressed from user feedback.
