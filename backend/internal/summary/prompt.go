@@ -3,7 +3,6 @@ package summary
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 const systemPrompt = `Halo! Kamu asisten travel yang asik dan santai. Bantu user rangkum trip mereka dengan gaya ngobrol santai tapi tetap informatif.
@@ -167,18 +166,4 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 	}
 
 	return systemPrompt, b.String()
-}
-
-// EstimateTokenCount gives a rough token estimate (1 token ≈ 4 chars for English).
-// Used for cost-awareness display in the UI.
-func EstimateTokenCount(system, user string) int {
-	return (len(system) + len(user)) / 4
-}
-
-// FormatDuration returns a human-readable duration string.
-func FormatDuration(d time.Duration) string {
-	if d < time.Minute {
-		return fmt.Sprintf("%ds", int(d.Seconds()))
-	}
-	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
 }

@@ -62,7 +62,7 @@ func (s *Service) generate(userID string, secret []byte, ttl time.Duration) (str
 
 func (s *Service) validate(tokenStr string, secret []byte) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &claims{}, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok || t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return secret, nil

@@ -1,25 +1,31 @@
 # Backend — Claude Context
 
 ## Stack
-Go, Echo framework, PostgreSQL 16, Redis 7, JWT (httpOnly cookie), Google OAuth, Viper (config)
+Go, Echo framework, PostgreSQL 16, Redis 7, JWT (httpOnly cookie), Google OAuth, Viper (config), DeepSeek/OpenRouter LLM
 
 ## Project Structure
 ```
 backend/
 ├── cmd/server/           # main.go — wire dependencies, start server
 ├── internal/
-│   ├── user/             # domain: model.go, repository.go, usecase.go, handler.go
-│   ├── trip/             # domain: trip + day (transportations/accommodations parked here)
+│   ├── accommodation/    # domain: accommodation CRUD + linked expense
 │   ├── activity/         # domain: polymorphic activities (location | note | todo)
-│   ├── expense/          # domain: CRUD + summary, auto-convert via currency.Usecase (Converter interface)
-│   ├── currency/         # domain: rates / convert / supported; Redis-cached CurrencyFreaks USD map
 │   ├── apperr/           # shared sentinel errors (ErrNotFound, ErrUnauthorized, etc.)
-│   └── middleware/       # JWT auth, CORS — cross-cutting, not domain-specific
+│   ├── autogen/          # domain: AI trip generation (LLM prompt → draft → persist)
+│   ├── currency/         # domain: rates / convert / supported; Redis-cached CurrencyFreaks USD map
+│   ├── expense/          # domain: CRUD + summary, auto-convert via currency.Usecase (Converter interface)
+│   ├── integration/      # cross-domain data assembly adapters (summary aggregator, autogen creator)
+│   ├── middleware/       # JWT auth, CORS — cross-cutting, not domain-specific
+│   ├── summary/          # domain: AI trip summary generation (LLM → markdown → cache)
+│   ├── transportation/   # domain: transportation CRUD + linked expense
+│   ├── trip/             # domain: trip + day CRUD, date regeneration, budget PATCH semantics
+│   └── user/             # domain: Google OAuth login, JWT refresh, logout, email whitelist
 ├── pkg/
+│   ├── currency/         # CurrencyFreaks API HTTP client
 │   ├── jwt/              # token generation/validation
-│   ├── oauth/            # Google OAuth helpers
-│   └── currency/         # CurrencyFreaks API HTTP client
-├── migrations/           # numbered SQL files (001_init.sql, 002_xxx.sql)
+│   ├── llm/              # Multi-provider LLM client (DeepSeek + OpenRouter, OpenAI-compatible)
+│   └── oauth/            # Google OAuth helpers (OAuth2 config, user info fetch)
+├── migrations/           # numbered SQL files (001_init.sql through 010_drop_calendar_tables.sql)
 ├── config/               # typed config struct + Viper loader
 ├── config.yaml           # base config (non-secret, git-tracked)
 └── .env                  # secrets (not committed — see .env.example)
@@ -71,11 +77,18 @@ server:
 db:
   pool_size: 10
 currency:
-  supported: [IDR, USD, JPY, SGD, KRW]
+  supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
   cache_ttl: 3600
 jwt:
   access_ttl: 900      # 15 minutes
   refresh_ttl: 604800  # 7 days
+llm:
+  provider: ""          # deepseek or openrouter
+  deepseek:
+    model: deepseek-v4-flash
+  openrouter:
+    model: google/gemini-2.0-flash-001
+    timeout_seconds: 300
 ```
 
 **.env** — secrets, never committed:
@@ -94,6 +107,16 @@ CURRENCYFREAKS_API_KEY=
 **Priority**: env vars override config.yaml (Viper handles this automatically).
 
 ## Supported Currencies
-`IDR`, `USD`, `JPY`, `SGD`, `KRW` — defined in `config.yaml`, loaded into `currency.SupportedCurrencies` at startup.
+`IDR`, `USD`, `JPY`, `SGD`, `KRW`, `MYR`, `THB`, `EUR`, `VND` — defined in `config.yaml`, loaded into `currency.SupportedCurrencies` at startup.
 
 Exchange rates fetched from CurrencyFreaks API (USD-based). Full USD-keyed map cached in Redis key `rates:USD` with TTL from config; cross-rates `base→target = rates[target]/rates[base]` derived in `internal/currency/rate_math.go`.
+
+## LLM Provider
+Multi-provider LLM client (`pkg/llm/`) supports DeepSeek and OpenRouter via config-driven selection. Auto-downgrades `json_schema` strict → `json_object` for DeepSeek with schema injected into system prompt. Config via `LLM_PROVIDER`, `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL` env vars. Falls back to legacy OpenRouter when `LLM_PROVIDER` is empty.
+
+## Cross-Domain Pattern
+Domains communicate via **local interfaces** (not cross-imports):
+- `expense.Converter` interface → satisfied by `*currency.Usecase` — auto-convert expenses to trip base
+- `expense.LinkedExpenseCreator` interface → satisfied by `*expense.Usecase` — atomic expense creation inside transport/accommodation tx
+- `summary.DataProvider` / `autogen.TripCreator` interfaces → satisfied by `*integration.Adapter` — cross-domain data assembly
+- `trip.Handler.SetOnDelete(fn)` — fire-and-forget delete hook (generic, reusable)

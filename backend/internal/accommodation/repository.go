@@ -12,6 +12,7 @@ var (
 	ErrTripNotFound = errors.New("trip not found")
 	ErrInvalidDates = errors.New("invalid accommodation dates")
 	ErrInvalidName  = errors.New("name required")
+	ErrInvalidType  = errors.New("invalid accommodation type")
 )
 
 type Repository interface {

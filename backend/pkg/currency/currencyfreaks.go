@@ -52,7 +52,10 @@ func (c *Client) Latest(ctx context.Context, symbols []string) (*LatestRates, er
 		return nil, fmt.Errorf("currency.Latest: api key required")
 	}
 
-	u, _ := url.Parse(c.baseURL + "/rates/latest")
+	u, err := url.Parse(c.baseURL + "/rates/latest")
+	if err != nil {
+		return nil, fmt.Errorf("currency.Latest: parse base URL: %w", err)
+	}
 	q := u.Query()
 	q.Set("apikey", c.apiKey)
 	if len(symbols) > 0 {
@@ -95,7 +98,10 @@ func (c *Client) Latest(ctx context.Context, symbols []string) (*LatestRates, er
 	}
 
 	// CurrencyFreaks date format: "2023-03-21 12:43:00+00"
-	t, _ := time.Parse("2006-01-02 15:04:05-07", raw.Date)
+	t, err := time.Parse("2006-01-02 15:04:05-07", raw.Date)
+	if err != nil {
+		return nil, fmt.Errorf("currency.Latest: parse date %q: %w", raw.Date, err)
+	}
 
 	base := raw.Base
 	if base == "" {

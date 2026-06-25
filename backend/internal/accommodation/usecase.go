@@ -82,7 +82,11 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	}
 	accType := in.AccommodationType
 	if !accType.Valid() {
-		accType = TypeHotel
+		if accType == "" {
+			accType = TypeHotel // zero value = default
+		} else {
+			return nil, fmt.Errorf("%w: %q", ErrInvalidType, accType)
+		}
 	}
 	a := &Accommodation{
 		TripID:             tripID,
@@ -144,6 +148,9 @@ func (u *Usecase) Update(userID, id string, in UpdateInput) (*Accommodation, err
 	}
 	accType := in.AccommodationType
 	if !accType.Valid() {
+		if accType != "" {
+			return nil, fmt.Errorf("%w: %q", ErrInvalidType, accType)
+		}
 		accType = existing.AccommodationType // keep existing type if not provided
 	}
 	existing.AccommodationType = accType

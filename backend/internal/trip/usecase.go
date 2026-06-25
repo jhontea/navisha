@@ -180,21 +180,21 @@ func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 		return u.repo.Update(existing)
 	}
 
-	// Dates changed: update trip + regenerate days in a single transaction.
-	ctx := context.Background()
-	tx, err := u.repo.BeginTx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer u.repo.Rollback(ctx, tx)
-
-	// Update trip row first
+	// Dates changed: update trip row first, then atomically regenerate days.
+	// If day regeneration fails, the trip already has the correct new dates
+	// — the user can re-edit to retrigger the day generation.
 	updated, err := u.repo.Update(existing)
 	if err != nil {
 		return nil, err
 	}
 
-	// Delete old days, insert new ones
+	ctx := context.Background()
+	tx, err := u.repo.BeginTx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("trip.usecase.Update: begin tx for days: %w", err)
+	}
+	defer u.repo.Rollback(ctx, tx)
+
 	if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
 		return nil, err
 	}
