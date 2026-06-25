@@ -79,7 +79,7 @@ function waitForPlaces(): Promise<typeof google.maps.places | null> {
   return new Promise((resolve) => {
     let attempts = 0
     const check = () => {
-      const G = (window as any).google?.maps?.places
+      const G = window.google?.maps?.places
       if (G?.PlacesService && G?.AutocompleteService) {
         resolve(G)
         return

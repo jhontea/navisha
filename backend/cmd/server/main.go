@@ -13,7 +13,6 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/accommodation"
 	"github.com/ahmadhafizh/navisha/backend/internal/activity"
 	"github.com/ahmadhafizh/navisha/backend/internal/autogen"
-	"github.com/ahmadhafizh/navisha/backend/internal/calendarexport"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 
@@ -25,7 +24,6 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
 	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
-	"github.com/ahmadhafizh/navisha/backend/pkg/googlecalendar"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
@@ -142,21 +140,6 @@ func main() {
 	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel())
 	autogenHandler := autogen.NewHandler(autogenUsecase)
 
-	// Calendar export domain (F4). Reuses the cross-domain provider (for trip
-	// data + ownership) and the user usecase (for stored Google tokens).
-	// Uses the Google Calendar REST API via the OAuth config.
-	calendarClient := googlecalendar.New(oauthCfg)
-	calendarExportRepo := calendarexport.NewPostgresRepository(db)
-	calendarExportUsecase := calendarexport.NewUsecase(
-		calendarExportRepo, tripContextProvider, userUsecase, calendarClient,
-	)
-	calendarExportHandler := calendarexport.NewHandler(calendarExportUsecase)
-
-	// When a trip is deleted, remove its exported Google Calendar events too.
-	tripHandler.SetOnDelete(func(userID, tripID string) {
-		calendarExportUsecase.RemoveTripInternal(context.Background(), userID, tripID)
-	})
-
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
@@ -188,7 +171,6 @@ func main() {
 	transportationHandler.RegisterRoutes(api, authMiddleware)
 	accommodationHandler.RegisterRoutes(api, authMiddleware)
 	summaryHandler.RegisterRoutes(api, authMiddleware)
-	calendarExportHandler.RegisterRoutes(api, authMiddleware)
 	autogenHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown

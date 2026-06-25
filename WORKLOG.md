@@ -4,6 +4,44 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-25 — Remove Calendar Export Feature + Calendar OAuth Consent
+
+Removed the entire Calendar Export feature (F4) — backend domain, Google Calendar client, OAuth token persistence, frontend UI, and `calendar.events` scope. Google Sign-in now only requests `openid email profile`.
+
+### Removed (deleted entirely)
+- `backend/internal/calendarexport/` — 6 files (model, handler, repository, repository_pg, usecase, usecase_test)
+- `backend/pkg/googlecalendar/` — 1 file (Google Calendar REST client)
+- `backend/internal/integration/calendar_items.go` — DataProvider adapter
+- `frontend/src/features/calendar-export/` — 3 files (api, hooks, CalendarExportCard)
+- DB migration `009_add_calendar_exports.sql` stays as history; new migration `010_drop_calendar_tables.sql` created
+
+### Modified
+- `backend/cmd/server/main.go` — removed imports, wiring block, route registration, delete hook
+- `backend/pkg/oauth/google.go` — removed `CalendarEventsScope` const + from `Scopes` slice (now just `openid email profile`)
+- `backend/internal/user/model.go` — removed `GoogleRefreshToken`, `GoogleAccessToken`, `GoogleTokenExpiry`, `GoogleScopes` fields
+- `backend/internal/user/repository.go` — removed `UpdateGoogleTokens`, `GetGoogleToken` from interface + `gooauth2` import
+- `backend/internal/user/repository_pg.go` — removed both method implementations + imports
+- `backend/internal/user/usecase.go` — removed `ErrNoGoogleToken`, `GoogleToken()`, `grantedScopes()`, token persist block in `GoogleLogin`, `AccessTypeOffline`+`ApprovalForce` from `GoogleAuthURL`, `log` import
+- `frontend/src/app/(dashboard)/trips/[id]/overview/page.tsx` — removed `CalendarExportCard` import + JSX section
+
+### Verification
+- `go build ./...` — clean
+- `go test ./...` — all pass (user, trip, autogen, summary, llm, etc.)
+- `npx tsc --noEmit` — clean, zero errors
+
+### Key Decisions
+- **Drop OAuth token columns via migration** — `google_refresh_token`, `google_access_token`, `google_token_expiry`, `google_scopes` no longer needed without Calendar API
+- **Remove `AccessTypeOffline`+`ApprovalForce` from OAuth** — without Calendar scope, users don't need to re-consent or grant offline access
+- **Keep `calendar_exports` migration file** — history preserved, table dropped via new migration
+- **`trip.handler.SetOnDelete` hook mechanism kept** — generic and reusable for future features
+
+### Files
+- Deleted: `internal/calendarexport/` (6 files), `pkg/googlecalendar/` (1 file), `integration/calendar_items.go` (1 file), `frontend/features/calendar-export/` (3 files)
+- Modified: `cmd/server/main.go`, `pkg/oauth/google.go`, `internal/user/model.go`, `internal/user/repository.go`, `internal/user/repository_pg.go`, `internal/user/usecase.go`, `frontend/overview/page.tsx`
+- New: `migrations/010_drop_calendar_tables.sql`
+
+---
+
 ## 2026-06-25 — Auto Cover Image + Location Description for AI-Generated Trips
 
 AI-generated trips now get a real cover photo and location description from Google Places (matching the manual trip creation flow). Previously AI trips had no cover image and blank description.
