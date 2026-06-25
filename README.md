@@ -5,7 +5,7 @@
 Navisha is an open-source travel itinerary app that helps you plan trips day by day, visualize routes on a map, and track your travel budget with multi-currency support.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-in%20development-yellow.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 
 ---
 
@@ -15,7 +15,7 @@ Navisha is an open-source travel itinerary app that helps you plan trips day by 
 - **Map View** — Visualize your daily route on Google Maps. See all activity locations in order for each day.
 - **Transportation & Accommodation** — Log flights, buses, trains, ferries, and hotel bookings at the trip level.
 - **Budget Tracker** — Track expenses per trip with automatic currency conversion to your base currency.
-- **Currency Converter** — Quick standalone tool to convert between IDR, USD, JPY, SGD, and KRW using live ECB rates.
+- **Currency Converter** — Quick standalone tool to convert between IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, and VND using live CurrencyFreaks rates.
 - **Google Sign-In** — Simple, secure authentication. No passwords to manage.
 
 ---

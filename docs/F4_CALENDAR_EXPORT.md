@@ -1,5 +1,10 @@
 # F4 — Export to Google Calendar + Remove on Delete
 
+> ⚠️ **REMOVED — 2026-06-25**  
+> This feature was fully removed. Calendar Export domain (`internal/calendarexport/`), Google Calendar client (`pkg/googlecalendar/`), OAuth token persistence, and frontend UI were deleted. See `WORKLOG.md` 2026-06-25 "Remove Calendar Export Feature" for details.
+>
+> This document is kept as **archival reference** for the original design.
+
 Task breakdown untuk fitur **Export to Google Calendar**. Sumber rencana: `docs/PLAN_PHASE2.md` bagian F4 + P2.
 
 ## Tujuan
