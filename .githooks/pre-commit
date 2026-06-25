@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Navisha pre-commit hook — fast checks only (lint + build).
+# Full test suite tetap di CI (GitHub Actions).
+set -e
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+EXIT=0
+
+# ── Frontend ──────────────────────────────────────────────────────
+if echo "$STAGED" | grep -q '^frontend/'; then
+  echo "==> Frontend: lint"
+  (cd frontend && npm run lint) || EXIT=1
+fi
+
+# ── Backend ───────────────────────────────────────────────────────
+if echo "$STAGED" | grep -q '^backend/'; then
+  echo "==> Backend: build"
+  (cd backend && go build ./...) || EXIT=1
+fi
+
+if [ $EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-commit checks failed. Perbaiki error di atas lalu coba commit lagi."
+fi
+exit $EXIT
+
