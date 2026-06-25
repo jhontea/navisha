@@ -79,7 +79,7 @@ export function Sidebar() {
               (item.href === "/dashboard" && isNewTrip)
             const Icon = item.icon
             const baseClasses =
-              "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all"
+              "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             const stateClasses = active
               ? "bg-primary/10 text-primary"
               : item.disabled
