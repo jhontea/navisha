@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { APIProvider } from "@vis.gl/react-google-maps"
@@ -101,6 +101,15 @@ export default function GenerateTripPage() {
   }
 
   const saving = create.isPending || resolving
+
+  // Warn before leaving during generation
+  const busy = generate.isPending || saving
+  useEffect(() => {
+    if (!busy) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [busy])
 
   return (
     <APIProvider apiKey={MAPS_API_KEY} libraries={["places"]}>

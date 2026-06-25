@@ -55,6 +55,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
   const [draftText, setDraftText] = useState("")
   const [error, setError] = useState<string | null>(null)
 
+  const endDateRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -231,22 +232,24 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 
           {step === "dates" && (
             <div className="space-y-3">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant">Mulai</label>
+              <div className="space-y-1.5">
+                <label className="text-xs text-on-surface-variant">Rentang Tanggal</label>
+                <div className="flex rounded-lg border border-outline-variant focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-surface-container-lowest">
                   <input
                     type="date"
-                    className={inputBase}
+                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
                     value={startDate}
                     onClick={openPicker}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      setStartDate(e.target.value)
+                      setTimeout(() => endDateRef.current?.showPicker?.(), 100)
+                    }}
                   />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant">Selesai</label>
+                  <span className="flex items-center text-on-surface-variant/30 text-sm px-0.5 select-none">—</span>
                   <input
+                    ref={endDateRef}
                     type="date"
-                    className={inputBase}
+                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
                     value={endDate}
                     min={startDate || undefined}
                     onClick={openPicker}

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -16,71 +17,63 @@ import type { TripSummary } from "../types"
 
 // Custom component mapping for rich rendering
 const markdownComponents: Components = {
-  // Style tables with Tailwind
-  table: ({ children }: { children: React.ReactNode }) => (
+  table: (props) => (
     <div className="my-4 overflow-x-auto rounded-lg border border-border">
-      <table className="min-w-full text-sm">{children}</table>
+      <table className="min-w-full text-sm">{props.children}</table>
     </div>
   ),
-  thead: ({ children }: { children: React.ReactNode }) => (
-    <thead className="bg-muted/50">{children}</thead>
+  thead: (props) => (
+    <thead className="bg-muted/50">{props.children}</thead>
   ),
-  th: ({ children }: { children: React.ReactNode }) => (
-    <th className="px-4 py-2 text-left font-semibold text-foreground">{children}</th>
+  th: (props) => (
+    <th className="px-4 py-2 text-left font-semibold text-foreground">{props.children}</th>
   ),
-  td: ({ children }: { children: React.ReactNode }) => (
-    <td className="border-t border-border px-4 py-2 text-foreground/80">{children}</td>
+  td: (props) => (
+    <td className="border-t border-border px-4 py-2 text-foreground/80">{props.children}</td>
   ),
-  // External links open in new tab
-  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+  a: (props) => (
     <a
-      href={href}
+      href={props.href}
       target="_blank"
       rel="noopener noreferrer"
       className="text-primary underline underline-offset-2 hover:text-primary/80 inline-flex items-center gap-0.5"
     >
-      {children}
+      {props.children}
       <ExternalLink className="h-3 w-3" />
     </a>
   ),
-  // Styled headings
-  h1: ({ children }: { children: React.ReactNode }) => (
-    <h1 className="mt-6 mb-3 text-2xl font-bold text-foreground">{children}</h1>
+  h1: (props) => (
+    <h1 className="mt-6 mb-3 text-2xl font-bold text-foreground">{props.children}</h1>
   ),
-  h2: ({ children }: { children: React.ReactNode }) => (
-    <h2 className="mt-5 mb-3 text-xl font-semibold text-foreground">{children}</h2>
+  h2: (props) => (
+    <h2 className="mt-5 mb-3 text-xl font-semibold text-foreground">{props.children}</h2>
   ),
-  h3: ({ children }: { children: React.ReactNode }) => (
-    <h3 className="mt-4 mb-2 text-lg font-semibold text-foreground">{children}</h3>
+  h3: (props) => (
+    <h3 className="mt-4 mb-2 text-lg font-semibold text-foreground">{props.children}</h3>
   ),
-  // Styled paragraphs
-  p: ({ children }: { children: React.ReactNode }) => (
-    <p className="my-2 leading-relaxed text-foreground/85">{children}</p>
+  p: (props) => (
+    <p className="my-2 leading-relaxed text-foreground/85">{props.children}</p>
   ),
-  // Styled lists
-  ul: ({ children }: { children: React.ReactNode }) => (
-    <ul className="my-2 ml-5 list-disc space-y-1 text-foreground/85">{children}</ul>
+  ul: (props) => (
+    <ul className="my-2 ml-5 list-disc space-y-1 text-foreground/85">{props.children}</ul>
   ),
-  ol: ({ children }: { children: React.ReactNode }) => (
-    <ol className="my-2 ml-5 list-decimal space-y-1 text-foreground/85">{children}</ol>
+  ol: (props) => (
+    <ol className="my-2 ml-5 list-decimal space-y-1 text-foreground/85">{props.children}</ol>
   ),
-  li: ({ children }: { children: React.ReactNode }) => (
-    <li className="pl-1">{children}</li>
+  li: (props) => (
+    <li className="pl-1">{props.children}</li>
   ),
-  // Bold and emphasis
-  strong: ({ children }: { children: React.ReactNode }) => (
-    <strong className="font-semibold text-foreground">{children}</strong>
+  strong: (props) => (
+    <strong className="font-semibold text-foreground">{props.children}</strong>
   ),
-  // Blockquote
-  blockquote: ({ children }: { children: React.ReactNode }) => (
+  blockquote: (props) => (
     <blockquote className="my-3 border-l-4 border-primary/30 pl-4 italic text-muted-foreground">
-      {children}
+      {props.children}
     </blockquote>
   ),
-  // Horizontal rule
   hr: () => <hr className="my-6 border-border" />,
-  // Inline code
-  code: ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  code: (props) => {
+    const { className, children } = props as React.HTMLAttributes<HTMLElement>
     const isInline = !className
     if (isInline) {
       return (
@@ -106,25 +99,32 @@ function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: str
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+      {/* Header row: badge + timestamp | delete */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary sm:text-sm">
             AI Summary
           </span>
-          <span>· Generated {new Date(summary.updated_at).toLocaleString()}</span>
+          <span className="text-[11px] text-muted-foreground sm:text-xs">
+            {new Date(summary.updated_at).toLocaleString(undefined, {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 text-destructive hover:text-destructive"
-            onClick={() => deleteSummary.mutate()}
-            disabled={deleteSummary.isPending}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Clear</span>
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1 text-destructive hover:text-destructive"
+          onClick={() => deleteSummary.mutate()}
+          disabled={deleteSummary.isPending}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Clear</span>
+        </Button>
       </div>
       <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:leading-relaxed">
         <ReactMarkdown
@@ -146,6 +146,14 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
   const isRateLimited = generate.isError && errStatus === 429
   // Any non-rate-limit failure (503 LLM unavailable, network, 500, etc.)
   const isGenerateError = generate.isError && !isRateLimited
+
+  // Warn before leaving during summary generation
+  useEffect(() => {
+    if (!generate.isPending) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [generate.isPending])
 
   if (isLoading) {
     return (
