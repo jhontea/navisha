@@ -24,11 +24,6 @@ const geistSans = localFont({
   variable: "--font-geist-sans",
   weight: "100 900",
 })
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-})
 
 export const metadata: Metadata = {
   title: "Navisha",
@@ -58,7 +53,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${inter.variable} ${geistSans.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

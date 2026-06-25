@@ -17,10 +17,3 @@ export const STATUS_LABEL: Record<TripStatus, string> = {
   active: "Active",
   past: "Past",
 }
-
-// Tailwind class tuples for badge background + text. Keyed by status.
-export const STATUS_CLASSES: Record<TripStatus, string> = {
-  upcoming: "bg-primary/10 text-primary",
-  active: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  past: "bg-muted text-muted-foreground",
-}

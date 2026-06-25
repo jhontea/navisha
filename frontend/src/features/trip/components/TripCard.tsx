@@ -5,19 +5,8 @@ import {
   tripStatus,
   type TripStatus,
 } from "../lib/status"
+import { MaterialIcon } from "@/components/MaterialIcon"
 import type { Trip } from "../types"
-
-function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
-  return (
-    <span
-      className={`material-symbols-outlined ${className}`}
-      style={{ fontSize: size }}
-      aria-hidden="true"
-    >
-      {name}
-    </span>
-  )
-}
 
 // Badge background + text per status — matches template style
 const STATUS_BADGE: Record<TripStatus, { bg: string; text: string }> = {

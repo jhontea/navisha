@@ -3,18 +3,7 @@
 import Link from "next/link"
 import { useUpcomingTrips } from "../hooks/useTrips"
 import { TripCard } from "./TripCard"
-
-function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
-  return (
-    <span
-      className={`material-symbols-outlined ${className}`}
-      style={{ fontSize: size }}
-      aria-hidden="true"
-    >
-      {name}
-    </span>
-  )
-}
+import { MaterialIcon } from "@/components/MaterialIcon"
 
 export function TripList() {
   const { data, isLoading, isError, error } = useUpcomingTrips(6)

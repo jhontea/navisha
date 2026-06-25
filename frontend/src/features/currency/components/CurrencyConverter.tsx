@@ -11,40 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useConvert, useSupportedCurrencies } from "../hooks/useCurrency"
-
-// Fallback names matching TripForm
-const CURRENCY_NAMES: Record<string, string> = {
-  IDR: "Indonesian Rupiah",
-  USD: "US Dollar",
-  JPY: "Japanese Yen",
-  SGD: "Singapore Dollar",
-  KRW: "South Korean Won",
-  EUR: "Euro",
-  GBP: "British Pound",
-  AUD: "Australian Dollar",
-  MYR: "Malaysian Ringgit",
-  THB: "Thai Baht",
-  CNY: "Chinese Yuan",
-  VND: "Vietnamese Dong",
-}
-
-function getCurrencyLabel(code: string, name?: string): string {
-  const resolvedName = name || CURRENCY_NAMES[code] || code
-  return `${code} - ${resolvedName}`
-}
-
-// Material Symbols icon component
-function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
-  return (
-    <span
-      className={`material-symbols-outlined ${className}`}
-      style={{ fontSize: size }}
-      aria-hidden="true"
-    >
-      {name}
-    </span>
-  )
-}
+import { MaterialIcon } from "@/components/MaterialIcon"
+import { getCurrencyLabel } from "@/lib/currency"
 
 export function CurrencyConverter() {
   const { data: supported, isLoading: loadingList } = useSupportedCurrencies()
