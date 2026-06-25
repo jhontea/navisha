@@ -13,12 +13,12 @@ import {
   Clock,
   ChevronRight,
   Check,
-  Pencil,
-  Trash2,
   X,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { BackLink } from "@/components/BackLink"
+import { TripTabBar } from "@/features/trip/components/TripTabBar"
+import { TripHero } from "@/features/trip/components/TripHero"
 import {
   useTrip,
   useDeleteTrip,
@@ -317,12 +317,7 @@ export default function TripOverviewPage() {
     return (
       <div className="px-4 py-6 md:px-10 md:py-8">
         <p className="text-sm text-destructive">Trip not found</p>
-        <Link
-          href="/dashboard"
-          className="mt-4 inline-block text-sm text-primary hover:underline"
-        >
-          ← Back to dashboard
-        </Link>
+        <BackLink href="/dashboard" variant="primary" />
       </div>
     )
   }
@@ -330,9 +325,6 @@ export default function TripOverviewPage() {
   const { currentDay, totalDays, percent: progressPercent, started } =
     getTripProgress(trip.start_date, trip.end_date)
 
-
-  const totalSpent = expenseSummary?.total_base ?? 0
-  const isOverBudget = !!trip.budget && trip.budget > 0 && totalSpent > trip.budget
 
   // Don't render every single day — surface the current day and the ones
   // coming up next (max 3). Full list lives on the Itinerary page.
@@ -380,170 +372,124 @@ export default function TripOverviewPage() {
 
   return (
     <main className="flex flex-col">
-      {/* Header — matches the Itinerary page header */}
-      <header className="sticky top-0 z-40 border-b bg-background/80 px-4 py-4 backdrop-blur-md md:px-10 md:py-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          {/* Left: trip info / inline edit */}
-          <div className="min-w-0 flex-1">
-            {isEditing ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-                    Editing
-                  </span>
-                </div>
+      {/* TripHero with cover image — replaced sticky admin header (Phase 3B-2) */}
+      {isEditing ? (
+        /* Inline edit form when editing */
+        <div className="border-b bg-background px-4 py-4 md:px-10 md:py-5">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+                Editing
+              </span>
+            </div>
+            <input
+              autoFocus
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") cancelEditing()
+              }}
+              placeholder="Trip title"
+              className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-xl font-bold tracking-tight text-foreground focus:outline-none md:text-2xl"
+              disabled={isUpdating}
+            />
+            <DestinationAutocomplete
+              value={editDescription}
+              onChange={setEditDescription}
+              onSelect={(place) => {
+                setEditDescription(place.description)
+                setEditCover(place.photoUrl || "")
+              }}
+              placeholder="Search city, province, or country"
+              className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+            />
+            {editCover && (
+              <div className="relative h-28 w-full overflow-hidden rounded-lg border border-input">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={editCover}
+                  alt="Trip cover preview"
+                  className="h-full w-full object-cover"
+                  onError={() => setEditCover("")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditCover("")}
+                  className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Start date
+                </label>
                 <input
-                  autoFocus
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") cancelEditing()
-                  }}
-                  placeholder="Trip title"
-                  className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-xl font-bold tracking-tight text-foreground focus:outline-none md:text-2xl"
+                  type="date"
+                  value={editStartDate}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
                   disabled={isUpdating}
                 />
-                {/* Location / destination — Google Places autocomplete */}
-                <DestinationAutocomplete
-                  value={editDescription}
-                  onChange={setEditDescription}
-                  onSelect={(place) => {
-                    setEditDescription(place.description)
-                    // Refresh the cover photo from the new destination.
-                    setEditCover(place.photoUrl || "")
-                  }}
-                  placeholder="Search city, province, or country"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                />
-                {/* Cover preview — auto-fetched destination photo */}
-                {editCover && (
-                  <div className="relative h-28 w-full overflow-hidden rounded-lg border border-input">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={editCover}
-                      alt="Trip cover preview"
-                      className="h-full w-full object-cover"
-                      onError={() => setEditCover("")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setEditCover("")}
-                      className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Start date
-                    </label>
-
-                    <input
-                      type="date"
-                      value={editStartDate}
-                      onChange={(e) => setEditStartDate(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      disabled={isUpdating}
-                    />
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1">
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      End date
-                    </label>
-                    <input
-                      type="date"
-                      value={editEndDate}
-                      onChange={(e) => setEditEndDate(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      disabled={isUpdating}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={saveEdits}
-                    disabled={isUpdating || !editTitle.trim()}
-                    className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    {isUpdating ? "Saving…" : "Save"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelEditing}
-                    disabled={isUpdating}
-                    className="flex items-center gap-1.5 rounded-lg border px-4 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                    Cancel
-                  </button>
-                </div>
               </div>
-            ) : (
-              <>
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-                    Active Trip
-                  </span>
-                  <span className="text-xs text-muted-foreground md:text-sm">
-                    · {formatDate(trip.start_date)} – {formatDate(trip.end_date)}
-                  </span>
-                </div>
-                <h1 className="truncate text-xl font-bold tracking-tight text-foreground md:text-3xl">
-                  {trip.title}
-                </h1>
-                {trip.description && (
-                  <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                    {trip.description}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Right: actions */}
-          {!isEditing && (
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={startEditing}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-destructive hover:border-destructive hover:text-destructive"
-                onClick={() => setConfirmDelete(true)}
-                disabled={isDeleting}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">
-                  {isDeleting ? "Deleting…" : "Delete"}
-                </span>
-              </Button>
+              <div className="flex flex-1 flex-col gap-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  End date
+                </label>
+                <input
+                  type="date"
+                  value={editEndDate}
+                  onChange={(e) => setEditEndDate(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                  disabled={isUpdating}
+                />
+              </div>
             </div>
-          )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={saveEdits}
+                disabled={isUpdating || !editTitle.trim()}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                <Check className="h-3.5 w-3.5" />
+                {isUpdating ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={cancelEditing}
+                disabled={isUpdating}
+                className="flex items-center gap-1.5 rounded-lg border px-4 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
-      </header>
+      ) : (
+        /* Display mode: full-bleed TripHero */
+        <TripHero
+          title={trip.title}
+          description={trip.description}
+          startDate={trip.start_date}
+          endDate={trip.end_date}
+          baseCurrency={trip.base_currency}
+          onEdit={startEditing}
+          onDelete={() => setConfirmDelete(true)}
+          isDeleting={isDeleting}
+        />
+      )}
 
+      {/* Phase 3B: Trip section tab navigation */}
+      <TripTabBar tripId={tripId} />
 
       {/* Content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
         <div className="mb-6">
-          <Link
-            href="/dashboard"
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline"><path d="m15 18-6-6 6-6"/></svg>
-            Back to Dashboard
-          </Link>
+          <BackLink href="/dashboard" />
         </div>
         {/* Hero Summary Section */}
 
@@ -569,89 +515,37 @@ export default function TripOverviewPage() {
             </div>
 
             {/* Bento Stat Cards */}
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              {/* Activities — total across all days */}
-              <div className="rounded-xl border border-border/40 bg-card p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-transport-blue">
-                    <Calendar className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Activities
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
+            {/* Quick stats — horizontal scrollable chips (Iteration 4: de-dashboard) */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              <div className="flex shrink-0 items-center gap-2 rounded-full bg-transport-blue/20 px-4 py-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">
                   {activitiesLoaded ? totalActivities : "—"}
-                </p>
+                </span>
+                <span className="text-xs text-muted-foreground">activities</span>
               </div>
-
-              {/* Stays — accommodation count */}
-              <div className="rounded-xl border border-border/40 bg-card p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stay-purple">
-                    <Hotel className="h-4 w-4 text-on-secondary-fixed-variant" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Stays
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
+              <div className="flex shrink-0 items-center gap-2 rounded-full bg-stay-purple/20 px-4 py-2">
+                <Hotel className="h-4 w-4 text-[#7C3AED]" />
+                <span className="text-sm font-semibold text-foreground">
                   {accommodations?.items.length ?? 0}
-                </p>
+                </span>
+                <span className="text-xs text-muted-foreground">stays</span>
               </div>
-
-              {/* Transport — transportation count */}
-              <div className="rounded-xl border border-border/40 bg-card p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-transport-blue">
-                    <Plane className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Transport
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
+              <div className="flex shrink-0 items-center gap-2 rounded-full bg-transport-blue/20 px-4 py-2">
+                <Plane className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">
                   {transportations?.items.length ?? 0}
-                </p>
+                </span>
+                <span className="text-xs text-muted-foreground">transport</span>
               </div>
-
-              {/* Budget — total spent vs budget */}
-              <div className="rounded-xl border border-border/40 bg-card p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-budget-green">
-                    <Wallet className="h-4 w-4 text-on-secondary-fixed" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Spent
-                  </span>
-                </div>
-                <p
-                  className={cn(
-                    "truncate text-lg font-bold md:text-xl",
-                    isOverBudget ? "text-destructive" : "text-foreground",
-                  )}
-                  title={
-                    expenseSummary
-                      ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)
-                      : undefined
-                  }
-                >
+              <div className="flex shrink-0 items-center gap-2 rounded-full bg-budget-green/20 px-4 py-2">
+                <Wallet className="h-4 w-4 text-emerald-700" />
+                <span className="text-sm font-semibold text-foreground">
                   {expenseSummary
                     ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)
                     : "—"}
-                </p>
-                {trip.budget && trip.budget > 0 && (
-                  <p
-                    className={cn(
-                      "truncate text-xs",
-                      isOverBudget ? "text-destructive" : "text-muted-foreground",
-                    )}
-                    title={`/ ${formatCurrency(trip.budget, trip.base_currency)}`}
-                  >
-                    / {formatCurrency(trip.budget, trip.base_currency)}
-                  </p>
-                )}
-
+                </span>
+                <span className="text-xs text-muted-foreground">spent</span>
               </div>
             </div>
 

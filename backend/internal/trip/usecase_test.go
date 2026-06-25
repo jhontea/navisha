@@ -201,7 +201,7 @@ func TestUsecase_Update_Forbidden(t *testing.T) {
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}
 	u := NewUsecase(repo)
 
-	_, err := u.Update("user-1", "t1", UpdateInput{
+	_, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
 		Title:        "x",
 		StartDate:    date(2026, 7, 1),
 		EndDate:      date(2026, 7, 3),
@@ -224,7 +224,7 @@ func TestUsecase_Update_OmittedBudgetPreservesExisting(t *testing.T) {
 	}
 	u := NewUsecase(repo)
 
-	got, err := u.Update("user-1", "t1", UpdateInput{
+	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
 		Title:        "renamed",
 		StartDate:    date(2026, 7, 1),
 		EndDate:      date(2026, 7, 3),
@@ -251,7 +251,7 @@ func TestUsecase_Update_ExplicitBudgetZero(t *testing.T) {
 	u := NewUsecase(repo)
 
 	zero := 0.0
-	got, err := u.Update("user-1", "t1", UpdateInput{
+	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
 		Title:        "x",
 		StartDate:    date(2026, 7, 1),
 		EndDate:      date(2026, 7, 3),

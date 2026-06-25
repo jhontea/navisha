@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"regexp"
 	"strings"
 )
@@ -209,8 +209,10 @@ func logSuspiciousLocations(d *TripDraft, destination string) {
 				}
 			}
 			if !matched {
-				log.Printf("autogen: SUSPICIOUS location: %q does not contain destination %q (day %d)",
-					a.LocationName, destination, d.Days[i].DayNumber)
+				slog.Warn("autogen: SUSPICIOUS location",
+					"location_name", a.LocationName,
+					"destination", destination,
+					"day", d.Days[i].DayNumber)
 			}
 		}
 	}

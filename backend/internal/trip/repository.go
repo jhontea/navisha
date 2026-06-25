@@ -38,6 +38,8 @@ type Repository interface {
 	InsertDays(ctx context.Context, tx pgx.Tx, days []Day) error
 	DeleteDays(ctx context.Context, tx pgx.Tx, tripID string) error
 	Update(t *Trip) (*Trip, error)
+	// UpdateTx updates a trip row within an existing transaction (Phase 3D / Iter 8).
+	UpdateTx(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error)
 	Delete(id string) error
 
 	ListDays(tripID string) ([]Day, error)

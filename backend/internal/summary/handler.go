@@ -2,7 +2,7 @@ package summary
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"math"
 	"net/http"
 
@@ -92,7 +92,7 @@ func mapErr(err error) error {
 			"message": "Couldn't generate the summary right now. Please try again in a moment.",
 		})
 	default:
-		log.Printf("summary: internal error: %v", err)
+		slog.Error("summary: internal error", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
 }

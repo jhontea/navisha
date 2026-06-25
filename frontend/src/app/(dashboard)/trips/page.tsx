@@ -2,13 +2,12 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { BackLink } from "@/components/BackLink"
 import { TripCard } from "@/features/trip/components/TripCard"
+import { TripCTAs } from "@/features/trip/components/TripCTAs"
 import { useFilteredTrips } from "@/features/trip/hooks/useTrips"
 
 export default function TripsPage() {
-  const [from, setFrom] = useState("")
-  const [to, setTo] = useState("")
-  // Applied filters (only update on submit)
   const [appliedFrom, setAppliedFrom] = useState("")
   const [appliedTo, setAppliedTo] = useState("")
 
@@ -24,30 +23,10 @@ export default function TripsPage() {
 
   const trips = data?.pages.flatMap((p) => p.items) ?? []
 
-  const applyFilter = () => {
-    setAppliedFrom(from)
-    setAppliedTo(to)
-  }
-
-  const clearFilter = () => {
-    setFrom("")
-    setTo("")
-    setAppliedFrom("")
-    setAppliedTo("")
-  }
-
-  const hasFilter = appliedFrom || appliedTo
-
   return (
     <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-8 pb-24">
       {/* Back to dashboard */}
-      <Link
-        href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Back to Dashboard
-      </Link>
+      <BackLink href="/dashboard" />
 
       {/* Header */}
       <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -60,82 +39,48 @@ export default function TripsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-          <Link
-            href="/trips/generate"
-            className="flex items-center justify-center gap-2 border border-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-[0.98]"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>auto_fix_high</span>
-            Generate Trip with AI
-          </Link>
-          <Link
-            href="/trips/new"
-            className="flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98]"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
-            New Trip
-          </Link>
+          <TripCTAs />
         </div>
       </header>
 
 
-      {/* Filter bar */}
-      <div className="mb-8 flex flex-wrap items-end gap-4 p-5 rounded-xl bg-white border border-outline-variant shadow-sm">
-        <div className="flex flex-col gap-1.5">
-          <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">From</label>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">To</label>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            min={from || undefined}
-            className="px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={applyFilter}
-          className="px-5 py-2 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:opacity-90 transition-all active:scale-95"
-        >
-          Apply
-        </button>
-        {hasFilter && (
-          <button
-            type="button"
-            onClick={clearFilter}
-            className="px-5 py-2 text-on-surface-variant font-label-md text-label-md rounded-lg border border-outline-variant hover:bg-surface-container transition-colors"
-          >
-            Clear
-          </button>
-        )}
-        {hasFilter && (
-          <span className="text-body-sm text-on-surface-variant">
-            Filtering: {appliedFrom || '—'} → {appliedTo || '—'}
-          </span>
-        )}
+      {/* Filter chips — Phase 3B-3: replaces date-range form */}
+      <div className="mb-6 flex gap-2 overflow-x-auto no-scrollbar">
+        {[
+          { label: "All", from: "", to: "" },
+          { label: "Upcoming", from: "", to: "active" },
+          { label: "2026", from: "2026-01-01", to: "2026-12-31" },
+          { label: "2025", from: "2025-01-01", to: "2025-12-31" },
+        ].map((chip) => {
+          const isActive =
+            appliedFrom === chip.from && appliedTo === chip.to;
+          return (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => {
+                setAppliedFrom(chip.from);
+                setAppliedTo(chip.to);
+              }}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-white"
+                  : "bg-surface-container-low text-muted-foreground hover:bg-surface-container-high hover:text-foreground"
+              }`}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Trip Grid */}
+      {/* Trip list — single column mobile-first */}
       {isLoading ? (
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+        <div className="flex flex-col gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-xl border border-[#F1F5F9] bg-surface-container-lowest overflow-hidden animate-pulse">
-              <div className="h-48 bg-surface-container-high" />
-              <div className="p-6 space-y-3">
-                <div className="h-3 w-1/3 rounded bg-surface-container-high" />
-                <div className="h-5 w-2/3 rounded bg-surface-container-high" />
-                <div className="h-3 w-1/2 rounded bg-surface-container-high" />
-              </div>
-            </div>
+            <div key={i} className="h-56 w-full animate-pulse rounded-xl bg-surface-container-high" />
           ))}
-        </section>
+        </div>
       ) : isError ? (
         <p className="text-body-sm text-error">
           Failed to load trips: {error?.message ?? "unknown error"}
@@ -143,32 +88,28 @@ export default function TripsPage() {
       ) : trips.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant">
           <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-surface-container-high">
-            <span className="material-symbols-outlined text-outline" style={{ fontSize: 48 }}>map</span>
+            <span className="material-symbols-outlined text-outline text-5xl">map</span>
           </div>
           <h2 className="text-headline-md font-headline-md text-on-surface mb-2">
-            {hasFilter ? "No trips match the filter" : "No trips yet"}
+            No trips yet
           </h2>
           <p className="text-body-md font-body-md text-on-surface-variant mb-8 max-w-sm">
-            {hasFilter ? "Try adjusting or clearing the date filter." : "Start planning your first adventure."}
+            Start planning your first adventure.
           </p>
-          {!hasFilter && (
-            <Link
-              href="/trips/new"
-              className="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-md text-label-md hover:opacity-90 transition-all"
-            >
-              Create My First Trip
-            </Link>
-          )}
+          <Link
+            href="/trips/new"
+            className="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-md text-label-md hover:opacity-90 transition-all"
+          >
+            Create My First Trip
+          </Link>
         </div>
       ) : (
         <>
-          <section
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}
-          >
+          <div className="flex flex-col gap-4">
             {trips.map((t) => (
               <TripCard key={t.id} trip={t} />
             ))}
-          </section>
+          </div>
 
           {hasNextPage && (
             <div className="mt-10 flex justify-center">
@@ -180,7 +121,7 @@ export default function TripsPage() {
               >
                 {isFetchingNextPage ? (
                   <>
-                    <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>progress_activity</span>
+                    <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
                     Loading…
                   </>
                 ) : (

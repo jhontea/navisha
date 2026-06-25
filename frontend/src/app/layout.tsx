@@ -26,8 +26,18 @@ const geistSans = localFont({
 })
 
 export const metadata: Metadata = {
-  title: "Navisha",
-  description: "Plan your journey. Own your adventure.",
+  title: {
+    default: "Navisha — Travel Planner",
+    template: "%s | Navisha",
+  },
+  description:
+    "Plan your journey, build day-by-day itineraries, track your budget, and explore the world with AI-powered trip planning.",
+  keywords: ["travel", "itinerary", "trip planner", "budget tracker", "AI travel"],
+  openGraph: {
+    title: "Navisha — Travel Planner",
+    description: "Plan your journey. Own your adventure.",
+    type: "website",
+  },
 }
 
 export default function RootLayout({

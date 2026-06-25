@@ -2,8 +2,8 @@ package activity
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
@@ -65,6 +65,13 @@ func (h *Handler) Create(c echo.Context) error {
 	var req createRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	// Early validation (Loop 2: user-friendly errors)
+	if strings.TrimSpace(req.Title) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	}
+	if !Type(req.Type).Valid() {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid activity type")
 	}
 	a, err := h.usecase.Create(c.Request().Context(), userID, dayID, CreateInput{
 		Type:      req.Type,
@@ -141,20 +148,12 @@ func toResponse(a *Activity) map[string]any {
 }
 
 func mapErr(err error) error {
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "activity not found")
-	case errors.Is(err, ErrDayNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "day not found")
-	case errors.Is(err, ErrInvalidType):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid activity type (expect location|note|todo)")
-	case errors.Is(err, ErrInvalidPayload):
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	case errors.Is(err, ErrReorderMismatch):
-		return echo.NewHTTPError(http.StatusBadRequest, "reorder list does not match day activities")
-	case errors.Is(err, apperr.ErrForbidden):
-		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
-	default:
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
-	}
+	return apperr.MapHTTP(err,
+		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "activity not found"},
+		apperr.HTTPMapping{Err: ErrDayNotFound, Code: http.StatusNotFound, Message: "day not found"},
+		apperr.HTTPMapping{Err: ErrInvalidType, Code: http.StatusBadRequest, Message: "invalid activity type (expect location|note|todo)"},
+		apperr.HTTPMapping{Err: ErrInvalidPayload, Code: http.StatusBadRequest, Message: "invalid activity payload"},
+		apperr.HTTPMapping{Err: ErrReorderMismatch, Code: http.StatusBadRequest, Message: "reorder list does not match day activities"},
+		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
+	)
 }

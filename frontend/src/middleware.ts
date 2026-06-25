@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Fully public — no auth check at all
-const OPEN_PATHS = ["/"]
+const OPEN_PATHS = ["/", "/privacy", "/terms", "/contact"]
 // Public but redirect to /dashboard if already logged in
 const AUTH_PATHS = ["/login", "/auth/callback"]
 

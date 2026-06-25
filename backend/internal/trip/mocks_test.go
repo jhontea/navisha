@@ -98,13 +98,13 @@ func (m *mockRepo) Update(t *Trip) (*Trip, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr
 	}
-	// Persist the mutated trip so tests can assert the usecase's field
-	// assignments (e.g. budget preservation). Mirrors repository_pg.Update
-	// which returns the row from ...RETURNING.
 	out := *t
 	out.UpdatedAt = time.Now()
 	m.trips[t.ID] = &out
 	return &out, nil
+}
+func (m *mockRepo) UpdateTx(_ context.Context, _ pgx.Tx, t *Trip) (*Trip, error) {
+	return m.Update(t)
 }
 func (m *mockRepo) Delete(_ string) error {
 	return m.deleteErr

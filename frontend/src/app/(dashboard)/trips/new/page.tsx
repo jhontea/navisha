@@ -1,9 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { TripForm } from "@/features/trip/components/TripForm"
 import { useCreateTrip } from "@/features/trip/hooks/useTrips"
+import { BackLink } from "@/components/BackLink"
 
 export default function NewTripPage() {
   const router = useRouter()
@@ -15,13 +15,7 @@ export default function NewTripPage() {
       <div className="bg-white rounded-xl shadow-sm border border-surface-container-high p-8 space-y-8">
           {/* Card Header */}
           <div>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-body-sm text-on-surface-variant hover:text-primary transition-colors mb-4"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
-              Back to Dashboard
-            </Link>
+            <BackLink href="/dashboard" className="mb-4" />
             <h3 className="font-headline-md text-headline-md mb-1">Trip Details</h3>
             <p className="font-body-md text-on-surface-variant">
               Let&apos;s start planning your next great adventure.

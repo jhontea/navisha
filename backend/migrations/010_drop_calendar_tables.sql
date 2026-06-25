@@ -1,4 +1,4 @@
-﻿-- 010_drop_calendar_tables.sql
+-- 010_drop_calendar_tables.sql
 -- Remove Calendar Export feature (F4) artifacts.
 -- Calendar export was removed on 2026-06-25.
 

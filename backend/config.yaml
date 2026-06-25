@@ -3,9 +3,14 @@ server:
 
 db:
   pool_size: 10
+  max_conns: 25
+  min_conns: 5
+  max_conn_lifetime: 3600   # 1 hour in seconds
+  max_conn_idle_time: 1800   # 30 minutes in seconds
 
 redis:
   pool_size: 10
+  min_idle_conns: 5
 
 currency:
   supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
@@ -39,4 +44,13 @@ openrouter:
   base_url: https://openrouter.ai/api/v1
   summary_rate_limit_seconds: 0
   timeout_seconds: 300
+
+# ── Rate Limiting (Phase 3D) ──
+# Per-user sliding-window rate limits via Redis.
+# Set enabled: false to disable all rate limiting.
+rate_limit:
+  enabled: true
+  auth_per_minute: 20
+  llm_per_minute: 5
+  general_per_min: 100
 

@@ -1,7 +1,6 @@
 package expense
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
@@ -56,6 +55,16 @@ func (h *Handler) Create(c echo.Context) error {
 	var req expenseRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	// Early validation (Iteration 7: user-friendly errors)
+	if strings.TrimSpace(req.Title) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	}
+	if req.Amount <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than 0")
+	}
+	if strings.TrimSpace(req.Currency) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "currency is required")
 	}
 	e, err := h.usecase.Create(userID, tripID, CreateInput{
 		Title:       req.Title,
@@ -143,18 +152,11 @@ func toResponse(e *Expense) map[string]any {
 }
 
 func mapErr(err error) error {
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "expense not found")
-	case errors.Is(err, ErrTripNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "trip not found")
-	case errors.Is(err, ErrInvalidCategory):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid category")
-	case errors.Is(err, ErrInvalidCurrency):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid currency")
-	case errors.Is(err, apperr.ErrForbidden):
-		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
-	default:
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
-	}
+	return apperr.MapHTTP(err,
+		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "expense not found"},
+		apperr.HTTPMapping{Err: ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
+		apperr.HTTPMapping{Err: ErrInvalidCategory, Code: http.StatusBadRequest, Message: "invalid category"},
+		apperr.HTTPMapping{Err: ErrInvalidCurrency, Code: http.StatusBadRequest, Message: "invalid currency"},
+		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
+	)
 }

@@ -156,13 +156,19 @@ func TestUsecase_Reorder_Success(t *testing.T) {
 	if repo.beginTxCalls != 1 || repo.commitCalls != 1 {
 		t.Errorf("tx: begin=%d commit=%d, want 1/1", repo.beginTxCalls, repo.commitCalls)
 	}
-	want := []orderUpdate{{"c", 0}, {"a", 1}, {"b", 2}}
 	if len(repo.orderUpdates) != 3 {
 		t.Fatalf("got %d updates, want 3", len(repo.orderUpdates))
 	}
-	for i, ou := range repo.orderUpdates {
-		if ou != want[i] {
-			t.Errorf("update[%d] = %+v, want %+v", i, ou, want[i])
+	// Phase 3D: BatchUpdateOrderTx iterates a map, so order is non-deterministic.
+	// Check that each ID has the correct index via a lookup.
+	got := make(map[string]int, 3)
+	for _, ou := range repo.orderUpdates {
+		got[ou.id] = ou.order
+	}
+	want := map[string]int{"c": 0, "a": 1, "b": 2}
+	for id, expectedIdx := range want {
+		if got[id] != expectedIdx {
+			t.Errorf("orderUpdates[%s] = %d, want %d", id, got[id], expectedIdx)
 		}
 	}
 }
@@ -209,7 +215,7 @@ func TestUsecase_Reorder_RollbackOnError(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["day-1"] = "user-1"
 	repo.dayIDs["day-1"] = []string{"a", "b"}
-	repo.updateOrderErr = errors.New("db failure")
+	repo.batchUpdateErr = errors.New("db failure")
 	u := NewUsecase(repo)
 
 	err := u.Reorder(context.Background(), "user-1", "day-1", []string{"a", "b"})

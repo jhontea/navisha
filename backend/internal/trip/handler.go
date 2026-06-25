@@ -1,7 +1,6 @@
 package trip
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -177,7 +176,7 @@ func (h *Handler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date format (expect YYYY-MM-DD)")
 	}
 
-	t, err := h.usecase.Update(userID, tripID, UpdateInput{
+	t, err := h.usecase.Update(c.Request().Context(), userID, tripID, UpdateInput{
 		Title:         req.Title,
 		Description:   req.Description,
 		StartDate:     start,
@@ -273,20 +272,12 @@ func toDaysResponse(days []Day) []map[string]any {
 }
 
 func mapErr(err error) error {
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "trip not found")
-	case errors.Is(err, ErrDayNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "day not found")
-	case errors.Is(err, ErrInvalidDates):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid dates: end must be on or after start")
-	case errors.Is(err, ErrInvalidCurrency):
-		return echo.NewHTTPError(http.StatusBadRequest, "unsupported base currency")
-	case errors.Is(err, ErrInvalidCursor):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid cursor")
-	case errors.Is(err, apperr.ErrForbidden):
-		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
-	default:
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
-	}
+	return apperr.MapHTTP(err,
+		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "trip not found"},
+		apperr.HTTPMapping{Err: ErrDayNotFound, Code: http.StatusNotFound, Message: "day not found"},
+		apperr.HTTPMapping{Err: ErrInvalidDates, Code: http.StatusBadRequest, Message: "invalid dates: end must be on or after start"},
+		apperr.HTTPMapping{Err: ErrInvalidCurrency, Code: http.StatusBadRequest, Message: "unsupported base currency"},
+		apperr.HTTPMapping{Err: ErrInvalidCursor, Code: http.StatusBadRequest, Message: "invalid cursor"},
+		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
+	)
 }

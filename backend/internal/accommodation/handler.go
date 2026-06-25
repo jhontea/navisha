@@ -1,7 +1,6 @@
 package accommodation
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -151,20 +150,12 @@ func toResponse(a *Accommodation) map[string]any {
 }
 
 func mapErr(err error) error {
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "accommodation not found")
-	case errors.Is(err, ErrTripNotFound):
-		return echo.NewHTTPError(http.StatusNotFound, "trip not found")
-	case errors.Is(err, ErrInvalidName):
-		return echo.NewHTTPError(http.StatusBadRequest, "name required")
-	case errors.Is(err, ErrInvalidDates):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid dates: check_out must be on or after check_in")
-	case errors.Is(err, ErrInvalidType):
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid accommodation type: must be hotel, hostel, apartment, or other")
-	case errors.Is(err, apperr.ErrForbidden):
-		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
-	default:
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
-	}
+	return apperr.MapHTTP(err,
+		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "accommodation not found"},
+		apperr.HTTPMapping{Err: ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
+		apperr.HTTPMapping{Err: ErrInvalidName, Code: http.StatusBadRequest, Message: "name required"},
+		apperr.HTTPMapping{Err: ErrInvalidDates, Code: http.StatusBadRequest, Message: "invalid dates: check_out must be on or after check_in"},
+		apperr.HTTPMapping{Err: ErrInvalidType, Code: http.StatusBadRequest, Message: "invalid accommodation type: must be hotel, hostel, apartment, or other"},
+		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
+	)
 }

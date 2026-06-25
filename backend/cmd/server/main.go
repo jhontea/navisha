@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +19,7 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/expense"
 	"github.com/ahmadhafizh/navisha/backend/internal/integration"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/internal/migrate"
 	"github.com/ahmadhafizh/navisha/backend/internal/summary"
 	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
@@ -30,38 +31,84 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echomw "github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"
 )
 
 func main() {
+	// Structured JSON logger (Phase 3D).
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
 	}
 
-	// Database
-	db, err := pgxpool.New(context.Background(), cfg.DB.URL)
+	// Database — Phase 3D: tuned connection pool.
+	dbCfg, err := pgxpool.ParseConfig(cfg.DB.URL)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		slog.Error("failed to parse database url", "error", err)
+		os.Exit(1)
+	}
+	if cfg.DB.PoolSize > 0 {
+		dbCfg.MaxConns = int32(cfg.DB.PoolSize)
+	}
+	if cfg.DB.MaxConns > 0 {
+		dbCfg.MaxConns = cfg.DB.MaxConns
+	}
+	if cfg.DB.MinConns > 0 {
+		dbCfg.MinConns = cfg.DB.MinConns
+	}
+	if cfg.DB.MaxConnLifetime > 0 {
+		dbCfg.MaxConnLifetime = cfg.DB.MaxConnLifetime * time.Second
+	}
+	if cfg.DB.MaxConnIdleTime > 0 {
+		dbCfg.MaxConnIdleTime = cfg.DB.MaxConnIdleTime * time.Second
+	}
+	db, err := pgxpool.NewWithConfig(context.Background(), dbCfg)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 	if err := db.Ping(context.Background()); err != nil {
-		log.Fatalf("failed to ping database: %v", err)
+		slog.Error("failed to ping database", "error", err)
+		os.Exit(1)
 	}
-	log.Println("database connected")
+	slog.Info("database connected", "max_conns", dbCfg.MaxConns, "min_conns", dbCfg.MinConns)
 
-	// Redis
+	// Redis — Phase 3D: tuned connection pool.
 	redisOpts, err := redis.ParseURL(cfg.Redis.URL)
 	if err != nil {
-		log.Fatalf("failed to parse redis url: %v", err)
+		slog.Error("failed to parse redis url", "error", err)
+		os.Exit(1)
+	}
+	if cfg.Redis.PoolSize > 0 {
+		redisOpts.PoolSize = cfg.Redis.PoolSize
+	}
+	if cfg.Redis.MinIdleConns > 0 {
+		redisOpts.MinIdleConns = cfg.Redis.MinIdleConns
 	}
 	rdb := redis.NewClient(redisOpts)
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("failed to ping redis: %v", err)
+		slog.Error("failed to ping redis", "error", err)
+		os.Exit(1)
 	}
-	log.Println("redis connected")
+	slog.Info("redis connected", "pool_size", redisOpts.PoolSize)
 	defer rdb.Close()
+
+	// Run pending database migrations (Loop 1: auto-migration on startup).
+	migrator := migrate.New(db, "migrations")
+	n, err := migrator.Run(context.Background())
+	if err != nil {
+		slog.Error("migration failed", "error", err)
+		os.Exit(1)
+	}
+	if n > 0 {
+		slog.Info("migrations applied", "count", n)
+	}
 
 	// Populate supported currencies from config
 	currency.SupportedCurrencies = cfg.Currency.Supported
@@ -144,18 +191,71 @@ func main() {
 	e := echo.New()
 	e.HideBanner = true
 
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	// Phase 3D: structured request logging with slog + request ID.
+	e.Use(echomw.RequestID())
+	e.Use(echomw.RequestLoggerWithConfig(echomw.RequestLoggerConfig{
+		LogStatus:   true,
+		LogURI:      true,
+		LogMethod:   true,
+		LogLatency:  true,
+		LogRemoteIP: true,
+		LogValuesFunc: func(c echo.Context, v echomw.RequestLoggerValues) error {
+			userID, _ := c.Get(appMiddleware.UserIDKey).(string)
+			slog.Info("request",
+				"request_id", v.RequestID,
+				"method", v.Method,
+				"uri", v.URI,
+				"status", v.Status,
+				"latency_ms", v.Latency.Milliseconds(),
+				"remote_ip", v.RemoteIP,
+				"user_id", userID,
+			)
+			return nil
+		},
+	}))
+	e.Use(echomw.Recover())
+	e.Use(echomw.CORSWithConfig(echomw.CORSConfig{
 		AllowOrigins:     []string{cfg.App.FrontendURL},
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowHeaders:     []string{echo.HeaderContentType, echo.HeaderAuthorization},
 		AllowCredentials: true,
 	}))
 
-	// Health check
+	// Loop 6: per-request timeout (30s default) to prevent hanging requests.
+	e.Use(appMiddleware.Timeout(30 * time.Second))
+
+	// Loop 3: limit request body size to 1MB.
+	e.Use(appMiddleware.BodyLimit(1 << 20))
+
+	// Phase 3D: per-user rate limiting via Redis sliding window.
+	rateLimiter := appMiddleware.NewRateLimiter(rdb, appMiddleware.RateLimitConfig{
+		Enabled:       cfg.RateLimit.Enabled,
+		AuthPerMinute: cfg.RateLimit.AuthPerMinute,
+		LLMPerMinute:  cfg.RateLimit.LLMPerMinute,
+		GeneralPerMin: cfg.RateLimit.GeneralPerMin,
+	})
+	e.Use(rateLimiter.Limit())
+
+	// Loop 2: API version header on all responses.
+	e.Use(appMiddleware.APIVersionHeader())
+
+	// Health check — includes DB and Redis status (Loop 5: robustness)
 	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+		healthy := true
+		dbOk := db.Ping(c.Request().Context()) == nil
+		redisOk := rdb.Ping(c.Request().Context()).Err() == nil
+		if !dbOk || !redisOk {
+			healthy = false
+		}
+		status := http.StatusOK
+		if !healthy {
+			status = http.StatusServiceUnavailable
+		}
+		return c.JSON(status, map[string]any{
+			"status": map[bool]string{true: "ok", false: "degraded"}[healthy],
+			"db":     map[bool]string{true: "ok", false: "error"}[dbOk],
+			"redis":  map[bool]string{true: "ok", false: "error"}[redisOk],
+		})
 	})
 
 	// Auth middleware
@@ -176,9 +276,10 @@ func main() {
 	// Graceful shutdown
 	go func() {
 		addr := fmt.Sprintf(":%d", cfg.Server.Port)
-		log.Printf("server starting on %s", addr)
+		slog.Info("server starting", "addr", addr)
 		if err := e.Start(addr); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+			slog.Error("server error", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -189,7 +290,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
-		log.Fatal(err)
+		slog.Error("server shutdown error", "error", err)
+		os.Exit(1)
 	}
-	log.Println("server stopped")
+	slog.Info("server stopped")
 }

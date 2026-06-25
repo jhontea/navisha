@@ -10,6 +10,9 @@ import (
 
 type UsecaseInterface interface {
 	List(userID, dayID string) ([]Activity, error)
+	// ListByDayIDs batch-fetches activities for multiple days owned by the same user.
+	// Phase 3D: eliminates N+1 queries when loading trip context.
+	ListByDayIDs(ctx context.Context, userID string, dayIDs []string) (map[string][]Activity, error)
 	Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error)
 	Update(userID, activityID string, in UpdateInput) (*Activity, error)
 	Delete(userID, activityID string) error
@@ -46,6 +49,21 @@ func (u *Usecase) List(userID, dayID string) ([]Activity, error) {
 		return nil, err
 	}
 	return u.repo.ListByDay(dayID)
+}
+
+// ListByDayIDs batch-fetches activities for multiple days. Verifies ownership
+// via the first day (all days must belong to the same user's trip).
+// Phase 3D: eliminates N+1 queries when loading trip context.
+func (u *Usecase) ListByDayIDs(ctx context.Context, userID string, dayIDs []string) (map[string][]Activity, error) {
+	if len(dayIDs) == 0 {
+		return make(map[string][]Activity), nil
+	}
+	// Verify ownership on the first day; the caller (trip context) guarantees
+	// all dayIDs belong to the same trip, hence same user.
+	if err := u.verifyDayOwnership(userID, dayIDs[0]); err != nil {
+		return nil, err
+	}
+	return u.repo.ListByDayIDs(ctx, dayIDs)
 }
 
 func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error) {
@@ -120,6 +138,7 @@ func (u *Usecase) Delete(userID, activityID string) error {
 
 // Reorder accepts the full set of activity IDs for the day in their new order.
 // Rejects if the set doesn't match exactly (catches drift between client + server).
+// Phase 3D: Uses BatchUpdateOrderTx for single-statement atomic update.
 func (u *Usecase) Reorder(ctx context.Context, userID, dayID string, orderedIDs []string) error {
 	if err := u.verifyDayOwnership(userID, dayID); err != nil {
 		return err
@@ -139,10 +158,12 @@ func (u *Usecase) Reorder(ctx context.Context, userID, dayID string, orderedIDs 
 	}
 	defer u.repo.Rollback(ctx, tx)
 
+	orderMap := make(map[string]int, len(orderedIDs))
 	for i, id := range orderedIDs {
-		if err := u.repo.UpdateOrderTx(ctx, tx, id, i); err != nil {
-			return err
-		}
+		orderMap[id] = i
+	}
+	if err := u.repo.BatchUpdateOrderTx(ctx, tx, orderMap); err != nil {
+		return err
 	}
 	return u.repo.Commit(ctx, tx)
 }

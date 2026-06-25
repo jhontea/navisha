@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
@@ -93,8 +93,10 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 	}
 
 	system, user := BuildPrompt(*tripCtx)
+	temp := TemperatureForTrip(tripCtx.TripID)
 	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{
-		Model: u.model,
+		Model:       u.model,
+		Temperature: &temp,
 		Messages: []llm.Message{
 			{Role: "system", Content: system},
 			{Role: "user", Content: user},
@@ -105,12 +107,12 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 		// context canceled, decode error) are transient and not a server
 		// bug — surface them as ErrLLMUnavailable so the handler returns
 		// 503 instead of 500. The original error is logged for debugging.
-		log.Printf("summary.Generate: llm failed for trip %s: %v", tripID, err)
+		slog.Error("summary.Generate: llm failed", "trip_id", tripID, "error", err)
 		return nil, fmt.Errorf("%w: %w", ErrLLMUnavailable, err)
 	}
 
 	if content == "" {
-		log.Printf("summary.Generate: llm returned empty content for trip %s", tripID)
+		slog.Warn("summary.Generate: llm returned empty content", "trip_id", tripID)
 		return nil, fmt.Errorf("%w: empty response", ErrLLMUnavailable)
 	}
 

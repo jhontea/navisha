@@ -2,11 +2,12 @@ package autogen
 
 import (
 	"fmt"
+	"hash/fnv"
 	"strings"
 	"time"
 )
 
-const systemPrompt = `Kamu adalah AI perencana perjalanan (travel planner) yang ahli dan teliti.
+const systemPromptBase = `Kamu adalah AI perencana perjalanan (travel planner) yang ahli dan teliti.
 Peran UTAMA kamu HANYA merencanakan perjalanan dan membuat itinerary detail.
 Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan perjalanan.
 
@@ -14,7 +15,6 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 - Hanya merespons permintaan perencanaan perjalanan (destinasi, itinerary, aktivitas, akomodasi, transportasi).
 - Jika user meminta hal di luar travel planning, tolak dengan sopan dan arahkan untuk memberikan topik perjalanan.
 - Selalu respons dalam Bahasa Indonesia.
-- Travel style default: seimbang antara wisata, kuliner, dan relaksasi.
 - Jadwalkan aktivitas antara pukul 08:00 dan 21:00 waktu lokal.
 - Rencanakan 4–6 aktivitas per hari.
 
@@ -40,6 +40,12 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 - "summary" adalah deskripsi singkat perjalanan (2–3 kalimat).
 - "tips" adalah array string berisi tips umum perjalanan ke destinasi ini.
 
+## ATURAN VARIASI HARIAN (Phase 3F)
+- SETIAP HARI harus memiliki VARIASI aktivitas yang berbeda dari hari sebelumnya.
+- JANGAN ulangi JENIS aktivitas yang sama lebih dari 2 hari berturut-turut.
+  Contoh: jangan 3 hari berturut-turut mengunjungi candi/kuil.
+- Usahakan setiap hari memiliki minimal 2 KATEGORI berbeda (kuliner, wisata alam, budaya, dll).
+
 ## ATURAN LOKASI (SANGAT PENTING — DIBACA BERULANG)
 - SEMUA lokasi HARUS berada di dalam kota/area destinasi yang diminta user.
   Contoh: jika destinasi "Bandung", semua tempat harus di Bandung atau sekitarnya (max ~50km).
@@ -60,31 +66,140 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 - Perkirakan "budget" total yang wajar dalam mata uang tersebut bila user menyebut anggaran;
   jika tidak, beri estimasi kasar yang realistis untuk destinasi & durasi.`
 
-// BuildPrompt returns the system and user messages for the LLM call.
-// Separated from the usecase so it can be unit-tested without an LLM.
-func BuildPrompt(in GenerateInput) (system, user string) {
-	system = fmt.Sprintf(systemPrompt, MaxTripDays, MaxActivitiesPerDay)
+// stylePrompt returns additional instructions based on travel style.
+// Phase 3F: reduces monotony by varying the trip generation focus.
+func stylePrompt(style string) string {
+	switch strings.ToLower(strings.TrimSpace(style)) {
+	case "backpacker":
+		return `
 
+## GAYA PERJALANAN: BACKPACKER
+- Fokus pada opsi HEMAT dan terjangkau (hostel/guesthouse, street food, transportasi umum).
+- Estimasi budget harian RENDAH — prioritaskan value for money.
+- Rekomendasikan tempat yang gratis atau murah (taman kota, pantai publik, pasar tradisional).
+- Gunakan transportasi publik atau jalan kaki sebisa mungkin.
+- Tips harus mencakup cara hemat (happy hour, early bird discount, student card).`
+	case "cultural", "budaya":
+		return `
+
+## GAYA PERJALANAN: BUDAYA & SEJARAH
+- Fokus pada museum, situs bersejarah, candi/pura, pertunjukan seni tradisional, workshop kerajinan.
+- Setiap hari harus memiliki minimal 1 aktivitas budaya atau sejarah.
+- Rekomendasikan museum, galeri seni, walking tour bersejarah, dan pengalaman budaya immersive.
+- Tips harus mencakup etiket budaya lokal, dress code untuk tempat ibadah, jam operasional museum.`
+	case "luxury", "mewah":
+		return `
+
+## GAYA PERJALANAN: LUXURY
+- Fokus pada pengalaman PREMIUM: fine dining, hotel bintang 5, private tour, spa, shopping.
+- Estimasi budget harian TINGGI — prioritaskan kenyamanan dan eksklusivitas.
+- Rekomendasikan restoran fine dining, resort, private car charter, dan pengalaman VIP.
+- Tips harus mencakup dress code fine dining, reservasi advance, dan tipping etiquette.`
+	case "nature", "alam":
+		return `
+
+## GAYA PERJALANAN: ALAM & PETUALANGAN
+- Fokus pada aktivitas OUTDOOR: hiking, air terjun, pantai, snorkeling/diving, camping, sunrise/sunset spot.
+- Minimal 2 aktivitas outdoor per hari.
+- Rekomendasikan taman nasional, gunung, pantai, dan ekowisata.
+- Tips harus mencakup perlengkapan outdoor (sepatu, sunblock, jas hujan), safety tips, dan best time to visit.`
+	case "foodie", "kuliner":
+		return `
+
+## GAYA PERJALANAN: KULINER
+- Fokus pada MAKANAN & MINUMAN: street food, restoran legendaris, food market, coffee shop specialty, cooking class.
+- Setiap hari harus memiliki minimal 2 pengalaman kuliner (sarapan khas, jajanan, makan malam spesial).
+- Rekomendasikan makanan KHAS daerah tersebut, hidden gem kuliner, dan food tour.
+- Tips harus mencakup rekomendasi menu, jam buka, estimasi harga, dan etiquette makan lokal.`
+	default: // "balanced" or empty
+		return `
+
+## GAYA PERJALANAN: SEIMBANG
+- Campuran seimbang antara wisata alam, budaya, kuliner, dan relaksasi.
+- Variasikan jenis aktivitas setiap hari agar trip terasa lengkap.
+- Tips harus mencakup berbagai aspek perjalanan (transportasi, kuliner, budaya, keamanan).`
+	}
+}
+
+// seasonContext returns weather-aware instructions based on trip month.
+// Simple rule: April-September = dry, October-March = rainy (for most of Indonesia).
+func seasonContext(start, end time.Time) string {
+	isDry := func(m time.Month) bool { return m >= 4 && m <= 9 }
+	allDry := isDry(start.Month()) && isDry(end.Month())
+	allRainy := !isDry(start.Month()) && !isDry(end.Month())
+
+	if allDry {
+		return `
+
+## INFORMASI MUSIM: Kemarau (April–September)
+- Cuaca cenderung cerah dan kering — optimal untuk aktivitas outdoor (pantai, hiking, sightseeing).
+- Rekomendasikan lebih banyak aktivitas outdoor dan spot sunset/sunrise.
+- Tetap ingatkan sunscreen dan hidrasi karena cuaca panas.`
+	} else if allRainy {
+		return `
+
+## INFORMASI MUSIM: Hujan (Oktober–Maret)
+- Cuaca cenderung hujan, terutama sore hari — prioritaskan aktivitas indoor atau pagi hari.
+- Rekomendasikan museum, kafe, mall, cooking class, atau workshop indoor sebagai alternatif.
+- Jadwalkan aktivitas outdoor di pagi hari (08:00–12:00) sebelum hujan turun.
+- Tips: bawa payung/jas hujan, hindari hiking saat hujan deras, cek prakiraan cuaca harian.`
+	}
+	return "" // mixed season — no specific guidance
+}
+
+// TemperatureForDraft returns a temperature value (0.7–0.9) for non-monotonous generation.
+func TemperatureForDraft(input GenerateInput) float64 {
+	h := fnv.New32a()
+	h.Write([]byte(input.Destination))
+	h.Write([]byte(input.Description))
+	h.Write([]byte(input.StartDate.Format("2006-01-02")))
+	base := float64(h.Sum32()%200) / 1000.0 // 0.000–0.199
+	return 0.7 + base
+}
+
+// BuildPrompt returns the system and user messages for the LLM call.
+// Phase 3F: injects travel style, season awareness, and diversity constraints.
+func BuildPrompt(in GenerateInput) (system, user string) {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf(systemPromptBase, MaxTripDays, MaxActivitiesPerDay))
+
+	// Inject travel style
+	style := in.TravelStyle
+	if style == "" {
+		style = "balanced"
+	}
+	sb.WriteString(stylePrompt(style))
+
+	// Inject season awareness
+	sb.WriteString(seasonContext(in.StartDate, in.EndDate))
+
+	system = sb.String()
+
+	// User prompt
 	days := daySpan(in.StartDate, in.EndDate)
 
-	var b strings.Builder
-	b.WriteString("Buatkan itinerary perjalanan dengan detail berikut:\n")
-	b.WriteString(fmt.Sprintf("- Destinasi: %s\n", in.Destination))
+	var ub strings.Builder
+	ub.WriteString("Buatkan itinerary perjalanan dengan detail berikut:\n")
+	ub.WriteString(fmt.Sprintf("- Destinasi: %s\n", in.Destination))
 	if strings.TrimSpace(in.Description) != "" {
-		b.WriteString(fmt.Sprintf("- Deskripsi/preferensi: %s\n", in.Description))
+		ub.WriteString(fmt.Sprintf("- Deskripsi/preferensi: %s\n", in.Description))
 	}
-	b.WriteString(fmt.Sprintf("- Tanggal mulai: %s\n", in.StartDate.Format("2006-01-02")))
-	b.WriteString(fmt.Sprintf("- Tanggal selesai: %s\n", in.EndDate.Format("2006-01-02")))
-	b.WriteString(fmt.Sprintf("- Total hari: %d (buat tepat %d hari)\n", days, days))
-	b.WriteString(fmt.Sprintf("- Mata uang: %s\n", in.BaseCurrency))
-	b.WriteString("\nTanggal per hari:\n")
+	if style != "balanced" {
+		ub.WriteString(fmt.Sprintf("- Gaya perjalanan: %s\n", style))
+	}
+	ub.WriteString(fmt.Sprintf("- Tanggal mulai: %s\n", in.StartDate.Format("2006-01-02")))
+	ub.WriteString(fmt.Sprintf("- Tanggal selesai: %s\n", in.EndDate.Format("2006-01-02")))
+	ub.WriteString(fmt.Sprintf("- Total hari: %d (buat tepat %d hari)\n", days, days))
+	ub.WriteString(fmt.Sprintf("- Mata uang: %s\n", in.BaseCurrency))
+	ub.WriteString("\nTanggal per hari:\n")
 	for i := 0; i < days; i++ {
 		d := in.StartDate.AddDate(0, 0, i)
-		b.WriteString(fmt.Sprintf("  Day %d: %s\n", i+1, d.Format("2006-01-02")))
+		ub.WriteString(fmt.Sprintf("  Day %d: %s\n", i+1, d.Format("2006-01-02")))
 	}
-	b.WriteString("\nPENTING: Setiap location_name HARUS menyertakan nama kota destinasi sebagai akhiran (format: \"Nama Tempat, Nama Kota\"). JANGAN gunakan nama tempat dari kota/negara lain.\n")
+	ub.WriteString("\nPENTING: Setiap location_name HARUS menyertakan nama kota destinasi sebagai akhiran (format: \"Nama Tempat, Nama Kota\"). JANGAN gunakan nama tempat dari kota/negara lain.\n")
+	ub.WriteString("PENTING: Variasikan jenis aktivitas setiap hari. Jangan ulangi jenis yang sama lebih dari 2 hari berturut-turut.\n")
 
-	return system, b.String()
+	return system, ub.String()
 }
 
 // daySpan returns the inclusive number of days between start and end.

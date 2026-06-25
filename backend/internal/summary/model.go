@@ -16,6 +16,7 @@ type Summary struct {
 // by an adapter (internal/integration) so the summary package stays decoupled
 // from the individual domain packages.
 type TripContext struct {
+	TripID       string // Phase 3E: for deterministic style variation
 	Title        string
 	Destination  string
 	StartDate    time.Time
