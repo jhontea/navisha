@@ -1,10 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { useAuth } from "@/features/auth/hooks"
 import { TripList } from "@/features/trip/components/TripList"
 import { StatsSection } from "@/features/trip/components/StatsSection"
-import { MaterialIcon } from "@/components/MaterialIcon"
+import { TripCTAs } from "@/features/trip/components/TripCTAs"
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -15,31 +14,20 @@ export default function DashboardPage() {
       <header className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <h1 className="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface">
-            Welcome back, {firstName}
+            Your Adventures
           </h1>
           <p className="text-body-lg font-body-lg text-on-surface-variant">
-            Where are we exploring next?
+            Ready to explore, {firstName}?
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/trips/generate"
-            className="flex items-center justify-center gap-2 border border-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-[0.98]"
-          >
-            <MaterialIcon name="auto_fix_high" size={20} />
-            Generate Trip with AI
-          </Link>
-          <Link href="/trips/new"
-            className="flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98]"
-          >
-            <MaterialIcon name="add" size={20} />
-            New Trip
-          </Link>
+          <TripCTAs />
         </div>
       </header>
 
 
       <TripList />
-      <div style={{ height: '4rem' }} />
+      <div className="h-16" />
       <StatsSection />
     </div>
   )

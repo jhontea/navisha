@@ -26,6 +26,7 @@ type GenerateInput struct {
 	StartDate    time.Time // inclusive
 	EndDate      time.Time // inclusive
 	BaseCurrency string    // ISO 4217, validated against supported list
+	TravelStyle  string    // Phase 3F: style variant (backpacker, cultural, luxury, nature, foodie, balanced)
 }
 
 // TripDraft is the structured itinerary returned by the LLM (after validation).

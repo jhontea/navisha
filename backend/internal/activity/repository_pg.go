@@ -197,3 +197,62 @@ func (r *postgresRepository) ListIDsByDay(dayID string) ([]string, error) {
 	}
 	return out, nil
 }
+
+// ListByDayIDs fetches activities for multiple days in a single query.
+// Returns a map of dayID → activities. Days with no activities get an empty slice.
+// Phase 3D: Eliminates N+1 queries when loading trip context.
+func (r *postgresRepository) ListByDayIDs(ctx context.Context, dayIDs []string) (map[string][]Activity, error) {
+	if len(dayIDs) == 0 {
+		return make(map[string][]Activity), nil
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at
+		 FROM activities
+		 WHERE day_id = ANY($1)
+		 ORDER BY day_id, order_index ASC, created_at ASC`, dayIDs)
+	if err != nil {
+		return nil, fmt.Errorf("activity.ListByDayIDs: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[string][]Activity, len(dayIDs))
+	// Pre-initialize all dayIDs so callers always get a slice (even empty).
+	for _, did := range dayIDs {
+		out[did] = []Activity{}
+	}
+	for rows.Next() {
+		var a Activity
+		var typ string
+		if err := rows.Scan(&a.ID, &a.DayID, &typ, &a.Title, &a.StartTime, &a.EndTime,
+			&a.OrderIndex, &a.Payload, &a.CreatedAt, &a.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("activity.ListByDayIDs scan: %w", err)
+		}
+		a.Type = Type(typ)
+		out[a.DayID] = append(out[a.DayID], a)
+	}
+	return out, nil
+}
+
+// BatchUpdateOrderTx updates all order indexes in a single UPDATE statement
+// using unnest with parallel arrays. Phase 3D: replaces N individual UPDATEs.
+func (r *postgresRepository) BatchUpdateOrderTx(ctx context.Context, tx pgx.Tx, orderMap map[string]int) error {
+	if len(orderMap) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(orderMap))
+	idxs := make([]int, 0, len(orderMap))
+	for id, idx := range orderMap {
+		ids = append(ids, id)
+		idxs = append(idxs, idx)
+	}
+	_, err := tx.Exec(ctx,
+		`UPDATE activities SET order_index = v.idx, updated_at = NOW()
+		 FROM (SELECT * FROM unnest($1::text[], $2::int[])) AS v(id, idx)
+		 WHERE activities.id = v.id`,
+		ids, idxs)
+	if err != nil {
+		return fmt.Errorf("activity.BatchUpdateOrderTx: %w", err)
+	}
+	return nil
+}

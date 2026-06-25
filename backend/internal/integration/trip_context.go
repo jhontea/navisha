@@ -54,6 +54,7 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 	totalDays := len(days)
 
 	out := &summary.TripContext{
+		TripID:       tripID,
 		Title:        t.Title,
 		Destination:  t.Description,
 		StartDate:    t.StartDate,
@@ -63,17 +64,23 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 		Budget:       t.Budget,
 	}
 
-	// Days + activities
+	// Days + activities — Phase 3D: batch-fetch all activities in one query
+	// instead of N individual queries (one per day).
+	dayIDs := make([]string, len(days))
+	for i, d := range days {
+		dayIDs[i] = d.ID
+	}
+	actsByDay, err := p.activities.ListByDayIDs(ctx, userID, dayIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, d := range days {
 		dc := summary.DayContext{
 			DayNumber: d.DayNumber,
 			Date:      d.Date,
 		}
-		acts, err := p.activities.List(userID, d.ID)
-		if err != nil {
-			return nil, err
-		}
-		for _, a := range acts {
+		for _, a := range actsByDay[d.ID] {
 			ac := summary.ActivityContext{
 				Type:      string(a.Type),
 				Title:     a.Title,

@@ -236,15 +236,28 @@ func (r *postgresRepository) InsertTrip(ctx context.Context, tx pgx.Tx, t *Trip)
 	return out, nil
 }
 
+// InsertDays inserts all days for a trip in a single multi-row INSERT.
+// Phase 3D / Iter 9: batch insert via unnest instead of per-row loop.
 func (r *postgresRepository) InsertDays(ctx context.Context, tx pgx.Tx, days []Day) error {
-	for _, d := range days {
-		_, err := tx.Exec(ctx,
-			`INSERT INTO days (trip_id, date, day_number, notes)
-			 VALUES ($1, $2, $3, $4)`,
-			d.TripID, d.Date, d.DayNumber, d.Notes)
-		if err != nil {
-			return fmt.Errorf("trip.InsertDays: %w", err)
-		}
+	if len(days) == 0 {
+		return nil
+	}
+	tripIDs := make([]string, len(days))
+	dates := make([]time.Time, len(days))
+	dayNums := make([]int, len(days))
+	notes := make([]string, len(days))
+	for i, d := range days {
+		tripIDs[i] = d.TripID
+		dates[i] = d.Date
+		dayNums[i] = d.DayNumber
+		notes[i] = d.Notes
+	}
+	_, err := tx.Exec(ctx,
+		`INSERT INTO days (trip_id, date, day_number, notes)
+		 SELECT * FROM unnest($1::uuid[], $2::date[], $3::int[], $4::text[])`,
+		tripIDs, dates, dayNums, notes)
+	if err != nil {
+		return fmt.Errorf("trip.InsertDays: %w", err)
 	}
 	return nil
 }
@@ -277,6 +290,30 @@ func (r *postgresRepository) Update(t *Trip) (*Trip, error) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("trip.Update: %w", err)
+	}
+	return out, nil
+}
+
+// UpdateTx updates a trip row within an existing transaction.
+// Phase 3D / Iter 8: enables atomic trip+days updates.
+func (r *postgresRepository) UpdateTx(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error) {
+	out := &Trip{}
+	err := tx.QueryRow(ctx,
+		`UPDATE trips
+		    SET title = $2, description = $3, start_date = $4, end_date = $5,
+		        base_currency = $6, budget = $7, cover_image_url = $8, notes = $9, updated_at = NOW()
+		  WHERE id = $1
+		  RETURNING id, user_id, title, description, start_date, end_date,
+		            base_currency, budget, cover_image_url, notes, created_at, updated_at`,
+		t.ID, t.Title, t.Description, t.StartDate, t.EndDate,
+		t.BaseCurrency, t.Budget, t.CoverImageURL, t.Notes).
+		Scan(&out.ID, &out.UserID, &out.Title, &out.Description, &out.StartDate, &out.EndDate,
+			&out.BaseCurrency, &out.Budget, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("trip.UpdateTx: %w", err)
 	}
 	return out, nil
 }

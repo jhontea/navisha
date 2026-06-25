@@ -1,5 +1,9 @@
 -- Add 'souvenir' to the category check constraint on expenses.
--- Drop old constraint first, then add new one with souvenir included.
+-- First, fix any rows with invalid categories (safety net for existing data).
+UPDATE expenses SET category = 'other'
+  WHERE category NOT IN ('accommodation', 'transport', 'food', 'activity', 'souvenir', 'other');
+
+-- Drop old constraint and add new one with souvenir included.
 ALTER TABLE expenses
   DROP CONSTRAINT IF EXISTS expenses_category_check;
 

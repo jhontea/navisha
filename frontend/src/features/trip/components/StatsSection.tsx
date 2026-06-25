@@ -33,9 +33,9 @@ export function StatsSection() {
   const level = currentLevel.name
 
   return (
-    <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+    <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {/* Trips Completed */}
-      <div className="p-6 rounded-2xl flex flex-col justify-between h-40" style={{ backgroundColor: '#d8e2ff' }}>
+      <div className="flex h-40 flex-col justify-between rounded-2xl bg-primary/10 p-6">
         <MaterialIcon name="flight_takeoff" size={32} className="text-primary" />
         <div>
           <p className="text-headline-md font-headline-md text-on-primary-fixed">
@@ -47,56 +47,40 @@ export function StatsSection() {
         </div>
       </div>
 
-      {/* Countries Visited */}
-      <div className="p-6 rounded-2xl flex flex-col justify-between h-40" style={{ backgroundColor: '#EDE9FE' }}>
+      {/* Currencies Used */}
+      <div className="flex h-40 flex-col justify-between rounded-2xl bg-stay-purple/30 p-6">
         <MaterialIcon name="public" size={32} className="text-on-secondary-fixed" />
         <div>
           <p className="text-headline-md font-headline-md text-on-secondary-fixed">
             {currencies}
           </p>
           <p className="text-label-md font-label-md text-on-secondary-fixed-variant">
-            Countries Visited
+            Currencies Used
           </p>
         </div>
       </div>
 
-      {/* Traveler Level */}
-      <div className="p-6 bg-surface-container rounded-2xl flex items-center gap-8 h-40" style={{ gridColumn: 'span 2', minWidth: 0 }}>
-        <div className="flex-1">
-          <p className="text-headline-sm font-headline-sm text-on-surface mb-1">
+      {/* Traveler Level — full width on tablet, 1-col on desktop */}
+      <div className="col-span-1 flex h-40 items-center gap-6 rounded-2xl bg-surface-container p-6 sm:col-span-2 lg:col-span-1">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-headline-sm font-headline-sm text-on-surface mb-1">
             Traveler Level: {level}
           </p>
-          <p className="text-body-sm font-body-sm text-on-surface-variant">
+          <p className="line-clamp-2 text-body-sm font-body-sm text-on-surface-variant">
             {upcoming > 0 ? `${upcoming} upcoming · ` : ""}
             {nextLevel
               ? `${milesToNext} miles until ${nextLevel.name} status`
               : "Max level reached"}
           </p>
-          <div className="w-full h-2 bg-surface-container-high rounded-full mt-4 overflow-hidden">
+          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
             <div
-              className="h-full bg-primary transition-all duration-1000 rounded-full"
+              className="h-full rounded-full bg-primary transition-all duration-1000"
               style={{ width: `${progressPct}%` }}
             />
           </div>
         </div>
-        <div
-          className="shrink-0"
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            backgroundColor: 'rgba(0, 88, 188, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 40, color: '#0058bc' }}
-          >
-            military_tech
-          </span>
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/5">
+          <MaterialIcon name="military_tech" size={40} className="text-primary" />
         </div>
       </div>
     </section>

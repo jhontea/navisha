@@ -27,6 +27,8 @@ type Repository interface {
 	FindActivityOwner(activityID string) (userID, dayID string, err error)
 
 	ListByDay(dayID string) ([]Activity, error)
+	// ListByDayIDs fetches activities for multiple days in a single query (Phase 3D: N+1 fix).
+	ListByDayIDs(ctx context.Context, dayIDs []string) (map[string][]Activity, error)
 	FindByID(id string) (*Activity, error)
 	Insert(a *Activity) (*Activity, error)
 	Update(a *Activity) (*Activity, error)
@@ -34,5 +36,7 @@ type Repository interface {
 
 	// UpdateOrderTx runs in a tx so reorder is atomic.
 	UpdateOrderTx(ctx context.Context, tx pgx.Tx, activityID string, orderIndex int) error
+	// BatchUpdateOrderTx updates all order indexes in a single statement (Phase 3D).
+	BatchUpdateOrderTx(ctx context.Context, tx pgx.Tx, orderMap map[string]int) error
 	ListIDsByDay(dayID string) ([]string, error)
 }

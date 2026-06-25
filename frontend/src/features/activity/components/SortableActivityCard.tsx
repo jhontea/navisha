@@ -55,17 +55,12 @@ export function SortableActivityCard({
         <GripVertical className="h-4 w-4" />
       </button>
       <div
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-solid text-xs font-semibold tabular-nums"
         style={{
-          width: "1.75rem",
-          height: "1.75rem",
-          borderRadius: "9999px",
-          borderWidth: 2,
-          borderStyle: "solid",
           borderColor: "hsl(var(--foreground))",
           backgroundColor: "hsl(var(--card))",
           color: "hsl(var(--foreground))",
         }}
-        className="flex shrink-0 items-center justify-center text-xs font-semibold tabular-nums"
       >
         {index + 1}
       </div>

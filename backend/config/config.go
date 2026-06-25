@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -19,6 +20,7 @@ type Config struct {
 	App        AppConfig
 	LLM        LLMConfig
 	OpenRouter OpenRouterConfig // legacy; used as fallback when LLM.Provider is empty
+	RateLimit  RateLimitConfig  `mapstructure:"rate_limit"`
 }
 
 type ServerConfig struct {
@@ -26,13 +28,25 @@ type ServerConfig struct {
 }
 
 type DBConfig struct {
-	URL      string
-	PoolSize int `mapstructure:"pool_size"`
+	URL             string
+	PoolSize        int           `mapstructure:"pool_size"`
+	MaxConns        int32         `mapstructure:"max_conns"`
+	MinConns        int32         `mapstructure:"min_conns"`
+	MaxConnLifetime time.Duration `mapstructure:"max_conn_lifetime"`
+	MaxConnIdleTime time.Duration `mapstructure:"max_conn_idle_time"`
 }
 
 type RedisConfig struct {
-	URL      string
-	PoolSize int `mapstructure:"pool_size"`
+	URL          string
+	PoolSize     int `mapstructure:"pool_size"`
+	MinIdleConns int `mapstructure:"min_idle_conns"`
+}
+
+type RateLimitConfig struct {
+	Enabled       bool `mapstructure:"enabled"`
+	AuthPerMinute int  `mapstructure:"auth_per_minute"`
+	LLMPerMinute  int  `mapstructure:"llm_per_minute"`
+	GeneralPerMin int  `mapstructure:"general_per_minute"`
 }
 
 type CurrencyConfig struct {

@@ -8,6 +8,10 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 | Date | Title |
 |------|-------|
+| 2026-06-26 | [Phase 3 Polish: Width Consistency, TripHero Simplify, Budget Fix, NavBar Align](#2026-06-26--phase-3-polish-width-consistency-triphero-simplify-budget-fix-navbar-align) |
+| 2026-06-26 | [Phase 3: De-Dashboard + Backend Optimization + AI Variation](#2026-06-26--phase-3-de-dashboard--backend-optimization--ai-variation) |
+| 2026-06-26 | [Phase 3 Review Fixes: Overview Tab, Trip Dates, BackLink, Polish](#2026-06-26--phase-3-review-fixes-overview-tab-trip-dates-backlink-polish) |
+| 2026-06-26 | [20 Iterations: Audit, Bug Fix, Cleanup, Optimization](#2026-06-26--20-iterations-audit-bug-fix-cleanup-optimization) |
 | 2026-06-25 | [Review Fixes: Responsive Forms, Loading UX, Casual Summary Language](#2026-06-25--review-fixes-responsive-forms-loading-ux-casual-summary-language) |
 | 2026-06-25 | [Rich AI Summary Rendering (react-markdown + Tailwind Typography)](#2026-06-25--rich-ai-summary-rendering-react-markdown--tailwind-typography) |
 | 2026-06-25 | [Remove Calendar Export Feature + Calendar OAuth Consent](#2026-06-25--remove-calendar-export-feature--calendar-oauth-consent) |
@@ -43,6 +47,85 @@ Progress log for Navisha development. Update at the start and end of each sessio
 | 2026-06-13 | [Session 10: Currency + Expense Backend](#2026-06-13--session-10-currency--expense-backend) |
 | 2026-06-12 | [Session 9: Frontend Activity UI](#2026-06-12--session-9-frontend-activity-ui) |
 | 2026-06-11 | [Session 8: Activity Domain Backend + Graphify + coss Skill](#2026-06-11--session-8-activity-domain-backend--graphify--coss-skill) |
+
+---
+
+## 2026-06-26 — Phase 3 Polish: Width Consistency, TripHero Simplify, Budget Fix, NavBar Align
+
+Consolidation session fixing visual inconsistencies across all trip pages. Standardized width constraints, simplified TripHero (removed cover images), fixed budget display, and aligned NavBar.
+
+### Fix 1 — Budget not displaying despite existing in DB
+- `budget/page.tsx`: `tripBudget` prop was never passed to `ExpenseSection` — budget ring never rendered
+- `BudgetSummary.tsx`: empty expenses state bailed out with "No expenses yet" even when budget was set. Now shows budget chip in empty state
+
+### Fix 2 — Overview page missing cover image (TripHero)
+- `overview/page.tsx`: replaced custom sticky `<header>` with `TripHero` component
+- TripHero displays full-bleed cover image with title/dates overlaid; edit/delete as floating icon buttons
+- Inline edit form preserved — shown in place of TripHero when editing
+- Removed unused imports: `Pencil`, `Trash2`, `Button`
+
+### Fix 3 — Auth callback page missing
+- `(auth)/auth/callback/page.tsx` existed but build failed with "Cannot find module"
+- Resolved by removing accidental duplicate at `auth/callback/page.tsx`
+
+### Fix 4 — TripTabBar tabs not centered
+- Added `justify-center` to flex container — Overview/Itinerary/Transport/Stay/Budget now centered
+
+### Fix 5 — Consistent width across all trip pages
+- Overview used `max-w-max-width` (1200px); itinerary/transport/stay/budget used `max-w-lg` (512px)
+- Standardized all 5 pages to: `max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8`
+
+### Fix 6 — TripHero + TripTabBar constrained to content width
+- `TripHero.tsx`: added `className` prop; outer div uses `mx-auto w-full max-w-max-width px-margin-mobile md:px-margin-desktop`
+- `TripTabBar.tsx`: added `mx-auto w-full max-w-max-width` — tabs align with content edges
+
+### Fix 7 — TripHero content repositioning (centered layout)
+- Title/metadata/description: left-aligned → **centered** (matches centered TripTabBar below)
+- Edit/delete buttons: top-right → **bottom-right** on image (thumb-friendly)
+- Gradient: `from-black/70 via-black/20` → `from-black/85 via-black/30` (better readability)
+- Hero height: `h-48 sm:h-56` → `h-48 sm:h-56 md:h-64` (taller on desktop)
+- Title size: `text-xl sm:text-2xl` → `text-xl sm:text-2xl md:text-3xl`
+- Added `drop-shadow-lg` / `drop-shadow` for text crispness
+
+### Fix 8 — Remove cover images from TripHero entirely
+- Removed `coverImageUrl` prop — no more photo-based hero
+- Always shows clean gradient banner: `from-primary/25 via-primary/10 to-secondary/15`
+- Button positioning simplified: always top-right with `bg-background/60 backdrop-blur-sm`
+- Cleaned up `coverImageUrl` prop from 5 pages: overview, itinerary, transport, stay, budget
+- TripHero reduced from 113 lines to 93 lines
+
+### Fix 9 — TripTabBar sticky + mobile overflow fix
+- Added `sticky top-0 z-30 bg-background/95 backdrop-blur-sm` — tabs stay visible when scrolling
+- `justify-center` → `justify-start md:justify-center` — prevents left-side clip on narrow mobile
+- Tab padding: `px-3 py-2.5` → `px-2 py-2 text-[12px] sm:text-[13px] md:px-3 md:py-2.5`
+- Icon size: `h-4 w-4` → `h-3.5 w-3.5 sm:h-4 sm:w-4`
+- Nav padding: `px-2` → `px-3`
+- TripHero bottom padding: `py-8` → `pt-6 pb-3` (snug to tabs on mobile)
+
+### Fix 10 — Privacy/Terms/Contact redirecting to login
+- `middleware.ts`: `OPEN_PATHS` only had `"/"` — all other routes required auth
+- Added `"/privacy"`, `"/terms"`, `"/contact"` to `OPEN_PATHS`
+
+### Fix 11 — NavBar width alignment
+- Desktop: `max-w-4xl px-6` → `max-w-max-width px-margin-mobile md:px-margin-desktop`
+- Mobile: `max-w-lg px-2` → `max-w-max-width px-margin-mobile`
+- "Navisha" brand left-aligned, "Home My Trips Currency Profile" right-aligned within same 1200px max-width
+
+### Verify
+- `npx next build` — 16 pages, zero errors
+- All pages share consistent `max-w-max-width` (1200px) constraint
+
+### Files
+- `frontend/src/features/trip/components/TripHero.tsx` — rewritten (no images, centered, simplified)
+- `frontend/src/features/trip/components/TripTabBar.tsx` — sticky, responsive sizing, width constraint
+- `frontend/src/features/expense/components/BudgetSummary.tsx` — empty state shows budget
+- `frontend/src/components/NavBar.tsx` — width aligned to 1200px
+- `frontend/src/middleware.ts` — public paths expanded
+- `frontend/src/app/(dashboard)/trips/[id]/overview/page.tsx` — TripHero, removed Button imports
+- `frontend/src/app/(dashboard)/trips/[id]/page.tsx` — width, removed coverImageUrl
+- `frontend/src/app/(dashboard)/trips/[id]/transport/page.tsx` — width, removed coverImageUrl
+- `frontend/src/app/(dashboard)/trips/[id]/stay/page.tsx` — width, removed coverImageUrl
+- `frontend/src/app/(dashboard)/trips/[id]/budget/page.tsx` — width, tripBudget prop, removed coverImageUrl
 
 ---
 
@@ -1510,3 +1593,134 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - **Update cannot change type** — handler ignores `type` field on PUT. Type change is rare and semantically equivalent to delete+create (different payload shape).
 - **Payload validation only when present** — empty payload allowed (some clients may not send one for simple notes); strict shape enforcement when non-empty.
 - **Graphify AST-only mode** — no `GEMINI_API_KEY` set, skip Claude subagent dispatch (semantic extraction costs tokens). AST captures structural edges (calls, types, fields). Cross-doc relationships absent until LLM extraction enabled.
+
+---
+
+## 2026-06-26 � Phase 3: De-Dashboard + Backend Optimization + AI Variation
+
+**Goal**: Complete frontend overhaul to mobile-first design, eliminate all dashboard patterns, optimize backend for high traffic, and add AI prompt variation.
+
+### Phase 3D � Backend Performance Optimization
+
+- **Migration 011**: 4 composite indexes � trips(user_id, start_date DESC, id DESC), trips(user_id, end_date), activities(day_id, order_index), expenses(trip_id, category)
+- **N+1 Fix**: \	rip_context.go\ � replaced per-day \List()\ loop with single \ListByDayIDs(ctx, dayIDs)\ using \WHERE day_id = ANY(\)\
+- **Batch Operations**: \ctivity/repository_pg.go\ � \ListByDayIDs\ (single query), \BatchUpdateOrderTx\ (single UPDATE ... FROM unnest)
+- **Rate Limiter**: \middleware/rate_limiter.go\ � Redis sliding window per-user: 100/min general, 5/min LLM, 20/min auth
+- **Connection Pool**: config.yaml � DB min 5/max 25, max lifetime 1h, idle 30m; Redis min idle 5
+- **Structured Logging**: \main.go\ � replaced \log.Printf\ with \slog\ JSON logger + Echo RequestID middleware
+- **DB Config**: Added \pgxpool.ParseConfig\ with MaxConns, MinConns, MaxConnLifetime, MaxConnIdleTime
+
+### Phase 3A � Component Library Foundation (Frontend)
+
+- **\src/lib/categories.ts\**: Unified 3 separate family of category configs (TYPE_COLOR, CATEGORY_CONFIG, getActivityColor) into single source of truth. Exports: \getExpenseCategoryStyle\, \getTransportTypeStyle\, \getAccommodationTypeStyle\, \getActivityTypeStyle\
+- **\BackLink\**: Replaced 10+ duplicated inline SVG + Link patterns. Props: \href\, \label\ (default "Back to Home"), \ariant\ (default/subtle/primary)
+- **\EmptyState\**: Standardized 6+ ad-hoc empty states. Props: \icon\, \	itle\, \description\, \ctionLabel\, \ctionHref\, \size\ (large/compact)
+- **\TripCTAs\**: Replaced duplicated "Generate Trip with AI" + "New Trip" button pair in dashboard + trips pages
+
+### Phase 3B � Mobile-First De-Dashboarding
+
+**3B-1: Kill the Sidebar**
+- **DELETED** \Sidebar.tsx\ and \MobileNav.tsx\
+- **Created** \NavBar.tsx\ � 4-tab bottom bar (Home, My Trips, Currency, Profile), always visible all viewports, primary blue active pill
+- **Created** \/profile\ page � avatar, name, email, StatsSection, logout
+- **Simplified** \layout.tsx\ � single-column, no \h-screen overflow-hidden\, \pb-20\ for NavBar clearance
+
+**3B-2: Trip Detail Hero + Tabs**
+- **Created** \TripHero.tsx\ � full-bleed cover image with gradient overlay, title/dates/currency overlaid, edit/delete icon buttons top-right
+- **Created** \TripTabBar.tsx\ � horizontal scrollable pill tabs: Overview, Itinerary, Transport, Stay, Budget
+- **Updated** all 4 trip sub-pages: replaced sticky "Active Trip" admin header ? TripHero + TripTabBar
+- **Removed** all "Back to Trip Overview" breadcrumb links
+
+**3B-3: Feed-Style Cards**
+- **Redesigned** \TripCard.tsx\ � full-bleed (no border), large cover image (h-56), title+destination overlaid on image gradient, status chip top-right, date range + currency info bar below image, removed all inline \style={{}}\
+- **Redesigned** \TripList.tsx\ � single-column vertical stack (not auto-fill grid), uses EmptyState component, skeleton simplified
+- **Updated** \TripCard\ link ? \/trips/[id]/overview\ (previously went to itinerary)
+
+**3B-4: FAB + BottomSheet**
+- **Created** \FAB.tsx\ � floating action button (bottom-20 right-4), speed-dial with context-aware actions (home: "Plan Manually" + "Generate with AI", trip: add based on active tab)
+- **Created** \BottomSheet.tsx\ � slide-up panel with drag handle, overlay backdrop, Escape-to-close, scroll-lock
+- **Added** FAB to dashboard layout
+
+### Phase 3E � AI Summary Variation (Backend)
+
+- **5 style variants**: Eksplorer (adventure), Santai (relaxed), Budaya (culture), Kuliner (food), Fotogenik (photography) � deterministically rotated via trip ID hash
+- **50 curated local tips**: \summary/localtips.go\ � Indonesian travel tips, 2 randomly injected per summary
+- **3 emoji sets**: Rotated deterministically � Set A (?????????), B (????????), C (????????)
+- **Temperature variation**: 0.7�0.9 based on trip ID hash
+- **Trip context injection**: duration (short/long), budget level (loose/tight), itinerary density � shapes style-aware suggestions
+- **\TripID\** added to \TripContext\ model for deterministic hashing
+
+### Phase 3F � AI Trip Generation Variation (Backend)
+
+- **6 travel styles**: Backpacker, Cultural, Luxury, Nature, Foodie, Balanced � added \TravelStyle\ to \GenerateInput\
+- **Season/month awareness**: Apr-Sep = dry, Oct-Mar = rainy (Indonesia) � adjusts activity suggestions
+- **Diversity constraints**: No same activity type on 3+ consecutive days
+- **Temperature variation**: 0.7�0.9 based on input hash
+- **\Temperature\** field added to \llm.ChatRequest\
+
+### Files Changed
+
+| Layer | New | Modified | Deleted | Total |
+|-------|-----|----------|---------|-------|
+| Backend | 3 | 12 | 0 | 15 |
+| Frontend | 14 | 14 | 2 | 30 |
+| **Total** | **17** | **26** | **2** | **45** |
+
+### Verification
+- Backend: \go build ./...\ ?, \go test ./internal/...\ ? (all packages pass)
+- Frontend: \
+ext build\ ? (13 pages, 0 errors)
+
+
+## 2026-06-26 � Phase 3 Review Fixes: Overview Tab, Trip Dates, BackLink, Polish
+
+### Review Round 1
+- **TripTabBar**: Added Overview tab (was missing � user couldn't find overview page)
+- **TripCard**: Added date range (?? Aug 14 � Aug 20) and currency (?? IDR) below cover image � user couldn't tell when trips were scheduled
+- **BackLink**: Changed default label "Back to Dashboard" ? "Back to Home" (matches NavBar Home tab)
+- **TripCard link**: Changed from \/trips/[id]\ ? \/trips/[id]/overview\ (direct to overview on click)
+- **Overview page**: Added \TripTabBar\ navigation below header
+
+### Review Round 2
+- **TripTabBar**: Fixed tab wrapping � added \lex-nowrap\, reduced padding (\px-4\?\px-3\), smaller text (\	ext-sm\?\	ext-[13px]\), \whitespace-nowrap\
+- **FAB speed-dial**: Increased gap (\gap-3\?\gap-4\), larger touch targets (\px-4 py-2.5\?\px-5 py-3\), \whitespace-nowrap\, stronger shadow
+
+### Review Round 3
+- **Unused import**: Removed \Link\ from \dashboard/page.tsx\
+- **Hardcoded strings**: Replaced all remaining "? Back to dashboard" with \BackLink\ in \	rips/[id]/page.tsx\, \	rips/new/page.tsx\
+- **Orphaned tag**: Removed leftover \</Link>\ after BackLink replacement
+
+
+## 2026-06-26 � 20 Iterations: Audit, Bug Fix, Cleanup, Optimization
+
+### Frontend Audit Fixes
+- **focus-visible**: Added \ocus-visible:ring-2\ to TripCard, TripHero (edit/delete), FAB (button+speed-dial), TripTabBar tabs
+- **StatsSection**: Replaced hardcoded \#d8e2ff\, \#EDE9FE\, \#0058bc\, \
+gba(0,88,188,0.05)\ ? Tailwind \g-primary/10\, \g-stay-purple/30\, \	ext-primary\, \g-primary/5\
+- **StatsSection**: Replaced inline \style={{display:'grid',...}}\ ? \grid grid-cols-1 sm:grid-cols-2\
+- **StatsSection**: Replaced inline circle layout \style={{width:80,height:80,...}}\ ? \h-20 w-20 rounded-full\
+- **Profile**: Fixed avatar alt fallback \""\ ? \"User avatar"\
+- **Console audit**: Zero \console.log\ found � clean
+
+### Backend Audit Fixes
+- **Trip Update transaction**: \Update()\ now accepts \ctx context.Context\, wraps trip row + day regeneration in single transaction (was: trip updated outside tx ? data inconsistency risk)
+- **New \UpdateTx\**: Added in-transaction trip update to repository
+- **\InsertDays\ batch**: Changed from per-row loop ? \unnest(\::uuid[], \::date[], \::int[], \::text[])\ single multi-row INSERT
+- **Tests updated**: \usecase_test.go\ + \mocks_test.go\ for new Update signature and UpdateTx
+
+### Security + Quality Audit
+- **SQL injection**: All queries use \ parameterized placeholders ?
+- **Transaction safety**: All 5 \BeginTx\ calls have \defer Rollback\ ?
+- **Error handling**: No ignored errors in handlers ?
+- **Input validation**: Usecase-level validation on all domains ?
+
+### Deferred
+- **ErrorBoundary** component � needs design discussion
+- **overview/page.tsx** refactor (740 lines) � stable, best with dedicated session
+- **Repository ctx plumbing** (45+ \context.Background()\ calls) � systemic, incremental
+- **autogen_creator batch INSERT** � MVP trade-off, low risk for typical trip sizes
+
+### Build Verification
+- Backend: \go build ./...\ ?, \go test ./internal/...\ ?
+- Frontend: \
+ext build\ ? (13 pages)

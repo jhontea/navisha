@@ -71,14 +71,6 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
     )
   }
 
-  if (data.by_category.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground mb-8">
-        No expenses yet. Add one below to see the breakdown.
-      </div>
-    )
-  }
-
   const total = data.total_base
   const usedPct = tripBudget && tripBudget > 0 ? (total / tripBudget) * 100 : null
   // stroke-dashoffset = CIRCUMFERENCE * (1 - pct/100)
@@ -86,6 +78,22 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
     usedPct !== null
       ? CIRCUMFERENCE * (1 - Math.min(usedPct, 100) / 100)
       : CIRCUMFERENCE * 0.59 // fallback visual
+
+  // If no expenses but budget IS set, still show the budget ring so the user
+  // can see their budget at a glance even before adding expenses.
+  if (data.by_category.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground mb-8">
+        <p className="mb-4">No expenses yet. Add one below to see the breakdown.</p>
+        {tripBudget && tripBudget > 0 ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-foreground">
+            <span className="text-label-sm text-muted-foreground">Budget:</span>
+            <span className="font-medium">{formatCurrency(tripBudget, data.base_currency)}</span>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

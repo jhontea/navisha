@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 )
@@ -56,8 +56,10 @@ func (u *Usecase) GenerateDraft(ctx context.Context, userID string, in GenerateI
 	}
 
 	system, user := BuildPrompt(in)
+	temp := TemperatureForDraft(in)
 	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{
-		Model: u.model,
+		Model:       u.model,
+		Temperature: &temp,
 		Messages: []llm.Message{
 			{Role: "system", Content: system},
 			{Role: "user", Content: user},
@@ -72,22 +74,20 @@ func (u *Usecase) GenerateDraft(ctx context.Context, userID string, in GenerateI
 		},
 	})
 	if err != nil {
-		log.Printf("autogen.GenerateDraft: llm failed: %v", err)
+		slog.Error("autogen.GenerateDraft: llm failed", "error", err)
 		return nil, fmt.Errorf("%w: %w", ErrLLMUnavailable, err)
 	}
 	if content == "" {
 		return nil, fmt.Errorf("%w: empty response", ErrLLMUnavailable)
 	}
-	log.Printf("autogen.GenerateDraft: raw llm response (%d chars): %s", len(content), content)
+	slog.Debug("autogen.GenerateDraft: llm response received", "chars", len(content))
 
 	draft, err := ParseAndValidate(content, in)
 	if err != nil {
-		// ErrInvalidPrompt (ok=false / unusable) propagates as-is; a parse
-		// failure is treated as a transient LLM issue.
 		if errors.Is(err, ErrInvalidPrompt) {
 			return nil, err
 		}
-		log.Printf("autogen.GenerateDraft: parse failed: %v", err)
+		slog.Error("autogen.GenerateDraft: parse failed", "error", err)
 		return nil, fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
 	}
 	return draft, nil

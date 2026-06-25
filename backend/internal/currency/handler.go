@@ -1,11 +1,11 @@
 package currency
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/labstack/echo/v4"
 )
 
@@ -85,10 +85,7 @@ func (h *Handler) Supported(c echo.Context) error {
 }
 
 func mapErr(err error) error {
-	switch {
-	case errors.Is(err, ErrUnsupported):
-		return echo.NewHTTPError(http.StatusBadRequest, "unsupported currency")
-	default:
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
-	}
+	return apperr.MapHTTP(err,
+		apperr.HTTPMapping{Err: ErrUnsupported, Code: http.StatusBadRequest, Message: "unsupported currency"},
+	)
 }

@@ -1,7 +1,8 @@
 "use client"
 
-import { MobileNav } from "@/components/MobileNav"
-import { Sidebar } from "@/components/Sidebar"
+import { NavBar } from "@/components/NavBar"
+import { FAB } from "@/components/FAB"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { useTokenRefresh } from "@/features/auth/hooks"
 
 export default function DashboardLayout({
@@ -9,18 +10,16 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Silently refresh the access token every 10 minutes while the user is
-  // active. Stops refreshing after 30 minutes of inactivity so the token
-  // can expire naturally in the background.
   useTokenRefresh()
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto pb-16 md:pb-0">
-        <main className="min-w-0 flex-1">{children}</main>
+    <ErrorBoundary>
+      <div className="flex min-h-screen flex-col bg-background">
+        {/* pb-20 for mobile bottom nav, pt-14 for desktop top nav */}
+        <main className="animate-fade-in flex-1 pb-20 pt-0 md:pb-8 md:pt-14">{children}</main>
+        <NavBar />
+        <FAB />
       </div>
-      <MobileNav />
-    </div>
+    </ErrorBoundary>
   )
 }

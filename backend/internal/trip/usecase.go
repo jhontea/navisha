@@ -20,7 +20,7 @@ type UsecaseInterface interface {
 	ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error)
 	ListUpcoming(userID string, limit int) ([]Trip, error)
 	Get(userID, tripID string) (*Trip, []Day, error)
-	Update(userID, tripID string, in UpdateInput) (*Trip, error)
+	Update(ctx context.Context, userID, tripID string, in UpdateInput) (*Trip, error)
 	Delete(userID, tripID string) error
 	UpdateDayNotes(userID, dayID, notes string) (*Day, error)
 }
@@ -148,7 +148,7 @@ func (u *Usecase) Get(userID, tripID string) (*Trip, []Day, error) {
 
 // Update mutates trip metadata. When the date range changes, days are
 // regenerated atomically: old days deleted, new days inserted.
-func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
+func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateInput) (*Trip, error) {
 	existing, err := u.repo.FindByID(tripID)
 	if err != nil {
 		return nil, err
@@ -180,20 +180,18 @@ func (u *Usecase) Update(userID, tripID string, in UpdateInput) (*Trip, error) {
 		return u.repo.Update(existing)
 	}
 
-	// Dates changed: update trip row first, then atomically regenerate days.
-	// If day regeneration fails, the trip already has the correct new dates
-	// — the user can re-edit to retrigger the day generation.
-	updated, err := u.repo.Update(existing)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx := context.Background()
+	// Dates changed: wrap trip update + day regeneration in a single transaction
+	// so the trip row and its days stay consistent (Phase 3D / Iter 8).
 	tx, err := u.repo.BeginTx(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("trip.usecase.Update: begin tx for days: %w", err)
+		return nil, fmt.Errorf("trip.usecase.Update: begin tx: %w", err)
 	}
 	defer u.repo.Rollback(ctx, tx)
+
+	updated, err := u.repo.UpdateTx(ctx, tx, existing)
+	if err != nil {
+		return nil, fmt.Errorf("trip.usecase.Update: update trip in tx: %w", err)
+	}
 
 	if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
 		return nil, err

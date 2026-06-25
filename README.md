@@ -2,21 +2,39 @@
 
 > Plan your journey. Own your adventure.
 
-Navisha is an open-source travel itinerary app that helps you plan trips day by day, visualize routes on a map, and track your travel budget with multi-currency support.
+**Navisha** is an open-source travel itinerary app. Build day-by-day trip plans, visualize routes on a map, track expenses across currencies, and let AI help generate your itinerary — all from a clean mobile-first interface.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
+![Stack](https://img.shields.io/badge/stack-Go%20%7C%20Next.js%2014-00ADD8.svg)
+![AI](https://img.shields.io/badge/AI-DeepSeek%20%7C%20OpenRouter-8B5CF6.svg)
 
 ---
 
 ## Features
 
-- **Itinerary Builder** — Plan each day of your trip with activities. Each activity can be a location (with map pin), a note, or a to-do checklist.
-- **Map View** — Visualize your daily route on Google Maps. See all activity locations in order for each day.
-- **Transportation & Accommodation** — Log flights, buses, trains, ferries, and hotel bookings at the trip level.
-- **Budget Tracker** — Track expenses per trip with automatic currency conversion to your base currency.
-- **Currency Converter** — Quick standalone tool to convert between IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, and VND using live CurrencyFreaks rates.
-- **Google Sign-In** — Simple, secure authentication. No passwords to manage.
+### Trip Planning
+- **Day-by-day itinerary** — Add activities (location pins, notes, to-dos) to each day
+- **Map visualization** — View all activity locations in order on Google Maps per day
+- **AI trip generation** — Describe your destination and let AI build a complete itinerary with 6 travel styles (Backpacker, Cultural, Luxury, Nature, Foodie, Balanced)
+- **AI trip summary** — Get a rich markdown summary with budget breakdowns, local tips, and recommendations in 5 style variants
+
+### Logistics
+- **Transportation** — Log flights, buses, trains, ferries, and rides
+- **Accommodation** — Track hotel check-ins, addresses, and booking references
+- **Google Maps integration** — Search places with autocomplete, open locations directly in Google Maps
+
+### Budget
+- **Expense tracker** — Log expenses per trip with categories (food, transport, stay, activity, shopping, souvenir)
+- **Multi-currency** — Automatic conversion via CurrencyFreaks API (IDR, USD, JPY, SGD, KRW, EUR, GBP, AUD, MYR, THB, CNY, VND)
+- **Budget ring** — Visual budget health with percentage ring and category distribution bar
+- **Currency converter** — Standalone quick converter tool
+
+### Platform
+- **Google Sign-In** — Simple OAuth 2.0 authentication, no passwords
+- **Mobile-first design** — Responsive layout with bottom tab nav on mobile, top header on desktop
+- **Rate limiting** — Redis-backed sliding window rate limiter (100/min general, 5/min AI)
+- **Structured logging** — JSON slog output for production observability
 
 ---
 
@@ -24,12 +42,22 @@ Navisha is an open-source travel itinerary app that helps you plan trips day by 
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Go, Echo, PostgreSQL 16, Redis 7 |
+| Backend | Go 1.22+, Echo v4, pgx v5 (PostgreSQL 16), Redis 7 |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI) |
+| AI / LLM | DeepSeek V4, OpenRouter (multi-provider fallback) |
 | Maps | Google Maps JS API + Places API |
-| Currency | CurrencyFreaks API (USD-based, free tier w/ key) |
+| Currency | CurrencyFreaks API |
 | Auth | Google OAuth 2.0 + JWT (httpOnly cookie) |
-| Infra (dev) | Docker Compose |
+| Infra (dev) | Docker Compose (PostgreSQL + Redis) |
+| CI/CD | GitHub Actions → VPS via SSH |
+
+---
+
+## Screenshots
+
+<p align="center">
+  <em>Screenshots coming soon — mobile-first trip planning, AI itinerary generation, map view, and budget tracking.</em>
+</p>
 
 ---
 
@@ -108,15 +136,37 @@ npm run dev
 
 ```
 navisha/
-├── backend/          # Go API server (Echo, Clean Architecture)
-├── frontend/         # Next.js web app
-├── docs/             # Architecture, API reference, feature specs
-└── docker-compose.yml
+├── backend/              # Go API server (Clean Architecture)
+│   ├── cmd/server/       # Main server entrypoint
+│   ├── cmd/migrate/      # Standalone migration CLI
+│   ├── internal/         # Domain packages (trip, activity, expense, etc.)
+│   ├── migrations/       # Numbered SQL migration files
+│   ├── pkg/              # Shared packages (jwt, llm, currency, oauth)
+│   └── config/           # Typed config struct + YAML
+├── frontend/             # Next.js 14 web app
+│   ├── src/app/          # App Router pages
+│   ├── src/features/     # Feature-slice architecture
+│   ├── src/components/   # Shared UI components
+│   └── src/lib/          # Utilities, API client, categories
+├── docs/                 # Architecture, API reference, feature specs
+├── deploy/               # Nginx config for production
+├── docker-compose.yml    # Dev infrastructure (PostgreSQL + Redis)
+└── docker-compose.prod.yml
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for system design and decisions.
+- [Architecture](docs/ARCHITECTURE.md) — System design and decisions
+- [API Reference](docs/API.md) — Full REST API documentation
+- [Features](docs/FEATURES.md) — Feature specifications and history
 
-See [docs/API.md](docs/API.md) for full API reference.
+## Links
+
+- [Privacy Policy](https://navisha.app/privacy)
+- [Terms of Service](https://navisha.app/terms)
+- [Contact](https://navisha.app/contact)
+
+## License
+
+MIT © 2025–2026 Navisha
 
 ---
 

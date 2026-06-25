@@ -35,6 +35,8 @@ type Message struct {
 type ChatRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
+	// Temperature controls randomness (0.0–2.0). Omitempty so 0 means "not set".
+	Temperature *float64 `json:"temperature,omitempty"`
 	// ResponseFormat optionally constrains the model output (e.g. JSON schema).
 	// When nil it is omitted entirely.
 	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`

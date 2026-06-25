@@ -2,7 +2,7 @@ package autogen
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -115,7 +115,7 @@ func mapErr(err error) error {
 			"message": "Gagal membuat itinerary saat ini. Silakan coba lagi sebentar lagi.",
 		})
 	default:
-		log.Printf("autogen: internal error: %v", err)
+		slog.Error("autogen: internal error", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
 }
