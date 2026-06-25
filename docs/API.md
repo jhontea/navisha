@@ -390,6 +390,7 @@ aggregates trip info, itinerary, stays, transport, and budget into a friendly na
 | DELETE | `/trips/:id/summary` | Yes | Clear cached summary |
 
 **Summary response:**
+
 ```json
 {
   "id": "uuid",
@@ -416,7 +417,75 @@ the window, `POST` returns `429 Too Many Requests`:
 
 ---
 
+## AI Auto-Generate Trip (F5)
+
+Generate a structured itinerary draft from a short prompt, then persist it after the
+user approves. Backed by OpenRouter (JSON schema response). Max 10 days per generate.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips/generate` | Yes | Generate a trip draft (does NOT persist) |
+| POST | `/trips/from-draft` | Yes | Persist an approved draft (trip + days + activities) |
+
+**POST /trips/generate request:**
+```json
+{
+  "destination": "Tokyo, Jepang",
+  "description": "suka anime dan kuliner",
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-05",
+  "base_currency": "IDR"
+}
+```
+
+**POST /trips/generate response (200):**
+```json
+{
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-05",
+  "draft": {
+    "title": "Liburan Tokyo",
+    "description": "...",
+    "base_currency": "IDR",
+    "budget": 5000000,
+    "days": [
+      {
+        "day_number": 1,
+        "date": "2026-07-01",
+        "activities": [
+          {
+            "type": "location",
+            "title": "Shibuya Crossing",
+            "start_time": "09:00",
+            "end_time": "11:00",
+            "location_name": "Shibuya Crossing",
+            "lat": 35.6595,
+            "lng": 139.7005,
+            "notes": ""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Errors:**
+- `422 INVALID_INPUT` — input kosong / garbage / range > 10 hari.
+- `422 INVALID_PROMPT` — model menilai input bukan permintaan perjalanan valid (`ok: false`).
+- `503 LLM_UNAVAILABLE` — LLM timeout / error transien; coba lagi.
+
+**POST /trips/from-draft request:** `{ start_date, end_date, draft }` (draft = objek di atas).
+
+**POST /trips/from-draft response (201):**
+```json
+{ "trip_id": "uuid" }
+```
+
+---
+
 ## Error Format
+
 
 
 ```json

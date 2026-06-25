@@ -70,3 +70,54 @@ export interface Accommodation {
   confirmation_number: string
   notes: string
 }
+
+// --- Auto-generate (F5) ---
+
+export interface GenerateTripInput {
+  destination: string
+  description?: string
+  start_date: string // YYYY-MM-DD
+  end_date: string
+  base_currency: string
+}
+
+export interface ActivityDraft {
+  type: "location" | "note"
+  title: string
+  start_time: string
+  end_time: string
+  location_name: string
+  address: string
+  lat: number | null
+  lng: number | null
+  google_place_id: string
+  category: string // kuliner | wisata alam | budaya | belanja | transportasi | akomodasi
+  notes: string
+}
+
+export interface DayDraft {
+  day_number: number
+  date: string
+  theme: string
+  activities: ActivityDraft[]
+}
+
+export interface TripDraft {
+  title: string
+  destination: string
+  total_days: number
+  travel_style: string
+  summary: string
+  base_currency: string
+  budget: number
+  days: DayDraft[]
+  tips: string[]
+}
+
+// Response envelope from POST /trips/generate
+export interface GenerateTripResponse {
+  start_date: string
+  end_date: string
+  draft: TripDraft
+}
+

@@ -2,11 +2,15 @@ import { api } from "@/lib/api"
 import type {
   CreateTripInput,
   Day,
+  GenerateTripInput,
+  GenerateTripResponse,
   Trip,
   TripDetail,
+  TripDraft,
   TripListResponse,
   UpdateTripInput,
 } from "./types"
+
 
 export const tripApi = {
   listUpcoming: (limit = 6) =>
@@ -39,4 +43,12 @@ export const tripApi = {
 
   updateDayNotes: (dayId: string, notes: string) =>
     api.put<Day>(`/days/${dayId}/notes`, { notes }),
+
+  // F5 — Auto-generate
+  generate: (input: GenerateTripInput) =>
+    api.post<GenerateTripResponse>("/trips/generate", input),
+
+  createFromDraft: (params: { start_date: string; end_date: string; draft: TripDraft }) =>
+    api.post<{ trip_id: string }>("/trips/from-draft", params),
 }
+

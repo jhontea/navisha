@@ -68,6 +68,20 @@
 - [x] Fallback: opens generic Google Maps when no valid coordinates exist
 - [x] Pure frontend — no backend changes required
 
+### Auto-Generate Trip from Prompt (OpenRouter)
+- [x] User provides destination, date range, description, and currency
+- [x] Backend calls OpenRouter LLM with structured JSON schema response format
+- [x] AI generates complete trip draft: title, summary, travel style, tips, daily activities
+- [x] Max 10 days enforced (backend + frontend) to limit LLM cost/generation time
+- [x] Max 6 activities per day enforced
+- [x] Activity types: `location` and `note` only (unsupported types dropped)
+- [x] Category sanitization: AI-provided categories mapped to valid set (kuliner, belanja, alam, budaya, hiburan, olahraga, transportasi, akomodasi, lainnya)
+- [x] AI-provided lat/lng stripped — frontend resolves via Google Places API with destination-restricted bias (~50km radius)
+- [x] `ok: false` guard: AI can reject unclear/insufficient prompts with a reason
+- [x] Frontend: generate page with form → loading state → DraftPreview → "Create Trip" button
+- [x] Backend: `POST /api/v1/trips/generate` (draft) + `POST /api/v1/trips/from-draft` (persist)
+- [x] TripDraft includes: destination, travel_style, summary, tips[], per-day theme, per-activity category
+- [x] 14 unit tests covering validation, parsing, trimming, prompt building, and schema shape
 
 ### Collaboration
 

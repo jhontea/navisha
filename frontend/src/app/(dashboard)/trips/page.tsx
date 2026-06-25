@@ -59,14 +59,24 @@ export default function TripsPage() {
             Your complete travel history
           </p>
         </div>
-        <Link
-          href="/trips/new"
-          className="flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98] self-start md:self-auto"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
-          New Trip
-        </Link>
+        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+          <Link
+            href="/trips/generate"
+            className="flex items-center justify-center gap-2 border border-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>auto_fix_high</span>
+            Generate Trip with AI
+          </Link>
+          <Link
+            href="/trips/new"
+            className="flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+            New Trip
+          </Link>
+        </div>
       </header>
+
 
       {/* Filter bar */}
       <div className="mb-8 flex flex-wrap items-end gap-4 p-5 rounded-xl bg-white border border-outline-variant shadow-sm">

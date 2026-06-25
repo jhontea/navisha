@@ -34,10 +34,13 @@ export function MobileNav() {
   const { mutate: logout, isPending: loggingOut } = useLogout()
   const [profileOpen, setProfileOpen] = useState(false)
 
-  // Detect trip context
+  // Detect trip context. Exclude reserved sub-routes ("new", "generate")
+  // that are not real trip IDs.
   const tripMatch = pathname.match(/^\/trips\/([^/]+)/)
-  const tripId = tripMatch ? tripMatch[1] : null
-  const isOnTripPage = !!tripId && tripId !== "new"
+  const RESERVED_TRIP_ROUTES = ["new", "generate"]
+  const tripId =
+    tripMatch && !RESERVED_TRIP_ROUTES.includes(tripMatch[1]) ? tripMatch[1] : null
+  const isOnTripPage = !!tripId
 
   return (
     <>

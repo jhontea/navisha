@@ -7,7 +7,13 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 import { tripApi } from "../api"
-import type { CreateTripInput, UpdateTripInput } from "../types"
+import type {
+  CreateTripInput,
+  GenerateTripInput,
+  TripDraft,
+  UpdateTripInput,
+} from "../types"
+
 
 const LIMIT = 20
 
@@ -78,7 +84,29 @@ export function useDeleteTrip() {
   })
 }
 
+// F5 — Auto-generate trip from a short prompt.
+// useGenerateTripDraft calls the LLM (blocking, ~10-25s) and returns a draft.
+// It does NOT persist; the user reviews the draft before committing.
+export function useGenerateTripDraft() {
+  return useMutation({
+    mutationFn: (input: GenerateTripInput) => tripApi.generate(input),
+  })
+}
+
+// useCreateTripFromDraft persists an approved draft (trip + days + activities).
+export function useCreateTripFromDraft() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (params: { start_date: string; end_date: string; draft: TripDraft }) =>
+      tripApi.createFromDraft(params),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips"] })
+    },
+  })
+}
+
 // Invalidates the parent trip detail so the inline day notes value stays
+
 // in sync with what we just persisted. tripId comes from the page that owns
 // the DayPanel.
 export function useUpdateDayNotes(tripId: string) {

@@ -12,8 +12,11 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/config"
 	"github.com/ahmadhafizh/navisha/backend/internal/accommodation"
 	"github.com/ahmadhafizh/navisha/backend/internal/activity"
+	"github.com/ahmadhafizh/navisha/backend/internal/autogen"
 	"github.com/ahmadhafizh/navisha/backend/internal/calendarexport"
+
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
+
 	"github.com/ahmadhafizh/navisha/backend/internal/expense"
 	"github.com/ahmadhafizh/navisha/backend/internal/integration"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
@@ -129,6 +132,12 @@ func main() {
 
 	summaryHandler := summary.NewHandler(summaryUsecase)
 
+	// Auto-generate trip domain (F5). Reuses the OpenRouter client and an
+	// integration adapter that persists the approved draft via trip + activity.
+	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase)
+	autogenUsecase := autogen.NewUsecase(openrouterClient, autogenCreator, cfg.OpenRouter.Model)
+	autogenHandler := autogen.NewHandler(autogenUsecase)
+
 	// Calendar export domain (F4). Reuses the cross-domain provider (for trip
 	// data + ownership) and the user usecase (for stored Google tokens).
 	// Uses the Google Calendar REST API via the OAuth config.
@@ -176,6 +185,7 @@ func main() {
 	accommodationHandler.RegisterRoutes(api, authMiddleware)
 	summaryHandler.RegisterRoutes(api, authMiddleware)
 	calendarExportHandler.RegisterRoutes(api, authMiddleware)
+	autogenHandler.RegisterRoutes(api, authMiddleware)
 
 	// Graceful shutdown
 	go func() {
