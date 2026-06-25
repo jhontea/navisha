@@ -96,7 +96,6 @@ export function AccommodationForm({
     handleSubmit,
     control,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -115,9 +114,6 @@ export function AccommodationForm({
       currency: defaultCurrency,
     },
   })
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _type = watch("accommodation_type")
 
   const submit = async (v: FormValues) => {
     const entity: CreateAccommodationInput = {

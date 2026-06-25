@@ -2,18 +2,7 @@
 
 import { useTrips } from "../hooks/useTrips"
 import { tripStatus } from "../lib/status"
-
-function MaterialIcon({ name, size = 24, className = "" }: { name: string; size?: number; className?: string }) {
-  return (
-    <span
-      className={`material-symbols-outlined ${className}`}
-      style={{ fontSize: size }}
-      aria-hidden="true"
-    >
-      {name}
-    </span>
-  )
-}
+import { MaterialIcon } from "@/components/MaterialIcon"
 
 export function StatsSection() {
   const { data } = useTrips()

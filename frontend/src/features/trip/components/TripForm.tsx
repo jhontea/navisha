@@ -6,33 +6,11 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
+import { getCurrencyLabel } from "@/lib/currency"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import type { CreateTripInput, Trip } from "../types"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-
-
-// Fallback names for when backend doesn't return name field yet
-const CURRENCY_NAMES: Record<string, string> = {
-  IDR: "Indonesian Rupiah",
-  USD: "US Dollar",
-  JPY: "Japanese Yen",
-  SGD: "Singapore Dollar",
-  KRW: "South Korean Won",
-  EUR: "Euro",
-  GBP: "British Pound",
-  AUD: "Australian Dollar",
-  MYR: "Malaysian Ringgit",
-  THB: "Thai Baht",
-  CNY: "Chinese Yuan",
-  VND: "Vietnamese Dong",
-}
-
-function getCurrencyLabel(code: string, name?: string): string {
-  const resolvedName = name || CURRENCY_NAMES[code] || code
-  return `${code} - ${resolvedName}`
-}
 
 const schema = z
   .object({

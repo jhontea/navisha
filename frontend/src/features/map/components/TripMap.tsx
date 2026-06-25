@@ -373,15 +373,15 @@ function GeocodingLayer({
     const run = async () => {
       // Wait (max ~5s) for the Geocoder constructor to become available.
       let attempts = 0
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
+      while (attempts <= 50 && !cancelled) {
         const G = window.google?.maps
         if (G?.Geocoder) break
-        if (cancelled || attempts++ > 50) {
-          setLoading(false)
-          return
-        }
+        attempts++
         await new Promise((r) => setTimeout(r, 100))
+      }
+      if (cancelled || attempts > 50) {
+        setLoading(false)
+        return
       }
 
       const geocoder = new window.google.maps.Geocoder()

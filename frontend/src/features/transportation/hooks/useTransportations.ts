@@ -27,7 +27,12 @@ export function useCreateTransportation(tripId: string) {
   return useMutation({
     mutationFn: (input: CreateTransportationInput) =>
       transportationApi.create(tripId, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(tripId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: listKey(tripId) })
+      // Backend creates a linked expense when cost is provided — keep budget in sync
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId] })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId] })
+    },
   })
 }
 
