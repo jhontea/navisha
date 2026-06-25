@@ -4,6 +4,55 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-25 — Rich AI Summary Rendering (react-markdown + Tailwind Typography)
+
+Replaced custom regex markdown with `react-markdown` + `remark-gfm` + `@tailwindcss/typography`. AI trip summaries now render tables, ordered lists, links, code blocks, blockquotes, and properly styled headings. Prompt updated to encourage richer output (emoji-prefixed sections, budget tables).
+
+### Changes
+
+**Frontend — `TripSummaryCard.tsx`:**
+- Replaced `formatSimpleMarkdown()` regex (6 patterns) with `<ReactMarkdown>` + `remarkGfm` plugin
+- Custom component mapping: styled `<table>/<thead>/<th>/<td>` with border + muted bg, `<a>` with `ExternalLink` icon + `target="_blank"`, `<blockquote>` with left border + italic, `<code>` inline/pre variants
+- No more `dangerouslySetInnerHTML` — react-markdown is safe by default
+- Removed unused `useMemo` import
+
+**Frontend — `tailwind.config.ts`:**
+- Added `@tailwindcss/typography` plugin — `prose` classes now actually produce CSS
+- Import: `import typography from "@tailwindcss/typography"`; `plugins: [typography]`
+
+**Backend — `summary/prompt.go`:**
+- Added **FORMAT OUTPUT** section: emoji-prefixed `##` headings, **budget tables** with markdown format, bold for keywords, blockquote for important notes
+- "Rekomendasi Aktivitas" heading now: `## 💡 Rekomendasi Aktivitas`
+- Removed "(3-5 paragraf)" constraint to allow richer structure
+
+**Packages installed:**
+- `react-markdown` — React component to render markdown
+- `remark-gfm` — GitHub Flavored Markdown (tables, strikethrough, task lists)
+- `@tailwindcss/typography` — prose styling plugin
+
+### Verification
+- `go build ./...` + `go test ./internal/summary/...` — PASS
+- `npx tsc --noEmit` — clean, zero errors
+
+### What's now supported in summaries
+| Feature | Before | After |
+|---|---|---|
+| Tables | ❌ | ✅ styled with border/muted header |
+| Ordered lists | ❌ | ✅ `1. item` |
+| Links | ❌ | ✅ with ExternalLink icon |
+| Blockquotes | ❌ | ✅ left border + italic |
+| Code (inline/pre) | ❌ | ✅ styled monospace |
+| Bold/Emphasis | ✅ regex | ✅ react-markdown |
+| Headings #/##/### | ✅ regex | ✅ Tailwind prose |
+| Safety | ❌ dangerouslySetInnerHTML | ✅ react-markdown (safe) |
+
+### Files
+- `frontend/src/features/summary/components/TripSummaryCard.tsx`
+- `frontend/tailwind.config.ts`
+- `backend/internal/summary/prompt.go`
+
+---
+
 ## 2026-06-25 — Remove Calendar Export Feature + Calendar OAuth Consent
 
 Removed the entire Calendar Export feature (F4) — backend domain, Google Calendar client, OAuth token persistence, frontend UI, and `calendar.events` scope. Google Sign-in now only requests `openid email profile`.

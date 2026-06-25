@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
-import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2 } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   useTripSummary,
@@ -12,15 +13,87 @@ import { GeneratingIndicator } from "./GeneratingIndicator"
 import { ShimmerOverlay } from "./ShimmerOverlay"
 import type { TripSummary } from "../types"
 
-function formatSimpleMarkdown(text: string) {
-  return text
-    .replace(/^### (.*$)/gim, "<h3 class='text-lg font-semibold mt-4 mb-2'>$1</h3>")
-    .replace(/^## (.*$)/gim, "<h2 class='text-xl font-semibold mt-5 mb-3'>$1</h2>")
-    .replace(/^# (.*$)/gim, "<h1 class='text-2xl font-bold mt-6 mb-4'>$1</h1>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/^- (.*$)/gim, "<li class='ml-5 list-disc'>$1</li>")
-    .replace(/\n/g, "<br />")
+// Custom component mapping for rich rendering
+const markdownComponents: Record<string, any> = {
+  // Style tables with Tailwind
+  table: ({ children }: { children: React.ReactNode }) => (
+    <div className="my-4 overflow-x-auto rounded-lg border border-border">
+      <table className="min-w-full text-sm">{children}</table>
+    </div>
+  ),
+  thead: ({ children }: { children: React.ReactNode }) => (
+    <thead className="bg-muted/50">{children}</thead>
+  ),
+  th: ({ children }: { children: React.ReactNode }) => (
+    <th className="px-4 py-2 text-left font-semibold text-foreground">{children}</th>
+  ),
+  td: ({ children }: { children: React.ReactNode }) => (
+    <td className="border-t border-border px-4 py-2 text-foreground/80">{children}</td>
+  ),
+  // External links open in new tab
+  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary underline underline-offset-2 hover:text-primary/80 inline-flex items-center gap-0.5"
+    >
+      {children}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  ),
+  // Styled headings
+  h1: ({ children }: { children: React.ReactNode }) => (
+    <h1 className="mt-6 mb-3 text-2xl font-bold text-foreground">{children}</h1>
+  ),
+  h2: ({ children }: { children: React.ReactNode }) => (
+    <h2 className="mt-5 mb-3 text-xl font-semibold text-foreground">{children}</h2>
+  ),
+  h3: ({ children }: { children: React.ReactNode }) => (
+    <h3 className="mt-4 mb-2 text-lg font-semibold text-foreground">{children}</h3>
+  ),
+  // Styled paragraphs
+  p: ({ children }: { children: React.ReactNode }) => (
+    <p className="my-2 leading-relaxed text-foreground/85">{children}</p>
+  ),
+  // Styled lists
+  ul: ({ children }: { children: React.ReactNode }) => (
+    <ul className="my-2 ml-5 list-disc space-y-1 text-foreground/85">{children}</ul>
+  ),
+  ol: ({ children }: { children: React.ReactNode }) => (
+    <ol className="my-2 ml-5 list-decimal space-y-1 text-foreground/85">{children}</ol>
+  ),
+  li: ({ children }: { children: React.ReactNode }) => (
+    <li className="pl-1">{children}</li>
+  ),
+  // Bold and emphasis
+  strong: ({ children }: { children: React.ReactNode }) => (
+    <strong className="font-semibold text-foreground">{children}</strong>
+  ),
+  // Blockquote
+  blockquote: ({ children }: { children: React.ReactNode }) => (
+    <blockquote className="my-3 border-l-4 border-primary/30 pl-4 italic text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  // Horizontal rule
+  hr: () => <hr className="my-6 border-border" />,
+  // Inline code
+  code: ({ children, className }: { children: React.ReactNode; className?: string }) => {
+    const isInline = !className
+    if (isInline) {
+      return (
+        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground/85">
+          {children}
+        </code>
+      )
+    }
+    return (
+      <pre className="my-3 overflow-x-auto rounded-lg bg-muted/50 p-4 text-sm font-mono">
+        <code className={className}>{children}</code>
+      </pre>
+    )
+  },
 }
 
 interface TripSummaryCardProps {
@@ -29,7 +102,6 @@ interface TripSummaryCardProps {
 
 function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: string }) {
   const deleteSummary = useDeleteSummary(tripId)
-  const html = useMemo(() => formatSimpleMarkdown(summary.content), [summary.content])
 
   return (
     <div className="space-y-4">
@@ -53,10 +125,14 @@ function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: str
           </Button>
         </div>
       </div>
-      <div
-        className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:leading-relaxed">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={markdownComponents}
+        >
+          {summary.content}
+        </ReactMarkdown>
+      </div>
     </div>
   )
 }
