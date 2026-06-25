@@ -4,6 +4,44 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-25 — Review Fixes: Responsive Forms, Loading UX, Casual Summary Language
+
+Six review items addressed from user feedback.
+
+### Fix 1 — Wizard date inputs responsive
+- `GenerateChatWizard.tsx`: date step grid: `style={{ gridTemplateColumns: "1fr 1fr" }}` → `className="grid grid-cols-1 sm:grid-cols-2 gap-3"`
+- Date inputs now stack vertically on mobile
+
+### Fix 2 — TripForm date range responsive
+- `TripForm.tsx`: date range grid: inline style → `className="grid grid-cols-1 sm:grid-cols-2 gap-4"`
+
+### Fix 3 — Simpler loading skeleton for AI trip generation
+- `GeneratingItinerarySkeleton.tsx`: removed heavy DaySkeleton with rotating messages, DaySkeleton cards, useEffect timer
+- Replaced with: single spark icon + "AI sedang menyusun itinerary-mu" message + 2 simple shimmer cards
+- Removed ~60 lines of complex skeleton code
+
+### Fix 4 — Summary card responsive labels
+- `TripSummaryCard.tsx`: timestamp label added `text-[12px] sm:text-sm` responsive sizing
+- Fixed `Components` type to use `(props) =>` pattern compatible with react-markdown's `Components` type
+
+### Fix 5 — Casual Bahasa Indonesia summary prompt
+- `summary/prompt.go`: entire system prompt rewritten from formal ("Kamu adalah asisten perencana...") to casual ("Halo! Kamu asisten travel yang asik dan santai...")
+- Language style: "lo", "gue", "ngobrol", "bakal", "udah", "banget", "kayak"
+- Section names updated: "💰 Budget", "💡 Tips Jalan-Jalan"
+
+### Verify
+- `go build ./...` + `go test ./internal/summary/...` — PASS
+- `npx tsc --noEmit` — clean
+
+### Files
+- `frontend/src/features/trip/components/GenerateChatWizard.tsx`
+- `frontend/src/features/trip/components/TripForm.tsx`
+- `frontend/src/features/trip/components/GeneratingItinerarySkeleton.tsx`
+- `frontend/src/features/summary/components/TripSummaryCard.tsx`
+- `backend/internal/summary/prompt.go`
+
+---
+
 ## 2026-06-25 — Rich AI Summary Rendering (react-markdown + Tailwind Typography)
 
 Replaced custom regex markdown with `react-markdown` + `remark-gfm` + `@tailwindcss/typography`. AI trip summaries now render tables, ordered lists, links, code blocks, blockquotes, and properly styled headings. Prompt updated to encourage richer output (emoji-prefixed sections, budget tables).

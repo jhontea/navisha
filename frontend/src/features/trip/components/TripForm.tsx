@@ -202,38 +202,39 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
 
 
-      {/* Date Range — side by side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="space-y-2">
-          <label className="font-label-md text-label-md text-on-surface" htmlFor="start-date">
-            Start Date
-          </label>
+      {/* Date Range — unified single field */}
+      <div className="space-y-2">
+        <label className="font-label-md text-label-md text-on-surface">
+          Date Range
+        </label>
+        <div className={`flex rounded-lg border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-surface-container-lowest ${errors.start_date || errors.end_date ? "border-error" : "border-outline-variant"}`}>
           <input
-            id="start-date"
             type="date"
-            className={`${inputBase} ${errors.start_date ? "border-error" : "border-outline-variant"}`}
+            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
             onClick={openPicker}
-            {...register("start_date")}
+            {...register("start_date", {
+              onChange: () => {
+                setTimeout(() => {
+                  const el = document.getElementById("end-date") as HTMLInputElement | null
+                  el?.showPicker?.()
+                }, 100)
+              },
+            })}
           />
-          {errors.start_date && (
-            <p className="text-xs text-error">{errors.start_date.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <label className="font-label-md text-label-md text-on-surface" htmlFor="end-date">
-            End Date
-          </label>
+          <span className="flex items-center text-on-surface-variant/30 text-sm px-0.5 select-none">—</span>
           <input
             id="end-date"
             type="date"
-            className={`${inputBase} ${errors.end_date ? "border-error" : "border-outline-variant"}`}
+            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
             onClick={openPicker}
             {...register("end_date")}
           />
-          {errors.end_date && (
-            <p className="text-xs text-error">{errors.end_date.message}</p>
-          )}
         </div>
+        {(errors.start_date || errors.end_date) && (
+          <p className="text-xs text-error">
+            {errors.start_date?.message || errors.end_date?.message || "Please select both dates"}
+          </p>
+        )}
       </div>
 
       {/* Budget (optional) */}
