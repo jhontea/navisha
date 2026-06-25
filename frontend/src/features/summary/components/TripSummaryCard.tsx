@@ -1,6 +1,7 @@
 "use client"
 
 import ReactMarkdown from "react-markdown"
+import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,7 +15,7 @@ import { ShimmerOverlay } from "./ShimmerOverlay"
 import type { TripSummary } from "../types"
 
 // Custom component mapping for rich rendering
-const markdownComponents: Record<string, any> = {
+const markdownComponents: Components = {
   // Style tables with Tailwind
   table: ({ children }: { children: React.ReactNode }) => (
     <div className="my-4 overflow-x-auto rounded-lg border border-border">
