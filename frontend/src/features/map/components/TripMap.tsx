@@ -375,7 +375,7 @@ function GeocodingLayer({
       let attempts = 0
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        const G = (window as any).google?.maps
+        const G = window.google?.maps
         if (G?.Geocoder) break
         if (cancelled || attempts++ > 50) {
           setLoading(false)
@@ -384,7 +384,7 @@ function GeocodingLayer({
         await new Promise((r) => setTimeout(r, 100))
       }
 
-      const geocoder = new (window as any).google.maps.Geocoder()
+      const geocoder = new window.google.maps.Geocoder()
 
       // Geocode ALL pending points concurrently for speed.
       const results = await Promise.allSettled(
