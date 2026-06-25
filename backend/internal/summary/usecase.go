@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/openrouter"
+	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 )
 
 // ErrForbidden is returned when the user does not own the trip.
@@ -37,9 +37,9 @@ type TripDataProvider interface {
 	GetTripContext(ctx context.Context, userID, tripID string) (*TripContext, error)
 }
 
-// LLMClient is the subset of the OpenRouter client this usecase needs.
+// LLMClient is the subset of the LLM client this usecase needs.
 type LLMClient interface {
-	ChatCompletion(ctx context.Context, req openrouter.ChatRequest) (string, error)
+	ChatCompletion(ctx context.Context, req llm.ChatRequest) (string, error)
 }
 
 type UsecaseInterface interface {
@@ -93,9 +93,9 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 	}
 
 	system, user := BuildPrompt(*tripCtx)
-	content, err := u.llm.ChatCompletion(ctx, openrouter.ChatRequest{
+	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{
 		Model: u.model,
-		Messages: []openrouter.Message{
+		Messages: []llm.Message{
 			{Role: "system", Content: system},
 			{Role: "user", Content: user},
 		},

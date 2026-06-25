@@ -33,7 +33,7 @@ var _ autogen.TripCreator = (*AutogenCreator)(nil)
 // then added per day; a failure mid-way leaves the trip created with partial
 // activities. For MVP this is acceptable (user can edit), and the trip itself
 // is always consistent.
-func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, draft autogen.TripDraft, startDate, endDate string) (string, error) {
+func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, draft autogen.TripDraft, startDate, endDate, coverImageURL, description string) (string, error) {
 	start, err := time.Parse("2006-01-02", startDate)
 	if err != nil {
 		return "", fmt.Errorf("autogen.CreateFromDraft: parse start date: %w", err)
@@ -44,12 +44,14 @@ func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, dra
 	}
 
 	t, err := c.trips.Create(ctx, userID, trip.CreateInput{
-		Title:        draft.Title,
-		Description:  draft.Summary,
-		StartDate:    start,
-		EndDate:      end,
-		BaseCurrency: draft.BaseCurrency,
-		Budget:       draft.Budget,
+		Title:         draft.Title,
+		Description:   description,
+		Notes:         draft.Summary,
+		StartDate:     start,
+		EndDate:       end,
+		BaseCurrency:  draft.BaseCurrency,
+		Budget:        draft.Budget,
+		CoverImageURL: coverImageURL,
 	})
 	if err != nil {
 		return "", fmt.Errorf("autogen.CreateFromDraft: create trip: %w", err)

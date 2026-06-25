@@ -60,9 +60,11 @@ func (h *Handler) Generate(c echo.Context) error {
 }
 
 type fromDraftRequest struct {
-	StartDate string    `json:"start_date"`
-	EndDate   string    `json:"end_date"`
-	Draft     TripDraft `json:"draft"`
+	StartDate     string    `json:"start_date"`
+	EndDate       string    `json:"end_date"`
+	Draft         TripDraft `json:"draft"`
+	CoverImageURL string    `json:"cover_image_url"`
+	Description   string    `json:"description"`
 }
 
 func (h *Handler) CreateFromDraft(c echo.Context) error {
@@ -78,7 +80,7 @@ func (h *Handler) CreateFromDraft(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
 	}
 
-	tripID, err := h.usecase.CreateFromDraft(c.Request().Context(), userID, req.Draft, req.StartDate, req.EndDate)
+	tripID, err := h.usecase.CreateFromDraft(c.Request().Context(), userID, req.Draft, req.StartDate, req.EndDate, req.CoverImageURL, req.Description)
 	if err != nil {
 		return mapErr(err)
 	}

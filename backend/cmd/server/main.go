@@ -27,8 +27,8 @@ import (
 	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
 	"github.com/ahmadhafizh/navisha/backend/pkg/googlecalendar"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
-	"github.com/ahmadhafizh/navisha/backend/pkg/openrouter"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -117,25 +117,29 @@ func main() {
 	accommodationUsecase := accommodation.NewUsecase(accommodationRepo, expenseUsecase)
 	accommodationHandler := accommodation.NewHandler(accommodationUsecase)
 
-	// Summary domain (AI trip summary via OpenRouter).
-	// Cross-domain data assembled by an adapter in internal/integration so the
-	// individual domain packages stay isolated.
-	openrouterClient := openrouter.NewClient(cfg.OpenRouter.APIKey, cfg.OpenRouter.Model).
-		WithTimeout(time.Duration(cfg.OpenRouter.TimeoutSeconds) * time.Second)
+	// ── LLM Client (provider-agnostic: DeepSeek or OpenRouter) ──
+	// Replaces the old openrouter.Client. Provider is selected via LLM_PROVIDER
+	// env var or config.yaml. Falls back to legacy OPENROUTER_* vars when unset.
+	llmClient := llm.NewClient(
+		cfg.EffectiveProvider(),
+		cfg.ActiveAPIKey(),
+		cfg.ActiveModel(),
+		cfg.ActiveBaseURL(),
+	).WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second)
 
 	summaryRepo := summary.NewPostgresRepository(db)
 	tripContextProvider := integration.NewTripContextProvider(
 		tripUsecase, activityUsecase, accommodationUsecase, transportationUsecase, expenseUsecase,
 	)
-	summaryUsecase := summary.NewUsecase(summaryRepo, openrouterClient, tripContextProvider, cfg.OpenRouter.Model).
-		WithRateLimitWindow(time.Duration(cfg.OpenRouter.SummaryRateLimitSeconds) * time.Second)
+	summaryUsecase := summary.NewUsecase(summaryRepo, llmClient, tripContextProvider, cfg.ActiveModel()).
+		WithRateLimitWindow(time.Duration(cfg.LLM.SummaryRateLimitSeconds) * time.Second)
 
 	summaryHandler := summary.NewHandler(summaryUsecase)
 
-	// Auto-generate trip domain (F5). Reuses the OpenRouter client and an
+	// Auto-generate trip domain (F5). Reuses the LLM client and an
 	// integration adapter that persists the approved draft via trip + activity.
 	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase)
-	autogenUsecase := autogen.NewUsecase(openrouterClient, autogenCreator, cfg.OpenRouter.Model)
+	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel())
 	autogenHandler := autogen.NewHandler(autogenUsecase)
 
 	// Calendar export domain (F4). Reuses the cross-domain provider (for trip

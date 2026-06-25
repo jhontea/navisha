@@ -6,28 +6,28 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/openrouter"
+	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 )
 
 // ErrLLMUnavailable signals a transient LLM failure (network, timeout, decode,
 // empty response). Maps to HTTP 503 so the frontend shows "try again".
 var ErrLLMUnavailable = errors.New("trip generation is temporarily unavailable")
 
-// LLMClient is the subset of the OpenRouter client this usecase needs.
+// LLMClient is the subset of the LLM client this usecase needs.
 type LLMClient interface {
-	ChatCompletion(ctx context.Context, req openrouter.ChatRequest) (string, error)
+	ChatCompletion(ctx context.Context, req llm.ChatRequest) (string, error)
 }
 
 // TripCreator persists an approved draft. Implemented by an adapter in
 // internal/integration so this package stays decoupled from the trip/activity
 // domains. Returns the created trip ID.
 type TripCreator interface {
-	CreateFromDraft(ctx context.Context, userID string, draft TripDraft, start, end string) (string, error)
+	CreateFromDraft(ctx context.Context, userID string, draft TripDraft, start, end, coverImageURL, description string) (string, error)
 }
 
 type UsecaseInterface interface {
 	GenerateDraft(ctx context.Context, userID string, in GenerateInput) (*TripDraft, error)
-	CreateFromDraft(ctx context.Context, userID string, draft TripDraft, startDate, endDate string) (string, error)
+	CreateFromDraft(ctx context.Context, userID string, draft TripDraft, startDate, endDate, coverImageURL, description string) (string, error)
 }
 
 type Usecase struct {
@@ -56,15 +56,15 @@ func (u *Usecase) GenerateDraft(ctx context.Context, userID string, in GenerateI
 	}
 
 	system, user := BuildPrompt(in)
-	content, err := u.llm.ChatCompletion(ctx, openrouter.ChatRequest{
+	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{
 		Model: u.model,
-		Messages: []openrouter.Message{
+		Messages: []llm.Message{
 			{Role: "system", Content: system},
 			{Role: "user", Content: user},
 		},
-		ResponseFormat: &openrouter.ResponseFormat{
+		ResponseFormat: &llm.ResponseFormat{
 			Type: "json_schema",
-			JSONSchema: &openrouter.JSONSchema{
+			JSONSchema: &llm.JSONSchema{
 				Name:   "trip_draft",
 				Strict: true,
 				Schema: JSONSchema(),
@@ -94,9 +94,9 @@ func (u *Usecase) GenerateDraft(ctx context.Context, userID string, in GenerateI
 }
 
 // CreateFromDraft persists an approved draft via the TripCreator adapter.
-func (u *Usecase) CreateFromDraft(ctx context.Context, userID string, draft TripDraft, startDate, endDate string) (string, error) {
+func (u *Usecase) CreateFromDraft(ctx context.Context, userID string, draft TripDraft, startDate, endDate, coverImageURL, description string) (string, error) {
 	if len(draft.Days) == 0 {
 		return "", fmt.Errorf("%w: draft has no days", ErrInvalidInput)
 	}
-	return u.creator.CreateFromDraft(ctx, userID, draft, startDate, endDate)
+	return u.creator.CreateFromDraft(ctx, userID, draft, startDate, endDate, coverImageURL, description)
 }

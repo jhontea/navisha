@@ -12,6 +12,7 @@ import {
   useGenerateTripDraft,
 } from "@/features/trip/hooks/useTrips"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
+import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
 import { ApiError } from "@/lib/api"
 
@@ -67,8 +68,16 @@ export default function GenerateTripPage() {
       // original draft is used unchanged.
       setResolving(true)
       let draft = result.draft
+      let coverImageUrl = ""
+      let description = ""
       try {
         draft = await resolveDraftLocations(result.draft, destination)
+        // Resolve destination → cover image + formatted address from Google Places.
+        const meta = await resolveDestinationMeta(destination)
+        if (meta) {
+          coverImageUrl = meta.coverImageUrl
+          description = meta.description
+        }
       } catch {
         // Ignore resolution failures — fall back to the unresolved draft.
       } finally {
@@ -79,6 +88,8 @@ export default function GenerateTripPage() {
         start_date: result.start_date,
         end_date: result.end_date,
         draft,
+        cover_image_url: coverImageUrl,
+        description,
       })
       router.push(`/trips/${trip_id}/overview`)
     } catch (err) {
