@@ -15,13 +15,28 @@ jwt:
   access_ttl: 3600     # 1 hour
   refresh_ttl: 604800  # 7 days
 
-openrouter:
-  model: openrouter/owl-alpha
-  base_url: https://openrouter.ai/api/v1
+# ── LLM Provider ──
+# Select provider via the "provider" field or LLM_PROVIDER env var.
+# Supported: "deepseek", "openrouter". Empty = fall back to openrouter: section below.
+llm:
+  provider: ""   # set to "deepseek" or "openrouter"
+  # DeepSeek
+  deepseek_model: deepseek-v4-flash
+  deepseek_base_url: https://api.deepseek.com
+  # OpenRouter (when provider is explicitly "openrouter")
+  openrouter_model: openrouter/owl-alpha
+  openrouter_base_url: https://openrouter.ai/api/v1
   # Soft rate-limit in seconds between summary (re)generations.
   # Set to 0 to disable the rate-limit check entirely.
   summary_rate_limit_seconds: 0
-  # HTTP timeout (seconds) for OpenRouter calls. Some models are slow, so keep
+  # HTTP timeout (seconds) for LLM calls. Some models are slow, so keep
   # this generous. Set to 0 to use the client default (120s).
+  timeout_seconds: 300
+
+# Legacy OpenRouter config — used as fallback when llm.provider is empty.
+openrouter:
+  model: openrouter/owl-alpha
+  base_url: https://openrouter.ai/api/v1
+  summary_rate_limit_seconds: 0
   timeout_seconds: 300
 

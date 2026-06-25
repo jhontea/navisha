@@ -4,6 +4,73 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-25 — Auto Cover Image + Location Description for AI-Generated Trips
+
+AI-generated trips now get a real cover photo and location description from Google Places (matching the manual trip creation flow). Previously AI trips had no cover image and blank description.
+
+### Changes
+
+**Backend** — Wire `cover_image_url` + `description` through the from-draft pipeline:
+- `autogen/handler.go`: `fromDraftRequest` + `CoverImageURL`, `Description` fields
+- `autogen/usecase.go`: `CreateFromDraft` + `TripCreator` interface updated with new params
+- `integration/autogen_creator.go`: `draft.Summary` → `Notes`, new params passed to `trip.Create()`
+
+**Frontend** — Resolve destination → photo + address before persisting:
+- `features/trip/lib/resolveDestinationMeta.ts` (new): Uses `AutocompleteService` → `PlacesService.getDetails` (same proven pattern as `resolveDraftLocations.ts`) to find the destination as a Place, then fetch `photos[0].getUrl()` + `formatted_address`. Falls back to raw destination string if Places unavailable.
+- `app/(dashboard)/trips/generate/page.tsx`: Call `resolveDestinationMeta(destination)` alongside existing `resolveDraftLocations()`, pass `cover_image_url` + `description` to `create.mutateAsync()`.
+- `features/trip/api.ts`: `createFromDraft` accepts optional `cover_image_url`, `description`.
+- `features/trip/hooks/useTrips.ts`: Updated mutation param type.
+
+### Verification
+- `go build ./...` clean, `go test ./...` all pass.
+- `npx tsc --noEmit` clean, zero errors.
+- Manual smoke: generated trip for "Semarang" → card shows location description + cover photo.
+
+### Key Decisions
+- **Photo from PlacesService, not Geocoder** — Geocoder results (city-level) rarely have photos. `AutocompleteService` finds a concrete Place (e.g., "Semarang, Semarang City") which has photos.
+- **Description always populated** — fallback to raw destination string if Places fails.
+- **`draft.Summary` → `Notes`** — AI-generated trip summary text now stored in `Notes` field, leaving `Description` free for Google Places formatted address.
+
+### Files
+- `frontend/src/features/trip/lib/resolveDestinationMeta.ts` (new)
+- `frontend/src/app/(dashboard)/trips/generate/page.tsx`
+- `frontend/src/features/trip/api.ts`
+- `frontend/src/features/trip/hooks/useTrips.ts`
+- `backend/internal/autogen/handler.go`
+- `backend/internal/autogen/usecase.go`
+- `backend/internal/integration/autogen_creator.go`
+
+---
+
+## 2026-06-25 — Fix: DeepSeek json_schema Downgrade Missing Schema Injection
+
+After switching to DeepSeek, AI trip generation failed with `422 INVALID_PROMPT`. Root cause: `json_schema` strict mode was downgraded to `json_object`, but the JSON schema wasn't injected into the prompt — so DeepSeek used wrong field names (`"itinerary"` instead of `"days"`, missing `"title"`).
+
+### Fix
+- `pkg/llm/client.go`: When downgrading `json_schema` → `json_object`, now injects the full JSON schema (serialized) into the system prompt with explicit instructions: "Keluarkan HANYA JSON valid persis mengikuti schema berikut. JANGAN ubah nama field."
+- `pkg/llm/client_test.go`: Updated `TestChatCompletion_JsonSchemaDowngrade` to verify schema appears in system message content.
+- `go test ./pkg/llm/...` — 10/10 PASS including schema injection verification.
+
+---
+
+## 2026-06-25 — Session 36: Multi-Provider LLM — DeepSeek + OpenRouter
+
+Migrated AI provider from OpenRouter-only to multi-provider with DeepSeek (`deepseek-v4-flash`) as primary, OpenRouter as fallback. All tests green, fully backward compatible.
+
+**New `pkg/llm/` client** — provider-agnostic OpenAI-compatible client. Supports DeepSeek (`https://api.deepseek.com`) and OpenRouter via config. Auto-downgrades `json_schema` strict → `json_object` for DeepSeek in `ChatCompletion()`. 10 unit tests.
+
+**Config** — `LLMConfig` with `Provider`, `DeepSeekAPIKey/Model/BaseURL`, `OpenRouterAPIKey/Model/BaseURL`, helper methods `ActiveAPIKey()/ActiveModel()/ActiveBaseURL()/EffectiveProvider()`. Falls back to legacy `OpenRouterConfig` when `LLM_PROVIDER` is empty. New env vars: `LLM_PROVIDER`, `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`.
+
+**Wiring** — `main.go` uses `llm.NewClient()` with config-driven provider selection. Autogen + summary usecases updated to `llm.ChatRequest`/`llm.Message` (interface unchanged, import only).
+
+**Verification** — `go build ./...` clean, `go test ./...` all pass (autogen, summary, llm 10/10, openrouter legacy intact).
+
+**Switch**: set `LLM_PROVIDER=deepseek` + `DEEPSEEK_API_KEY=sk-...` in `.env`. Leave empty for OpenRouter backward compat.
+
+**Files**: `pkg/llm/client.go` (new), `pkg/llm/client_test.go` (new), `config/config.go`, `config.yaml`, `.env`, `.env.example`, `cmd/server/main.go`, `internal/autogen/usecase.go`, `internal/summary/usecase.go`, `internal/summary/usecase_test.go`.
+
+---
+
 ## 2026-06-25 — Fix AI-Generated Trip: Lokasi Muncul dari Negara Lain
 
 **Bug**: Saat generate trip dengan AI (mis. "Bandung cafe hopping"), map menampilkan lokasi dari Jepang, Malaysia, atau Eropa — bukan dari Bandung. Root cause ada di tiga lapis: (1) LLM menghalusinasi nama tempat dari data training global, (2) Google Places Autocomplete `locationRestriction` hanya bias, bukan hard filter, (3) query pencarian Places tidak menyertakan nama kota destinasi.
@@ -552,7 +619,7 @@ Deploy semua changes ke VPS. Kemudian tackle "Unknown date" expense bug atau lin
 - [ ] **Phase 2**: share trip via link, collaborator invite, PDF export
 
 ### Resume From
-Deploy ke VPS lalu verify: (1) trip baru langsung muncul di dashboard, (2) edit tanggal trip regenerasi day panels. Kemudian tackle "Unknown date" expense bug.
+Deploy ke VPS lalu verify: (1) trip baru langsung muncul di dashboard, (2) edit tanggal trip regenerasi day panels. Kemudian tackle "Unknown date" expense bug atau linked-expense lifecycle.
 
 ---
 
@@ -687,6 +754,46 @@ Remove whitelist once testing is done (set `ALLOWED_EMAILS=` or remove it). Then
 
 ### Resume From
 OAuth is now working end-to-end. VPS deployment steps documented. Next session can focus on fixing the "Unknown date" expense grouping bug or picking up linked-expense lifecycle work.
+
+---
+
+## 2026-06-23 — Session 19: Budget Page Revamp + Expense Features
+
+**Status**: Budget page fully revamped with new UI, budget planning with spending tracker, expense date/note fields, grouped-by-date list, and category improvements.
+
+### Completed
+- **Budget page UI revamp** (`frontend/template/8-dashboard-budget.html` reference):
+  - `BudgetSummary` — stacked bar chart for category distribution + donut ring showing % used vs budget. Ring turns red when over-budget. Shows Budget / Remaining breakdown when budget is set.
+  - `ExpenseForm` — category icon picker (pill buttons, no dropdown), icon prefix in title field, thousand-separator amount input, date picker, note textarea (optional).
+  - `ExpenseCard` — category-colored icon, note shown inline.
+  - `ExpenseSection` — inline edit form directly in list, set/edit budget button in header.
+  - `budget/page.tsx` — inline budget edit panel, passes `tripBudget` to section.
+- **Budget planning** (`trips.budget` column):
+  - Backend: migration `003_add_trip_budget.sql` — `budget NUMERIC(14,4) DEFAULT 0` on `trips` table. Model, all repository queries, usecase, handler updated.
+  - Frontend: `Trip` type, `CreateTripInput`, `TripForm` — all include optional `budget` field with number input + thousand separator.
+- **Category additions**: `souvenir` (Gift, icon `redeem`, pink) + `shopping` (Shopping, icon `shopping_cart`, yellow). DB constraints updated via migrations `004` + `005`.
+- **Expense date + note fields** (`expense_date`, `note` on expenses):
+  - Backend: migration `006_add_expense_date_note.sql`. Model, repository (all CRUD queries + `scan`), usecase (parses date, defaults to today), handler (accepts + returns both fields). `CreateLinkedExpenseTx` signature updated to accept `expenseDate` — accommodation passes `check_in`, transportation passes `departure_datetime`.
+  - Frontend: `Expense` and `CreateExpenseInput` types updated. `ExpenseForm` has date picker (defaults to today) + note textarea. `ExpenseSection` groups expenses by `expense_date` (newest first), each group shows date header + group total.
+- **Cache invalidation fix**: `useCreateAccommodation` now also invalidates `["expenses", "summary", tripId]` + `["expenses", "list", tripId]` so Budget page refreshes immediately after adding a stay.
+- **Stay form cost input**: thousand separator on cost field in `AccommodationForm`.
+- **UX improvements**: edit/delete buttons always visible (not hover-only), icon spacing fixed in title input.
+
+### Key Decisions
+- **`expense_date` separate from `created_at`** — lets user backdate an expense (e.g. logging yesterday's dinner today) and ensures transport/accommodation linked expenses are attributed to their travel day, not the data-entry date.
+- **`souvenir` kept as a DB category value, label changed to "Gift"** — avoids a migration to rename the value; display label is frontend-only.
+- **Budget stored on `trips` table** — simplest fit; budget is per-trip, single value, in the trip's base currency. No separate budget table needed for Phase 1.
+- **Linked expense date set by the caller** — accommodation → `check_in`, transportation → `departure_datetime`. Keeps expense timeline aligned with actual travel day without extra user input.
+
+### Pending
+- [ ] **Debug "Unknown date" grouping** — some old expenses may have `expense_date` field missing or empty string from the API response. Need to verify API payload and add defensive fallback.
+- [ ] **Linked-expense lifecycle** (carried since Session 13) — editing cost or deleting transport/stay does not affect linked expense.
+- [ ] **Cover image upload** — form has no upload UI until file storage is ready.
+- [ ] **Real loyalty math** — StatsSection still uses mock progress.
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export.
+
+### Resume From
+Fix the "Unknown date" group bug (likely `expense_date` field is empty/null in old API response for expenses created before the migration). Then pick up **linked-expense lifecycle** or a Phase 2 item.
 
 ---
 
@@ -920,7 +1027,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - [ ] **Phase 2**: share trip via link, collaborator invite, PDF export, mobile app.
 
 ### Resume From
-**Decide linked-expense lifecycle** (third session carrying this). After that, the smallest-risk Phase 2 unit of work is **share trip via link** (backend: generate share token + public read route; frontend: `/shared/:token` page). Alternative: replace dashboard template chrome with real wiring — search endpoint + cover upload + notification feed.
+**Decide linked-expense lifecycle** (carried from Session 13). Two options remain: schema migration that adds `transportation_id` + `accommodation_id` FK columns on `expenses` with `ON DELETE CASCADE` so the entity owns the expense lifecycle; or leave them independent and require manual cleanup. Option 1 better for data integrity, Option 2 cheaper to ship. After that: pick up the Phase 2 backlog (share-link is the smallest unit of work).
 
 ---
 
@@ -959,7 +1066,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - [ ] **Phase 2** still open: share trip via link, collaborator invite, PDF export, mobile app.
 
 ### Resume From
-**Decide linked-expense lifecycle** (carried from Session 13). Two options remain: schema migration that adds `transportation_id` + `accommodation_id` FK columns on `expenses` with `ON DELETE CASCADE` so the entity owns the expense lifecycle; or leave them independent and require manual cleanup. Option 1 better for data integrity, Option 2 cheaper to ship. After that: pick up the Phase 2 backlog (share-link is the smallest unit of work).
+**Decide linked-expense lifecycle** (carried from Session 13). Two options: (1) tag the expense row with `transportation_id` / `accommodation_id` (schema migration) so the entity owns its expense lifecycle; (2) leave them independent and rely on the user to clean up via the Budget tab. Option 2 is the cheaper MVP path. Beyond that: unblock Maps API (Cloud Console steps documented in Session 13 above) or pick up the Phase 2 backlog.
 
 ---
 
@@ -1018,7 +1125,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 **Status**: Three trip-level features shipped end-to-end. Day notes save inline, transportation and accommodation each get their own domain, slice, and trip detail tab. Trip detail page now has 4 tabs: Itinerary / Transport / Stay / Budget.
 
 ### Completed
-- **Day notes** (extends `internal/trip` rather than splitting Day into its own domain — Day stays a child of Trip):
+- **Day notes** (extends `internal/trip` rather than splitting Day into its own domain — Day stays a child of Trip, CASCADE-deleted, auto-created):
   - `repository.go` — `FindDayOwner(dayID)` + `UpdateDayNotes(dayID, notes)` + `ErrDayNotFound`
   - `repository_pg.go` — JOIN `days → trips` for ownership; targeted UPDATE on `days.notes`
   - `usecase.go` — `UpdateDayNotes(userID, dayID, notes)` with ownership check
@@ -1052,11 +1159,11 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - **Tabs grow to 4 (Itinerary / Transport / Stay / Budget)** — kept consistent `flex-1` triggers and `w-full` list. Reorganization didn't touch tab styling settled in Session 11.
 
 ### Pending — must come back to
-- [ ] Activities: Google Maps Places autofill (blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
-- [ ] User handler unit tests (`UsecaseInterface` mock).
-- [ ] Transportation + Accommodation unit tests (mirror trip/activity patterns).
-- [ ] Map view (Phase 1 feature — render location activities + transport hops as a route).
-- [ ] Phase 2 features: share trip via link, collaborator invite, PDF export, mobile.
+- [ ] **Activities: Google Maps Places autofill** (blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
+- [ ] **User handler unit tests** (`UsecaseInterface` mock).
+- [ ] **Transportation + Accommodation unit tests** (mirror trip/activity patterns).
+- [ ] **Map view** (Phase 1 feature — render location activities + transport hops as a route).
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export, mobile app.
 
 ### Resume From
 **Transportation + Accommodation unit tests** are the closest next deliverable to ship. Mirror `internal/activity/{mocks_test.go, usecase_test.go}` — small mockRepo with trip + entity owner maps, validate-input tests, ownership Forbidden tests, success cases. Targets ~10–15 new tests per domain. After that, choose between Map view (large, Phase 1 closer) or Google Maps Places autofill (small, needs API key).
@@ -1193,7 +1300,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - **Locked type renders as chip in edit mode** — same component handles add + edit. Avoids a second "ActivityCard editing inline" component.
 
 ### Pending — must come back to
-- [ ] **Drag-drop reorder** — backend `Reorder` endpoint + hook exist; UI not wired. Needs `dnd-kit` (`@dnd-kit/core` + `@dnd-kit/sortable`). Wire in `DayActivities` so dragging cards calls `useReorderActivities` with the new full ID set
+- [ ] **Drag-drop reorder** — backend `Reorder` endpoint + hook exist; UI not wired. Needs `dnd-kit` (`@dnd-kit/core` + `@dnd-kit/sortable`). Wire in `DayActivities` so dragging cards calls `useReorderActivities.mutate({ ids })`. Backend enforces full-set match so no partial reorder logic needed on the client.
 - [ ] **Replace `window.confirm()` with coss `AlertDialog`** — currently used for trip delete (`trips/[id]/page.tsx`) and activity delete (`DayActivities`). coss has `alert-dialog` primitive (see `frontend/.agents/skills/coss/references/primitives/alert-dialog.md`)
 - [ ] **Google Maps Places autofill for location activities** — `LocationPayload` already has `google_place_id`, `lat`, `lng`, `address` fields. Activity form currently asks user to type these manually. Need Places Autocomplete on `location_name` to populate the rest. Blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (already in env contract, not set yet)
 - [ ] Trip edit page (backend ready)
@@ -1236,264 +1343,3 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - **Update cannot change type** — handler ignores `type` field on PUT. Type change is rare and semantically equivalent to delete+create (different payload shape).
 - **Payload validation only when present** — empty payload allowed (some clients may not send one for simple notes); strict shape enforcement when non-empty.
 - **Graphify AST-only mode** — no `GEMINI_API_KEY` set, skip Claude subagent dispatch (semantic extraction costs tokens). AST captures structural edges (calls, types, fields). Cross-doc relationships absent until LLM extraction enabled.
-
-### Pending
-- [ ] Frontend activity UI: `DayView`, `ActivityCard` per type, `ActivityForm` per type, drag-and-drop reorder
-- [ ] Expense + Currency domain backend (usecase + handler)
-- [ ] Transportation + Accommodation: move to own domains or build CRUD in trip
-- [ ] User handler unit tests (UsecaseInterface mock)
-- [ ] Trip edit page on frontend
-- [ ] Replace `window.confirm` with coss `Dialog` for delete confirmation
-
-### Resume From
-**Frontend activity UI** — `features/itinerary/` slice. Hooks: `useActivities(dayID)`, `useCreateActivity`, `useUpdateActivity`, `useDeleteActivity`, `useReorderActivities`. Components: `DayView` (collapsible per day on trip detail), `ActivityCard` with per-type body, `ActivityForm` with type selector → conditional fields. Trip detail page (`app/(dashboard)/trips/[id]/page.tsx`) currently shows day list; expand each day with `useActivities` lazy fetch. Drag-and-drop with `dnd-kit` for reorder.
-
----
-
-## 2026-06-10 — Session 7: Frontend Trip CRUD + shadcn Base UI Fix
-
-**Status**: Dashboard shows user info + trip list. Create/view/delete trip flow working end-to-end. Resolved shadcn Base UI ref-forwarding issue blocking RHF.
-
-### Completed
-- `features/trip/api.ts` — typed client for list/get/create/update/delete
-- `features/trip/hooks/useTrips.ts` — `useTrips` (`useInfiniteQuery` for cursor pagination, `LIMIT=20`), `useTrip`, `useCreateTrip`, `useUpdateTrip`, `useDeleteTrip`; all mutations invalidate `["trips", "list"]`
-- `features/trip/components/TripCard.tsx`, `TripList.tsx` (grid + Load more), `TripForm.tsx` (RHF + Zod)
-- `features/auth/components/UserBadge.tsx` — avatar/name/email pill driven by `useAuth`
-- Pages: `app/(dashboard)/dashboard/page.tsx` (header + UserBadge + New trip + LogoutButton + TripList), `app/(dashboard)/trips/new/page.tsx`, `app/(dashboard)/trips/[id]/page.tsx` (detail + day list + Delete with `confirm()`)
-- shadcn install: `textarea`, `select` (form component not shipped by current registry)
-- **Fixed shadcn Input + Textarea ref forwarding** — current `npx shadcn add input/textarea` ships Base UI–backed wrappers as **plain function components**, not `React.forwardRef`. RHF's `register("field")` returns a ref callback that React silently drops at non-forwardRef boundaries → field never registered in RHF → submit value `undefined` → Zod 4 returns `"Invalid input: expected string, received undefined"` (truncates to "Invalid input" in UI). Rewrote both to native `<input>`/`<textarea>` with `forwardRef`.
-
-### Key Decisions
-- **Cursor pagination in frontend** — `useInfiniteQuery` reads `next_cursor` from each page; `getNextPageParam` returns `undefined` when empty to disable Load more.
-- **Controller for shadcn Select** — Base UI Select uses Field context internally; `setValue` alone left RHF unaware of the field. `Controller` from RHF binds value/onChange explicitly.
-- **`showPicker()` onClick only** — Chrome rejects `showPicker()` from `onFocus` (programmatic focus / Tab key counts as non-gesture in strict mode). `onClick` fires only from a real user gesture. Wrapped in try/catch as defence.
-- **Replace shadcn Input/Textarea wholesale, not Controller every field** — RHF integration is foundational; fixing the primitive once beats wrapping every form field in `Controller`.
-- **Form route over modal** — `/trips/new` as a page (matches backend dev's mental model of routing). Modal can come later if multi-form UX demands it.
-
-### Pending
-- [ ] Trip update page (form reused with `useUpdateTrip`)
-- [ ] Replace `window.confirm` with shadcn `Dialog` for delete confirmation
-- [ ] Activities domain (polymorphic location/note/todo) — backend + frontend
-- [ ] Transportation, Accommodation domains
-- [ ] Expense + Currency domain backend
-- [ ] User handler unit tests (UsecaseInterface mock)
-
-### Resume From
-**Trip update page** — `cd frontend && npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`. In `DayActivities.tsx`, wrap the activity list in `DndContext` + `SortableContext`, make `ActivityCard` use `useSortable`. On drag end, compute new ID order and call `useReorderActivities.mutate({ ids })`. Backend enforces full-set match so no partial reorder logic needed on the client.
-
----
-
-## 2026-06-10 — Session 6: Trip Domain Backend + Tests
-
-**Status**: Trip CRUD backend complete with tests. Cursor pagination working. OAuth flow now redirects to `/auth/callback` to avoid cookie-timing race in Next.js middleware.
-
-### Completed
-- **OAuth redirect fix**: backend now redirects to `frontendURL + "/dashboard"` (not `/dashboard`). New page `app/(auth)/auth/callback/page.tsx` does client-side `router.replace("/dashboard")` after mount — avoids middleware race where cookie set via `Set-Cookie` on redirect wasn't yet visible to Next.js middleware on the immediate `/dashboard` request. Added `/auth/callback` to `AUTH_PATHS` in middleware.
-- **Trip domain backend** — `internal/trip/`:
-  - `repository.go` — slim interface: BeginTx/Commit/Rollback + List/FindByID/InsertTrip/InsertDays/Update/Delete/ListDays. Removed old broad interface (activities, transports, accommodations deferred).
-  - `repository_pg.go` — pg implementation; cursor pagination using row-value comparison `(start_date, id) < ($cursor_date, $cursor_id)` on indexed columns; fetches `limit+1` rows to detect next page.
-  - `usecase.go` — Create orchestrates transaction (BeginTx → InsertTrip → InsertDays → Commit), validates dates + currency, generates day rows. List clamps limit (default 20, max 50). Get/Update/Delete enforce ownership via `apperr.ErrForbidden`. Update does NOT regenerate days on date-range change (deferred until itinerary builder).
-  - `handler.go` — REST endpoints `GET/POST/PUT/DELETE /api/v1/trips[/:id]`, error mapping (404/403/400/500), date parsing YYYY-MM-DD, cursor query param.
-  - Wired in `cmd/server/main.go`.
-- **Tests** (19 passing):
-  - `mocks_test.go` — `mockRepo` records calls, returns canned values; test helpers (`setupCurrencies`, `date`)
-  - `usecase_test.go` — `generateDays`, `validateDates`, Create success/invalid-currency/invalid-dates/rollback-on-failure, Get/Update/Delete ownership checks, List limit clamping
-  - `cursor_test.go` — `encodeCursor`/`decodeCursor` roundtrip, empty cursor, invalid base64/format/date
-
-### Key Decisions
-- **Cursor pagination over offset** — stable load-more UX; new trip insertions don't shift pages. Cursor = `base64("<RFC3339 start_date>|<uuid>")`.
-- **Repository owns transaction lifecycle** — `BeginTx`/`Commit`/`Rollback` exposed as repo methods so usecase doesn't call `tx.Commit()` directly; keeps all DB interaction routed through repository even though pgx.Tx leaks into signatures.
-- **Days kept in trip domain** — `ListDays` lives in `trip/repository_pg.go`; insert split into `InsertTrip` + `InsertDays` so usecase orchestrates the transaction (user feedback).
-- **Mocks in separate `mocks_test.go`** — keeps test fixtures discoverable, avoids cluttering `usecase_test.go` (user feedback).
-- **Update does not regenerate days** — flagged via inline comment; will revisit when itinerary builder needs to handle range changes.
-
-### Pending
-- [ ] Frontend trip list page on dashboard (consume cursor pagination)
-- [ ] Frontend trip create/edit form
-- [ ] Activities domain (polymorphic location/note/todo)
-- [ ] Transportation, Accommodation domains
-- [ ] Expense + Currency domain backend
-- [ ] User handler unit tests (UsecaseInterface mock)
-
-### Resume From
-**Frontend trip list page** — `app/(dashboard)/dashboard/page.tsx` replaces placeholder with trip list. Build `features/trip/hooks/useTrips.ts` (TanStack Query infinite query for cursor pagination), `features/trip/components/TripCard.tsx`, `features/trip/components/TripList.tsx`. API client method in `lib/api.ts` already supports the call. Use shadcn `Card` component for trip rows.
-
----
-
-## 2026-06-09 — Session 5: Frontend Setup & Auth UI
-
-**Status**: Auth flow fully working end-to-end (frontend + backend). Login, logout, protected routes, landing page all functional. Frontend restructured to feature-slice architecture.
-
-### Completed
-- Fixed `tailwind.config.ts` — added all shadcn HSL color tokens (`background`, `foreground`, `card`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`, `borderRadius`); fixes `border-border` class not found error
-- Frontend dev server running on port 3000, compiles clean
-- `middleware.ts` — auth guard: `/` always public, `/login` redirects to `/dashboard` if logged in, all other routes require `access_token` cookie
-- Landing page (`/`) — hero section + CTA "Get started" button linking to `/login`
-- Dashboard page (`/dashboard`) — placeholder with LogoutButton
-- `LogoutButton` — calls `POST /auth/logout`, clears Zustand store + TanStack Query cache, redirects to `/login`
-- Backend `GoogleCallback` — now redirects to `frontendURL + "/dashboard"` after login
-- **Refactored to feature-slice structure**: removed `hooks/`, `stores/`, `types/`, `components/features/`; all code now under `features/<domain>/`
-  - `features/auth/` — `components/`, `hooks.ts`, `store.ts`, `types.ts`
-  - `features/trip/` — `components/`, `hooks/`, `types.ts`
-  - `features/itinerary/` — `components/`, `hooks/`
-  - `features/budget/` — `components/`, `types.ts`
-- Updated `docs/ARCHITECTURE.md` — added Frontend Feature-Slice Structure section, Libraries table, Routing & Auth Guard section
-- Updated `docs/FEATURES.md` — Auth checklist items marked done
-- Updated `frontend/CLAUDE.md` — new structure, libraries table, conventions
-
-### Key Decisions
-- **Feature-slice over layer-based** — all code for a feature (components, hooks, store, types) lives together under `features/<name>/`; easier to navigate and scale than `components/features/` + `hooks/` + `stores/` + `types/` scattered across dirs
-- **No cross-feature imports** — `trip/` never imports from `auth/`; shared utilities stay in `lib/`
-- **`app/` pages are thin shells** — business logic and components live in `features/`, pages just import and compose
-- **Middleware reads cookie presence only** — `access_token` is httpOnly so JS can't read its value; middleware just checks `request.cookies.has("access_token")`
-
-### Pending
-- [ ] Trip domain: usecase + handler + routes (backend)
-- [ ] Trip list page — dashboard shows real trips
-- [ ] Trip detail + itinerary builder
-- [ ] Expense, Currency, Transportation, Accommodation domains (backend)
-- [ ] Handler unit tests (using `UsecaseInterface` mock)
-
-### Resume From
-**Trip domain backend** — `internal/trip/usecase.go` + `internal/trip/handler.go`. CRUD for trips: `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/:id`, `PUT /api/v1/trips/:id`, `DELETE /api/v1/trips/:id`. Wire in `main.go`. Then build frontend trip list on dashboard.
-
----
-
-## 2026-06-09 — Session 4: Auth Implementation, Tests & Refactor
-
-**Status**: Auth fully working end-to-end. Google OAuth tested in browser, user persisted in DB. JWT tests passing. Ready for frontend setup.
-
-### Completed
-- `internal/user/repository_pg.go` — PostgreSQL impl: `FindByID`, `FindByGoogleID`, `Upsert` (ON CONFLICT upsert)
-- `internal/user/usecase.go` — `GoogleLogin`, `Me`, `RefreshTokens`, `issueTokens`, `fetchGoogleUserInfo`; added `UsecaseInterface` so handler can be tested with a mock
-- `internal/user/handler.go` — `GoogleRedirect`, `GoogleCallback`, `Logout`, `Refresh`, `Me`; CSRF state cookie, httpOnly JWT cookies, redirect to frontendURL post-login
-- `cmd/server/main.go` — wired user domain (repo → usecase → handler), auth middleware, routes registered under `/api/v1`
-- `config.yaml` — updated `access_ttl` from 900 → 3600 (1 hour)
-- Google OAuth credentials set in `.env` — end-to-end flow tested in browser
-- `pkg/jwt/jwt_test.go` — 8 unit tests: generate/validate access & refresh, cross-token rejection, expired token, tampered signature, empty token (all passing)
-- **Refactor**: `Handler` now depends on `UsecaseInterface` (not `*Usecase`) — enables mock-based handler testing
-
-### Key Decisions
-- **`UsecaseInterface`** added to `user/usecase.go` — handler depends on interface so tests don't require DB or live Google OAuth
-- **access_ttl = 1 hour** — longer than standard 15min for development comfort; frontend still does token refresh before expiry
-- **`frontendURL` in handler** — after OAuth callback, backend redirects to frontend (`http://localhost:3000`); expected ERR_CONNECTION_REFUSED until frontend is set up
-- **JWT unit tests over integration tests** — `pkg/jwt` is pure logic, no external deps; repository integration tests deferred until later
-
-### Pending
-- [ ] Frontend Next.js project setup
-- [ ] Trip domain: usecase + handler + routes
-- [ ] Expense, Currency, Transportation, Accommodation domains
-- [ ] Handler unit tests (using `UsecaseInterface` mock)
-
-### Resume From
-**Frontend setup** — `cd frontend`, init Next.js 14 with App Router + TypeScript + Tailwind, install shadcn/ui, TanStack Query, Zustand. Create folder structure per `frontend/CLAUDE.md`. First page: auth (login with Google button that hits `GET /api/v1/auth/google`).
-
----
-
-## 2026-06-08 — Session 3: Migration, Fixes & Pre-Auth Cleanup
-
-**Status**: All backend foundations solid. Migration applied, build clean. Ready to implement Auth next session.
-
-### Completed
-- Fixed typo `IsSuppported` → `IsSupported` in `currency/model.go`
-- Fixed `config.go` — `BindEnv` errors now handled (loop with error check)
-- Fixed `currency.SupportedCurrencies` now populated from config at server startup in `main.go`
-- Created `pkg/oauth/google.go` — `NewGoogleConfig()` + `GoogleUserInfo` struct
-- Created `migrations/001_init.sql` — all 7 tables: users, trips, days, activities, transportations, accommodations, expenses
-- Applied migration successfully to local PostgreSQL — all tables verified
-- Created `.gitignore` — protects `.env`, `node_modules`, `.next`, `bin/`, `.DS_Store`
-- Build clean after all changes
-
-### Key Decisions
-- **UUID for all PKs** — IDs appear in public URLs; sequential ints are guessable
-- **`days` table** — kept as-is (not `trip_days`); relation to trip already expressed via `trip_id` FK
-- **`day_number` kept** — stored for display convenience ("Day 1", "Day 2") to avoid JOIN to trips every time
-- **`activity_id` in expenses is nullable** — expenses are trip-level and standalone; linking to an activity is optional
-- **expense columns** — `amount`+`currency` = original payment; `converted_amount`+`base_currency` = trip base currency equivalent (e.g. 500 USD → 8,100,000 IDR)
-- **`from_location`/`to_location`** in transportations (not `from`/`to`) — avoids reserved keyword conflicts in SQL
-
-### Pending
-- [ ] Auth implementation (Google OAuth + JWT)
-- [ ] Frontend Next.js project setup
-- [ ] DB migrations
-- [ ] All features (see `docs/FEATURES.md`)
-
-### Resume From
-**Auth implementation** — create `internal/user/usecase.go` and `internal/user/handler.go`. Wire Google OAuth flow: `GET /api/v1/auth/google` (redirect) → `GET /api/v1/auth/google/callback` (exchange code, fetch userinfo from Google, upsert user in DB, issue JWT + refresh token as httpOnly cookies). Register routes in `cmd/server/main.go`. Use `pkg/oauth/google.go` for OAuth config and `pkg/jwt/jwt.go` for token issuance.
-
----
-
-## 2026-06-08 — Session 2: Backend Setup & Domain Structure
-
-**Status**: Backend scaffold complete. Server boots, DB and Redis connections verified. Ready to implement Auth.
-
-### Completed
-- `go mod init` and all dependencies installed (Echo, pgx, Viper, godotenv, go-redis, golang-jwt, oauth2, uuid)
-- Clean domain-based folder structure under `internal/` (user/, trip/, expense/, currency/, apperr/, middleware/)
-- Viper config loader: `config.yaml` for non-secrets + `.env` for secrets, env vars override YAML
-- `config.yaml` and `.env.example` created
-- All domain model and repository interface files:
-  - `user/model.go`, `user/repository.go`
-  - `trip/model.go` (Trip, Day, Activity polymorphic, Transportation, Accommodation), `trip/repository.go`
-  - `expense/model.go`, `expense/repository.go`
-  - `currency/model.go` (with `IsSupported()`, `Symbol()`), `currency/repository.go`
-  - `apperr/errors.go` — shared sentinel errors
-- `pkg/jwt/jwt.go` — JWT service (GenerateAccessToken, GenerateRefreshToken, Validate*)
-- `internal/middleware/auth.go` — Echo JWT middleware (cookie + Bearer fallback)
-- `cmd/server/main.go` — Echo server with graceful shutdown, DB+Redis ping on startup, CORS
-- docker-compose verified: `postgres-navisha` on 5439, `redis-navisha` on 6389
-- Server starts and `/health` returns `{"status":"ok"}`
-
-### Key Decisions
-- **Domain-driven structure**: each domain (user, trip, expense, currency) is a self-contained package with model/repository/usecase/handler — not layer-based folders
-- **Cross-domain**: domains reference each other by string ID only, no cross-imports; shared errors in `apperr/`
-- **Domain errors**: each domain owns its own errors (e.g. `trip.ErrNotFound`) alongside the repository interface
-- **DATABASE_URL**: single connection string in `.env` (includes user:password) — standard format compatible with cloud providers
-- **DB/Redis ports**: PostgreSQL 5439, Redis 6389 (avoids conflicts with other local Docker services)
-
-### Pending
-- [ ] Frontend Next.js project setup
-- [ ] DB migrations
-- [ ] Auth implementation (Google OAuth + JWT)
-- [ ] All features (see `docs/FEATURES.md`)
-
-### Resume From
-**Auth implementation** — `internal/user/usecase.go` + `internal/user/handler.go` for Google OAuth callback, JWT issuance, and `/api/v1/auth/*` routes wired in `main.go`.
-
----
-
-## 2026-06-08 — Session 1: Project Planning & Documentation
-
-**Status**: Planning complete. No code yet.
-
-### Completed
-- Finalized full tech stack (Go + Echo, Next.js 14, PostgreSQL, Redis, Google Maps, Frankfurter API)
-- Chose Google OAuth-only auth — no password management, simpler attack surface
-- Designed domain model:
-  - `Activity` is polymorphic: type `location | note | todo` with JSONB payload
-  - `Trip` has trip-level `transportations[]` and `accommodations[]`
-  - Currency converter as a standalone feature (no trip required)
-- Created documentation:
-  - `docs/ARCHITECTURE.md` — system design, entity model, ADRs
-  - `docs/API.md` — all endpoints + request/response shapes
-  - `docs/FEATURES.md` — Phase 1 & 2 feature checklist
-  - `CLAUDE.md`, `backend/CLAUDE.md`, `frontend/CLAUDE.md` — Claude context files
-  - `docker-compose.yml` — PostgreSQL + Redis with `navisha-dev` naming
-  - `README.md` — open-source GitHub readme
-
-### Key Decisions
-- **Backend port**: 8090
-- **Supported currencies**: IDR, USD, JPY, SGD, KRW
-- **Config strategy**: `config.yaml` for non-secrets (git-tracked) + `.env` for secrets, merged via Viper
-- **Docker naming**: project `navisha-dev`, containers suffixed `-navisha`, network `navisha-dev-network`
-- **Activity payload**: JSONB column in DB, validated at usecase layer per type
-
-### Pending
-- [ ] Backend Go project setup (`go mod init`, folder structure, Viper config)
-- [ ] Frontend Next.js project setup
-- [ ] DB migrations
-- [ ] Auth implementation (Google OAuth + JWT)
-- [ ] All features (see `docs/FEATURES.md`)
-
-### Resume From
-**Backend setup** — `go mod init`, clean architecture folder structure, Viper config loader, verify docker-compose works.

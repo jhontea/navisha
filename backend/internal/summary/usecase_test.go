@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/openrouter"
+	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 )
 
 // --- fakes ---
@@ -48,7 +48,7 @@ type fakeLLM struct {
 	called bool
 }
 
-func (f *fakeLLM) ChatCompletion(ctx context.Context, req openrouter.ChatRequest) (string, error) {
+func (f *fakeLLM) ChatCompletion(ctx context.Context, req llm.ChatRequest) (string, error) {
 	f.called = true
 	return f.resp, f.err
 }

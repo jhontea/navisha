@@ -48,7 +48,7 @@ export const tripApi = {
   generate: (input: GenerateTripInput) =>
     api.post<GenerateTripResponse>("/trips/generate", input),
 
-  createFromDraft: (params: { start_date: string; end_date: string; draft: TripDraft }) =>
+  createFromDraft: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
     api.post<{ trip_id: string }>("/trips/from-draft", params),
 }
 

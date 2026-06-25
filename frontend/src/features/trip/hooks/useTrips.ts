@@ -97,7 +97,7 @@ export function useGenerateTripDraft() {
 export function useCreateTripFromDraft() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (params: { start_date: string; end_date: string; draft: TripDraft }) =>
+    mutationFn: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
       tripApi.createFromDraft(params),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trips"] })

@@ -17,7 +17,8 @@ type Config struct {
 	JWT        JWTConfig
 	Google     GoogleConfig
 	App        AppConfig
-	OpenRouter OpenRouterConfig
+	LLM        LLMConfig
+	OpenRouter OpenRouterConfig // legacy; used as fallback when LLM.Provider is empty
 }
 
 type ServerConfig struct {
@@ -59,6 +60,86 @@ type AppConfig struct {
 	AllowedEmails []string `mapstructure:"allowed_emails"`
 }
 
+// LLMConfig holds the active LLM provider configuration.
+// It supports DeepSeek and OpenRouter, selectable via the Provider field.
+// When Provider is empty/unset, the legacy OpenRouter config is used as fallback.
+type LLMConfig struct {
+	// Provider selects the LLM provider: "deepseek" or "openrouter".
+	// When empty, falls back to OpenRouterConfig for backward compatibility.
+	Provider string `mapstructure:"provider"`
+	// DeepSeek
+	DeepSeekAPIKey  string `mapstructure:"deepseek_api_key"`
+	DeepSeekModel   string `mapstructure:"deepseek_model"`
+	DeepSeekBaseURL string `mapstructure:"deepseek_base_url"`
+	// OpenRouter (when LLM provider is explicitly "openrouter")
+	OpenRouterAPIKey  string `mapstructure:"openrouter_api_key"`
+	OpenRouterModel   string `mapstructure:"openrouter_model"`
+	OpenRouterBaseURL string `mapstructure:"openrouter_base_url"`
+	// SummaryRateLimitSeconds is the soft window between summary (re)generations
+	// for a trip. When 0 (or unset) the rate-limit check is disabled.
+	SummaryRateLimitSeconds int `mapstructure:"summary_rate_limit_seconds"`
+	// TimeoutSeconds is the HTTP timeout for LLM calls. When 0 (or unset)
+	// the client default is used.
+	TimeoutSeconds int `mapstructure:"timeout_seconds"`
+}
+
+// ActiveAPIKey returns the API key for the currently selected provider.
+func (c *Config) ActiveAPIKey() string {
+	switch c.LLM.Provider {
+	case "deepseek":
+		if c.LLM.DeepSeekAPIKey != "" {
+			return c.LLM.DeepSeekAPIKey
+		}
+	case "openrouter":
+		if c.LLM.OpenRouterAPIKey != "" {
+			return c.LLM.OpenRouterAPIKey
+		}
+	}
+	// Fallback to legacy OpenRouter config
+	return c.OpenRouter.APIKey
+}
+
+// ActiveModel returns the model name for the currently selected provider.
+func (c *Config) ActiveModel() string {
+	switch c.LLM.Provider {
+	case "deepseek":
+		if c.LLM.DeepSeekModel != "" {
+			return c.LLM.DeepSeekModel
+		}
+	case "openrouter":
+		if c.LLM.OpenRouterModel != "" {
+			return c.LLM.OpenRouterModel
+		}
+	}
+	// Fallback to legacy OpenRouter config
+	return c.OpenRouter.Model
+}
+
+// ActiveBaseURL returns the base URL for the currently selected provider.
+// Returns empty string when unset (the llm.Client uses provider defaults).
+func (c *Config) ActiveBaseURL() string {
+	switch c.LLM.Provider {
+	case "deepseek":
+		return c.LLM.DeepSeekBaseURL
+	case "openrouter":
+		return c.LLM.OpenRouterBaseURL
+	default:
+		return c.OpenRouter.BaseURL
+	}
+}
+
+// EffectiveProvider returns the active provider identifier, defaulting to
+// "openrouter" when LLM.Provider is empty (backward compat).
+func (c *Config) EffectiveProvider() string {
+	if c.LLM.Provider != "" {
+		return c.LLM.Provider
+	}
+	return "openrouter"
+}
+
+// OpenRouterConfig is kept for backward compatibility with existing deployments
+// that set OPENROUTER_API_KEY / OPENROUTER_MODEL without LLM_PROVIDER.
+// New deployments should use LLMConfig with LLM_PROVIDER.
 type OpenRouterConfig struct {
 	APIKey  string `mapstructure:"api_key"`
 	Model   string `mapstructure:"model"`
@@ -104,6 +185,9 @@ func Load() (*Config, error) {
 		"currency.api_key":     "CURRENCYFREAKS_API_KEY",
 		"openrouter.api_key":   "OPENROUTER_API_KEY",
 		"openrouter.model":     "OPENROUTER_MODEL",
+		"llm.provider":         "LLM_PROVIDER",
+		"llm.deepseek_api_key": "DEEPSEEK_API_KEY",
+		"llm.deepseek_model":   "DEEPSEEK_MODEL",
 	} {
 
 		if err := v.BindEnv(key, envVar); err != nil {
