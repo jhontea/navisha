@@ -33,7 +33,7 @@ export default function EditTripPage() {
         >
           ← Back to trip
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Edit trip</h1>
+        <h1 className="mt-2 font-headline-md text-headline-md">Edit trip</h1>
       </div>
       <TripForm
         initial={trip}

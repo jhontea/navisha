@@ -29,8 +29,7 @@ function daySpan(start: string, end: string): number {
   return diff > 0 ? diff : 0
 }
 
-const inputBase =
-  "w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/50"
+const inputBase = "input-base"
 
 // GenerateChatWizard collects the auto-generate inputs through a guided,
 // chat-style flow. Each answer becomes a bubble; the final step shows a recap
@@ -41,7 +40,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 
   const [step, setStep] = useState<StepId>("destination")
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { from: "bot", text: "Halo! Aku bantu susun itinerary-mu. Mau liburan ke mana?" },
+    { from: "bot", text: "Hey! I'll help you build an itinerary. Where would you like to go?" },
   ])
 
   // Collected values
@@ -70,7 +69,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
   const handleDestination = () => {
     const v = draftText.trim()
     if (!v) {
-      setError("Isi dulu tujuannya ya.")
+      setError("Please enter a destination first.")
       return
     }
     setError(null)
@@ -78,43 +77,43 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
     pushUser(v)
     setDraftText("")
     setStep("description")
-    pushBot("Mantap! Coba ceritakan tujuan atau preferensimu (opsional). Misalnya: suka anime, kuliner, atau budget hemat.")
+    pushBot("Nice! Now tell me about your travel style or preferences (optional). For example: foodie, adventure, budget-friendly, cultural.")
   }
 
   const handleDescription = (skip: boolean) => {
     const v = skip ? "" : draftText.trim()
     setError(null)
     setDescription(v)
-    pushUser(skip || !v ? "(lewati)" : v)
+    pushUser(skip || !v ? "(skip)" : v)
     setDraftText("")
     setStep("dates")
-    pushBot("Oke! Dari kapan sampai kapan rencananya? (maksimal 10 hari)")
+    pushBot("Got it! When is your trip? (up to 10 days)")
   }
 
   const handleDates = () => {
     if (!startDate || !endDate) {
-      setError("Pilih tanggal mulai dan selesai.")
+      setError("Please select both start and end dates.")
       return
     }
     if (span === 0) {
-      setError("Tanggal selesai tidak boleh sebelum tanggal mulai.")
+      setError("End date must be on or after the start date.")
       return
     }
     if (span > MAX_DAYS) {
-      setError(`Maksimal ${MAX_DAYS} hari (sekarang ${span} hari).`)
+      setError(`Maximum ${MAX_DAYS} days (currently ${span} days).`)
       return
     }
     setError(null)
-    pushUser(`${startDate} → ${endDate} (${span} hari)`)
+    pushUser(`${startDate} → ${endDate} (${span} days)`)
     setStep("currency")
-    pushBot("Terakhir, mata uang apa yang mau dipakai untuk perkiraan budget?")
+    pushBot("Last one — which currency would you like to use for budget estimates?")
   }
 
   const handleCurrency = () => {
     setError(null)
     pushUser(currency)
     setStep("review")
-    pushBot("Siap! Ini ringkasannya. Kalau sudah pas, klik Generate Itinerary.")
+    pushBot("All set! Here's a recap. If it looks good, click Generate Itinerary.")
   }
 
   const handleGenerate = () => {
@@ -129,7 +128,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 
   const restart = () => {
     setStep("destination")
-    setMessages([{ from: "bot", text: "Halo! Aku bantu susun itinerary-mu. Mau liburan ke mana?" }])
+    setMessages([{ from: "bot", text: "Hey! I'll help you build an itinerary. Where would you like to go?" }])
     setDestination("")
     setDescription("")
     setStartDate("")
@@ -219,7 +218,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
                 <span className="text-xs text-on-surface-variant">{draftText.length}/{MAX_DESCRIPTION}</span>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleDescription(true)} className={ghostBtn}>
-                    Lewati
+                    Skip
                   </button>
                   <button type="button" onClick={() => handleDescription(false)} className={sendBtn}>
                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
@@ -259,11 +258,11 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-on-surface-variant">
-                  {span > 0 ? `${span} hari` : "Pilih rentang tanggal"}
+                  {span > 0 ? `${span} days` : "Select date range"}
                 </span>
                 <button type="button" onClick={handleDates} className={sendBtn}>
                   <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
-                  Lanjut
+                  Continue
                 </button>
               </div>
             </div>
@@ -297,7 +296,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
               <div className="flex justify-end">
                 <button type="button" onClick={handleCurrency} className={sendBtn}>
                   <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
-                  Lanjut
+                  Continue
                 </button>
               </div>
             </div>
@@ -311,7 +310,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
           <div className="rounded-lg bg-surface-container-low p-4 space-y-1.5 text-body-sm">
             <Recap label="Tujuan" value={destination} />
             {description && <Recap label="Preferensi" value={description} />}
-            <Recap label="Tanggal" value={`${startDate} → ${endDate} (${span} hari)`} />
+            <Recap label="Date" value={`${startDate} → ${endDate} (${span} days)`} />
             <Recap label="Mata uang" value={currency} />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">

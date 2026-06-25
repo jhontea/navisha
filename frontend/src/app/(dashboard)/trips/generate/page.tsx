@@ -53,7 +53,7 @@ export default function GenerateTripPage() {
       setResult(res)
     } catch (err) {
       setFormError(
-        err instanceof ApiError ? err.message : "Gagal membuat itinerary. Coba lagi.",
+        err instanceof ApiError ? err.message : "Failed to generate itinerary. Please try again.",
       )
     }
   }
@@ -95,7 +95,7 @@ export default function GenerateTripPage() {
     } catch (err) {
       setResolving(false)
       setFormError(
-        err instanceof ApiError ? err.message : "Gagal menyimpan trip. Coba lagi.",
+        err instanceof ApiError ? err.message : "Failed to save trip. Please try again.",
       )
     }
   }
@@ -119,7 +119,7 @@ export default function GenerateTripPage() {
         className="mb-6 inline-flex items-center gap-1.5 text-body-sm text-on-surface-variant hover:text-primary transition-colors"
       >
         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
-        Kembali ke Trips
+        Back to Trips
       </Link>
 
       <header className="mb-8">
@@ -132,7 +132,7 @@ export default function GenerateTripPage() {
           </h1>
         </div>
         <p className="font-body-md text-on-surface-variant">
-          Jawab beberapa pertanyaan, biar AI yang menyusun itinerary awal. Maksimal {MAX_DAYS} hari.
+          Answer a few questions and let AI build your starter itinerary. Up to {MAX_DAYS} days.
         </p>
       </header>
 
@@ -163,12 +163,12 @@ export default function GenerateTripPage() {
                   <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>
                     progress_activity
                   </span>
-                  {resolving ? "Menyiapkan lokasi…" : "Menyimpan…"}
+                  {resolving ? "Resolving locations…" : "Saving…"}
                 </>
               ) : (
                 <>
                   <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check</span>
-                  Buat Trip
+                  Create Trip
                 </>
               )}
             </button>
@@ -181,7 +181,7 @@ export default function GenerateTripPage() {
               disabled={saving}
               className="w-full sm:w-auto px-8 py-3 text-on-surface-variant font-label-md text-label-md text-center hover:text-primary transition-colors disabled:opacity-60"
             >
-              Ulangi
+              Start Over
             </button>
           </div>
         </div>

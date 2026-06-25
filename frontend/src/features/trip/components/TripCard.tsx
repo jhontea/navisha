@@ -9,10 +9,10 @@ import { MaterialIcon } from "@/components/MaterialIcon"
 import type { Trip } from "../types"
 
 // Badge background + text per status — matches template style
-const STATUS_BADGE: Record<TripStatus, { bg: string; text: string }> = {
-  upcoming: { bg: 'rgba(255,255,255,0.9)', text: '#0058bc' },
-  active: { bg: 'rgba(255,255,255,0.9)', text: '#059669' },
-  past: { bg: 'rgba(255,255,255,0.9)', text: '#717786' },
+const STATUS_BADGE: Record<TripStatus, { bg: string; color: string }> = {
+  upcoming: { bg: 'rgba(255,255,255,0.9)', color: 'hsl(var(--primary))' },
+  active: { bg: 'rgba(255,255,255,0.9)', color: '#059669' },
+  past: { bg: 'rgba(255,255,255,0.9)', color: 'hsl(var(--muted-foreground))' },
 }
 
 export function TripCard({ trip }: { trip: Trip }) {
@@ -44,7 +44,7 @@ export function TripCard({ trip }: { trip: Trip }) {
             fontWeight: 500,
             lineHeight: '16px',
             letterSpacing: '0.02em',
-            color: STATUS_BADGE[status].text,
+            color: STATUS_BADGE[status].color,
           }}
         >
           {STATUS_LABEL[status]}

@@ -94,7 +94,7 @@ export function MobileNav() {
             {/* Back to trips list */}
             <Link
               href="/trips"
-              className="flex flex-col items-center gap-1 text-[10px] font-medium text-muted-foreground transition-colors"
+              className="flex flex-col items-center gap-1 text-[10px] font-medium text-muted-foreground transition-colors focus:outline-none focus-visible:text-primary"
             >
               <Compass className="h-5 w-5" />
               Trips

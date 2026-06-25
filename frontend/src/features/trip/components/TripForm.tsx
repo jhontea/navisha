@@ -45,8 +45,7 @@ interface Props {
   submitLabel?: string
 }
 
-const inputBase =
-  "w-full px-4 py-3 rounded-lg border bg-surface-container-lowest font-body-md text-body-md text-on-surface transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/50"
+const inputBase = "input-base"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
