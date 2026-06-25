@@ -310,27 +310,156 @@ export function TripMap({ days }: Props) {
               mapId={MAP_ID}
               style={{ width: "100%", height: "100%" }}
               defaultCenter={{
-                lat: visiblePoints[0].lat,
-                lng: visiblePoints[0].lng,
+                lat: visiblePoints[0].lat || 0,
+                lng: visiblePoints[0].lng || 0,
               }}
               defaultZoom={11}
               gestureHandling="greedy"
               disableDefaultUI={false}
             >
-              <Markers points={visiblePoints} onOpenInMaps={openSingleInMaps} />
-              {visibleByDay.map((d) => (
-                <Polyline
-                  key={d.dayId}
-                  path={d.points.map((p) => ({ lat: p.lat, lng: p.lng }))}
-                  color={colorForDay(d.dayNumber)}
-                />
-              ))}
-              <FitBounds points={visiblePoints} />
+              <GeocodingLayer
+                visiblePoints={visiblePoints}
+                visibleByDay={visibleByDay}
+                onOpenInMaps={openSingleInMaps}
+              />
             </Map>
           </APIProvider>
         )}
       </div>
     </div>
+  )
+}
+
+// GeocodingLayer resolves coordinates for points that lack stored lat/lng
+// (e.g. AI-generated trips) by geocoding their locationName via Google's
+// Geocoder. Points that already carry valid coords pass through untouched.
+// This keeps the map accurate without trusting AI-invented coordinates.
+function GeocodingLayer({
+  visiblePoints,
+  visibleByDay,
+  onOpenInMaps,
+}: {
+  visiblePoints: LocationPoint[]
+  visibleByDay: { dayId: string; dayNumber: number; points: LocationPoint[] }[]
+  onOpenInMaps: (p: LocationPoint) => void
+}) {
+  const map = useMap()
+  // activityId -> resolved {lat,lng}
+  const [resolved, setResolved] = useState<Record<string, { lat: number; lng: number }>>({})
+  const [loading, setLoading] = useState(false)
+
+  // Build the list of points that need geocoding (no real coords, but a name).
+  const needGeocode = visiblePoints.filter(
+    (p) =>
+      !hasValidCoords(p.lat, p.lng) &&
+      p.locationName.trim() !== "" &&
+      !resolved[p.activityId],
+  )
+
+  // Stable key: only re-run the geocode effect when the SET of unresolved
+  // locations actually changes (not on every render). Without this, the
+  // freshly-allocated `needGeocode` array would retrigger the effect forever.
+  const pendingKey = needGeocode.map((p) => p.activityId).join("|")
+
+  useEffect(() => {
+    if (!map || pendingKey === "") return
+
+    let cancelled = false
+    setLoading(true)
+
+    // The core Geocoder lives on window.google.maps once the JS API has
+    // finished loading. APIProvider may resolve the map ref slightly before
+    // the library is ready, so poll briefly until Geocoder exists.
+    const run = async () => {
+      // Wait (max ~5s) for the Geocoder constructor to become available.
+      let attempts = 0
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const G = (window as any).google?.maps
+        if (G?.Geocoder) break
+        if (cancelled || attempts++ > 50) {
+          setLoading(false)
+          return
+        }
+        await new Promise((r) => setTimeout(r, 100))
+      }
+
+      const geocoder = new (window as any).google.maps.Geocoder()
+
+      // Geocode ALL pending points concurrently for speed.
+      const results = await Promise.allSettled(
+        needGeocode.map(async (p) => {
+          const res = await geocoder.geocode({ address: p.locationName })
+          const loc = res.results?.[0]?.geometry?.location
+          return loc
+            ? { id: p.activityId, lat: loc.lat(), lng: loc.lng() }
+            : null
+        }),
+      )
+
+      if (cancelled) return
+
+      const next: Record<string, { lat: number; lng: number }> = {}
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value) {
+          next[r.value.id] = { lat: r.value.lat, lng: r.value.lng }
+        }
+      }
+      if (Object.keys(next).length > 0) {
+        setResolved((prev) => ({ ...prev, ...next }))
+      }
+      setLoading(false)
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, pendingKey])
+
+  // Merge resolved coords into points
+  const applyCoords = (pts: LocationPoint[]): LocationPoint[] =>
+    pts
+      .map((p) => {
+        if (hasValidCoords(p.lat, p.lng)) return p
+        const r = resolved[p.activityId]
+        return r ? { ...p, lat: r.lat, lng: r.lng } : p
+      })
+      .filter((p) => hasValidCoords(p.lat, p.lng))
+
+  const displayable = applyCoords(visiblePoints)
+
+  return (
+    <>
+      {displayable.length === 0 && needGeocode.length > 0 && loading && (
+        <div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm"
+          style={{ pointerEvents: "none" }}
+        >
+          <span className="material-symbols-outlined animate-spin text-primary" style={{ fontSize: 32 }}>
+            progress_activity
+          </span>
+          <p className="mt-2 text-sm font-medium text-on-surface-variant">
+            Resolving locations…
+          </p>
+        </div>
+      )}
+      {displayable.length > 0 && (
+        <>
+          <Markers points={displayable} onOpenInMaps={onOpenInMaps} />
+          {visibleByDay.map((d) => (
+            <Polyline
+              key={d.dayId}
+              path={applyCoords(d.points).map((p) => ({ lat: p.lat, lng: p.lng }))}
+              color={colorForDay(d.dayNumber)}
+            />
+          ))}
+          <FitBounds points={displayable} />
+        </>
+      )}
+    </>
   )
 }
 

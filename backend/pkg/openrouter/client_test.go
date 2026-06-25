@@ -127,7 +127,98 @@ func TestChatCompletion_EmptyResponse(t *testing.T) {
 	}
 }
 
+func TestChatCompletion_ResponseFormatSent(t *testing.T) {
+	var gotResponseFormat *ResponseFormat
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			ResponseFormat *ResponseFormat `json:"response_format"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		gotResponseFormat = req.ResponseFormat
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{
+				{"message": map[string]string{"role": "assistant", "content": "{}"}},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := &Client{
+		baseURL: srv.URL,
+		apiKey:  "test-key",
+		model:   "test-model",
+		http:    srv.Client(),
+	}
+
+	_, err := c.ChatCompletion(context.Background(), ChatRequest{
+		Messages: []Message{{Role: "user", Content: "hi"}},
+		ResponseFormat: &ResponseFormat{
+			Type: "json_schema",
+			JSONSchema: &JSONSchema{
+				Name:   "trip_draft",
+				Strict: true,
+				Schema: map[string]any{"type": "object"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotResponseFormat == nil {
+		t.Fatal("expected response_format to be sent, got nil")
+	}
+	if gotResponseFormat.Type != "json_schema" {
+		t.Errorf("expected type json_schema, got %s", gotResponseFormat.Type)
+	}
+	if gotResponseFormat.JSONSchema == nil || gotResponseFormat.JSONSchema.Name != "trip_draft" {
+		t.Errorf("expected json_schema name trip_draft, got %+v", gotResponseFormat.JSONSchema)
+	}
+}
+
+func TestChatCompletion_NoResponseFormatOmitted(t *testing.T) {
+	var bodyHasResponseFormat bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var raw map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		_, bodyHasResponseFormat = raw["response_format"]
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{
+				{"message": map[string]string{"role": "assistant", "content": "ok"}},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := &Client{
+		baseURL: srv.URL,
+		apiKey:  "test-key",
+		model:   "test-model",
+		http:    srv.Client(),
+	}
+
+	_, err := c.ChatCompletion(context.Background(), ChatRequest{
+		Messages: []Message{{Role: "user", Content: "hi"}},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if bodyHasResponseFormat {
+		t.Error("expected response_format to be omitted when nil")
+	}
+}
+
 func TestChatCompletion_ModelOverride(t *testing.T) {
+
 	var receivedModel string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req struct {

@@ -37,11 +37,21 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     let message = `HTTP ${res.status}`
     try {
       const body = await res.json()
-      code = body.code ?? code
-      message = body.error ?? message
+      // Echo wraps custom errors as { message: <payload> }. The payload may be
+      // a plain string or an object { code, message }. Handle both, plus the
+      // older { code, error } shape.
+      const payload = body.message ?? body
+      if (typeof payload === "object" && payload !== null) {
+        code = payload.code ?? body.code ?? code
+        message = payload.message ?? body.error ?? message
+      } else if (typeof payload === "string") {
+        message = payload
+        code = body.code ?? code
+      }
     } catch {}
     throw new ApiError(res.status, code, message)
   }
+
 
   // 204 No Content
   if (res.status === 204) return undefined as T

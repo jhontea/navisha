@@ -4,6 +4,51 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 ---
 
+## 2026-06-25 — Fix AI-Generated Trip: Lokasi Muncul dari Negara Lain
+
+**Bug**: Saat generate trip dengan AI (mis. "Bandung cafe hopping"), map menampilkan lokasi dari Jepang, Malaysia, atau Eropa — bukan dari Bandung. Root cause ada di tiga lapis: (1) LLM menghalusinasi nama tempat dari data training global, (2) Google Places Autocomplete `locationRestriction` hanya bias, bukan hard filter, (3) query pencarian Places tidak menyertakan nama kota destinasi.
+
+### Changes
+
+**Phase 1 — Prompt Hardening** (`backend/internal/autogen/prompt.go`):
+- `## ATURAN LOKASI` ditulis ulang dengan bahasa lebih tegas: "DIBACA BERULANG", "KESALAHAN FATAL".
+- Rule baru: setiap `location_name` **WAJIB** menyertakan nama kota sebagai akhiran (format: `"Nama Tempat, Nama Kota"`).
+- Contoh benar/salah eksplisit: ✅ `"Kopi Toko Djawa, Bandung"` vs ❌ `"Chapter Two Cafe"` (tanpa kota), ❌ `"Starbucks Reserve Roastery, Tokyo"` (kota salah).
+- Fallback: jika LLM tidak yakin nama tempat nyata di destinasi, gunakan nama generik berbasis kategori + kota (contoh: `"Kafe spesialti di Bandung"`).
+- User prompt `BuildPrompt` ditambah reminder: *"Setiap location_name HARUS menyertakan nama kota destinasi sebagai akhiran."*
+
+**Phase 2 — Frontend Places Resolution Fix** (`frontend/src/features/trip/lib/resolveDraftLocations.ts`):
+- **Query pencarian sekarang menyertakan destinasi**: dari `input: name` → `input: \`${name} ${destination}\`` (mis. `"Chapter Two Cafe Bandung"` bukan `"Chapter Two Cafe"`). Ini adalah fix paling impactful — Google mencari "X in Y" bukan hanya "X".
+- **Fallback**: jika pencarian dengan suffix destinasi gagal, retry dengan hanya nama tempat (backward compatibility — LLM yang sudah menyertakan kota di location_name tetap bekerja).
+- **Fix formula longitude bound**: faktor `* 0.6` yang tidak perlu dihapus — bounds sekarang benar ~50km di semua arah.
+- Refactor inner promise ke helper `tryResolve` untuk menghindari duplikasi kode.
+
+**Phase 3 — Backend Validation Logging** (`backend/internal/autogen/validate.go`):
+- Fungsi baru `logSuspiciousLocations()`: untuk setiap aktivitas tipe `location`, cek apakah `location_name` mengandung kata dari destinasi (≥3 karakter, dengan punctuation stripping).
+- Log warning `SUSPICIOUS location` untuk mismatch — **soft check**, tidak menolak draft. Memberi visibilitas frekuensi halusinasi ke operator tanpa merusak UX.
+- Import `"log"` ditambahkan.
+
+### Verifikasi
+- `go build ./...` — clean.
+- `go test ./internal/autogen/...` — 11/11 PASS (log SUSPICIOUS muncul di test data "Tokyo, Japan" vs "Shibuya Crossing" — expected, Shibuya tidak mengandung "tokyo" atau "japan").
+- `npx tsc --noEmit` (frontend) — clean, zero errors.
+
+### Defense in Depth
+| Lapis | Mekanisme | Efek |
+|---|---|---|
+| LLM Prompt | location_name wajib sertakan kota | Model output `"Kopi Toko Djawa, Bandung"` |
+| Frontend Resolver | Query `"NamaTempat Destinasi"` + locationRestriction | Google Places menemukan lokasi Bandung, bukan London |
+| Frontend Fallback | Retry tanpa suffix destinasi | Backward compatibility jika LLM sudah sertakan kota |
+| Backend Logger | `logSuspiciousLocations` | Operator bisa monitor frekuensi halusinasi |
+
+### Key Decisions
+- **Defense in depth, bukan single fix** — setiap lapis menangani skenario berbeda: prompt melatih model, resolver menangkap error model, log memberi visibilitas.
+- **Soft validation di backend, bukan hard reject** — false positive (nama tempat nyata yang kebetulan tidak mengandung kata kota) akan merusak UX. Log warning sudah cukup untuk monitoring.
+- **Fallback di frontend mempertahankan backward compatibility** — jika LLM sudah menghasilkan `"Braga Permai, Bandung"`, pencarian `"Braga Permai, Bandung Bandung"` tetap menemukan lokasi yang benar via Google Places.
+- **Koordinat LLM tetap di-strip** — `validateDraft` tetap meng-null-kan lat/lng/address/google_place_id dari AI. Resolusi koordinat 100% dari Google Places (single source of truth).
+
+---
+
 ## 2026-06-24 — Session 35: F2 Open in Google Maps — Review Fixes
 
 Tindak lanjut review user atas fitur F2 (Open in Google Maps) dan AI Summary. Tiga isu diperbaiki, frontend build hijau.
@@ -207,7 +252,7 @@ Smoke test: (1) Map View → Open in Google Maps untuk "All days" & per-hari, (2
 
 ## 2026-06-24 — Session 29: Fix Deploy npm ci + AI Summary Loading UX
 
-**Status**: Deployment yang gagal di tahap `npm ci` (frontend) sudah diperbaiki dengan regenerasi lock file yang universal lintas-platform. Selain itu, UX saat generate/regenerate AI Trip Summary ditingkatkan dengan rotating loading messages + efek shimmer pada card.
+**Status**: Deployment yang gagal di `npm ci` (frontend) sudah diperbaiki dengan regenerasi lock file yang universal lintas-platform. Selain itu, UX saat generate/regenerate AI Trip Summary ditingkatkan dengan rotating loading messages + efek shimmer pada card.
 
 ### Completed
 - **Fix deploy gagal di `npm ci` (root cause)**:
@@ -253,23 +298,23 @@ Commit & push `frontend/package-lock.json` (versi universal hasil Alpine/npm 11)
 
 ### Completed
 - **Root cause analysis**:
-  - **Frontend (immediate cause):** Dua inline-edit `saveEdits` handler (Itinerary page `trips/[id]/page.tsx` dan Overview page `trips/[id]/overview/page.tsx`) mengirim `PUT /trips/:id` tanpa field `budget`. Edit title/dates/cover saja sudah cukup untuk menghapus budget.
-  - **Backend (root cause):** `tripRequest.Budget *float64` di handler di-coerce ke `float64` biasa via `var updateBudget float64; if req.Budget != nil { updateBudget = *req.Budget }` — jadi `budget` absent dari JSON → `nil` → `0` → tertulis ke DB.
+  - **Frontend (immediate cause)**: Dua inline-edit `saveEdits` handler (Itinerary page `trips/[id]/page.tsx` dan Overview page `trips/[id]/overview/page.tsx`) mengirim `PUT /trips/:id` tanpa field `budget`. Edit title/dates/cover saja sudah cukup untuk menghapus budget.
+  - **Backend (root cause)**: `tripRequest.Budget *float64` di handler di-coerce ke `float64` biasa via `var updateBudget float64; if req.Budget != nil { updateBudget = *req.Budget }` — jadi `budget` absent dari JSON → `nil` → `0` → tertulis ke DB.
 - **Frontend fix** (2 file, 1 baris masing-masing):
   - `frontend/src/app/(dashboard)/trips/[id]/page.tsx:123` — tambah `budget: trip.budget` ke payload `saveEdits`
   - `frontend/src/app/(dashboard)/trips/[id]/overview/page.tsx:367` — tambah `budget: trip.budget` ke payload `saveEdits`
-- **Backend fix (PATCH semantics untuk budget):**
+- **Backend fix (PATCH semantics untuk budget)**:
   - `backend/internal/trip/usecase.go` — `UpdateInput.Budget` dari `float64` jadi `*float64` (`nil = leave unchanged; &0.0 = explicitly clear`). Di `Update()`, hanya overwrite `existing.Budget` saat `in.Budget != nil`. `CreateInput.Budget` tetap `float64` (create-with-zero adalah konvensi yang sudah ada).
   - `backend/internal/trip/handler.go` — pass `req.Budget` (sudah `*float64` dari request struct) langsung ke `UpdateInput`; hapus blok coercion `nil → 0`.
-- **Tests:**
+- **Tests**:
   - `backend/internal/trip/usecase_test.go` — tambah 2 regression test: `TestUsecase_Update_OmittedBudgetPreservesExisting` (budget nil → budget existing 5_000_000 dipertahankan) dan `TestUsecase_Update_ExplicitBudgetZero` (`&0.0` → budget jadi 0, membuktikan "clear budget" tetap works).
   - `backend/internal/trip/mocks_test.go` — fix mock `Update` yang sebelumnya membuang `*Trip` input dan return `m.updateResult` (nil default). Sekarang persist + return trip yang sudah di-mutate (mirror `repository_pg.Update` `...RETURNING` behavior). Hapus field `updateResult` yang jadi dead code.
-- **Verification:**
+- **Verification**:
   - `go build ./...` — clean
   - `go test ./...` — semua package hijau, termasuk 2 test baru
   - `npm run build` — clean
   - `graphify update .` — graph di-refresh (29045 nodes, 57756 edges)
-- **Cleanup:** Revert stray `*.json` yang sempat tertambah ke `.gitignore` (dari tooling graphify), supaya `.gitignore` kembali ke state original.
+- **Cleanup**: Revert stray `*.json` yang sempat tertambah ke `.gitignore` (dari tooling graphify), supaya `.gitignore` kembali ke state original.
 
 ### Key Decisions
 - **Budget-only PATCH semantics di PUT /trips/:id** — field `budget` yang omitted = "leave unchanged", `budget: 0` = "explicitly clear". Field lain tetap full-replacement. Ini exception yang sengaja didokumentasikan di comment `UpdateInput.Budget` karena hanya `budget` yang punya masalah `*float64 → 0` coercion; field lain tidak terdampak.
@@ -668,7 +713,7 @@ OAuth is now working end-to-end. VPS deployment steps documented. Next session c
 - **UX improvements**: edit/delete buttons always visible (not hover-only), icon spacing fixed in title input.
 
 ### Key Decisions
-- **`expense_date` separate from `created_at`** — lets user backdate an expense (e.g. logging yesterday's dinner today) and ensures transport/accommodation linked expenses are attributed to their travel date, not the data-entry date.
+- **`expense_date` separate from `created_at`** — lets user backdate an expense (e.g. logging yesterday's dinner today) and ensures transport/accommodation linked expenses are attributed to their travel day, not the data-entry date.
 - **`souvenir` kept as a DB category value, label changed to "Gift"** — avoids a migration to rename the value; display label is frontend-only.
 - **Budget stored on `trips` table** — simplest fit; budget is per-trip, single value, in the trip's base currency. No separate budget table needed for Phase 1.
 - **Linked expense date set by the caller** — accommodation → `check_in`, transportation → `departure_datetime`. Keeps expense timeline aligned with actual travel day without extra user input.
@@ -1011,7 +1056,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - [ ] User handler unit tests (`UsecaseInterface` mock).
 - [ ] Transportation + Accommodation unit tests (mirror trip/activity patterns).
 - [ ] Map view (Phase 1 feature — render location activities + transport hops as a route).
-- [ ] Phase 2 features: share trip, collaborator invite, PDF export, mobile.
+- [ ] Phase 2 features: share trip via link, collaborator invite, PDF export, mobile.
 
 ### Resume From
 **Transportation + Accommodation unit tests** are the closest next deliverable to ship. Mirror `internal/activity/{mocks_test.go, usecase_test.go}` — small mockRepo with trip + entity owner maps, validate-input tests, ownership Forbidden tests, success cases. Targets ~10–15 new tests per domain. After that, choose between Map view (large, Phase 1 closer) or Google Maps Places autofill (small, needs API key).
@@ -1046,11 +1091,12 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - **`TripForm` inversion** — caller owns the mutation hook, redirect, and submit label. The form stays a single component for both create and edit pages.
 
 ### Pending — must come back to
-- [ ] Day-level notes endpoint + UI (column exists, no endpoint yet).
-- [ ] Transportation + Accommodation: own domains or finish CRUD inside trip + frontend UI.
-- [ ] Activities: optional Google Maps Places autofill (blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
-- [ ] User handler unit tests (`UsecaseInterface` mock).
-- [ ] Map view (Phase 1 feature, untouched).
+- [ ] **Day-level notes endpoint + UI** (column exists, no endpoint yet).
+- [ ] **Transportation + Accommodation: own domains or finish CRUD inside trip + frontend UI**.
+- [ ] **Activities: optional Google Maps Places autofill** (blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
+- [ ] **User handler unit tests** (`UsecaseInterface` mock).
+- [ ] **Map view** (Phase 1 feature — render location activities + transport hops as a route).
+- [ ] **Phase 2**: share trip via link, collaborator invite, PDF export, mobile app.
 
 ### Resume From
 **Pick: day-level notes (small) or transport/accommodation (larger).** Day notes — backend `PUT /days/:id/notes` with ownership JOIN, frontend inline textarea in `DayPanel` (collapsible already). Transport / accommodation — split decision (new domain vs trip): see WORKLOG Session 8 "Activity as separate domain" rationale. Activities precedent suggests separate domains because both have their own forms + lifecycle.
@@ -1142,7 +1188,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 ### Key Decisions
 - **Times bound to `location` only** — note and todo are time-agnostic. Backend still accepts `start_time`/`end_time` on any type (column is `TEXT NOT NULL DEFAULT ''`); frontend simply never sends them for note/todo. No backend migration needed.
 - **Click-to-edit beats explicit Edit button** — fewer UI affordances per row, larger hit target. Keyboard accessibility preserved via `role="button"` + Enter/Space.
-- **Delete icon hover-reveal** — avoids visual noise on long itineraries while keeping the action discoverable. `focus:opacity-100` keeps it usable via keyboard tab.
+- **Delete icon hover-revealed** — avoids visual noise on long itineraries while keeping the action discoverable. `focus:opacity-100` keeps it usable via keyboard tab.
 - **Lazy activity fetch per day** — each `DayActivities` mounts its own `useActivities(dayId)`. Cache key per `dayId` so edits stay scoped. Trade-off: N requests on initial render; acceptable for typical trip sizes (~7 days). Switch to batched endpoint if profile shows it matters.
 - **Locked type renders as chip in edit mode** — same component handles add + edit. Avoids a second "ActivityCard editing inline" component.
 
@@ -1151,9 +1197,10 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - [ ] **Replace `window.confirm()` with coss `AlertDialog`** — currently used for trip delete (`trips/[id]/page.tsx`) and activity delete (`DayActivities`). coss has `alert-dialog` primitive (see `frontend/.agents/skills/coss/references/primitives/alert-dialog.md`)
 - [ ] **Google Maps Places autofill for location activities** — `LocationPayload` already has `google_place_id`, `lat`, `lng`, `address` fields. Activity form currently asks user to type these manually. Need Places Autocomplete on `location_name` to populate the rest. Blocked on `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (already in env contract, not set yet)
 - [ ] Trip edit page (backend ready)
-- [ ] Day-level notes endpoint + UI (column exists)
-- [ ] Expense + Currency domain backend (usecase + handler)
+- [ ] Day-level notes endpoint + UI
 - [ ] Transportation + Accommodation: move to own domains or finish CRUD inside trip
+- [ ] User handler unit tests (UsecaseInterface mock)
+- [ ] Google Maps Places autofill for location activities
 
 ### Resume From
 **Drag-drop reorder for activities.** `cd frontend && npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`. In `DayActivities.tsx`, wrap the activity list in `DndContext` + `SortableContext`, make `ActivityCard` use `useSortable`. On drag end, compute new ID order and call `useReorderActivities.mutate({ ids })`. Backend enforces full-set match so no partial reorder logic needed on the client.
@@ -1232,7 +1279,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - [ ] User handler unit tests (UsecaseInterface mock)
 
 ### Resume From
-**Activities domain backend** — `internal/activity/` package. Polymorphic via `type` discriminator + JSONB payload (already in migration). CRUD endpoints scoped under `/api/v1/trips/:trip_id/days/:day_id/activities`. Ownership cascades: trip → user. Frontend later adds DayView + ActivityForm with per-type field sets.
+**Trip update page** — `cd frontend && npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`. In `DayActivities.tsx`, wrap the activity list in `DndContext` + `SortableContext`, make `ActivityCard` use `useSortable`. On drag end, compute new ID order and call `useReorderActivities.mutate({ ids })`. Backend enforces full-set match so no partial reorder logic needed on the client.
 
 ---
 
@@ -1241,7 +1288,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 **Status**: Trip CRUD backend complete with tests. Cursor pagination working. OAuth flow now redirects to `/auth/callback` to avoid cookie-timing race in Next.js middleware.
 
 ### Completed
-- **OAuth redirect fix**: backend now redirects to `frontendURL + "/auth/callback"` (not `/dashboard`). New page `app/(auth)/auth/callback/page.tsx` does client-side `router.replace("/dashboard")` after mount — avoids middleware race where cookie set via `Set-Cookie` on redirect wasn't yet visible to Next.js middleware on the immediate `/dashboard` request. Added `/auth/callback` to `AUTH_PATHS` in middleware.
+- **OAuth redirect fix**: backend now redirects to `frontendURL + "/dashboard"` (not `/dashboard`). New page `app/(auth)/auth/callback/page.tsx` does client-side `router.replace("/dashboard")` after mount — avoids middleware race where cookie set via `Set-Cookie` on redirect wasn't yet visible to Next.js middleware on the immediate `/dashboard` request. Added `/auth/callback` to `AUTH_PATHS` in middleware.
 - **Trip domain backend** — `internal/trip/`:
   - `repository.go` — slim interface: BeginTx/Commit/Rollback + List/FindByID/InsertTrip/InsertDays/Update/Delete/ListDays. Removed old broad interface (activities, transports, accommodations deferred).
   - `repository_pg.go` — pg implementation; cursor pagination using row-value comparison `(start_date, id) < ($cursor_date, $cursor_id)` on indexed columns; fetches `limit+1` rows to detect next page.
@@ -1264,8 +1311,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 - [ ] Frontend trip list page on dashboard (consume cursor pagination)
 - [ ] Frontend trip create/edit form
 - [ ] Activities domain (polymorphic location/note/todo)
-- [ ] Transportation domain
-- [ ] Accommodation domain
+- [ ] Transportation, Accommodation domains
 - [ ] Expense + Currency domain backend
 - [ ] User handler unit tests (UsecaseInterface mock)
 
@@ -1369,6 +1415,7 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 ### Pending
 - [ ] Auth implementation (Google OAuth + JWT)
 - [ ] Frontend Next.js project setup
+- [ ] DB migrations
 - [ ] All features (see `docs/FEATURES.md`)
 
 ### Resume From
@@ -1450,25 +1497,3 @@ Decide **linked-expense lifecycle** (third session carrying this). Alternatively
 
 ### Resume From
 **Backend setup** — `go mod init`, clean architecture folder structure, Viper config loader, verify docker-compose works.
-
----
-
-<!-- Session template:
-
-## YYYY-MM-DD — Session N: [Title]
-
-**Status**: ...
-
-### Completed
-- ...
-
-### Key Decisions
-- ...
-
-### Pending
-- [ ] ...
-
-### Resume From
-...
-
--->

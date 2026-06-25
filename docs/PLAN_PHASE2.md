@@ -10,7 +10,8 @@ Rencana implementasi 5 fitur Phase 2. Memecah setiap fitur menjadi unit kerja in
 | F2 | Open in Google Maps                        | Rendah       | —         |
 | F3 | Export to Google Maps bookmark (Saved Places) | Tinggi    | — (KML)  |
 | F4 | Export to Google Calendar + remove on delete | Tinggi     | P2        |
-| F5 | Auto-generate trip dari prompt (OpenRouter) | Tinggi      | P1        |
+| F5 | Auto-generate trip dari prompt (OpenRouter) ✅ | Tinggi   | P1        |
+
 
 ---
 

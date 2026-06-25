@@ -18,6 +18,9 @@ export interface LocationPoint {
   lng: number
   address: string
   orderIndex: number
+  // Human-readable place name used to geocode accurate coordinates when
+  // stored lat/lng are missing (e.g. AI-generated trips don't carry coords).
+  locationName: string
 }
 
 export interface DayLocations {
@@ -35,8 +38,9 @@ export interface TripLocationsResult {
 }
 
 // Aggregates location-type activities across every day of the trip via
-// parallel queries. Lat/lng=0 rows are excluded — they came in without
-// real coords and would skew the map center.
+// parallel queries. Points without stored coordinates are KEPT (carrying their
+// locationName) so the map layer can geocode them — AI-generated trips don't
+// store coords, but they do have accurate place names.
 export function useTripLocations(days: Day[]): TripLocationsResult {
   const queries = useQueries({
     queries: days.map((d) => ({
@@ -53,7 +57,7 @@ export function useTripLocations(days: Day[]): TripLocationsResult {
     const items = queries[i]?.data?.items ?? []
     const points = items
       .filter((a: Activity) => a.type === "location" && a.payload)
-      .map((a: Activity) => {
+      .map((a: Activity): LocationPoint => {
         const p = a.payload as LocationPayload
         return {
           activityId: a.id,
@@ -61,13 +65,20 @@ export function useTripLocations(days: Day[]): TripLocationsResult {
           dayNumber: d.day_number,
           date: d.date,
           title: a.title,
-          lat: p.lat,
-          lng: p.lng,
+          lat: p.lat ?? 0,
+          lng: p.lng ?? 0,
           address: p.address ?? "",
           orderIndex: a.order_index,
+          locationName: p.location_name ?? a.title,
         }
       })
-      .filter((p) => p.lat !== 0 || p.lng !== 0)
+      // Keep a point if it has real coords OR a name we can geocode.
+      .filter(
+        (p) =>
+          p.lat !== 0 ||
+          p.lng !== 0 ||
+          p.locationName.trim() !== "",
+      )
       .sort((a, b) => a.orderIndex - b.orderIndex)
     return {
       dayId: d.id,

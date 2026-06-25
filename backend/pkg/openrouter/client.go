@@ -21,6 +21,24 @@ type Message struct {
 type ChatRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
+	// ResponseFormat optionally constrains the model output (e.g. JSON schema).
+	// When nil it is omitted entirely, preserving backward compatibility.
+	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
+}
+
+// ResponseFormat constrains the model's output. For structured output set
+// Type to "json_schema" and provide JSONSchema.
+type ResponseFormat struct {
+	Type       string      `json:"type"`
+	JSONSchema *JSONSchema `json:"json_schema,omitempty"`
+}
+
+// JSONSchema describes the expected JSON shape for structured output.
+// Schema is the raw JSON Schema object (use map[string]any or json.RawMessage).
+type JSONSchema struct {
+	Name   string `json:"name"`
+	Strict bool   `json:"strict,omitempty"`
+	Schema any    `json:"schema"`
 }
 
 type chatResponse struct {
@@ -69,11 +87,13 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (string, e
 	}
 
 	payload := struct {
-		Model    string    `json:"model"`
-		Messages []Message `json:"messages"`
+		Model          string          `json:"model"`
+		Messages       []Message       `json:"messages"`
+		ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
 	}{
-		Model:    req.Model,
-		Messages: req.Messages,
+		Model:          req.Model,
+		Messages:       req.Messages,
+		ResponseFormat: req.ResponseFormat,
 	}
 
 	body, err := json.Marshal(payload)

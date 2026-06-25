@@ -44,10 +44,13 @@ export function Sidebar() {
   const { user, isLoading } = useAuth()
   const { mutate: logout, isPending: loggingOut } = useLogout()
 
-  // Extract tripId from /trips/[id] or /trips/[id]/* paths
+  // Extract tripId from /trips/[id] or /trips/[id]/* paths.
+  // Exclude reserved sub-routes ("new", "generate") that are not real trip IDs.
   const tripMatch = pathname.match(/^\/trips\/([^/]+)/)
-  const tripId = tripMatch ? tripMatch[1] : null
-  const isOnTripPage = !!tripId && tripId !== "new"
+  const RESERVED_TRIP_ROUTES = ["new", "generate"]
+  const tripId =
+    tripMatch && !RESERVED_TRIP_ROUTES.includes(tripMatch[1]) ? tripMatch[1] : null
+  const isOnTripPage = !!tripId
 
   // Fetch trip detail only when on a trip page (for trip name)
   const { data: trip } = useTrip(tripId ?? "")
