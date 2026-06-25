@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -44,15 +43,8 @@ func NewUsecase(repo Repository, jwtSvc *jwt.Service, oauthConfig *gooauth2.Conf
 }
 
 // GoogleAuthURL returns the Google consent URL the user should be redirected to.
-// AccessTypeOffline + ApprovalForce (prompt=consent) ensure Google returns a
-// refresh token so the backend can call the Calendar API on the user's behalf
-// (F4). prompt=consent is required because Google only returns a refresh token
-// on the first consent unless re-consent is forced.
 func (u *Usecase) GoogleAuthURL(state string) string {
-	return u.oauthConfig.AuthCodeURL(state,
-		gooauth2.AccessTypeOffline,
-		gooauth2.ApprovalForce,
-	)
+	return u.oauthConfig.AuthCodeURL(state)
 }
 
 // isEmailAllowed returns true when the whitelist is empty (open access)
@@ -97,29 +89,12 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 		return nil, nil, fmt.Errorf("user.GoogleLogin: upsert: %w", err)
 	}
 
-	// Persist Google tokens so the backend can call Google APIs (Calendar) on
-	// the user's behalf (F4). A non-fatal failure here must not block login —
-	// the user simply won't have Calendar export until they re-authorize.
-	if err := u.repo.UpdateGoogleTokens(usr.ID, token, grantedScopes(token)); err != nil {
-		log.Printf("user.GoogleLogin: store google tokens for %s: %v", usr.ID, err)
-	}
-
 	tokens, err := u.issueTokens(usr.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return usr, tokens, nil
-}
-
-// grantedScopes extracts the space-separated "scope" field Google returns in
-// the token exchange response, if present.
-func grantedScopes(token *gooauth2.Token) []string {
-	raw, ok := token.Extra("scope").(string)
-	if !ok || raw == "" {
-		return nil
-	}
-	return strings.Fields(raw)
 }
 
 // Me returns the user by ID (called by the /auth/me endpoint).
@@ -129,24 +104,6 @@ func (u *Usecase) Me(id string) (*User, error) {
 		return nil, fmt.Errorf("user.Me: %w", err)
 	}
 	return usr, nil
-}
-
-// ErrNoGoogleToken is returned when a user has no stored Google refresh token,
-// so the backend cannot act on their behalf (they must re-authorize).
-var ErrNoGoogleToken = errors.New("user: no google token")
-
-// GoogleToken returns the user's stored Google OAuth token for calling Google
-// APIs on their behalf (F4). Returns ErrNoGoogleToken when no refresh token is
-// stored. Implements calendarexport.TokenProvider.
-func (u *Usecase) GoogleToken(userID string) (*gooauth2.Token, error) {
-	token, _, err := u.repo.GetGoogleToken(userID)
-	if err != nil {
-		return nil, err
-	}
-	if token == nil || token.RefreshToken == "" {
-		return nil, ErrNoGoogleToken
-	}
-	return token, nil
 }
 
 // RefreshTokens validates a refresh token and issues a new token pair.
