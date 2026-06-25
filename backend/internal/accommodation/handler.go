@@ -160,6 +160,8 @@ func mapErr(err error) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "name required")
 	case errors.Is(err, ErrInvalidDates):
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid dates: check_out must be on or after check_in")
+	case errors.Is(err, ErrInvalidType):
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid accommodation type: must be hotel, hostel, apartment, or other")
 	case errors.Is(err, apperr.ErrForbidden):
 		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
 	default:

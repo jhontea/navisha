@@ -16,7 +16,7 @@ const testFrontendURL = "http://localhost:3000"
 const testCookieDomain = "" // empty for localhost tests
 
 func newHandler(mu *mockUsecase) *Handler {
-	return NewHandler(mu, testFrontendURL, testCookieDomain)
+	return NewHandler(mu, testFrontendURL, testCookieDomain, 3600, 604800)
 }
 
 // ---------- GoogleRedirect ----------

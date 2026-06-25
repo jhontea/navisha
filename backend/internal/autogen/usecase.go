@@ -73,7 +73,7 @@ func (u *Usecase) GenerateDraft(ctx context.Context, userID string, in GenerateI
 	})
 	if err != nil {
 		log.Printf("autogen.GenerateDraft: llm failed: %v", err)
-		return nil, fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
+		return nil, fmt.Errorf("%w: %w", ErrLLMUnavailable, err)
 	}
 	if content == "" {
 		return nil, fmt.Errorf("%w: empty response", ErrLLMUnavailable)

@@ -82,7 +82,7 @@ func main() {
 	// User domain
 	userRepo := user.NewPostgresRepository(db)
 	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg, cfg.App.AllowedEmails)
-	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL, cfg.App.CookieDomain)
+	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL, cfg.App.CookieDomain, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
 
 	// Trip domain
 	tripRepo := trip.NewPostgresRepository(db)

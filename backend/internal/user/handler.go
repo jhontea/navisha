@@ -15,10 +15,12 @@ type Handler struct {
 	usecase      UsecaseInterface
 	frontendURL  string // redirect destination after successful OAuth callback
 	cookieDomain string // cookie domain for cross-subdomain auth (.navisha.cloud)
+	accessTTL    int    // JWT access token TTL in seconds (for cookie MaxAge)
+	refreshTTL   int    // JWT refresh token TTL in seconds (for cookie MaxAge)
 }
 
-func NewHandler(usecase UsecaseInterface, frontendURL, cookieDomain string) *Handler {
-	return &Handler{usecase: usecase, frontendURL: frontendURL, cookieDomain: cookieDomain}
+func NewHandler(usecase UsecaseInterface, frontendURL, cookieDomain string, accessTTL, refreshTTL int) *Handler {
+	return &Handler{usecase: usecase, frontendURL: frontendURL, cookieDomain: cookieDomain, accessTTL: accessTTL, refreshTTL: refreshTTL}
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
@@ -122,7 +124,7 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		Value:    accessToken,
 		Path:     "/",
 		Domain:   h.cookieDomain,
-		MaxAge:   3600, // 1 hour
+		MaxAge:   h.accessTTL,
 		HttpOnly: true,
 		Secure:   h.cookieDomain != "",
 		SameSite: http.SameSiteNoneMode,
@@ -132,7 +134,7 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		Value:    refreshToken,
 		Path:     "/",
 		Domain:   h.cookieDomain,
-		MaxAge:   604800, // 7 days
+		MaxAge:   h.refreshTTL,
 		HttpOnly: true,
 		Secure:   h.cookieDomain != "",
 		SameSite: http.SameSiteNoneMode,

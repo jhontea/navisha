@@ -106,7 +106,7 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 		// bug — surface them as ErrLLMUnavailable so the handler returns
 		// 503 instead of 500. The original error is logged for debugging.
 		log.Printf("summary.Generate: llm failed for trip %s: %v", tripID, err)
-		return nil, fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
+		return nil, fmt.Errorf("%w: %w", ErrLLMUnavailable, err)
 	}
 
 	if content == "" {
