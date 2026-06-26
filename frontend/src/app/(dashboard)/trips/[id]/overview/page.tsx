@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useQueries } from "@tanstack/react-query"
@@ -33,6 +33,7 @@ import { useTransportations } from "@/features/transportation/hooks/useTransport
 import { useExpenseSummary, useExpenses } from "@/features/expense/hooks/useExpenses"
 import { TripSummaryCard } from "@/features/summary/components/TripSummaryCard"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
+import { Progress } from "@/components/ui/progress"
 
 import type { Day } from "@/features/trip/types"
 import type { Expense } from "@/features/expense/types"
@@ -283,14 +284,23 @@ export default function TripOverviewPage() {
 
 
 
-  // Aggregate total activities across every day of the trip.
-  const dayIds = trip?.days.map((d) => d.id) ?? []
+  // ── Aggregate activity queries per day ──
+  // CRITICAL: useMemo on both dayIds AND queries array — prevents
+  // useQueries from re-creating queryFn on every render which causes
+  // internal TanStack Query churn and excessive backend calls.
+  // See: /memories/navisha-frontend-patterns.md
+  const dayIds = useMemo(() => trip?.days.map((d) => d.id) ?? [], [trip?.days])
   const activityQueries = useQueries({
-    queries: dayIds.map((dayId) => ({
-      queryKey: ["activities", "list", dayId],
-      queryFn: () => activityApi.list(dayId),
-      enabled: !!dayId,
-    })),
+    queries: useMemo(
+      () =>
+        dayIds.map((dayId) => ({
+          queryKey: ["activities", "list", dayId] as const,
+          queryFn: () => activityApi.list(dayId),
+          enabled: !!dayId,
+          staleTime: 5 * 60 * 1000,
+        })),
+      [dayIds],
+    ),
   })
   const totalActivities = activityQueries.reduce(
     (sum, q) => sum + (q.data?.items.length ?? 0),
@@ -552,7 +562,7 @@ export default function TripOverviewPage() {
           </div>
 
           {/* Trip Progress */}
-          <div className="mb-6 rounded-xl border border-border/40 bg-card p-5">
+          <div className="glass mb-6 rounded-xl p-5">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground">
                 Trip Progress
@@ -563,13 +573,12 @@ export default function TripOverviewPage() {
                   : "Not started yet"}
               </span>
             </div>
-
-            <div className="mb-2 h-3 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-1000"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
+            <Progress
+              value={progressPercent}
+              variant="gradient"
+              size="lg"
+              showValue
+            />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{formatDate(trip.start_date)}</span>
               <span>{formatDate(trip.end_date)}</span>

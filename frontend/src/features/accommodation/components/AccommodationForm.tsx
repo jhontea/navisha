@@ -350,7 +350,7 @@ export function AccommodationForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center justify-center gap-2 bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 disabled:opacity-60"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-semibold px-6 py-3 rounded-xl shadow-md shadow-chromatic-sunset/20 transition-all active:scale-95 disabled:opacity-60 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
         >
           {isSubmitting ? (
             <>

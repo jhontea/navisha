@@ -33,11 +33,11 @@ const TYPE_CONFIG = {
   },
   note: {
     Icon: StickyNote,
-    iconBg: "bg-[#FEF9C3]",
-    iconColor: "text-amber-700",
-    borderColor: "border-l-amber-400",
+    iconBg: "bg-[#E0E7FF]",
+    iconColor: "text-indigo-600",
+    borderColor: "border-l-indigo-400",
     label: "Note",
-    labelColor: "text-amber-700",
+    labelColor: "text-indigo-600",
   },
   todo: {
     Icon: ListChecks,
@@ -55,8 +55,8 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
   return (
     <div
       className={cn(
-        "group relative rounded-xl border border-l-4 bg-card p-5 shadow-sm transition-all",
-        "hover:translate-x-0.5 hover:shadow-md",
+        "glass group relative rounded-xl border-l-4 p-5 transition-all",
+        "hover:translate-x-0.5 hover:bg-white/25",
         config.borderColor,
       )}
     >

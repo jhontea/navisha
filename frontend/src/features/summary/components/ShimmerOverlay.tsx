@@ -16,8 +16,8 @@ export function ShimmerOverlay({ children, active, className = "" }: ShimmerOver
       {children}
       {/* Shimmer overlay */}
       <div className="pointer-events-none absolute inset-0 z-10">
-        <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-        <div className="absolute inset-0 animate-pulse bg-primary/5" />
+        <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-chromatic-sky/15 to-transparent" />
+        <div className="absolute inset-0 animate-pulse bg-chromatic-sunset/3" />
       </div>
     </div>
   )

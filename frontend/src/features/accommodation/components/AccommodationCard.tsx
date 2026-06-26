@@ -29,8 +29,8 @@ export function AccommodationCard({
         }
       }}
       className={cn(
-        "group relative cursor-pointer rounded-lg border bg-card p-3 transition-colors",
-        "hover:border-primary/40 hover:bg-accent/30",
+        "glass group relative cursor-pointer rounded-lg p-3 transition-all",
+        "hover:bg-white/25 hover:shadow-chromatic",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
     >

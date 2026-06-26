@@ -59,7 +59,7 @@ export function useCreateTrip() {
     mutationFn: (input: CreateTripInput) => tripApi.create(input),
     onSuccess: () => {
       // Invalidate all trip list variants so dashboard + trips page update immediately
-      qc.invalidateQueries({ queryKey: ["trips"] })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
     },
   })
 }
@@ -69,7 +69,7 @@ export function useUpdateTrip(id: string) {
   return useMutation({
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"] })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
     },
   })
 }
@@ -79,18 +79,28 @@ export function useDeleteTrip() {
   return useMutation({
     mutationFn: (id: string) => tripApi.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"] })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
     },
   })
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AI Generate Trip — Mutation Pattern (DO NOT REGRESS)
+//
+// ALWAYS use `mutate(input, { onSuccess, onError, onSettled })`
+// NEVER use `await mutateAsync()` — causes shimmer-stuck-after-200 bug.
+// retry: 0 + gcTime: 0 — no auto-retry, no stale mutation replay.
+// See: /memories/navisha-frontend-patterns.md
+//
 // F5 — Auto-generate trip from a short prompt.
-// useGenerateTripDraft calls the LLM (blocking, ~10-25s) and returns a draft.
+// useGenerateTripDraft calls the LLM (blocking, ~10-55s) and returns a draft.
 // It does NOT persist; the user reviews the draft before committing.
 export function useGenerateTripDraft() {
   return useMutation({
+    mutationKey: ["trips", "generate"],
     mutationFn: (input: GenerateTripInput) => tripApi.generate(input),
     retry: 0,
+    gcTime: 0,
   })
 }
 
@@ -101,7 +111,7 @@ export function useCreateTripFromDraft() {
     mutationFn: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
       tripApi.createFromDraft(params),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"] })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
     },
   })
 }
@@ -116,6 +126,6 @@ export function useUpdateDayNotes(tripId: string) {
     mutationFn: ({ dayId, notes }: { dayId: string; notes: string }) =>
       tripApi.updateDayNotes(dayId, notes),
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId] }),
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: 'all' }),
   })
 }

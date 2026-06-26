@@ -53,7 +53,7 @@ export function BottomSheet({ open, onClose, children, title }: BottomSheetProps
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-background shadow-2xl animate-slide-up"
+        className="glass-lg relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl shadow-2xl animate-slide-up"
       >
         {/* Drag handle */}
         <div className="flex shrink-0 justify-center pt-3 pb-1">

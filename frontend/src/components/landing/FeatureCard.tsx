@@ -8,13 +8,13 @@ type FeatureCardProps = {
 
 export function FeatureCard({ icon, title, description, visual, className = "" }: FeatureCardProps) {
   return (
-    <div className={`group relative overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-500 ${className}`}>
+    <div className={`glass group relative overflow-hidden rounded-3xl p-8 transition-all duration-500 hover:bg-white/25 hover:shadow-chromatic ${className}`}>
       <div className="relative z-10">
-        <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-6">
           <span className="material-symbols-outlined" data-icon={icon}>{icon}</span>
         </div>
-        <h3 className="font-headline-sm text-headline-sm text-on-surface mb-3">{title}</h3>
-        <p className="text-body-md text-on-surface-variant max-w-sm mb-8">{description}</p>
+        <h3 className="font-heading text-headline-sm text-foreground mb-3">{title}</h3>
+        <p className="text-body-md text-muted-foreground max-w-sm mb-8">{description}</p>
       </div>
       {visual && <div className="relative z-10">{visual}</div>}
     </div>

@@ -11,6 +11,21 @@ export interface DestinationMeta {
   description: string
 }
 
+/**
+ * Google Places getUrl() returns a 2KB+ URL with callback, referer, and token
+ * params embedded. Parse out just the base64 photo reference (the `1s` param)
+ * and rebuild a clean, short /place/photo URL.
+ */
+function shortPhotoUrl(photo: google.maps.places.PlacePhoto): string {
+  const raw = photo.getUrl({ maxWidth: MAX_PHOTO_WIDTH })
+  // Extract the 1s param (base64 photo reference) from the JS API URL.
+  const match = raw.match(/[?&]1s=([^&]+)/)
+  if (!match) return raw // fallback to long URL if parsing fails
+  const ref = match[1]
+  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
+  return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${MAX_PHOTO_WIDTH}&photoreference=${ref}&key=${key}`
+}
+
 export async function resolveDestinationMeta(
   destination: string,
 ): Promise<DestinationMeta | null> {
@@ -19,15 +34,11 @@ export async function resolveDestinationMeta(
   const places = await waitForPlaces()
   if (!places) return null
 
-  // Step 1: Use AutocompleteService to find the destination as a Place
-  // (e.g. "Semarang" → prediction with place_id).
   const placeId = await autocompletePlaceId(places, destination)
   if (!placeId) {
-    // Fallback: use the raw destination string as description.
     return { coverImageUrl: "", description: destination }
   }
 
-  // Step 2: GetDetails for photo + formatted_address.
   return new Promise((resolve) => {
     const svc = new places.PlacesService(document.createElement("div"))
     svc.getDetails(
@@ -40,7 +51,7 @@ export async function resolveDestinationMeta(
           status === google.maps.places.PlacesServiceStatus.OK &&
           place?.photos?.length
         ) {
-          coverImageUrl = place.photos[0].getUrl({ maxWidth: MAX_PHOTO_WIDTH }) ?? ""
+          coverImageUrl = shortPhotoUrl(place.photos[0])
         }
 
         resolve({ coverImageUrl, description: desc })

@@ -31,7 +31,7 @@ export const TripHero = memo(function TripHero({
 }: TripHeroProps) {
   return (
     <div
-      className={`relative mx-auto w-full max-w-max-width bg-gradient-to-br from-primary/25 via-primary/10 to-secondary/15 px-margin-mobile pt-6 pb-3 sm:py-10 md:px-margin-desktop md:py-12 ${className ?? ""}`}
+      className={`relative mx-auto w-full max-w-max-width bg-gradient-to-br from-chromatic-sunset/15 via-chromatic-aurora/8 to-chromatic-sky/10 px-margin-mobile pt-6 pb-3 sm:py-10 md:px-margin-desktop md:py-12 ${className ?? ""}`}
     >
       {/* Action buttons — top-right, inside the padding area */}
       {(onEdit || onDelete) && (
@@ -40,7 +40,7 @@ export const TripHero = memo(function TripHero({
             <button
               type="button"
               onClick={onEdit}
-              className="rounded-full bg-background/60 p-2 text-muted-foreground backdrop-blur-sm hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+              className="glass flex items-center justify-center rounded-full p-2 text-muted-foreground hover:bg-white/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chromatic-sunset transition-colors"
               aria-label="Edit trip"
             >
               <Pencil className="h-4 w-4" />
@@ -51,7 +51,7 @@ export const TripHero = memo(function TripHero({
               type="button"
               onClick={onDelete}
               disabled={isDeleting}
-              className="rounded-full bg-background/60 p-2 text-muted-foreground backdrop-blur-sm hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
+              className="glass flex items-center justify-center rounded-full p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
               aria-label="Delete trip"
             >
               <Trash2 className="h-4 w-4" />

@@ -12,6 +12,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
         <BackLink href="/" label="Back to Home" className="mb-8" />
+        <div className="glass-lg rounded-2xl p-8">
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Privacy Policy</h1>
         <p className="mb-8 text-sm text-muted-foreground">Last updated: June 26, 2026</p>
         <div className="prose prose-sm prose-gray max-w-none space-y-6">
@@ -48,6 +49,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-foreground">7. Contact</h2>
             <p className="text-muted-foreground">For privacy inquiries: <Link href="/contact" className="text-primary hover:underline">contact page</Link> or <a href="mailto:privacy@navisha.cloud" className="text-primary hover:underline">privacy@navisha.cloud</a>.</p>
           </section>
+        </div>
         </div>
       </div>
       <Footer />

@@ -85,3 +85,22 @@ func (s *Service) validate(tokenStr string, secret []byte) (string, error) {
 	}
 	return c.UserID, nil
 }
+
+// ExtractUserIDUnverified parses a JWT WITHOUT signature validation.
+// Returns the user_id claim on a best-effort basis. Used by the rate limiter
+// (which runs before auth middleware) to identify users. The auth middleware
+// still performs full validation later in the chain.
+//
+// Never use this for authorization decisions — only for rate-limit bucketing.
+func (s *Service) ExtractUserIDUnverified(tokenStr string) (string, error) {
+	parser := jwt.NewParser()
+	token, _, err := parser.ParseUnverified(tokenStr, &claims{})
+	if err != nil {
+		return "", fmt.Errorf("jwt.extract_unverified: %w", err)
+	}
+	c, ok := token.Claims.(*claims)
+	if !ok || c.UserID == "" {
+		return "", fmt.Errorf("jwt.extract_unverified: no user_id claim")
+	}
+	return c.UserID, nil
+}

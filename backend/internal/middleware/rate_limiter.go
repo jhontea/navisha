@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 )
@@ -20,6 +22,7 @@ import (
 // each check.
 type RateLimiter struct {
 	rdb    *redis.Client
+	jwtSvc *jwt.Service // optional: for extracting user ID from JWT before auth middleware runs
 	config RateLimitConfig
 }
 
@@ -31,9 +34,10 @@ type RateLimitConfig struct {
 	GeneralPerMin int // e.g. 100 req/min for everything else
 }
 
-// NewRateLimiter creates a rate limiter. Pass nil config to disable.
-func NewRateLimiter(rdb *redis.Client, cfg RateLimitConfig) *RateLimiter {
-	return &RateLimiter{rdb: rdb, config: cfg}
+// NewRateLimiter creates a rate limiter. Pass nil jwtSvc to skip JWT extraction
+// (then only context UserIDKey or IP is used for identification).
+func NewRateLimiter(rdb *redis.Client, jwtSvc *jwt.Service, cfg RateLimitConfig) *RateLimiter {
+	return &RateLimiter{rdb: rdb, jwtSvc: jwtSvc, config: cfg}
 }
 
 // Limit returns an Echo middleware that rate-limits requests per authenticated
@@ -51,13 +55,21 @@ func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			// Use user ID when authenticated; fall back to IP for public routes
-			// so OAuth endpoints, token refresh, and health checks are also
-			// protected from abuse.
+			// Identify the caller. Priority:
+			// 1. Context UserIDKey (set by auth middleware, if it ran before us)
+			// 2. JWT Authorization header (unverified — rate-limit bucketing only)
+			// 3. Client IP (fallback for public/unauthenticated routes)
 			ident := ""
 			if userID, ok := c.Get(UserIDKey).(string); ok && userID != "" {
 				ident = userID
-			} else {
+			} else if rl.jwtSvc != nil {
+				if token := tokenFromRequest(c); token != "" {
+					if userID, err := rl.jwtSvc.ExtractUserIDUnverified(token); err == nil && userID != "" {
+						ident = userID
+					}
+				}
+			}
+			if ident == "" {
 				ident = "ip:" + c.RealIP()
 			}
 
@@ -88,8 +100,8 @@ func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 
 // bucketAndLimit returns the Redis key bucket name and per-minute limit for a path.
 func (rl *RateLimiter) bucketAndLimit(path string) (string, int) {
-	// LLM endpoints (expensive)
-	if matchPath(path, "/api/v1/trips/generate") || matchPath(path, "/api/v1/trips/:id/summary") {
+	// LLM endpoints (expensive) — exact generate path or /trips/:id/summary suffix
+	if path == "/api/v1/trips/generate" || (strings.HasPrefix(path, "/api/v1/trips/") && strings.HasSuffix(path, "/summary")) {
 		return "llm", rl.config.LLMPerMinute
 	}
 	// Auth endpoints

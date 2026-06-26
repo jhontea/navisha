@@ -93,6 +93,9 @@ type LLMConfig struct {
 	// SummaryRateLimitSeconds is the soft window between summary (re)generations
 	// for a trip. When 0 (or unset) the rate-limit check is disabled.
 	SummaryRateLimitSeconds int `mapstructure:"summary_rate_limit_seconds"`
+	// GenerateRateLimitSeconds is the soft window between AI trip generations
+	// per user. When 0 (or unset) the rate-limit check is disabled.
+	GenerateRateLimitSeconds int `mapstructure:"generate_rate_limit_seconds"`
 	// TimeoutSeconds is the HTTP timeout for LLM calls. When 0 (or unset)
 	// the client default is used.
 	TimeoutSeconds int `mapstructure:"timeout_seconds"`

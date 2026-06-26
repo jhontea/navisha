@@ -329,7 +329,7 @@ export function ActivityForm({
         >
           Cancel
         </Button>
-        <Button type="submit" size="sm" disabled={isSubmitting}>
+        <Button type="submit" size="sm" variant="gradient" disabled={isSubmitting}>
           {isSubmitting ? "Saving…" : initial ? "Save changes" : "Add activity"}
         </Button>
       </div>

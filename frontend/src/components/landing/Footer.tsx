@@ -2,10 +2,10 @@ import Link from "next/link"
 
 export function Footer() {
   return (
-    <footer className="border-t border-outline-variant/30 py-12">
+    <footer className="border-t border-white/10 bg-gradient-to-b from-background to-muted/30 py-12">
       <div className="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex flex-col items-center md:items-start gap-4">
-          <div className="text-headline-sm font-bold text-primary">Navisha</div>
+          <div className="text-gradient-sunset text-headline-sm font-bold">Navisha</div>
           <p className="text-label-sm text-muted-foreground">
             © 2026 Navisha. All rights reserved.
           </p>

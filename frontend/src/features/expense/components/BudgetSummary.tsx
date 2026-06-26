@@ -2,6 +2,7 @@
 
 import { cn, formatCurrency } from "@/lib/utils"
 import { useExpenseSummary } from "../hooks/useExpenses"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const CATEGORY_CONFIG: Record<
   string,
@@ -57,8 +58,8 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 h-48 animate-pulse rounded-xl bg-muted" />
-        <div className="h-48 animate-pulse rounded-xl bg-muted" />
+        <div className="lg:col-span-2 h-48 rounded-xl"><Skeleton variant="glass" className="h-full w-full" /></div>
+        <div className="h-48 rounded-xl"><Skeleton variant="glass" className="h-full w-full" /></div>
       </div>
     )
   }
@@ -83,7 +84,7 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
   // can see their budget at a glance even before adding expenses.
   if (data.by_category.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground mb-8">
+      <div className="rounded-xl glass p-8 text-center text-sm text-muted-foreground mb-8">
         <p className="mb-4">No expenses yet. Add one below to see the breakdown.</p>
         {tripBudget && tripBudget > 0 ? (
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-foreground">
@@ -98,7 +99,7 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       {/* Category Distribution Bar Card */}
-      <div className="lg:col-span-2 bg-card border border-border/40 shadow-sm rounded-xl p-4 sm:p-6">
+      <div className="lg:col-span-2 glass rounded-xl p-4 sm:p-6">
         <div className="flex justify-between items-center mb-4">
           <h4 className="font-label-md text-foreground">Category Distribution</h4>
           <span className="text-label-sm bg-muted px-2 py-1 rounded text-muted-foreground">
@@ -145,7 +146,7 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
       </div>
 
       {/* Budget Health — on mobile show as horizontal row, on lg show as ring card */}
-      <div className="bg-card border border-border/40 shadow-sm rounded-xl p-4 sm:p-6">
+      <div className="glass rounded-xl p-4 sm:p-6">
         {/* Mobile: horizontal layout */}
         <div className="flex items-center gap-4 lg:hidden">
           {/* Mini ring */}

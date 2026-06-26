@@ -33,8 +33,8 @@ export function DayPanel({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border bg-card transition-all duration-200",
-        expanded ? "shadow-sm" : "",
+        "glass overflow-hidden rounded-xl transition-all duration-200",
+        expanded ? "shadow-chromatic" : "",
       )}
     >
       {/* Day header — click to expand/collapse */}
@@ -44,7 +44,7 @@ export function DayPanel({
         aria-expanded={expanded}
         className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-accent/30"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-chromatic-sunset to-chromatic-sky text-sm font-bold text-white">
           {dayNumber}
         </span>
         <div className="flex-1">

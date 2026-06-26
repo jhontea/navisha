@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export type BackLinkVariant = "default" | "subtle" | "primary";
+export type BackLinkVariant = "default" | "subtle" | "primary" | "glass";
 
 interface BackLinkProps {
   href: string;
@@ -20,6 +20,8 @@ const variantStyles: Record<BackLinkVariant, string> = {
   subtle: "text-sm text-muted-foreground hover:text-primary transition-colors",
   primary:
     "inline-block text-sm text-primary hover:underline",
+  glass:
+    "glass inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-foreground hover:bg-white/25 transition-all",
 };
 
 /** Consistent back-navigation link. Phase 3A: replaces 10+ duplicated

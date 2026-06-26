@@ -2,21 +2,34 @@ package summary
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"math"
 	"net/http"
+	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
-	usecase UsecaseInterface
+	usecase      UsecaseInterface
+	rdb          *redis.Client
+	rateLimitSec int
 }
 
 func NewHandler(usecase UsecaseInterface) *Handler {
 	return &Handler{usecase: usecase}
+}
+
+// WithSummaryRateLimit enables per-user cooldown for summary generation.
+// Uses Redis SETNX for atomic check-and-reserve. Pass rdb=nil or seconds=0 to disable.
+func (h *Handler) WithSummaryRateLimit(rdb *redis.Client, seconds int) *Handler {
+	h.rdb = rdb
+	h.rateLimitSec = seconds
+	return h
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
@@ -28,6 +41,27 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 func (h *Handler) Generate(c echo.Context) error {
 	userID := c.Get(middleware.UserIDKey).(string)
 	tripID := c.Param("id")
+
+	// ── Per-user cooldown (Redis SETNX — same pattern as autogen) ──
+	if h.rdb != nil && h.rateLimitSec > 0 {
+		key := fmt.Sprintf("ratelimit:summary:cooldown:%s", userID)
+		dur := time.Duration(h.rateLimitSec) * time.Second
+		ok, err := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
+		if err != nil {
+			slog.Warn("summary: cooldown check failed", "user_id", userID, "err", err)
+		} else if !ok {
+			ttl, _ := h.rdb.TTL(c.Request().Context(), key).Result()
+			retryAfter := int(ttl.Seconds())
+			if retryAfter <= 0 {
+				retryAfter = h.rateLimitSec
+			}
+			return echo.NewHTTPError(http.StatusTooManyRequests, map[string]any{
+				"code":                "RATE_LIMITED",
+				"message":             fmt.Sprintf("Summary generation cooldown. Try again in %d seconds.", retryAfter),
+				"retry_after_seconds": retryAfter,
+			})
+		}
+	}
 
 	s, err := h.usecase.Generate(c.Request().Context(), userID, tripID)
 	if err != nil {

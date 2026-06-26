@@ -118,7 +118,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
 
       {/* Add Expense Form */}
       <section>
-        <div className="bg-card border border-border/40 shadow-sm rounded-xl p-8">
+        <div className="glass rounded-xl p-8">
           <h3 className="font-display text-headline-sm text-foreground mb-6">Add New Expense</h3>
 
           {addOpen ? (
@@ -171,7 +171,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
           {isLoading && (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
+                <div key={i} className="h-20 glass" />
               ))}
             </div>
           )}
@@ -207,7 +207,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
                       </span>
                     </div>
 
-                    <div className="bg-card border border-border/40 shadow-sm overflow-hidden rounded-xl">
+                    <div className="glass overflow-hidden rounded-xl">
                       <div className="divide-y divide-border/30">
                         {group.expenses.map((e) => {
                           const isEditing = editingId === e.id

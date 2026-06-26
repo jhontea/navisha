@@ -117,6 +117,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
   }
 
   const handleGenerate = () => {
+    if (disabled) return
     onSubmit({
       destination,
       description,

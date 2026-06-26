@@ -68,7 +68,7 @@ export function TransportationCard({
     : null
 
   return (
-    <div className="group bg-card border-l-4 border-l-primary rounded-xl p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
+    <div className="glass group flex flex-col items-start justify-between gap-6 rounded-xl border-l-4 border-l-primary p-6 transition-all hover:bg-white/25 hover:shadow-chromatic lg:flex-row lg:items-center">
       {/* Left: icon + route */}
       <div className="flex items-center gap-5">
         <div

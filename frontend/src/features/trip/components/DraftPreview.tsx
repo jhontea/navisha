@@ -14,7 +14,7 @@ export function DraftPreview({ draft }: Props) {
   return (
     <div className="space-y-6">
       {/* Header summary */}
-      <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6">
+      <div className="glass-lg rounded-xl p-6">
         <h3 className="font-headline-md text-headline-md text-on-surface mb-1">
           {draft.title}
         </h3>
