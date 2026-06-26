@@ -60,8 +60,8 @@ export const TripHero = memo(function TripHero({
         </div>
       )}
 
-      {/* Title + info — centered */}
-      <div className="text-center">
+      {/* Title + info — right padding on mobile so text clears action buttons */}
+      <div className="text-center pr-20 sm:pr-0">
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl md:text-3xl">
           {title}
         </h1>

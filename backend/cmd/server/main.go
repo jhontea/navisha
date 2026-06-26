@@ -226,7 +226,7 @@ func main() {
 	e.Use(echomw.CORSWithConfig(echomw.CORSConfig{
 		AllowOrigins:     []string{cfg.App.FrontendURL},
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-		AllowHeaders:     []string{echo.HeaderContentType, echo.HeaderAuthorization},
+		AllowHeaders:     []string{echo.HeaderContentType, echo.HeaderAuthorization, "X-CSRF-Token"},
 		AllowCredentials: true,
 	}))
 
