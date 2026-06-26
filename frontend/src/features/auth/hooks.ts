@@ -46,7 +46,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: () => api.post("/auth/logout"),
-    onSettled: () => {
+    onSuccess: () => {
       setUser(null)
       queryClient.clear()
       router.push("/login")

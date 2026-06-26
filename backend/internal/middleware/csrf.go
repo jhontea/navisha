@@ -15,22 +15,29 @@ const csrfTokenLen = 32
 
 // CSRF implements the Double Submit Cookie pattern for CSRF protection.
 //
+// cookieDomain is the shared domain for the CSRF cookie (e.g. ".navisha.cloud").
+// Without it, the cookie is scoped to the API subdomain only and the frontend
+// JS cannot read it. Pass empty string for localhost (CSRF is skipped there).
+//
 // On GET/HEAD/OPTIONS requests: sets a random csrf_token cookie (non-HTTP-only
 // so JavaScript can read it and include it in the X-CSRF-Token header).
 //
 // On POST/PUT/DELETE/PATCH requests: compares the csrf_token cookie value with
-// the X-CSRF-Token header. They must match. This works because an attacker on
-// a different origin cannot read the cookie (Same-Origin Policy), so they
-// cannot forge the header.
+// the X-CSRF-Token header. They must match.
 //
 // Exempts OAuth callback routes (which are redirects from Google, not
 // initiated by our frontend JS).
-func CSRF() echo.MiddlewareFunc {
+func CSRF(cookieDomain string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// Skip CSRF on localhost — cross-port cookie access is blocked.
+			if isLocalhost(c) || cookieDomain == "" {
+				return next(c)
+			}
+
 			// Skip CSRF check for safe methods — just ensure cookie is set.
 			if isSafeMethod(c.Request().Method) {
-				ensureCSRFCookie(c)
+				ensureCSRFCookie(c, cookieDomain)
 				return next(c)
 			}
 
@@ -65,6 +72,17 @@ func isSafeMethod(method string) bool {
 	return false
 }
 
+// isLocalhost returns true when the request comes from a localhost origin.
+// CSRF double-submit can't work across different ports on localhost because
+// the browser blocks cross-origin document.cookie access (localhost:3000
+// cannot read cookies set by localhost:8090).
+func isLocalhost(c echo.Context) bool {
+	host := c.Request().Host
+	return host == "" ||
+		len(host) >= 9 && host[:9] == "localhost" ||
+		len(host) >= 9 && host[:9] == "127.0.0.1"
+}
+
 func isOAuthCallback(path string) bool {
 	// OAuth callbacks arrive as GET from Google, so they'd pass isSafeMethod.
 	// But also skip POST/PUT/DELETE to auth endpoints in case OAuth providers
@@ -74,7 +92,7 @@ func isOAuthCallback(path string) bool {
 		path[len(path)-14:] == "/auth/callback"
 }
 
-func ensureCSRFCookie(c echo.Context) {
+func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 	_, err := c.Cookie(csrfCookieName)
 	if err == nil {
 		return // already set
@@ -84,10 +102,11 @@ func ensureCSRFCookie(c echo.Context) {
 		Name:     csrfCookieName,
 		Value:    token,
 		Path:     "/",
+		Domain:   cookieDomain,
 		MaxAge:   86400, // 24 hours
 		HttpOnly: false, // must be readable by JavaScript
-		Secure:   c.Request().URL.Scheme == "https" || c.Request().Header.Get("X-Forwarded-Proto") == "https",
-		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	})
 }
 
