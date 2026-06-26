@@ -19,6 +19,7 @@ export function useAccommodations(tripId: string) {
     queryKey: listKey(tripId),
     queryFn: () => accommodationApi.list(tripId),
     enabled: !!tripId,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -28,10 +29,10 @@ export function useCreateAccommodation(tripId: string) {
     mutationFn: (input: CreateAccommodationInput) =>
       accommodationApi.create(tripId, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: listKey(tripId) })
+      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
       // Invalidate expense summary + list so budget page reflects new cost immediately
-      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId] })
-      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId] })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'all' })
     },
   })
 }
@@ -41,7 +42,11 @@ export function useUpdateAccommodation(id: string, tripId: string) {
   return useMutation({
     mutationFn: (input: UpdateAccommodationInput) =>
       accommodationApi.update(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(tripId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'all' })
+    },
   })
 }
 
@@ -49,6 +54,10 @@ export function useDeleteAccommodation(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => accommodationApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(tripId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'all' })
+    },
   })
 }

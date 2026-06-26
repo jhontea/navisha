@@ -112,7 +112,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
           {isLoading && (
             <div className="space-y-3">
               {[1, 2].map((i) => (
-                <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+                <div key={i} className="h-24 glass" />
               ))}
             </div>
           )}
@@ -137,7 +137,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
 
               if (isEditing) {
                 return (
-                  <div key={a.id} className="rounded-2xl border bg-card p-6 shadow-sm">
+                  <div key={a.id} className="glass rounded-2xl p-6">
                     <AccommodationForm
                       initial={a}
                       isSubmitting={updateMut.isPending}

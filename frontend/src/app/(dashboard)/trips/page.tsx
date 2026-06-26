@@ -1,16 +1,13 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { BackLink } from "@/components/BackLink"
 import { TripCard } from "@/features/trip/components/TripCard"
 import { TripCTAs } from "@/features/trip/components/TripCTAs"
-import { useFilteredTrips } from "@/features/trip/hooks/useTrips"
+import { useTrips } from "@/features/trip/hooks/useTrips"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function TripsPage() {
-  const [appliedFrom, setAppliedFrom] = useState("")
-  const [appliedTo, setAppliedTo] = useState("")
-
   const {
     data,
     isLoading,
@@ -19,7 +16,7 @@ export default function TripsPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useFilteredTrips(appliedFrom || undefined, appliedTo || undefined)
+  } = useTrips()
 
   const trips = data?.pages.flatMap((p) => p.items) ?? []
 
@@ -42,43 +39,11 @@ export default function TripsPage() {
           <TripCTAs />
         </div>
       </header>
-
-
-      {/* Filter chips — Phase 3B-3: replaces date-range form */}
-      <div className="mb-6 flex gap-2 overflow-x-auto no-scrollbar">
-        {[
-          { label: "All", from: "", to: "" },
-          { label: "Upcoming", from: "", to: "active" },
-          { label: "2026", from: "2026-01-01", to: "2026-12-31" },
-          { label: "2025", from: "2025-01-01", to: "2025-12-31" },
-        ].map((chip) => {
-          const isActive =
-            appliedFrom === chip.from && appliedTo === chip.to;
-          return (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => {
-                setAppliedFrom(chip.from);
-                setAppliedTo(chip.to);
-              }}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-primary text-white"
-                  : "bg-surface-container-low text-muted-foreground hover:bg-surface-container-high hover:text-foreground"
-              }`}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Trip list — single column mobile-first */}
+      {/* Trip list — 1-col mobile, 3-col tablet/desktop */}
       {isLoading ? (
-        <div className="flex flex-col gap-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-56 w-full animate-pulse rounded-xl bg-surface-container-high" />
+            <Skeleton key={i} variant="glass" className="h-56 w-full" />
           ))}
         </div>
       ) : isError ? (
@@ -105,7 +70,7 @@ export default function TripsPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {trips.map((t) => (
               <TripCard key={t.id} trip={t} />
             ))}

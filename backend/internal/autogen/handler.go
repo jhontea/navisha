@@ -2,6 +2,7 @@ package autogen
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -10,14 +11,25 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
-	usecase UsecaseInterface
+	usecase              UsecaseInterface
+	rdb                  *redis.Client
+	generateRateLimitSec int
 }
 
 func NewHandler(usecase UsecaseInterface) *Handler {
 	return &Handler{usecase: usecase}
+}
+
+// WithGenerateRateLimit enables per-user cooldown for AI trip generation.
+// Pass rdb=nil or seconds=0 to disable.
+func (h *Handler) WithGenerateRateLimit(rdb *redis.Client, seconds int) *Handler {
+	h.rdb = rdb
+	h.generateRateLimitSec = seconds
+	return h
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
@@ -35,6 +47,31 @@ type generateRequest struct {
 
 func (h *Handler) Generate(c echo.Context) error {
 	userID := c.Get(middleware.UserIDKey).(string)
+
+	// ── Per-user cooldown (Redis SETNX — atomic check-and-reserve) ──
+	// SETNX ensures the check and reservation happen as a single atomic op.
+	// This prevents the classic race where two concurrent requests both pass
+	// a TTL check before either manages to set the cooldown key.
+	if h.rdb != nil && h.generateRateLimitSec > 0 {
+		key := fmt.Sprintf("ratelimit:autogen:cooldown:%s", userID)
+		dur := time.Duration(h.generateRateLimitSec) * time.Second
+		ok, err := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
+		if err != nil {
+			slog.Warn("autogen: cooldown check failed", "user_id", userID, "err", err)
+		} else if !ok {
+			ttl, _ := h.rdb.TTL(c.Request().Context(), key).Result()
+			retryAfter := int(ttl.Seconds())
+			if retryAfter <= 0 {
+				retryAfter = h.generateRateLimitSec
+			}
+			return echo.NewHTTPError(http.StatusTooManyRequests, map[string]any{
+				"code":                "RATE_LIMITED",
+				"message":             fmt.Sprintf("Trip generation cooldown. Try again in %d seconds.", retryAfter),
+				"retry_after_seconds": retryAfter,
+			})
+		}
+	}
+
 	var req generateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
@@ -71,6 +108,10 @@ func (h *Handler) Generate(c echo.Context) error {
 	if err != nil {
 		return mapErr(err)
 	}
+
+	// Cooldown was already reserved at the top of Generate via SETNX.
+	// No need to set it again here.
+
 	return c.JSON(http.StatusOK, draftToResponse(draft, req.StartDate, req.EndDate))
 }
 

@@ -13,6 +13,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // ── Chromatic Accent Tokens (blue-spectrum) ──
+        "chromatic-sunset": "hsl(var(--chromatic-sunset))",
+        "chromatic-sunset-end": "hsl(var(--chromatic-sunset-end))",
+        "chromatic-ocean": "hsl(var(--chromatic-ocean))",
+        "chromatic-ocean-end": "hsl(var(--chromatic-ocean-end))",
+        "chromatic-aurora": "hsl(var(--chromatic-aurora))",
+        "chromatic-gold": "hsl(var(--chromatic-gold))",
+        "chromatic-coral": "hsl(var(--chromatic-coral))",
+        "chromatic-amber": "hsl(var(--chromatic-amber))",
+        // ── Hardcoded hex (backwards compat) ──
         "primary-fixed": "#d8e2ff",
         "on-primary-fixed": "#001a41",
         "on-primary-fixed-variant": "#004493",
@@ -127,20 +137,47 @@ const config: Config = {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
+        "shimmer-sparkle": {
+          "0%, 100%": { opacity: "0" },
+          "50%": { opacity: "0.6" },
+        },
+        "gradient-shift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "float-orb": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(30px, -30px) scale(1.05)" },
+          "66%": { transform: "translate(-20px, 20px) scale(0.95)" },
+        },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(59, 130, 246, 0.15)" },
+          "50%": { boxShadow: "0 0 40px rgba(59, 130, 246, 0.3)" },
+        },
       },
       animation: {
         shimmer: "shimmer 1.8s ease-in-out infinite",
+        "shimmer-sparkle": "shimmer-sparkle 2s ease-in-out infinite",
+        "gradient-shift": "gradient-shift 8s ease-in-out infinite",
+        "float-orb": "float-orb 12s ease-in-out infinite",
+        "fade-up": "fade-up 0.4s ease-out both",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
       },
       fontSize: {
         "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
         "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
         "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "display-lg": ["64px", { lineHeight: "72px", letterSpacing: "-0.025em", fontWeight: "700" }],
         display: ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
         "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
         "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
         "label-md": ["14px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "600" }],
-        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600" }],
+        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.015em", fontWeight: "600" }],
         "headline-lg-mobile": ["24px", { lineHeight: "32px", fontWeight: "600" }],
       },
     },

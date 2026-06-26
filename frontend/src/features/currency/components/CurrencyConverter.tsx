@@ -57,7 +57,7 @@ export function CurrencyConverter() {
       {/* Converter Interface */}
       <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
         {/* From Card */}
-        <div className="w-full md:flex-1 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant soft-shadow transition-all hover:border-primary/30">
+        <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
           <Label className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4 block">From</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={from} onValueChange={(v) => v && setFrom(v)}>
@@ -103,7 +103,7 @@ export function CurrencyConverter() {
         </Button>
 
         {/* To Card */}
-        <div className="w-full md:flex-1 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant soft-shadow transition-all hover:border-primary/30">
+        <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
           <Label className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4 block">To</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={to} onValueChange={(v) => v && setTo(v)}>

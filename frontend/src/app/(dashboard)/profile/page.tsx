@@ -17,10 +17,10 @@ export default function ProfilePage() {
           <img
             src={user.avatar_url}
             alt={user.name ?? "User avatar"}
-            className="mb-4 h-24 w-24 rounded-full border-2 border-border object-cover shadow-sm"
+            className="mb-4 h-24 w-24 rounded-full border-4 border-chromatic-sky/30 object-cover shadow-lg"
           />
         ) : (
-          <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-primary text-4xl font-bold text-primary-foreground shadow-sm">
+          <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-4xl font-bold text-white shadow-lg">
             {user?.name?.charAt(0).toUpperCase() ?? "?"}
           </div>
         )}

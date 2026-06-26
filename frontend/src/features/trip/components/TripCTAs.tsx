@@ -1,26 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { MaterialIcon } from "@/components/MaterialIcon";
+import { Sparkles, Plus } from "lucide-react";
 
-/** Consistent CTA buttons for trip creation.
- *  Phase 3A: replaces the duplicated Generate + New Trip button pair
- *  in dashboard and trips pages. */
+/** Consistent CTA buttons with glass + gradient design. */
 export function TripCTAs() {
   return (
     <>
       <Link
         href="/trips/generate"
-        className="flex items-center justify-center gap-2 border border-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-[0.98]"
+        className="glass flex items-center justify-center gap-2 border-white/20 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-white/25 hover:shadow-chromatic active:scale-[0.98]"
       >
-        <MaterialIcon name="auto_fix_high" size={20} />
-        Generate Trip with AI
+        <Sparkles className="h-4 w-4 text-chromatic-sky" />
+        Generate with AI
       </Link>
       <Link
         href="/trips/new"
-        className="flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md text-label-md shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98]"
+        className="flex items-center justify-center gap-2 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-[0.98]"
       >
-        <MaterialIcon name="add" size={20} />
+        <Plus className="h-4 w-4" />
         New Trip
       </Link>
     </>

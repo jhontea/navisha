@@ -72,6 +72,7 @@
 
 @layer base {
   :root {
+    /* ── Original Blue Palette (MD3) ── */
     --background: 240 33% 98%;
     --foreground: 222.2 47.4% 11.2%;
     --card: 0 0% 100%;
@@ -91,8 +92,50 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
+    /* ── Chromatic Accent Tokens (pure blue/cool spectrum — no warm colors) ── */
+    --chromatic-primary: 215 100% 36%;
+    --chromatic-primary-light: 215 80% 55%;
+    --chromatic-ocean: 185 80% 40%;
+    --chromatic-ocean-end: 200 80% 50%;
+    --chromatic-aurora: 250 70% 55%;
+    --chromatic-sky: 200 90% 60%;
+    --chromatic-mint: 170 65% 48%;
+    --chromatic-ice: 210 60% 70%;
+    --chromatic-sunset: 215 100% 36%;
+    --chromatic-sunset-end: 250 70% 55%;
+    /* Legacy warm token names — now mapped to cool colors */
+    --chromatic-amber: 170 65% 48%;
+    --chromatic-coral: 200 90% 60%;
+    --chromatic-gold: 210 60% 70%;
+
+    /* ── Glassmorphism Tokens ── */
+    --glass-blur-sm: 8px;
+    --glass-blur: 12px;
+    --glass-blur-lg: 20px;
+    --glass-opacity-1: 0.08;
+    --glass-opacity-2: 0.15;
+    --glass-opacity-3: 0.25;
+    --glass-border-opacity: 0.18;
+    --glass-highlight-opacity: 0.35;
+
+    /* ── Depth / Elevation Scale ── */
+    --elevation-0: none;
+    --elevation-1: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    --elevation-2: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+    --elevation-3: 0 8px 24px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.05);
+    --elevation-4: 0 16px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06);
+
+    /* ── Z-Index Scale ── */
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-overlay: 300;
+    --z-modal: 400;
+    --z-toast: 500;
+
+    /* ── Legacy MD3 tokens ── */
     --on-primary: 0 0% 100%;
     --on-secondary-container: 210 14% 35%;
     --on-background: 222.2 47.4% 11.2%;
@@ -160,15 +203,18 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    --radius: 0.75rem;
   }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(210,100%,98%,1) 0, transparent 50%), 
-      radial-gradient(at 100% 0%, hsla(220,100%,97%,1) 0, transparent 50%);
+    background-image:
+      radial-gradient(at 0% 0%, hsla(215,100%,96%,1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(200,80%,95%,1) 0, transparent 50%),
+      radial-gradient(at 50% 100%, hsla(250,60%,96%,0.6) 0, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
@@ -176,44 +222,97 @@
   .text-balance {
     text-wrap: balance;
   }
+  /* Chromatic gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+  }
+  .text-gradient-sunset {
+    @apply bg-clip-text text-transparent bg-gradient-to-r;
+    background-image: linear-gradient(to right, hsl(var(--chromatic-sunset)), hsl(var(--chromatic-sunset-end)));
+  }
+  .text-gradient-ocean {
+    @apply bg-clip-text text-transparent bg-gradient-to-r;
+    background-image: linear-gradient(to right, hsl(var(--chromatic-ocean)), hsl(var(--chromatic-ocean-end)));
+  }
+  /* Tabular numbers for data displays */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
   /* Trip card placeholder gradient */
   .trip-cover-gradient {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(215, 100%, 60%) 40%, hsl(215, 100%, 80%) 70%, hsl(230, 100%, 92%) 100%);
   }
 }
 
-/* Custom styles from template */
+/* ── Chromatic Shadows ── */
 .shadow-soft {
-  box-shadow: 0 10px 25px -5px hsl(var(--primary) / 0.05), 0 8px 10px -6px hsl(var(--primary) / 0.03);
+  box-shadow: 0 10px 25px -5px hsla(var(--primary) / 0.08), 0 8px 10px -6px hsla(var(--primary) / 0.04);
 }
 .soft-shadow {
-  box-shadow: 0px 12px 24px hsl(var(--primary) / 0.04);
+  box-shadow: 0px 12px 24px hsla(var(--primary) / 0.06);
+}
+.shadow-chromatic {
+  box-shadow: 0 8px 32px hsla(var(--chromatic-sunset) / 0.12), 0 2px 8px hsla(var(--chromatic-ocean) / 0.06);
 }
 .trip-card-shadow {
-  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--elevation-2);
 }
 .trip-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0px 16px 32px hsl(var(--primary) / 0.06);
+  box-shadow: var(--elevation-3);
 }
-.sidebar-scroll::-webkit-scrollbar {
-  width: 4px;
+
+/* ── Glassmorphism Utilities ── */
+.glass-sm {
+  background: rgba(var(--glass-bg) / var(--glass-opacity-1));
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
 }
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
+.glass {
+  background: rgba(var(--glass-bg) / var(--glass-opacity-2));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
+  box-shadow: var(--elevation-2);
 }
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 10px;
+.glass-lg {
+  background: rgba(var(--glass-bg) / var(--glass-opacity-3));
+  backdrop-filter: blur(var(--glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg));
+  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
+  box-shadow: var(--elevation-3);
 }
+.glass-border {
+  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
+}
+/* Inner highlight for glass — light refraction at top edge */
+.glass-highlight {
+  position: relative;
+}
+.glass-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--glass-bg) / var(--glass-highlight-opacity)), transparent);
+  border-radius: 1px;
+}
+
+/* Legacy glass classes — enhanced */
 .glass-bg {
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: rgba(var(--glass-bg) / var(--glass-opacity-2));
 }
 .glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(var(--glass-bg) / var(--glass-opacity-2));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
+  box-shadow: var(--elevation-2);
 }
 @keyframes float {
   0% { transform: translateY(0px); }
@@ -265,19 +364,23 @@
   animation: slideUp 0.35s ease-out;
 }
 
-
-/* -- Page transition animations (Loop 8: UI/UX polish) -- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-.animate-slide-up {
-  animation: slideUp 0.35s ease-out;
+/* ── Reduced Motion (accessibility) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-float,
+  .animate-float-orb,
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-fade-up,
+  .animate-shimmer,
+  .animate-gradient-shift {
+    animation: none !important;
+  }
 }

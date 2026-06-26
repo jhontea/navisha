@@ -2,19 +2,25 @@ import Link from "next/link"
 
 export function HeroSection() {
   return (
-    <section className="flex flex-col items-center text-center py-20 md:py-32 max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
-      <h1 className="font-display text-display text-on-surface mb-6 max-w-3xl leading-tight">
+    <section className="relative flex flex-col items-center text-center py-20 md:py-32 max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop overflow-hidden">
+      {/* Animated gradient blobs */}
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-chromatic-sunset/20 blur-[128px] animate-float-orb" />
+        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-chromatic-ocean/15 blur-[128px] animate-float-orb" style={{ animationDelay: "-6s" }} />
+      </div>
+
+      <h1 className="font-display text-display-lg md:text-[72px] md:leading-[84px] text-foreground mb-6 max-w-4xl leading-tight">
         Your Journey,{" "}
-        <span className="text-primary">Beautifully Planned</span>
+        <span className="text-gradient-sunset">Beautifully Planned</span>
       </h1>
-      <p className="font-body-lg text-body-lg text-on-surface-variant mb-10 max-w-2xl mx-auto">
+      <p className="text-body-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
         Build day-by-day itineraries, track your budget in any currency, and let AI
         craft the perfect trip — all in one place.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <Link
           href="/login"
-          className="group flex items-center gap-3 rounded-xl bg-primary px-8 py-4 text-label-md font-label-md text-white shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-primary/30"
+          className="group flex items-center gap-3 rounded-xl bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-chromatic-sunset/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-chromatic-sunset/40 active:scale-[0.98] bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
         >
           <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

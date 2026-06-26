@@ -19,6 +19,15 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        sunset: "bg-chromatic-sunset/15 text-chromatic-sunset border-chromatic-sunset/30",
+        ocean: "bg-chromatic-ocean/15 text-chromatic-ocean border-chromatic-ocean/30",
+        aurora: "bg-chromatic-aurora/15 text-chromatic-aurora border-chromatic-aurora/30",
+        sky: "bg-chromatic-sky/15 text-chromatic-sky border-chromatic-sky/30",
+        mint: "bg-chromatic-mint/15 text-chromatic-mint border-chromatic-mint/30",
+        ice: "bg-chromatic-ice/15 text-chromatic-ice border-chromatic-ice/30",
+        // Legacy warm names — now cool colored
+        gold: "bg-chromatic-sky/15 text-chromatic-sky border-chromatic-sky/30",
+        coral: "bg-chromatic-mint/15 text-chromatic-mint border-chromatic-mint/30",
       },
     },
     defaultVariants: {

@@ -20,6 +20,7 @@ export function useActivities(dayId: string, enabled = true) {
     queryKey: listKey(dayId),
     queryFn: () => activityApi.list(dayId),
     enabled: enabled && !!dayId,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -27,7 +28,7 @@ export function useCreateActivity(dayId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateActivityInput) => activityApi.create(dayId, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(dayId) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: 'all' }),
   })
 }
 
@@ -35,7 +36,7 @@ export function useUpdateActivity(id: string, dayId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: UpdateActivityInput) => activityApi.update(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(dayId) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: 'all' }),
   })
 }
 
@@ -43,7 +44,7 @@ export function useDeleteActivity(dayId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => activityApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(dayId) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: 'all' }),
   })
 }
 
@@ -70,6 +71,6 @@ export function useReorderActivities(dayId: string) {
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(listKey(dayId), ctx.prev)
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: listKey(dayId) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: 'all' }),
   })
 }

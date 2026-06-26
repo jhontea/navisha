@@ -28,12 +28,13 @@ export function useExpenseSummary(tripId: string) {
     queryKey: summaryKey(tripId),
     queryFn: () => expenseApi.summary(tripId),
     enabled: !!tripId,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
 function invalidateAll(qc: ReturnType<typeof useQueryClient>, tripId: string) {
-  qc.invalidateQueries({ queryKey: listKey(tripId) })
-  qc.invalidateQueries({ queryKey: summaryKey(tripId) })
+  qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
+  qc.invalidateQueries({ queryKey: summaryKey(tripId), refetchType: 'all' })
 }
 
 export function useCreateExpense(tripId: string) {

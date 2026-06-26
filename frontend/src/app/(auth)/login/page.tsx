@@ -10,33 +10,34 @@ export default async function LoginPage({ searchParams }: Props) {
   const isNotAllowed = params.error === "not_allowed"
 
   return (
-    <main className="flex min-h-screen flex-col bg-surface-container-low">
-      {/* Background Decoration */}
+    <main className="flex min-h-screen flex-col bg-background">
+      {/* Background — animated gradient orbs */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[120px]" />
+        <div className="absolute -top-[20%] -left-[10%] h-[50%] w-[50%] rounded-full bg-chromatic-sunset/15 blur-[150px] animate-float-orb" />
+        <div className="absolute -bottom-[20%] -right-[10%] h-[50%] w-[50%] rounded-full bg-chromatic-ocean/12 blur-[150px] animate-float-orb" style={{ animationDelay: "-6s" }} />
+        <div className="absolute top-[40%] left-[30%] h-[30%] w-[30%] rounded-full bg-chromatic-aurora/8 blur-[120px] animate-float-orb" style={{ animationDelay: "-3s" }} />
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="flex-grow flex items-center justify-center p-4 relative z-10 min-h-screen">
-        <div className="w-full max-w-[420px] bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-soft p-8 md:p-10 transition-all duration-300 hover:shadow-xl mx-auto">
-          {/* Brand Logo */}
+        <div className="glass-lg w-full max-w-[420px] rounded-2xl p-8 md:p-10">
+          {/* Brand */}
           <div className="flex flex-col items-center mb-6">
-            <Link href="/" className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4 transition-transform hover:scale-105 duration-300">
-              <span className="material-symbols-outlined text-on-primary text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <Link href="/" className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-chromatic-sunset to-chromatic-coral mb-4 transition-transform hover:scale-105 shadow-md">
+              <span className="material-symbols-outlined text-white text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                 explore
               </span>
             </Link>
-            <Link href="/" className="font-display text-headline-md text-primary tracking-tight hover:opacity-80 transition-opacity">
+            <Link href="/" className="text-gradient-sunset text-headline-md font-bold tracking-tight hover:opacity-80 transition-opacity">
               Navisha
             </Link>
-            <p className="font-geist text-headline-sm text-on-surface mt-2">Welcome back</p>
-            <p className="font-body-sm text-on-surface-variant mt-1 text-center">
-              Ready for your next adventure?
+            <p className="text-headline-sm text-foreground mt-2">Welcome back</p>
+            <p className="text-body-sm text-muted-foreground mt-1 text-center">
+              Your next adventure awaits
             </p>
           </div>
 
-          {/* Access denied error */}
+          {/* Access denied */}
           {isNotAllowed && (
             <div className="mb-5 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
               <span className="material-symbols-outlined text-destructive text-[18px] mt-0.5 shrink-0">block</span>
@@ -49,37 +50,24 @@ export default async function LoginPage({ searchParams }: Props) {
             </div>
           )}
 
-          {/* Social Login */}
+          {/* Login */}
           <LoginButton />
-         
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 border-t border-outline-variant/20 relative z-10 text-center">
+      <footer className="w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-4 border-t border-border/30 relative z-10 text-center">
         <div className="flex items-center gap-2">
-          <span className="font-display font-bold text-label-md text-primary">Navisha</span>
-          <span className="font-body-sm text-outline">&copy; 2026 Navisha Travel. All rights reserved.</span>
+          <span className="text-gradient-sunset font-bold text-sm">Navisha</span>
+          <span className="text-body-sm text-muted-foreground">&copy; 2026 Navisha Travel. All rights reserved.</span>
         </div>
         <div className="flex gap-6 flex-wrap justify-center">
-          <a
-            className="font-body-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
+          <Link href="/privacy" className="text-body-sm text-muted-foreground hover:text-primary transition-colors">
             Privacy Policy
-          </a>
-          <a
-            className="font-body-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
+          </Link>
+          <Link href="/terms" className="text-body-sm text-muted-foreground hover:text-primary transition-colors">
             Terms of Service
-          </a>
-          <a
-            className="font-body-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
-            Help Center
-          </a>
+          </Link>
         </div>
       </footer>
     </main>

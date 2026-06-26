@@ -19,7 +19,7 @@ export default function ContactPage() {
           We&apos;d love to hear from you. Choose the right channel below.
         </p>
 
-        <div className="space-y-6">
+        <div className="glass-lg rounded-2xl p-8 space-y-6">
           {/* General */}
           <div className="rounded-2xl border bg-card p-6">
             <div className="mb-3 flex items-center gap-3">

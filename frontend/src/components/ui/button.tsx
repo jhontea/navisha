@@ -18,6 +18,12 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        glass:
+          "bg-white/15 backdrop-blur-md border-white/20 text-foreground hover:bg-white/25 hover:shadow-chromatic active:bg-white/20 dark:bg-white/10 dark:hover:bg-white/20 relative overflow-hidden before:absolute before:inset-0 before:rounded-lg before:bg-gradient-to-r before:from-white/0 before:via-white/20 before:to-white/0 before:translate-x-[-200%] hover:before:translate-x-[200%] before:transition-transform before:duration-700",
+        gradient:
+          "bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500 hover:shadow-chromatic active:shadow-md",
+        chromatic:
+          "bg-chromatic-ocean text-white hover:bg-chromatic-ocean/85 hover:shadow-md",
       },
       size: {
         default:

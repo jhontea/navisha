@@ -33,7 +33,10 @@ llm:
   openrouter_base_url: https://openrouter.ai/api/v1
   # Soft rate-limit in seconds between summary (re)generations.
   # Set to 0 to disable the rate-limit check entirely.
-  summary_rate_limit_seconds: 0
+  summary_rate_limit_seconds: 300
+  # Soft rate-limit in seconds between AI trip generations per user.
+  # Set to 0 to disable the rate-limit check entirely.
+  generate_rate_limit_seconds: 300
   # HTTP timeout (seconds) for LLM calls. Some models are slow, so keep
   # this generous. Set to 0 to use the client default (120s).
   timeout_seconds: 300

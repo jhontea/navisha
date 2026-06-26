@@ -33,7 +33,7 @@ const CATEGORY_OPTIONS: {
   { value: "food", label: "Food & Dining", icon: "restaurant", bg: "bg-[#DCFCE7]", text: "text-emerald-700", placeholder: "e.g., Lunch at Ichiran" },
   { value: "transport", label: "Transport", icon: "directions_subway", bg: "bg-[#DBEAFE]", text: "text-primary", placeholder: "e.g., Suica Top-up" },
   { value: "accommodation", label: "Stay", icon: "hotel", bg: "bg-stay-purple", text: "text-[#7C3AED]", placeholder: "e.g., Park Hyatt Night 1" },
-  { value: "activity", label: "Activity", icon: "local_activity", bg: "bg-[#FFEDD5]", text: "text-orange-700", placeholder: "e.g., TeamLab Tickets" },
+  { value: "activity", label: "Activity", icon: "local_activity", bg: "bg-[#E0E7FF]", text: "text-indigo-600", placeholder: "e.g., TeamLab Tickets" },
   { value: "souvenir", label: "Gift", icon: "redeem", bg: "bg-[#FCE7F3]", text: "text-pink-600", placeholder: "e.g., Tokyo snacks" },
   { value: "shopping", label: "Shopping", icon: "shopping_cart", bg: "bg-[#FEF9C3]", text: "text-yellow-700", placeholder: "e.g., Uniqlo haul" },
   { value: "other", label: "Other", icon: "receipt", bg: "bg-muted", text: "text-muted-foreground", placeholder: "e.g., Entry fee" },
@@ -307,8 +307,8 @@ export function ExpenseForm({
           type="submit"
           disabled={isSubmitting}
           className={cn(
-            "px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-label-md",
-            "shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98]",
+            "px-5 py-2.5 rounded-lg bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-label-md",
+            "shadow-md shadow-chromatic-sunset/20 hover:shadow-lg hover:shadow-chromatic-sunset/30 transition-all active:scale-[0.98]",
             "disabled:opacity-60",
           )}
         >

@@ -33,14 +33,14 @@ export function EmptyState({
     (actionHref ? (
       <Link
         href={actionHref}
-        className="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-md text-label-md hover:opacity-90 transition-all active:scale-95 inline-flex items-center"
+        className="inline-flex items-center rounded-xl bg-gradient-to-r from-chromatic-sunset to-chromatic-sunset-end px-8 py-3 text-sm font-semibold text-white shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-95"
       >
         {actionLabel}
       </Link>
     ) : onAction ? (
       <button
         onClick={onAction}
-        className="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-md text-label-md hover:opacity-90 transition-all active:scale-95"
+        className="inline-flex items-center rounded-xl bg-gradient-to-r from-chromatic-sunset to-chromatic-sunset-end px-8 py-3 text-sm font-semibold text-white shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-95"
       >
         {actionLabel}
       </button>
@@ -49,12 +49,12 @@ export function EmptyState({
   if (isLarge) {
     return (
       <div
-        className={`flex flex-col items-center justify-center py-24 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant ${className}`}
+        className={`glass flex flex-col items-center justify-center rounded-3xl py-24 text-center ${className}`}
       >
-        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-surface-container-high">
-          <MaterialIcon name={icon} size={48} className="text-outline" />
+        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
+          <MaterialIcon name={icon} size={48} className="text-muted-foreground" />
         </div>
-        <h2 className="text-headline-md font-headline-md text-on-surface mb-2">
+        <h2 className="text-headline-md font-heading text-foreground mb-2">
           {title}
         </h2>
         {description && (
@@ -70,7 +70,7 @@ export function EmptyState({
   // Compact variant
   return (
     <div
-      className={`rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground ${className}`}
+      className={`glass rounded-xl p-6 text-center text-sm text-muted-foreground ${className}`}
     >
       <p>{description ?? title}</p>
       {cta && <div className="mt-4">{cta}</div>}

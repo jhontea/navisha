@@ -25,7 +25,7 @@ const CATEGORY_CONFIG: Record<
   },
   activity: {
     bg: "bg-[#FFEDD5]",
-    text: "text-orange-700",
+    text: "text-indigo-600",
     icon: "local_activity",
   },
   souvenir: {
@@ -57,7 +57,7 @@ export function ExpenseCard({ expense, onEdit, onDelete, isDeleting }: Props) {
   const cfg = CATEGORY_CONFIG[expense.category] ?? CATEGORY_CONFIG.other
 
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors group rounded-lg">
+    <div className="glass group flex items-center justify-between rounded-lg p-4 transition-all hover:bg-white/25">
       <div className="flex items-center gap-4">
         {/* Category icon */}
         <div

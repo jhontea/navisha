@@ -3,16 +3,20 @@
 import Link from "next/link"
 import { useUpcomingTrips } from "../hooks/useTrips"
 import { TripCard } from "./TripCard"
-import { EmptyState } from "@/components/EmptyState"
+import { OnboardingCard } from "./OnboardingCard"
+import { useAuth } from "@/features/auth/hooks"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function TripList() {
   const { data, isLoading, isError, error: _error } = useUpcomingTrips(6)
+  const { user } = useAuth()
+  const firstName = user?.name?.split(" ")[0]
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-56 w-full animate-pulse rounded-xl bg-surface-container-high" />
+          <Skeleton key={i} variant="glass" className="h-56 w-full" />
         ))}
       </div>
     )
@@ -29,22 +33,13 @@ export function TripList() {
   const trips = data?.items ?? []
 
   if (trips.length === 0) {
-    return (
-      <EmptyState
-        icon="map"
-        title="No trips planned yet"
-        description="The world is waiting for you. Start planning your first adventure with Navisha today."
-        actionLabel="Create My First Trip"
-        actionHref="/trips/new"
-        size="large"
-      />
-    )
+    return <OnboardingCard userName={firstName} />
   }
 
   return (
     <>
-      {/* Phase 3B-3: Single-column vertical list (not dashboard grid) */}
-      <div className="flex flex-col gap-4">
+      {/* 1-col mobile, 2-col tablet, 3-col desktop */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {trips.map((t) => (
           <TripCard key={t.id} trip={t} />
         ))}

@@ -307,7 +307,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-8 py-3 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:opacity-90 transition-all active:scale-95 shadow-md shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-label-md text-label-md rounded-lg transition-all active:scale-95 shadow-md shadow-chromatic-sunset/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
         >
           {isSubmitting ? (
             <>
@@ -327,7 +327,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           type="button"
           onClick={() => router.back()}
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-8 py-3 text-on-surface-variant font-label-md text-label-md text-center hover:text-primary transition-colors disabled:opacity-60"
+          className="glass w-full sm:w-auto px-8 py-3 text-foreground font-label-md text-label-md text-center hover:bg-white/25 transition-colors disabled:opacity-60 rounded-lg"
         >
           Cancel
         </button>

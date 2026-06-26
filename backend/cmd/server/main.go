@@ -188,13 +188,15 @@ func main() {
 	summaryUsecase := summary.NewUsecase(summaryRepo, llmClient, tripContextProvider, cfg.ActiveModel()).
 		WithRateLimitWindow(time.Duration(cfg.LLM.SummaryRateLimitSeconds) * time.Second)
 
-	summaryHandler := summary.NewHandler(summaryUsecase)
+	summaryHandler := summary.NewHandler(summaryUsecase).
+		WithSummaryRateLimit(rdb, cfg.LLM.SummaryRateLimitSeconds)
 
 	// Auto-generate trip domain (F5). Reuses the LLM client and an
 	// integration adapter that persists the approved draft via trip + activity.
 	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase)
 	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel())
-	autogenHandler := autogen.NewHandler(autogenUsecase)
+	autogenHandler := autogen.NewHandler(autogenUsecase).
+		WithGenerateRateLimit(rdb, cfg.LLM.GenerateRateLimitSeconds)
 
 	// Echo
 	e := echo.New()
@@ -246,13 +248,14 @@ func main() {
 	e.Use(appMiddleware.BodyLimit(1 << 20))
 
 	// Phase 3D: per-user rate limiting via Redis sliding window.
-	rateLimiter := appMiddleware.NewRateLimiter(rdb, appMiddleware.RateLimitConfig{
+	// Uses JWT extraction to identify users even before auth middleware runs,
+	// falling back to IP for unauthenticated requests.
+	rateLimiter := appMiddleware.NewRateLimiter(rdb, jwtSvc, appMiddleware.RateLimitConfig{
 		Enabled:       cfg.RateLimit.Enabled,
 		AuthPerMinute: cfg.RateLimit.AuthPerMinute,
 		LLMPerMinute:  cfg.RateLimit.LLMPerMinute,
 		GeneralPerMin: cfg.RateLimit.GeneralPerMin,
 	})
-	e.Use(rateLimiter.Limit())
 
 	// Loop 2: API version header on all responses.
 	e.Use(appMiddleware.APIVersionHeader())
@@ -292,6 +295,11 @@ func main() {
 
 	// API v1
 	api := e.Group("/api/v1")
+
+	// Rate limiter for all /api/v1 routes. Identifies users via JWT extraction
+	// (unverified — for bucketing only) or falls back to IP for public routes.
+	api.Use(rateLimiter.Limit())
+
 	userHandler.RegisterRoutes(api, authMiddleware)
 	tripHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)

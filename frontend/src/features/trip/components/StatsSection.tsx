@@ -35,46 +35,50 @@ export function StatsSection() {
   return (
     <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {/* Trips Completed */}
-      <div className="flex h-40 flex-col justify-between rounded-2xl bg-primary/10 p-6">
-        <MaterialIcon name="flight_takeoff" size={32} className="text-primary" />
+      <div className="glass flex h-40 flex-col justify-between rounded-2xl p-6 hover:bg-white/20 hover:animate-glow-pulse transition-all">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-sunset/15">
+          <MaterialIcon name="flight_takeoff" size={24} className="text-chromatic-sunset" />
+        </div>
         <div>
-          <p className="text-headline-md font-headline-md text-on-primary-fixed">
+          <p className="text-headline-md tabular-nums font-heading text-foreground">
             {completed}
           </p>
-          <p className="text-label-md font-label-md text-on-primary-fixed-variant">
+          <p className="text-sm font-medium text-muted-foreground">
             Trips Completed
           </p>
         </div>
       </div>
 
       {/* Currencies Used */}
-      <div className="flex h-40 flex-col justify-between rounded-2xl bg-stay-purple/30 p-6">
-        <MaterialIcon name="public" size={32} className="text-on-secondary-fixed" />
+      <div className="glass flex h-40 flex-col justify-between rounded-2xl p-6 hover:bg-white/20 transition-all">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-ocean/15">
+          <MaterialIcon name="public" size={24} className="text-chromatic-ocean" />
+        </div>
         <div>
-          <p className="text-headline-md font-headline-md text-on-secondary-fixed">
+          <p className="text-headline-md tabular-nums font-heading text-foreground">
             {currencies}
           </p>
-          <p className="text-label-md font-label-md text-on-secondary-fixed-variant">
+          <p className="text-sm font-medium text-muted-foreground">
             Currencies Used
           </p>
         </div>
       </div>
 
-      {/* Traveler Level — full width on tablet, 1-col on desktop */}
-      <div className="col-span-1 flex h-40 items-center gap-6 rounded-2xl bg-surface-container p-6 sm:col-span-2 lg:col-span-1">
+      {/* Traveler Level */}
+      <div className="glass col-span-1 flex h-40 items-center gap-6 rounded-2xl p-6 sm:col-span-2 lg:col-span-1 hover:bg-white/20 transition-all">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-headline-sm font-headline-sm text-on-surface mb-1">
+          <p className="truncate text-headline-sm font-heading text-foreground mb-1">
             Traveler Level: {level}
           </p>
-          <p className="line-clamp-2 text-body-sm font-body-sm text-on-surface-variant">
+          <p className="line-clamp-2 text-sm text-muted-foreground">
             {upcoming > 0 ? `${upcoming} upcoming · ` : ""}
             {nextLevel
               ? `${milesToNext} miles until ${nextLevel.name} status`
               : "Max level reached"}
           </p>
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
+          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-1000"
+              className="h-full rounded-full bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000"
               style={{ width: `${progressPct}%` }}
             />
           </div>
