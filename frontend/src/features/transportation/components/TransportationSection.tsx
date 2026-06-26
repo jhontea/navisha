@@ -10,38 +10,8 @@ import {
 } from "../hooks/useTransportations"
 import type { CreateTransportationInput, Transportation } from "../types"
 import { TransportationForm } from "./TransportationForm"
-import {
-  Bus,
-  Car,
-  Pencil,
-  Plane,
-  Ship,
-  Train,
-  TramFront,
-  Boxes,
-  Trash2,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-
-const TYPE_ICON: Record<string, typeof Plane> = {
-  flight: Plane,
-  bus: Bus,
-  train: Train,
-  ferry: TramFront,
-  ship: Ship,
-  car: Car,
-  other: Boxes,
-}
-
-const TYPE_COLOR: Record<string, string> = {
-  flight: "bg-[#DBEAFE] text-primary",
-  bus: "bg-muted text-muted-foreground",
-  train: "bg-secondary/10 text-secondary",
-  ferry: "bg-[#EDE9FE] text-[#7C3AED]",
-  ship: "bg-[#EDE9FE] text-[#7C3AED]",
-  car: "bg-muted text-muted-foreground",
-  other: "bg-muted text-muted-foreground",
-}
+import { TransportationCard } from "./TransportationCard"
+import { Plane, Plus } from "lucide-react"
 
 interface Props {
   tripId: string
@@ -74,7 +44,6 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
           </p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-card border border-border/40 rounded-2xl shadow-sm p-8">
           {addOpen ? (
             <TransportationForm
@@ -89,8 +58,8 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4H4a2 2 0 0 0-1.4 3.4L8 12 6.2 19.2a1 1 0 0 0 1.4 1.1L12 18l4.4 2.3a1 1 0 0 0 1.4-1.1Z"/></svg>
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
+                <Plane className="h-7 w-7 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">
@@ -103,9 +72,9 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 bg-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/20"
+                className="flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                <Plus className="h-4 w-4" />
                 Add Transport
               </button>
             </div>
@@ -120,49 +89,56 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
             <h3 className="text-xl font-bold text-foreground">
               Upcoming Travel
             </h3>
-            <span className="text-sm text-muted-foreground">
-              {items.length} {items.length === 1 ? "entry" : "entries"}
-            </span>
+            {!isLoading && (
+              <span className="text-sm text-muted-foreground">
+                {items.length} {items.length === 1 ? "entry" : "entries"}
+              </span>
+            )}
           </div>
 
           {isLoading && (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 glass" />
+                <div key={i} className="rounded-2xl border border-border/20 bg-card p-5 animate-pulse overflow-hidden relative">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted rounded-l-2xl" />
+                  <div className="pl-2 flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-muted shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-20 rounded bg-muted" />
+                      <div className="h-4 w-48 rounded bg-muted" />
+                      <div className="h-3 w-32 rounded bg-muted" />
+                    </div>
+                    <div className="hidden lg:flex flex-col gap-1.5 shrink-0">
+                      <div className="h-3 w-16 rounded bg-muted" />
+                      <div className="h-4 w-28 rounded bg-muted" />
+                      <div className="h-3 w-20 rounded bg-muted" />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
 
           {isError && (
-            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
-              Failed to load transportation entries.
-            </p>
+            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
+              <p className="text-sm text-destructive font-medium">Failed to load transportation entries.</p>
+              <p className="text-xs text-muted-foreground mt-1">Check your connection and try again.</p>
+            </div>
           )}
 
           {!isLoading && !isError && items.length === 0 && (
-            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No transportation logged yet.
-            </p>
+            <div className="rounded-2xl border border-dashed p-8 text-center">
+              <p className="text-sm text-muted-foreground">No transportation logged yet.</p>
+            </div>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {items.map((t) => {
               const isEditing = editingId === t.id
-              const Icon = TYPE_ICON[t.type] ?? Boxes
-              const iconBg = TYPE_COLOR[t.type] ?? TYPE_COLOR.other
-              const depTime = t.departure_datetime
-                ? new Date(t.departure_datetime.replace(/Z$|[+-]\d{2}:\d{2}$/, "")).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : null
 
               if (isEditing) {
                 return (
-                  <div key={t.id} className="glass rounded-2xl p-6">
+                  <div key={t.id} className="rounded-2xl border border-border/40 bg-card p-6 shadow-md">
                     <TransportationForm
                       initial={t}
                       lockType
@@ -178,99 +154,19 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
               }
 
               return (
-                <div
+                <TransportationCard
                   key={t.id}
-                  className="group bg-card border-l-4 border-l-primary rounded-xl p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:shadow-md transition-shadow"
-                >
-                  {/* Left: icon + route */}
-                  <div className="flex items-center gap-5">
-                    <div
-                      className={cn(
-                        "flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
-                        iconBg,
-                      )}
-                    >
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <div>
-                      {(t.from_location || t.to_location) ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-foreground">
-                            {t.from_location || "—"}
-                          </span>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                          <span className="text-lg font-bold text-foreground">
-                            {t.to_location || "—"}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-lg font-bold text-foreground capitalize">
-                          {t.type}
-                        </span>
-                      )}
-                      {t.label && (
-                        <p className="text-sm font-medium text-foreground/80 mt-0.5">
-                          {t.label}
-                        </p>
-                      )}
-                      {t.operator && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {t.operator}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Departure */}
-                  {depTime && (
-                    <div className="flex flex-col">
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Departure
-                      </p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">{depTime}</p>
-                    </div>
-                  )}
-
-                  {/* Label */}
-                  {t.label && (
-                    <div className="flex flex-col">
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Label
-                      </p>
-                      <p className="text-sm font-semibold text-primary font-mono mt-0.5">
-                        {t.label}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      aria-label="Edit transportation"
-                      onClick={() => setEditingId(t.id)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Delete transportation"
-                      disabled={deleteMut.isPending && deleteMut.variables === t.id}
-                      onClick={() => setConfirmingDelete(t)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                  transportation={t}
+                  onEdit={() => setEditingId(t.id)}
+                  onDelete={() => setConfirmingDelete(t)}
+                  isDeleting={deleteMut.isPending && confirmingDelete?.id === t.id}
+                />
               )
             })}
           </div>
         </section>
       )}
 
-      {/* Confirm Delete */}
       <ConfirmDialog
         open={!!confirmingDelete}
         onOpenChange={(o) => !o && setConfirmingDelete(null)}

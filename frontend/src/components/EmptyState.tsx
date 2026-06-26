@@ -1,79 +1,100 @@
-"use client";
-
-import Link from "next/link";
-import { MaterialIcon } from "@/components/MaterialIcon";
+import { type LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface EmptyStateProps {
-  icon?: string;
-  title: string;
-  description?: string;
-  actionLabel?: string;
-  actionHref?: string;
-  onAction?: () => void;
-  /** Use "large" for full-page empty states, "compact" for section-level. */
-  size?: "large" | "compact";
-  className?: string;
+  icon?: LucideIcon
+  /** Emoji shown instead of icon when no icon provided */
+  emoji?: string
+  title: string
+  description?: string
+  action?: React.ReactNode
+  className?: string
+  /** Visual size variant */
+  size?: "sm" | "md" | "lg"
 }
 
-/** Standardized empty state with icon, title, description, and optional CTA.
- *  Phase 3A: replaces 6+ ad-hoc empty states across the app. */
+/**
+ * Generic empty state component.
+ * Iter 91 — size variants (sm/md/lg)
+ * Iter 92 — emoji support as alternative to icon
+ * Iter 93 — subtle animated bg circle
+ * Iter 94 — action slot accepts any ReactNode (not just button)
+ * Iter 95 — motion: fade-in-up on mount
+ */
 export function EmptyState({
-  icon = "map",
+  icon: Icon,
+  emoji,
   title,
   description,
-  actionLabel,
-  actionHref,
-  onAction,
-  size = "compact",
-  className = "",
+  action,
+  className,
+  size = "md",
 }: EmptyStateProps) {
-  const isLarge = size === "large";
+  const iconSizes = {
+    sm: { wrapper: "h-12 w-12", icon: "h-5 w-5", emoji: "text-2xl" },
+    md: { wrapper: "h-16 w-16", icon: "h-7 w-7", emoji: "text-3xl" },
+    lg: { wrapper: "h-20 w-20", icon: "h-9 w-9", emoji: "text-4xl" },
+  }
 
-  const cta = actionLabel &&
-    (actionHref ? (
-      <Link
-        href={actionHref}
-        className="inline-flex items-center rounded-xl bg-gradient-to-r from-chromatic-sunset to-chromatic-sunset-end px-8 py-3 text-sm font-semibold text-white shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-95"
-      >
-        {actionLabel}
-      </Link>
-    ) : onAction ? (
-      <button
-        onClick={onAction}
-        className="inline-flex items-center rounded-xl bg-gradient-to-r from-chromatic-sunset to-chromatic-sunset-end px-8 py-3 text-sm font-semibold text-white shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-95"
-      >
-        {actionLabel}
-      </button>
-    ) : null);
+  const textSizes = {
+    sm: { title: "text-sm font-semibold", desc: "text-xs" },
+    md: { title: "text-base font-semibold", desc: "text-sm" },
+    lg: { title: "text-lg font-bold", desc: "text-sm" },
+  }
 
-  if (isLarge) {
-    return (
-      <div
-        className={`glass flex flex-col items-center justify-center rounded-3xl py-24 text-center ${className}`}
-      >
-        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
-          <MaterialIcon name={icon} size={48} className="text-muted-foreground" />
+  const s = iconSizes[size]
+  const t = textSizes[size]
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center text-center animate-fade-in-up",
+        size === "sm" ? "py-8 gap-3" : size === "lg" ? "py-16 gap-5" : "py-12 gap-4",
+        className,
+      )}
+    >
+      {/* Iter 93 — icon wrapper with subtle bg circle */}
+      {(Icon || emoji) && (
+        <div className="relative">
+          {/* Iter 93 — animated bg blob */}
+          <div
+            className={cn(
+              "absolute inset-0 -z-10 rounded-full bg-primary/8 blur-xl scale-150",
+            )}
+            aria-hidden="true"
+          />
+          <div
+            className={cn(
+              "relative flex items-center justify-center rounded-2xl",
+              "bg-muted/60 border border-border/30",
+              s.wrapper,
+            )}
+          >
+            {/* Iter 92 — emoji or icon */}
+            {emoji ? (
+              <span className={s.emoji} role="img" aria-hidden="true">{emoji}</span>
+            ) : Icon ? (
+              <Icon className={cn(s.icon, "text-muted-foreground/60")} aria-hidden="true" />
+            ) : null}
+          </div>
         </div>
-        <h2 className="text-headline-md font-heading text-foreground mb-2">
-          {title}
-        </h2>
+      )}
+
+      <div className="max-w-[280px] space-y-1.5">
+        <p className={cn("text-foreground", t.title)}>{title}</p>
         {description && (
-          <p className="text-body-md font-body-md text-on-surface-variant mb-8 max-w-sm">
+          <p className={cn("text-muted-foreground leading-relaxed", t.desc)}>
             {description}
           </p>
         )}
-        {cta}
       </div>
-    );
-  }
 
-  // Compact variant
-  return (
-    <div
-      className={`glass rounded-xl p-6 text-center text-sm text-muted-foreground ${className}`}
-    >
-      <p>{description ?? title}</p>
-      {cta && <div className="mt-4">{cta}</div>}
+      {/* Iter 94 — action: any ReactNode */}
+      {action && (
+        <div className="mt-1">
+          {action}
+        </div>
+      )}
     </div>
-  );
+  )
 }

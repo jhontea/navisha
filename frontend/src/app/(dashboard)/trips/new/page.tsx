@@ -10,37 +10,68 @@ export default function NewTripPage() {
   const { mutateAsync, isPending } = useCreateTrip()
 
   return (
-    <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-8 pb-24">
-      {/* Form Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-surface-container-high p-8 space-y-8">
-          {/* Card Header */}
-          <div>
-            <BackLink href="/dashboard" className="mb-4" />
-            <h3 className="font-headline-md text-headline-md mb-1">Trip Details</h3>
-            <p className="font-body-md text-on-surface-variant">
-              Let&apos;s start planning your next great adventure.
-            </p>
-          </div>
+    <div className="mx-auto max-w-2xl w-full px-margin-mobile md:px-margin-desktop pt-8 pb-28">
+      {/* Page header */}
+      <BackLink href="/dashboard" className="mb-6" />
 
-          <TripForm
-            isSubmitting={isPending}
-            onSubmit={async (input) => {
-              const trip = await mutateAsync(input)
-              router.push(`/trips/${trip.id}/overview`)
-            }}
-          />
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
+            <span
+              className="material-symbols-outlined text-primary text-[22px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+              aria-hidden="true"
+            >
+              luggage
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">New Trip</h1>
+        </div>
+        <p className="text-sm text-muted-foreground pl-[52px]">
+          Let&apos;s start planning your next great adventure.
+        </p>
+      </div>
+
+      {/* Form Card */}
+      <div className="glass rounded-2xl p-6 md:p-8 space-y-6 animate-fade-in-up">
+        <TripForm
+          isSubmitting={isPending}
+          onSubmit={async (input) => {
+            const trip = await mutateAsync(input)
+            router.push(`/trips/${trip.id}/overview`)
+          }}
+        />
       </div>
 
       {/* Pro Tip */}
-      <div className="mt-8 bg-primary-fixed text-on-primary-fixed p-6 rounded-xl space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>lightbulb</span>
-          <span className="font-label-md text-label-md">Pro Tip</span>
+      <div className="mt-6 flex gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-5 animate-fade-in-up">
+        <div className="shrink-0 mt-0.5">
+          <span
+            className="material-symbols-outlined text-primary text-[20px]"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
+          >
+            lightbulb
+          </span>
         </div>
-        <p className="text-body-sm opacity-90 leading-relaxed">
-          Organizing by destination helps Navisha suggest the best transport
-          routes and local currency tips automatically.
-        </p>
+        <div>
+          <p className="text-xs font-semibold text-primary mb-1">Pro Tip</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Organizing by destination helps Navisha suggest the best transport routes and local
+            currency tips automatically.
+          </p>
+        </div>
+      </div>
+
+      {/* AI Alternative */}
+      <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <span>Rather let AI plan for you?</span>
+        <a
+          href="/trips/generate"
+          className="font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+        >
+          Generate with AI →
+        </a>
       </div>
     </div>
   )

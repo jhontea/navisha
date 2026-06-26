@@ -32,7 +32,7 @@ const CATEGORY_OPTIONS: {
 }[] = [
   { value: "food", label: "Food & Dining", icon: "restaurant", bg: "bg-[#DCFCE7]", text: "text-emerald-700", placeholder: "e.g., Lunch at Ichiran" },
   { value: "transport", label: "Transport", icon: "directions_subway", bg: "bg-[#DBEAFE]", text: "text-primary", placeholder: "e.g., Suica Top-up" },
-  { value: "accommodation", label: "Stay", icon: "hotel", bg: "bg-stay-purple", text: "text-[#7C3AED]", placeholder: "e.g., Park Hyatt Night 1" },
+  { value: "accommodation", label: "Stay", icon: "hotel", bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300", placeholder: "e.g., Park Hyatt Night 1" },
   { value: "activity", label: "Activity", icon: "local_activity", bg: "bg-[#E0E7FF]", text: "text-indigo-600", placeholder: "e.g., TeamLab Tickets" },
   { value: "souvenir", label: "Gift", icon: "redeem", bg: "bg-[#FCE7F3]", text: "text-pink-600", placeholder: "e.g., Tokyo snacks" },
   { value: "shopping", label: "Shopping", icon: "shopping_cart", bg: "bg-[#FEF9C3]", text: "text-yellow-700", placeholder: "e.g., Uniqlo haul" },
@@ -136,14 +136,15 @@ export function ExpenseForm({
                         : "border-border bg-background text-muted-foreground hover:border-primary/40",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "material-symbols-outlined text-[18px]",
-                        isSelected ? opt.text : "text-muted-foreground",
-                      )}
-                    >
-                      {opt.icon}
-                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn(isSelected ? opt.text : "text-muted-foreground")} aria-hidden="true">
+                      {opt.value === "food" && <><path d="M3 11l19-9-9 19-2-8-8-2z"/></>}
+                      {opt.value === "transport" && <><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>}
+                      {opt.value === "accommodation" && <><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></>}
+                      {opt.value === "activity" && <><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></>}
+                      {opt.value === "souvenir" && <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>}
+                      {opt.value === "shopping" && <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>}
+                      {opt.value === "other" && <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>}
+                    </svg>
                     {opt.label}
                   </button>
                 )
@@ -160,16 +161,20 @@ export function ExpenseForm({
       <div className="flex flex-col gap-1.5">
         <label className="font-label-md text-muted-foreground">Expense Title</label>
         <div className="relative flex items-center">
-          {selectedCategory && (
-            <span
-              className={cn(
-                "absolute left-3.5 material-symbols-outlined text-[18px] pointer-events-none",
-                CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.text ?? "text-muted-foreground",
-              )}
-            >
-              {CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.icon}
-            </span>
-          )}
+          {selectedCategory && (() => {
+            const catOpt = CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)
+            return (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("absolute left-3.5 pointer-events-none", catOpt?.text ?? "text-muted-foreground")} aria-hidden="true">
+                {selectedCategory === "food" && <><path d="M3 11l19-9-9 19-2-8-8-2z"/></>}
+                {selectedCategory === "transport" && <><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>}
+                {selectedCategory === "accommodation" && <><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></>}
+                {selectedCategory === "activity" && <><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></>}
+                {selectedCategory === "souvenir" && <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>}
+                {selectedCategory === "shopping" && <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>}
+                {selectedCategory === "other" && <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>}
+              </svg>
+            )
+          })()}
           <input
             {...register("title")}
             placeholder={CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.placeholder ?? "e.g., Entry fee"}
@@ -247,7 +252,7 @@ export function ExpenseForm({
           </div>
           {previewEnabled && preview && (
             <p className="text-label-sm text-primary font-medium flex items-center gap-1 mt-1">
-              <span className="material-symbols-outlined text-[14px] align-middle">sync</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
               ≈ {preview.converted_amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
               {tripBaseCurrency}{" "}
               <span className="text-muted-foreground font-normal">

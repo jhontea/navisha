@@ -24,9 +24,7 @@ const TripMap = dynamic(
   {
     loading: () => (
       <div className="flex h-64 items-center justify-center rounded-xl bg-muted">
-        <span className="material-symbols-outlined animate-spin text-2xl text-muted-foreground">
-          progress_activity
-        </span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-muted-foreground" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
       </div>
     ),
     ssr: false,
@@ -59,12 +57,12 @@ export default function TripDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
-        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-10 w-64 animate-pulse rounded bg-muted" />
-        <div className="mt-4 space-y-3">
+      <div className="flex flex-col gap-4 px-4 py-6 md:px-10 md:py-8 animate-fade-in-up">
+        <div className="h-48 w-full animate-pulse rounded-2xl bg-muted" />
+        <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
+        <div className="mt-2 space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
           ))}
         </div>
       </div>
@@ -126,6 +124,7 @@ export default function TripDetailPage() {
         startDate={trip.start_date}
         endDate={trip.end_date}
         baseCurrency={trip.base_currency}
+        coverImageUrl={trip.cover_image_url}
         onEdit={startEditing}
         onDelete={() => setConfirmDelete(true)}
         isDeleting={isDeleting}
@@ -137,36 +136,50 @@ export default function TripDetailPage() {
       {/* Main content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
         {/* View mode toggle */}
-        <div className="mb-4 flex w-full rounded-xl border bg-muted/40 p-1">
+        <div role="group" aria-label="View mode" className="mb-5 flex w-full gap-1 rounded-2xl border border-border/40 bg-muted/30 p-1">
           <button
             type="button"
             onClick={() => setViewMode("list")}
             className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-              viewMode === "list" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground",
+              "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
+              viewMode === "list"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/60",
             )}
             aria-pressed={viewMode === "list"}
           >
-            <List className="h-4 w-4" /> List View
+            <List className="h-4 w-4" aria-hidden="true" />
+            List
           </button>
           <button
             type="button"
             onClick={() => setViewMode("map")}
             className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-              viewMode === "map" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground",
+              "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
+              viewMode === "map"
+                ? "bg-primary text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/60",
             )}
             aria-pressed={viewMode === "map"}
           >
-            <Map className="h-4 w-4" /> Map View
+            <Map className="h-4 w-4" aria-hidden="true" />
+            Map
           </button>
         </div>
 
         {viewMode === "list" ? (
           trip.days.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No days generated for this trip.</p>
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/50 py-14 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                <List className="h-6 w-6 text-primary" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">No days yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">Generate your itinerary to see daily plans here.</p>
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 animate-fade-in-up">
               {trip.days.map((d, idx) => (
                 <DayPanel
                   key={d.id}
@@ -181,7 +194,9 @@ export default function TripDetailPage() {
             </div>
           )
         ) : (
-          <TripMap days={trip.days} />
+          <div className="animate-fade-in-up">
+            <TripMap days={trip.days} />
+          </div>
         )}
       </div>
 

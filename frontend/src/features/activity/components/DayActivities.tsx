@@ -130,12 +130,16 @@ function TransportTimelineCard({ t }: { t: Transportation }) {
     : null
 
   return (
-    <div className="rounded-xl border border-l-4 border-l-primary bg-[#DBEAFE]/40 p-4 shadow-sm">
+    <div className="rounded-2xl border-l-4 border-l-blue-500 border border-border/30 bg-blue-500/5 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
               Transport
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-semibold capitalize text-blue-700 dark:text-blue-300">
+              <Icon className="h-3 w-3" />
+              {t.type}
             </span>
             {depTime && (
               <span className="text-xs text-muted-foreground">· {depTime}</span>
@@ -153,18 +157,10 @@ function TransportTimelineCard({ t }: { t: Transportation }) {
           )}
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
             {t.operator && <span>{t.operator}</span>}
-            {t.reference_number && <span>Ref: {t.reference_number}</span>}
-            {depTime && arrTime && (
-              <span>
-                {depTime} → {arrTime}
-              </span>
-            )}
+            {t.reference_number && <span className="font-mono">#{t.reference_number}</span>}
+            {depTime && arrTime && <span>{depTime} → {arrTime}</span>}
           </div>
         </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#DBEAFE] px-2 py-0.5 text-xs font-semibold capitalize text-primary">
-          <Icon className="h-3 w-3" />
-          {t.type}
-        </span>
       </div>
     </div>
   )
@@ -181,15 +177,23 @@ function AccommodationTimelineCard({
   const EventIcon = isCheckin ? LogIn : LogOut
 
   return (
-    <div className="rounded-xl border border-l-4 border-l-[#8B5CF6] bg-[#EDE9FE]/40 p-4 shadow-sm">
+    <div className="rounded-2xl border-l-4 border-l-violet-500 border border-border/30 bg-violet-500/5 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7C3AED]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400">
               Stay
             </span>
-            <span className="text-xs text-muted-foreground">
-              · {isCheckin ? "Check-in" : "Check-out"}
+            <span
+              className={cn(
+                "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                isCheckin
+                  ? "bg-violet-500/10 text-violet-700 dark:text-violet-300"
+                  : "bg-muted text-muted-foreground",
+              )}
+            >
+              <EventIcon className="h-3 w-3" />
+              {isCheckin ? "Check-in" : "Check-out"}
             </span>
           </div>
           <h4 className="text-sm font-semibold text-foreground">{a.name}</h4>
@@ -197,22 +201,9 @@ function AccommodationTimelineCard({
             <p className="text-xs text-muted-foreground">{a.location_name}</p>
           )}
           {a.confirmation_number && (
-            <p className="text-xs text-muted-foreground">
-              Ref: {a.confirmation_number}
-            </p>
+            <p className="text-xs font-mono text-muted-foreground">#{a.confirmation_number}</p>
           )}
         </div>
-        <span
-          className={cn(
-            "flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
-            isCheckin
-              ? "bg-[#EDE9FE] text-[#7C3AED]"
-              : "bg-muted text-muted-foreground",
-          )}
-        >
-          <EventIcon className="h-3 w-3" />
-          {isCheckin ? "Check-in" : "Check-out"}
-        </span>
       </div>
     </div>
   )
@@ -393,7 +384,13 @@ export function DayActivities({ tripId, dayId, date }: Props) {
     return (
       <div className="space-y-3 py-2">
         {[1, 2].map((i) => (
-          <div key={i} className="h-16 glass" />
+          <div key={i} className="flex items-center gap-3 pl-12 relative">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-muted animate-pulse" />
+            <div className="flex-1 rounded-2xl border border-border/20 bg-muted/30 p-4 animate-pulse space-y-2">
+              <div className="h-3 w-1/3 rounded bg-muted" />
+              <div className="h-3 w-2/3 rounded bg-muted" />
+            </div>
+          </div>
         ))}
       </div>
     )
@@ -532,12 +529,12 @@ export function DayActivities({ tripId, dayId, date }: Props) {
 
       {/* Inline Add Activity form */}
       <div className="relative pl-12">
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background bg-muted text-muted-foreground">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted-foreground">
           <Plus className="h-4 w-4" />
         </div>
 
         {addOpen ? (
-          <div className="rounded-2xl border bg-card p-5 shadow-lg">
+          <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-md">
             <ActivityForm
               onCancel={() => setAddOpen(false)}
               isSubmitting={createMut.isPending}
@@ -551,9 +548,9 @@ export function DayActivities({ tripId, dayId, date }: Props) {
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="group flex w-full items-center gap-2 rounded-2xl border border-dashed border-border/50 px-4 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-primary hover:text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 transition-transform group-hover:rotate-90 duration-200" />
             Add activity
           </button>
         )}

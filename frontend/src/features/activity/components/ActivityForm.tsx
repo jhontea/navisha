@@ -159,30 +159,30 @@ export function ActivityForm({
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
       {/* Type switcher */}
-      <div className="flex rounded-xl border border-outline-variant/30 bg-muted/40 p-1">
-        {TYPES.filter((t) => (lockType ? t === type : true)).map((t) => {
-          const meta = TYPE_META[t]
-          const selected = type === t
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => !lockType && setValue("type", t)}
-              disabled={lockType && t !== type}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
-                selected
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-                lockType && t !== type && "hidden",
-              )}
-            >
-              <meta.Icon className="h-4 w-4" />
-              {meta.label}
-            </button>
-          )
-        })}
-      </div>
+      {!lockType && (
+        <div className="flex rounded-xl border border-border/30 bg-muted/30 p-1 gap-1">
+          {TYPES.map((t) => {
+            const meta = TYPE_META[t]
+            const selected = type === t
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setValue("type", t)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                  selected
+                    ? "bg-background text-foreground shadow-sm border border-border/30"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50",
+                )}
+              >
+                <meta.Icon className={cn("h-3.5 w-3.5", selected ? "text-primary" : "")} />
+                {meta.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Title — always visible */}
       <Field label="Title" error={errors.title?.message}>
@@ -278,28 +278,32 @@ export function ActivityForm({
       {/* Todo fields */}
       {type === "todo" && (
         <div className="flex flex-col gap-2">
-          <Label>Todo items</Label>
-          {todoArr.fields.map((field, i) => (
-            <div key={field.id} className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-              <Input
-                placeholder="Item text"
-                className="flex-1"
-                {...register(`todo_items.${i}.text`)}
-              />
-              <button
-                type="button"
-                onClick={() => todoArr.remove(i)}
-                aria-label="Remove item"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
+          <Label className="text-sm font-medium">Todo items</Label>
+          <div className="space-y-2">
+            {todoArr.fields.map((field, i) => (
+              <div key={field.id} className="flex items-center gap-2 group/item">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 group-hover/item:bg-primary/50 transition-colors" />
+                </div>
+                <Input
+                  placeholder={`Item ${i + 1}…`}
+                  className="flex-1 h-8 text-sm"
+                  {...register(`todo_items.${i}.text`)}
+                />
+                <button
+                  type="button"
+                  onClick={() => todoArr.remove(i)}
+                  aria-label="Remove item"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover/item:opacity-100"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
           {errors.todo_items?.message && (
-            <p className="text-xs text-destructive">
-              {errors.todo_items.message}
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <span>⚠</span> {errors.todo_items.message}
             </p>
           )}
           <button
@@ -311,7 +315,7 @@ export function ActivityForm({
                 completed: false,
               })
             }
-            className="flex w-fit items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+            className="flex w-fit items-center gap-1.5 rounded-lg border border-dashed border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/60 hover:text-primary hover:bg-primary/5 transition-all"
           >
             <Plus className="h-3.5 w-3.5" />
             Add item
@@ -319,18 +323,22 @@ export function ActivityForm({
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-1">
-        <Button
+      <div className="flex items-center justify-between pt-2 border-t border-border/30">
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-muted"
         >
           Cancel
-        </Button>
-        <Button type="submit" size="sm" variant="gradient" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : initial ? "Save changes" : "Add activity"}
+        </button>
+        <Button type="submit" size="sm" variant="gradient" disabled={isSubmitting} className="min-w-[100px]">
+          {isSubmitting ? (
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+              Saving…
+            </span>
+          ) : initial ? "Save changes" : "Add activity"}
         </Button>
       </div>
     </form>

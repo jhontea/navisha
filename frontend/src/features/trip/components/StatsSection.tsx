@@ -1,8 +1,34 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
+import { Plane, CalendarCheck, Globe, Award, Trophy, Gem, Medal } from "lucide-react"
 import { useTrips } from "../hooks/useTrips"
 import { tripStatus } from "../lib/status"
-import { MaterialIcon } from "@/components/MaterialIcon"
+
+/** Animated number counter that counts up on mount */
+function AnimatedCount({ to, duration = 800 }: { to: number; duration?: number }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (to === 0) { setCount(0); return }
+    const steps = 20
+    const increment = to / steps
+    let current = 0
+    ref.current = setInterval(() => {
+      current += increment
+      if (current >= to) {
+        setCount(to)
+        if (ref.current) clearInterval(ref.current)
+      } else {
+        setCount(Math.floor(current))
+      }
+    }, duration / steps)
+    return () => { if (ref.current) clearInterval(ref.current) }
+  }, [to, duration])
+
+  return <span className="tabular-nums">{count}</span>
+}
 
 export function StatsSection() {
   const { data } = useTrips()
@@ -16,12 +42,12 @@ export function StatsSection() {
   ).length
   const currencies = new Set(trips.map((t) => t.base_currency)).size
 
-  // Real loyalty math: each completed trip = 100 miles
+  // Loyalty math: each completed trip = 100 miles
   const totalMiles = completed * 100
   const levelThresholds = [
     { name: "Bronze", min: 0 },
     { name: "Silver", min: 300 },
-    { name: "Gold", min: 600 },
+    { name: "Gold",   min: 600 },
     { name: "Platinum", min: 1000 },
   ]
   const currentLevel = [...levelThresholds].reverse().find((l) => totalMiles >= l.min) ?? levelThresholds[0]
@@ -32,59 +58,76 @@ export function StatsSection() {
     : 100
   const level = currentLevel.name
 
+  const LevelIcon = level === "Platinum"
+    ? Gem
+    : level === "Gold"
+    ? Trophy
+    : level === "Silver"
+    ? Award
+    : Medal
+
   return (
-    <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {/* Trips Completed */}
-      <div className="glass flex h-40 flex-col justify-between rounded-2xl p-6 hover:bg-white/20 hover:animate-glow-pulse transition-all">
+      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-sunset/15">
-          <MaterialIcon name="flight_takeoff" size={24} className="text-chromatic-sunset" />
+          <Plane className="h-5 w-5 text-chromatic-sunset" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-headline-md tabular-nums font-heading text-foreground">
-            {completed}
+          <p className="text-2xl font-bold text-foreground font-heading leading-none">
+            <AnimatedCount to={completed} />
           </p>
-          <p className="text-sm font-medium text-muted-foreground">
-            Trips Completed
+          <p className="text-xs font-medium text-muted-foreground mt-1">Trips Completed</p>
+        </div>
+      </div>
+
+      {/* Upcoming */}
+      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
+          <CalendarCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-foreground font-heading leading-none">
+            <AnimatedCount to={upcoming} />
           </p>
+          <p className="text-xs font-medium text-muted-foreground mt-1">Upcoming Trips</p>
         </div>
       </div>
 
       {/* Currencies Used */}
-      <div className="glass flex h-40 flex-col justify-between rounded-2xl p-6 hover:bg-white/20 transition-all">
+      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-ocean/15">
-          <MaterialIcon name="public" size={24} className="text-chromatic-ocean" />
+          <Globe className="h-5 w-5 text-chromatic-ocean" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-headline-md tabular-nums font-heading text-foreground">
-            {currencies}
+          <p className="text-2xl font-bold text-foreground font-heading leading-none">
+            <AnimatedCount to={currencies} />
           </p>
-          <p className="text-sm font-medium text-muted-foreground">
-            Currencies Used
-          </p>
+          <p className="text-xs font-medium text-muted-foreground mt-1">Currencies Used</p>
         </div>
       </div>
 
       {/* Traveler Level */}
-      <div className="glass col-span-1 flex h-40 items-center gap-6 rounded-2xl p-6 sm:col-span-2 lg:col-span-1 hover:bg-white/20 transition-all">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-headline-sm font-heading text-foreground mb-1">
-            Traveler Level: {level}
+      <div className="col-span-2 lg:col-span-1 glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
+        <div className="flex items-center justify-between">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-aurora/15">
+            <LevelIcon className="h-5 w-5 text-chromatic-aurora" aria-hidden="true" />
+          </div>
+          <span className="text-xs font-semibold text-chromatic-aurora bg-chromatic-aurora/10 px-2 py-0.5 rounded-full">
+            {level}
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground leading-snug">Traveler Level</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {nextLevel ? `${milesToNext} mi to ${nextLevel.name}` : "Max level!"}
           </p>
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {upcoming > 0 ? `${upcoming} upcoming · ` : ""}
-            {nextLevel
-              ? `${milesToNext} miles until ${nextLevel.name} status`
-              : "Max level reached"}
-          </p>
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000"
+              className="h-full rounded-full bg-gradient-to-r from-chromatic-aurora via-chromatic-sunset to-chromatic-ocean bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000"
               style={{ width: `${progressPct}%` }}
             />
           </div>
-        </div>
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/5">
-          <MaterialIcon name="military_tech" size={40} className="text-primary" />
         </div>
       </div>
     </section>

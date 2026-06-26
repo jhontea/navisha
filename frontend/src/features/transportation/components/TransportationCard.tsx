@@ -1,39 +1,9 @@
 "use client"
 
-import {
-  Bus,
-  Car,
-  Pencil,
-  Plane,
-  Ship,
-  Train,
-  TramFront,
-  Boxes,
-  Trash2,
-} from "lucide-react"
+import { memo } from "react"
+import { ArrowRight, Clock, Hash, Pencil, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Transportation } from "../types"
-
-const TYPE_ICON: Record<string, typeof Plane> = {
-  flight: Plane,
-  bus: Bus,
-  train: Train,
-  ferry: TramFront,
-  ship: Ship,
-  car: Car,
-  other: Boxes,
-}
-
-// Background + text color per type
-const TYPE_COLOR: Record<string, string> = {
-  flight: "bg-[#DBEAFE] text-primary",
-  bus: "bg-muted text-muted-foreground",
-  train: "bg-secondary/10 text-secondary",
-  ferry: "bg-[#EDE9FE] text-[#7C3AED]",
-  ship: "bg-[#EDE9FE] text-[#7C3AED]",
-  car: "bg-muted text-muted-foreground",
-  other: "bg-muted text-muted-foreground",
-}
 
 interface Props {
   transportation: Transportation
@@ -42,117 +12,181 @@ interface Props {
   isDeleting: boolean
 }
 
-export function TransportationCard({
-  transportation: t,
+const TRANSPORT_EMOJI: Record<string, string> = {
+  flight: "✈️",
+  train:  "🚆",
+  bus:    "🚌",
+  ferry:  "⛴️",
+  ship:   "\u{1F6A2}",
+  car:    "\u{1F697}",
+  other:  "🚀",
+}
+
+const TRANSPORT_COLOR: Record<string, { bg: string; border: string }> = {
+  flight: { bg: "bg-violet-500/10", border: "border-l-violet-400" },
+  train:  { bg: "bg-blue-500/10",   border: "border-l-blue-400" },
+  bus:    { bg: "bg-green-500/10",  border: "border-l-green-400" },
+  ferry:  { bg: "bg-cyan-500/10",   border: "border-l-cyan-400" },
+  ship:   { bg: "bg-sky-500/10",    border: "border-l-sky-400" },
+  car:    { bg: "bg-amber-500/10",  border: "border-l-amber-400" },
+  other:  { bg: "bg-slate-500/10",  border: "border-l-slate-300" },
+}
+
+function getStyle(type?: string) {
+  const key = type?.toLowerCase() ?? "other"
+  return TRANSPORT_COLOR[key] ?? TRANSPORT_COLOR.other
+}
+
+/** Format ISO datetime string as "HH:MM" */
+function formatTime(dt?: string | null): string | null {
+  if (!dt) return null
+  try {
+    return new Date(dt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  } catch {
+    return null
+  }
+}
+
+/** Format ISO datetime string as "MMM D" */
+function formatDate(dt?: string | null): string | null {
+  if (!dt) return null
+  try {
+    return new Date(dt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Transportation card — Iter 76-85
+ * Uses actual Transportation type fields:
+ *   type, label, operator, reference_number,
+ *   from_location, to_location, departure_datetime, arrival_datetime, notes
+ */
+export const TransportationCard = memo(function TransportationCard({
+  transportation,
   onEdit,
   onDelete,
   isDeleting,
 }: Props) {
-  const Icon = TYPE_ICON[t.type] ?? Boxes
-  const iconBg = TYPE_COLOR[t.type] ?? TYPE_COLOR.other
+  const type = transportation.type?.toLowerCase() ?? "other"
+  const emoji = TRANSPORT_EMOJI[type] ?? TRANSPORT_EMOJI.other
+  const style = getStyle(transportation.type)
 
-  // departure_datetime is stored as UTC but represents the user's intended local time.
-  // Strip timezone suffix and parse as local to avoid double-shifting.
-  const depTime = t.departure_datetime
-    ? (() => {
-        const bare = t.departure_datetime!.replace(/Z$|[+-]\d{2}:\d{2}$/, "")
-        const d = new Date(bare)
-        return isNaN(d.getTime()) ? null : d.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      })()
-    : null
+  const depTime = formatTime(transportation.departure_datetime)
+  const arrTime = formatTime(transportation.arrival_datetime)
+  const depDate = formatDate(transportation.departure_datetime)
 
   return (
-    <div className="glass group flex flex-col items-start justify-between gap-6 rounded-xl border-l-4 border-l-primary p-6 transition-all hover:bg-white/25 hover:shadow-chromatic lg:flex-row lg:items-center">
-      {/* Left: icon + route */}
-      <div className="flex items-center gap-5">
+    <div
+      className={cn(
+        "group relative rounded-2xl border border-border/30 border-l-4 bg-card shadow-sm",
+        "transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-border/50",
+        style.border,
+      )}
+    >
+      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
+        {/* Iter 76 — emoji icon with type color */}
         <div
           className={cn(
-            "flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
-            iconBg,
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl transition-transform duration-200 group-hover:scale-110",
+            style.bg,
           )}
+          aria-hidden="true"
         >
-          <Icon className="h-7 w-7" />
+          {emoji}
         </div>
-        <div>
-          {(t.from_location || t.to_location) ? (
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-foreground">
-                {t.from_location || "—"}
+
+        <div className="flex-1 min-w-0 space-y-1.5">
+          {/* Iter 76 — type badge + label/operator */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {transportation.type}
+            </span>
+            {(transportation.label || transportation.operator) && (
+              <span className="truncate text-xs font-semibold text-foreground/80">
+                {transportation.label || transportation.operator}
               </span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              <span className="text-lg font-bold text-foreground">
-                {t.to_location || "—"}
+            )}
+            {transportation.label && transportation.operator && (
+              <span className="truncate text-xs text-muted-foreground">
+                {transportation.operator}
+              </span>
+            )}
+          </div>
+
+          {/* Iter 77 — from_location → to_location with times */}
+          {(transportation.from_location || transportation.to_location) && (
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-foreground leading-snug">
+                  {transportation.from_location || "–"}
+                </p>
+                {depTime && (
+                  <p className="flex items-center gap-0.5 text-[11px] text-muted-foreground tabular-nums">
+                    <Clock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                    {depTime}
+                    {depDate && <span className="ml-0.5">· {depDate}</span>}
+                  </p>
+                )}
+              </div>
+              <ArrowRight
+                className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50"
+                aria-hidden="true"
+              />
+              <div className="min-w-0 flex-1 text-right">
+                <p className="truncate text-xs font-semibold text-foreground leading-snug">
+                  {transportation.to_location || "–"}
+                </p>
+                {arrTime && (
+                  <p className="flex items-center justify-end gap-0.5 text-[11px] text-muted-foreground tabular-nums">
+                    <Clock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                    {arrTime}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Iter 78 — reference number: monospace pill */}
+          {transportation.reference_number && (
+            <div className="flex items-center gap-1.5">
+              <Hash className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
+              <span className="rounded-md border border-border/40 bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground/70">
+                {transportation.reference_number}
               </span>
             </div>
-          ) : (
-            <span className="text-lg font-bold text-foreground capitalize">
-              {t.type}
-            </span>
           )}
-          {t.label && (
-            <p className="text-sm font-medium text-foreground/80 mt-0.5">
-              {t.label}
-            </p>
-          )}
-          {t.operator && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t.operator}
+
+          {/* Notes */}
+          {transportation.notes && (
+            <p className="text-xs text-muted-foreground/80 line-clamp-2 italic">
+              {transportation.notes}
             </p>
           )}
         </div>
-      </div>
 
-      {/* Departure */}
-      {depTime && (
-        <div className="flex flex-col">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Departure
-          </p>
-          <p className="text-sm font-semibold text-foreground mt-0.5">{depTime}</p>
+        {/* Iter 80 — actions: hover reveal on desktop */}
+        <div className="flex shrink-0 flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label="Edit transportation"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:opacity-100"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isDeleting}
+            aria-label="Delete transportation"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive focus-visible:opacity-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
-      )}
-
-      {/* Label display */}
-      {t.label && (
-        <div className="flex flex-col">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Label
-          </p>
-          <p className="text-sm font-semibold text-primary font-mono mt-0.5">
-            {t.label}
-          </p>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Edit transportation"
-          onClick={onEdit}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <Pencil className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          aria-label="Delete transportation"
-          disabled={isDeleting}
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </div>
     </div>
   )
-}
+})

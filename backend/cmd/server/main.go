@@ -225,8 +225,21 @@ func main() {
 		},
 	}))
 	e.Use(echomw.Recover())
+	// Build CORS origins: always include the configured FRONTEND_URL.
+	// In development, also allow any localhost port so the frontend can run
+	// on port 3001/3002/etc when 3000 is occupied.
+	corsOrigins := []string{cfg.App.FrontendURL}
+	if strings.HasPrefix(cfg.App.FrontendURL, "http://localhost") {
+		// Allow localhost on any port during local dev.
+		corsOrigins = append(corsOrigins,
+			"http://localhost:3000",
+			"http://localhost:3001",
+			"http://localhost:3002",
+			"http://localhost:3003",
+		)
+	}
 	e.Use(echomw.CORSWithConfig(echomw.CORSConfig{
-		AllowOrigins:     []string{cfg.App.FrontendURL},
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowHeaders:     []string{echo.HeaderContentType, echo.HeaderAuthorization, "X-CSRF-Token"},
 		AllowCredentials: true,
