@@ -93,11 +93,28 @@ func isOAuthCallback(path string) bool {
 }
 
 func ensureCSRFCookie(c echo.Context, cookieDomain string) {
-	_, err := c.Cookie(csrfCookieName)
-	if err == nil {
-		return // already set
+	// Reuse existing token if present, generate new one if missing.
+	token := ""
+	if ck, err := c.Cookie(csrfCookieName); err == nil && ck.Value != "" {
+		token = ck.Value
+	} else {
+		token = generateCSRFToken()
 	}
-	token := generateCSRFToken()
+
+	// Clear any old cookie that was set without Domain (scoped to api.* only).
+	// Without this, the browser sends two csrf_token cookies and the wrong
+	// one may be read.
+	c.SetCookie(&http.Cookie{
+		Name:     csrfCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: false,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	// Set with the shared Domain so frontend JS on navisha.cloud can read it.
 	c.SetCookie(&http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
