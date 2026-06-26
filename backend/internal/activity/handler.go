@@ -7,6 +7,7 @@ import (
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
@@ -70,9 +71,17 @@ func (h *Handler) Create(c echo.Context) error {
 	if strings.TrimSpace(req.Title) == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
 	}
+	if len(req.Title) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
+	}
+	// Loop 48: reject oversized payloads (> 64KB).
+	if len(req.Payload) > 65536 {
+		return echo.NewHTTPError(http.StatusBadRequest, "payload is too large")
+	}
 	if !Type(req.Type).Valid() {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid activity type")
 	}
+	req.Title = sanitize.Text(req.Title)
 	a, err := h.usecase.Create(c.Request().Context(), userID, dayID, CreateInput{
 		Type:      req.Type,
 		Title:     req.Title,
@@ -93,6 +102,13 @@ func (h *Handler) Update(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	if len(req.Title) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
+	}
+	if len(req.Payload) > 65536 {
+		return echo.NewHTTPError(http.StatusBadRequest, "payload is too large")
+	}
+	req.Title = sanitize.Text(req.Title)
 	a, err := h.usecase.Update(userID, id, UpdateInput{
 		Title:     req.Title,
 		StartTime: req.StartTime,

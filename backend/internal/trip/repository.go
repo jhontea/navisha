@@ -8,10 +8,16 @@ import (
 )
 
 var (
-	ErrNotFound        = errors.New("trip not found")
-	ErrInvalidDates    = errors.New("invalid trip dates")
-	ErrInvalidCurrency = errors.New("invalid base currency")
-	ErrInvalidCursor   = errors.New("invalid cursor")
+	ErrNotFound           = errors.New("trip not found")
+	ErrInvalidDates       = errors.New("invalid trip dates")
+	ErrInvalidCurrency    = errors.New("invalid base currency")
+	ErrInvalidCursor      = errors.New("invalid cursor")
+	ErrEmptyTitle         = errors.New("title must not be empty")
+	ErrTitleTooLong       = errors.New("title exceeds maximum length")
+	ErrDescriptionTooLong = errors.New("description exceeds maximum length")
+	ErrNotesTooLong       = errors.New("notes exceed maximum length")
+	ErrURLTooLong         = errors.New("cover image url exceeds maximum length")
+	ErrTripTooLong        = errors.New("trip duration exceeds maximum (90 days)")
 )
 
 // ListResult carries a page of trips plus the cursor for the next page.

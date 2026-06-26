@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link"
 import { useAuth, useLogout } from "@/features/auth/hooks";
 import { StatsSection } from "@/features/trip/components/StatsSection";
 
@@ -34,8 +35,15 @@ export default function ProfilePage() {
       {/* Stats */}
       <StatsSection />
 
+      {/* Legal links */}
+      <div className="mt-8 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+        <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+        <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+        <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+      </div>
+
       {/* Logout */}
-      <div className="mt-8">
+      <div className="mt-6">
         <button
           type="button"
           onClick={() => logout()}

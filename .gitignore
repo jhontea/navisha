@@ -1,6 +1,8 @@
 # Secrets
 backend/.env
-frontend/.env.local
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
 # Go
 backend/bin/

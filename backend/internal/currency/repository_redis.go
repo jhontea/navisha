@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
@@ -37,18 +36,22 @@ type cachedRates struct {
 }
 
 // fetchUSD returns the USD-based rates table, using Redis cache when fresh
-// and falling back to the upstream API on miss.
+// and falling back to the upstream API on miss or Redis error (fail-open).
 func (r *redisRepository) fetchUSD(ctx context.Context) (*cachedRates, error) {
 	if cached, err := r.rdb.Get(ctx, usdCacheKey).Result(); err == nil {
 		var out cachedRates
 		if jsonErr := json.Unmarshal([]byte(cached), &out); jsonErr == nil {
 			return &out, nil
 		}
-	} else if !errors.Is(err, redis.Nil) {
-		return nil, fmt.Errorf("currency.cache get: %w", err)
+	} else if errors.Is(err, redis.Nil) {
+		// Cache miss — proceed to upstream fetch below.
+	} else {
+		// Redis error (connection refused, timeout) — log and fall through
+		// to upstream fetch so the app stays functional without Redis.
+		// The cache write will also be skipped gracefully below.
 	}
 
-	// Cache miss → upstream fetch
+	// Cache miss or Redis unavailable → upstream fetch
 	resp, err := r.client.Latest(ctx, SupportedCurrencies)
 	if err != nil {
 		return nil, err

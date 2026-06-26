@@ -12,6 +12,8 @@ type Service struct {
 	refreshSecret []byte
 	accessTTL     time.Duration
 	refreshTTL    time.Duration
+	issuer        string
+	Leeway        time.Duration
 }
 
 type claims struct {
@@ -25,6 +27,8 @@ func NewService(accessSecret, refreshSecret string, accessTTL, refreshTTL int) *
 		refreshSecret: []byte(refreshSecret),
 		accessTTL:     time.Duration(accessTTL) * time.Second,
 		refreshTTL:    time.Duration(refreshTTL) * time.Second,
+		issuer:        "navisha",
+		Leeway:        5 * time.Second,
 	}
 }
 
@@ -45,11 +49,15 @@ func (s *Service) ValidateRefreshToken(tokenStr string) (string, error) {
 }
 
 func (s *Service) generate(userID string, secret []byte, ttl time.Duration) (string, error) {
+	now := time.Now()
 	c := &claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    s.issuer,
+			Subject:   userID,
+			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now.Add(-5 * time.Second)),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
@@ -66,7 +74,7 @@ func (s *Service) validate(tokenStr string, secret []byte) (string, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return secret, nil
-	})
+	}, jwt.WithIssuer(s.issuer), jwt.WithLeeway(s.Leeway))
 	if err != nil {
 		return "", fmt.Errorf("jwt.validate: %w", err)
 	}

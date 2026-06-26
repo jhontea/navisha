@@ -7,6 +7,7 @@ import (
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
@@ -215,6 +216,11 @@ func (h *Handler) UpdateDayNotes(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	// Loop 43: validate and sanitize day notes.
+	if len(req.Notes) > 10000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
+	}
+	req.Notes = sanitize.Text(req.Notes)
 	d, err := h.usecase.UpdateDayNotes(userID, dayID, req.Notes)
 	if err != nil {
 		return mapErr(err)
@@ -276,8 +282,14 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "trip not found"},
 		apperr.HTTPMapping{Err: ErrDayNotFound, Code: http.StatusNotFound, Message: "day not found"},
 		apperr.HTTPMapping{Err: ErrInvalidDates, Code: http.StatusBadRequest, Message: "invalid dates: end must be on or after start"},
+		apperr.HTTPMapping{Err: ErrTripTooLong, Code: http.StatusBadRequest, Message: "trip duration must not exceed 90 days"},
 		apperr.HTTPMapping{Err: ErrInvalidCurrency, Code: http.StatusBadRequest, Message: "unsupported base currency"},
 		apperr.HTTPMapping{Err: ErrInvalidCursor, Code: http.StatusBadRequest, Message: "invalid cursor"},
+		apperr.HTTPMapping{Err: ErrEmptyTitle, Code: http.StatusBadRequest, Message: "title must not be empty"},
+		apperr.HTTPMapping{Err: ErrTitleTooLong, Code: http.StatusBadRequest, Message: "title must be 200 characters or less"},
+		apperr.HTTPMapping{Err: ErrDescriptionTooLong, Code: http.StatusBadRequest, Message: "description is too long"},
+		apperr.HTTPMapping{Err: ErrNotesTooLong, Code: http.StatusBadRequest, Message: "notes are too long"},
+		apperr.HTTPMapping{Err: ErrURLTooLong, Code: http.StatusBadRequest, Message: "cover image url is too long"},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 	)
 }

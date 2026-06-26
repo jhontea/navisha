@@ -40,7 +40,7 @@ export default function TripDetailPage() {
   const router = useRouter()
   const id = params.id
 
-  const { data: trip, isLoading, isError, error } = useTrip(id)
+  const { data: trip, isLoading, isError, error: _error } = useTrip(id)
   const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
   const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(id)
 
@@ -75,7 +75,7 @@ export default function TripDetailPage() {
     return (
       <div className="px-4 py-6 md:px-10 md:py-8">
         <p className="text-sm text-destructive">
-          {error?.message ?? "Trip not found"}
+          Trip not found or you don&apos;t have access to it.
         </p>
         <BackLink href="/dashboard" variant="primary" />
       </div>

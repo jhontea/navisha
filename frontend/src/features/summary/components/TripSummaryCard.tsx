@@ -6,6 +6,7 @@ import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { sanitizeText } from "@/lib/sanitize"
 import {
   useTripSummary,
   useGenerateSummary,
@@ -131,7 +132,7 @@ function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: str
           remarkPlugins={[remarkGfm]}
           components={markdownComponents}
         >
-          {summary.content}
+          {sanitizeText(summary.content)}
         </ReactMarkdown>
       </div>
     </div>

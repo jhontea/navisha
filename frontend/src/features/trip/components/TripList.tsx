@@ -6,7 +6,7 @@ import { TripCard } from "./TripCard"
 import { EmptyState } from "@/components/EmptyState"
 
 export function TripList() {
-  const { data, isLoading, isError, error } = useUpcomingTrips(6)
+  const { data, isLoading, isError, error: _error } = useUpcomingTrips(6)
 
   if (isLoading) {
     return (
@@ -21,7 +21,7 @@ export function TripList() {
   if (isError) {
     return (
       <p className="text-sm text-destructive">
-        Failed to load trips: {error?.message ?? "unknown error"}
+        Failed to load trips. Please try again.
       </p>
     )
   }

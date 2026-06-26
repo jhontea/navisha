@@ -10,7 +10,7 @@ export default function EditTripPage() {
   const router = useRouter()
   const id = params.id
 
-  const { data: trip, isLoading, isError, error } = useTrip(id)
+  const { data: trip, isLoading, isError, error: _error } = useTrip(id)
   const { mutateAsync, isPending } = useUpdateTrip(id)
 
   if (isLoading) {
@@ -19,7 +19,7 @@ export default function EditTripPage() {
   if (isError || !trip) {
     return (
       <p className="p-8 text-sm text-destructive">
-        {error?.message ?? "Trip not found"}
+        Trip not found or you don&apos;t have access to it.
       </p>
     )
   }

@@ -2,10 +2,12 @@ package transportation
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
@@ -101,6 +103,20 @@ func (h *Handler) Create(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	// Loop 32: early validation.
+	if strings.TrimSpace(req.FromLocation) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "from_location is required")
+	}
+	if strings.TrimSpace(req.ToLocation) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "to_location is required")
+	}
+	if len(req.Notes) > 5000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
+	}
+	req.FromLocation = sanitize.Text(req.FromLocation)
+	req.ToLocation = sanitize.Text(req.ToLocation)
+	req.Notes = sanitize.Text(req.Notes)
+	req.Label = sanitize.Text(req.Label)
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")
@@ -119,6 +135,19 @@ func (h *Handler) Update(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	if strings.TrimSpace(req.FromLocation) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "from_location is required")
+	}
+	if strings.TrimSpace(req.ToLocation) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "to_location is required")
+	}
+	if len(req.Notes) > 5000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
+	}
+	req.FromLocation = sanitize.Text(req.FromLocation)
+	req.ToLocation = sanitize.Text(req.ToLocation)
+	req.Notes = sanitize.Text(req.Notes)
+	req.Label = sanitize.Text(req.Label)
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")

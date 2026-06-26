@@ -15,7 +15,7 @@ export default function TripsPage() {
     data,
     isLoading,
     isError,
-    error,
+    error: _error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -83,7 +83,7 @@ export default function TripsPage() {
         </div>
       ) : isError ? (
         <p className="text-body-sm text-error">
-          Failed to load trips: {error?.message ?? "unknown error"}
+          Failed to load trips. Please try again.
         </p>
       ) : trips.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant">

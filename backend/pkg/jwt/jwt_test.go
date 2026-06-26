@@ -75,8 +75,10 @@ func TestRefreshTokenCannotBeValidatedAsAccess(t *testing.T) {
 }
 
 func TestValidateExpiredToken(t *testing.T) {
-	// TTL of 0 seconds produces a token that expires immediately
+	// TTL of 0 seconds produces a token that expires immediately.
+	// Set Leeway=0 so the token is rejected as soon as it expires.
 	svc := jwt.NewService("access-secret", "refresh-secret", 0, 0)
+	svc.Leeway = 0
 
 	token, err := svc.GenerateAccessToken("user-123")
 	if err != nil {
