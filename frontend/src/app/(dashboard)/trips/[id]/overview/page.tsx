@@ -95,13 +95,13 @@ function getActivityIcon(type: string) {
 function getActivityColor(type: string): string {
   switch (type) {
     case "location":
-      return "bg-transport-blue text-primary"
+      return "bg-blue-500/10 text-blue-700 dark:text-blue-300"
     case "note":
-      return "bg-note-yellow text-tertiary"
+      return "bg-amber-500/10 text-amber-700 dark:text-amber-300"
     case "todo":
-      return "bg-surface-container-highest text-on-surface-variant"
+      return "bg-muted text-muted-foreground"
     default:
-      return "bg-surface-container text-on-surface-variant"
+      return "bg-muted text-muted-foreground"
   }
 }
 
@@ -128,29 +128,30 @@ function RecentExpenses({ tripId }: { tripId: string }) {
     .slice(0, 5)
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card p-5 shadow-sm">
+    <div className="glass rounded-2xl p-5">
       <div className="mb-4 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-foreground">Recent Expenses</h4>
         <Link
           href={`/trips/${tripId}/budget`}
-          className="text-sm font-medium text-primary hover:underline"
+          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
         >
           View All
+          <ChevronRight className="h-3 w-3" aria-hidden="true" />
         </Link>
       </div>
       {expenses.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border/50 p-5 text-center text-xs text-muted-foreground">
           No expenses recorded yet.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {expenses.map((expense) => (
             <div
               key={expense.id}
-              className="flex items-center justify-between rounded-lg bg-muted/40 p-3"
+              className="flex items-center justify-between rounded-xl bg-white/40 border border-white/30 px-3 py-2.5 hover:bg-white/60 transition-colors"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-transport-blue text-primary">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   {getExpenseIcon(expense.category)}
                 </div>
                 <div className="min-w-0">
@@ -162,7 +163,7 @@ function RecentExpenses({ tripId }: { tripId: string }) {
                   </p>
                 </div>
               </div>
-              <p className="shrink-0 text-sm font-medium text-foreground">
+              <p className="shrink-0 text-sm font-semibold text-foreground tabular-nums">
                 {formatCurrency(expense.converted_amount, expense.base_currency)}
               </p>
             </div>
@@ -175,7 +176,6 @@ function RecentExpenses({ tripId }: { tripId: string }) {
 
 // Day card component with activity preview
 function DayCard({ day, tripId }: { day: Day; tripId: string }) {
-
   const { data: activities } = useActivities(day.id)
   const isToday = day.date === getToday()
   const activityList = activities?.items ?? []
@@ -183,78 +183,81 @@ function DayCard({ day, tripId }: { day: Day; tripId: string }) {
   const remainingCount = Math.max(0, activityList.length - 3)
 
   return (
-    <Link href={`/trips/${tripId}#day-${day.id}`}>
+    <Link href={`/trips/${tripId}#day-${day.id}`} aria-label={`View Day ${day.day_number} — ${formatDate(day.date)}`}>
       <div
         className={cn(
-          "group relative rounded-xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-lg",
+          "group relative rounded-2xl border bg-card p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.99] cursor-pointer",
           isToday
-            ? "border-primary border-2 shadow-md"
+            ? "border-primary/60 border-2 shadow-md ring-2 ring-primary/10"
             : "border-border/40 hover:border-primary/30"
         )}
       >
         {/* Today badge */}
         {isToday && (
-          <div className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+          <div className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm">
             Today
           </div>
         )}
 
         {/* Header */}
-        <div className="mb-4 flex items-start justify-between">
+        <div className="mb-3 flex items-start justify-between">
           <div>
-            <h4 className="text-lg font-semibold text-foreground">
+            <h4 className="text-base font-bold text-foreground">
               Day {day.day_number}
             </h4>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {formatDate(day.date)}
             </p>
           </div>
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary border border-primary/15">
             {activityList.length} {activityList.length === 1 ? "activity" : "activities"}
           </span>
         </div>
 
         {/* Activity preview */}
         {previewActivities.length > 0 ? (
-          <div className="mb-4 space-y-2">
+          <div className="mb-4 space-y-1.5">
             {previewActivities.map((activity) => (
               <div key={activity.id} className="flex items-center gap-2">
                 <div
                   className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-md",
                     getActivityColor(activity.type)
                   )}
+                  aria-hidden="true"
                 >
                   {getActivityIcon(activity.type)}
                 </div>
-                <span className="flex-1 truncate text-sm text-foreground">
+                <span className="flex-1 truncate text-xs text-foreground">
                   {activity.title}
                 </span>
               </div>
             ))}
             {remainingCount > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground pl-7">
                 +{remainingCount} more
               </p>
             )}
           </div>
         ) : (
-          <div className="mb-4 rounded-lg border border-dashed border-border/60 p-3 text-center">
+          <div className="mb-4 rounded-xl border border-dashed border-border/50 py-3 text-center">
             <p className="text-xs text-muted-foreground">No activities yet</p>
           </div>
         )}
 
-        {/* View day button */}
-        <button
+        {/* View day CTA */}
+        <div
           className={cn(
-            "w-full rounded-lg py-2 text-sm font-medium transition-colors",
+            "flex items-center justify-center gap-1.5 w-full rounded-xl py-2 text-xs font-semibold transition-colors",
             isToday
-              ? "bg-primary text-primary-foreground hover:bg-primary/90"
-              : "border border-primary text-primary hover:bg-primary/5"
+              ? "bg-primary text-primary-foreground"
+              : "border border-primary/40 text-primary group-hover:bg-primary/5"
           )}
+          aria-hidden="true"
         >
           View Day
-        </button>
+          <ChevronRight className="h-3 w-3" />
+        </div>
       </div>
     </Link>
   )
@@ -309,16 +312,15 @@ export default function TripOverviewPage() {
   const activitiesLoaded = activityQueries.every((q) => q.isSuccess)
 
   if (isLoading) {
-
     return (
-      <div className="flex flex-col gap-4 px-4 py-6 md:px-10 md:py-8">
-        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-10 w-64 animate-pulse rounded bg-muted" />
-        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="flex flex-col gap-4 px-4 py-6 md:px-10 md:py-8 animate-fade-in">
+        <div className="h-40 w-full animate-pulse rounded-2xl bg-muted" />
+        <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
           ))}
         </div>
+        <div className="h-32 animate-pulse rounded-2xl bg-muted" />
       </div>
     )
   }
@@ -487,6 +489,7 @@ export default function TripOverviewPage() {
           startDate={trip.start_date}
           endDate={trip.end_date}
           baseCurrency={trip.base_currency}
+          coverImageUrl={trip.cover_image_url}
           onEdit={startEditing}
           onDelete={() => setConfirmDelete(true)}
           isDeleting={isDeleting}
@@ -498,71 +501,69 @@ export default function TripOverviewPage() {
 
       {/* Content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-        <div className="mb-6">
+        <div className="mb-4">
           <BackLink href="/dashboard" />
         </div>
-        {/* Hero Summary Section */}
 
-        <section className="mb-8">
-          <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary/10 to-surface-container-low p-6 md:p-8">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-foreground md:text-2xl">
-                  Trip Overview
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Your complete journey at a glance
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Duration
-                </p>
-                <p className="text-2xl font-bold text-primary">
-                  {totalDays} Days
-                </p>
-              </div>
+        {/* Iter 93 — Hero summary section: bento grid on md+ */}
+        <section className="mb-8 animate-fade-in">
+          {/* Iter 94 — stat chips: 2x2 grid on sm, row on md */}
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* Activities */}
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/15 p-4 text-center">
+              <Calendar className="mb-1.5 h-5 w-5 text-primary" aria-hidden="true" />
+              <span className="text-xl font-bold text-foreground tabular-nums">
+                {activitiesLoaded ? totalActivities : "—"}
+              </span>
+              <span className="text-xs text-muted-foreground">Activities</span>
             </div>
-
-            {/* Bento Stat Cards */}
-            {/* Quick stats — horizontal scrollable chips (Iteration 4: de-dashboard) */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              <div className="flex shrink-0 items-center gap-2 rounded-full bg-transport-blue/20 px-4 py-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">
-                  {activitiesLoaded ? totalActivities : "—"}
-                </span>
-                <span className="text-xs text-muted-foreground">activities</span>
-              </div>
-              <div className="flex shrink-0 items-center gap-2 rounded-full bg-stay-purple/20 px-4 py-2">
-                <Hotel className="h-4 w-4 text-[#7C3AED]" />
-                <span className="text-sm font-semibold text-foreground">
-                  {accommodations?.items.length ?? 0}
-                </span>
-                <span className="text-xs text-muted-foreground">stays</span>
-              </div>
-              <div className="flex shrink-0 items-center gap-2 rounded-full bg-transport-blue/20 px-4 py-2">
-                <Plane className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">
-                  {transportations?.items.length ?? 0}
-                </span>
-                <span className="text-xs text-muted-foreground">transport</span>
-              </div>
-              <div className="flex shrink-0 items-center gap-2 rounded-full bg-budget-green/20 px-4 py-2">
-                <Wallet className="h-4 w-4 text-emerald-700" />
-                <span className="text-sm font-semibold text-foreground">
-                  {expenseSummary
-                    ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)
-                    : "—"}
-                </span>
-                <span className="text-xs text-muted-foreground">spent</span>
-              </div>
+            {/* Stays */}
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-violet-500/10 border border-violet-500/15 p-4 text-center">
+              <Hotel className="mb-1.5 h-5 w-5 text-violet-500" aria-hidden="true" />
+              <span className="text-xl font-bold text-foreground tabular-nums">
+                {accommodations?.items.length ?? 0}
+              </span>
+              <span className="text-xs text-muted-foreground">Stays</span>
             </div>
-
+            {/* Transport */}
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-sky-500/10 border border-sky-500/15 p-4 text-center">
+              <Plane className="mb-1.5 h-5 w-5 text-sky-500" aria-hidden="true" />
+              <span className="text-xl font-bold text-foreground tabular-nums">
+                {transportations?.items.length ?? 0}
+              </span>
+              <span className="text-xs text-muted-foreground">Transport</span>
+            </div>
+            {/* Spent */}
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/15 p-4 text-center">
+              <Wallet className="mb-1.5 h-5 w-5 text-emerald-600" aria-hidden="true" />
+              <span className="text-base font-bold text-foreground tabular-nums leading-tight">
+                {expenseSummary
+                  ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)
+                  : "—"}
+              </span>
+              <span className="text-xs text-muted-foreground">Spent</span>
+            </div>
           </div>
 
-          {/* Trip Progress */}
-          <div className="glass mb-6 rounded-xl p-5">
+          {/* Duration badge */}
+          <div className="mb-5 flex items-center gap-3">
+            <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-sm font-semibold text-primary">
+              {totalDays} {totalDays === 1 ? "day" : "days"}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {started
+                ? `Day ${currentDay} of ${totalDays} · in progress`
+                : new Date(trip.start_date) > new Date()
+                ? "Upcoming"
+                : "Completed"}
+            </span>
+          </div>
+
+          <div>
+          </div>
+
+          {/* Iter 95 — Trip progress bar */}
+          <div className="glass mb-6 rounded-2xl p-5">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground">
                 Trip Progress
@@ -586,25 +587,25 @@ export default function TripOverviewPage() {
           </div>
         </section>
 
-        {/* AI Trip Summary — generate is the focal CTA right under the hero */}
+        {/* Iter 96 — AI Trip Summary */}
         <section className="mb-8">
           <TripSummaryCard tripId={tripId} />
         </section>
 
         {/* Daily Itinerary */}
 
+        {/* Iter 97 — Daily Itinerary section header */}
         <section className="mb-8">
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-foreground md:text-2xl">
+          <div className="mb-5 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-foreground">
               Daily Itinerary
             </h3>
-
             <Link
               href={`/trips/${tripId}`}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               View All
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           </div>
 
@@ -637,8 +638,8 @@ export default function TripOverviewPage() {
         </section>
 
 
-        {/* Recent Expenses */}
-        <section className="mb-8">
+        {/* Iter 98 — Recent Expenses */}
+        <section className="mb-10">
           <RecentExpenses tripId={tripId} />
         </section>
       </div>

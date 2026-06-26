@@ -1,63 +1,93 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import {
-  CalendarDays,
-  Hotel,
-  LayoutDashboard,
-  Plane,
-  Wallet,
-} from "lucide-react";
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { Calendar, Map, DollarSign, Bus, Hotel } from "lucide-react"
+
+interface TripTabBarProps {
+  tripId: string
+}
 
 const TABS = [
-  { label: "Overview", href: "/overview", icon: LayoutDashboard },
-  { label: "Itinerary", href: "", icon: CalendarDays },
-  { label: "Transport", href: "/transport", icon: Plane },
-  { label: "Stay", href: "/stay", icon: Hotel },
-  { label: "Budget", href: "/budget", icon: Wallet },
-] as const;
+  { label: "Itinerary", href: "itinerary", icon: Calendar },
+  { label: "Overview",  href: "overview",  icon: Map },
+  { label: "Budget",    href: "budget",    icon: DollarSign },
+  { label: "Transport", href: "transport", icon: Bus },
+  { label: "Stay",      href: "stay",      icon: Hotel },
+] as const
 
-/** Horizontal scrollable pill tab bar for trip sub-navigation.
- *  Phase 3B-2: replaces the separate "Back to Trip Overview" links
- *  with native-app-style top tabs. */
-export function TripTabBar({ tripId }: { tripId: string }) {
-  const pathname = usePathname();
-  const base = `/trips/${tripId}`;
+/**
+ * Tab bar for trip detail sub-pages.
+ * Iter 46 — sticky below TopBar (top offset matches TopBar height)
+ * Iter 47 — active: gradient underline pill, not just color
+ * Iter 48 — icons on all tabs (not just mobile)
+ * Iter 49 — scrollable on mobile with snap
+ * Iter 50 — hide label on xs, show on sm+
+ */
+export function TripTabBar({ tripId }: TripTabBarProps) {
+  const pathname = usePathname()
 
   return (
     <nav
-      className="glass sticky top-14 z-30 flex flex-nowrap gap-0.5 overflow-x-auto justify-start md:justify-center px-3 py-2 no-scrollbar mx-auto w-full max-w-max-width md:top-20"
-      role="tablist"
+      className={cn(
+        "sticky z-30 top-[calc(3rem+1px)] md:top-[calc(3.5rem+1px)]",
+        "bg-background/90 backdrop-blur-xl border-b border-border/20",
+        "shadow-[0_1px_0_0_hsl(var(--border)/0.15)]",
+      )}
       aria-label="Trip sections"
     >
-      {TABS.map((tab) => {
-        const href = tab.href === "" ? base : `${base}${tab.href}`;
-        // Itinerary (empty href) is the default — only active when pathname
-        // exactly matches the base (not a sub-route like /overview, /transport, etc.)
-        const isActive =
-          tab.href === ""
-            ? pathname === base || pathname === `${base}/`
-            : pathname.startsWith(href);
-        return (
-          <Link
-            key={tab.href}
-            href={href}
-            role="tab"
-            aria-selected={isActive}
-            className={cn(
-              "flex shrink-0 items-center gap-1 rounded-lg px-2 py-2 text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chromatic-sunset md:px-3 md:py-2.5",
-              isActive
-                ? "bg-gradient-to-r from-chromatic-sunset to-chromatic-sky text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/10"
-            )}
-          >
-            <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            {tab.label}
-          </Link>
-        );
-      })}
+      <div
+        className="flex overflow-x-auto scrollbar-none px-2 md:px-4 gap-0.5 max-w-6xl mx-auto snap-x snap-mandatory"
+        role="tablist"
+      >
+        {TABS.map((tab) => {
+          const href = `/trips/${tripId}/${tab.href}`
+          const isActive =
+            tab.href === "overview"
+              ? pathname === `/trips/${tripId}` || pathname === `/trips/${tripId}/overview`
+              : pathname.startsWith(href)
+
+          return (
+            <Link
+              key={tab.href}
+              href={href}
+              role="tab"
+              aria-current={isActive ? "page" : undefined}
+              aria-label={tab.label}
+              className={cn(
+                "relative flex shrink-0 snap-start items-center gap-1.5 px-4 py-3.5 text-sm font-medium transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+                "rounded-t-lg",
+                isActive
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
+              )}
+            >
+              {/* Iter 48 — icons always shown */}
+              <tab.icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-all",
+                  isActive ? "text-primary" : "text-muted-foreground",
+                )}
+                strokeWidth={isActive ? 2.5 : 2}
+                aria-hidden="true"
+              />
+
+              {/* Iter 50 — label: hidden on xs, visible on sm+ */}
+              <span className="hidden sm:inline">{tab.label}</span>
+
+              {/* Iter 47 — active: gradient underline */}
+              {isActive && (
+                <span
+                  className="absolute bottom-0 left-1 right-1 h-0.5 rounded-full bg-gradient-to-r from-primary to-[hsl(250,70%,55%)]"
+                  aria-hidden="true"
+                />
+              )}
+            </Link>
+          )
+        })}
+      </div>
     </nav>
-  );
+  )
 }

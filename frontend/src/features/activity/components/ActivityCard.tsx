@@ -6,6 +6,8 @@ import {
   StickyNote,
   Pencil,
   Trash2,
+  Clock,
+  ExternalLink,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type {
@@ -25,63 +27,90 @@ interface Props {
 const TYPE_CONFIG = {
   location: {
     Icon: MapPin,
-    iconBg: "bg-[#DBEAFE]",
-    iconColor: "text-primary",
-    borderColor: "border-l-primary",
+    iconBg: "bg-blue-500/10 dark:bg-blue-400/10",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    borderColor: "border-l-blue-500",
     label: "Location",
-    labelColor: "text-primary",
+    badgeBg: "bg-blue-500/10 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300",
   },
   note: {
     Icon: StickyNote,
-    iconBg: "bg-[#E0E7FF]",
-    iconColor: "text-indigo-600",
-    borderColor: "border-l-indigo-400",
+    iconBg: "bg-amber-500/10 dark:bg-amber-400/10",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    borderColor: "border-l-amber-400",
     label: "Note",
-    labelColor: "text-indigo-600",
+    badgeBg: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
   },
   todo: {
     Icon: ListChecks,
-    iconBg: "bg-muted",
-    iconColor: "text-muted-foreground",
-    borderColor: "border-l-muted-foreground/30",
+    iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
+    iconColor: "text-slate-600 dark:text-slate-400",
+    borderColor: "border-l-slate-400",
     label: "Todo",
-    labelColor: "text-muted-foreground",
+    badgeBg: "bg-slate-500/10 text-slate-700 dark:bg-slate-400/10 dark:text-slate-300",
   },
 }
 
+/**
+ * ActivityCard — individual activity within a day.
+ * Iter 51 — compact time display with Clock icon
+ * Iter 52 — location: external link icon when address is available (opens maps)
+ * Iter 53 — todo: show completed count in badge (e.g. "2 / 5")
+ * Iter 54 — action buttons: hover states, show on focus too (not just visible)
+ * Iter 55 — note: better quote styling with left border accent
+ */
 export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) {
   const config = TYPE_CONFIG[activity.type]
 
   return (
     <div
       className={cn(
-        "glass group relative rounded-xl border-l-4 p-5 transition-all",
-        "hover:translate-x-0.5 hover:bg-white/25",
+        "group relative rounded-2xl border border-border/30 border-l-4 bg-card p-4 shadow-sm transition-all duration-200",
+        "hover:shadow-md hover:border-border/50 hover:-translate-y-0.5",
         config.borderColor,
       )}
     >
-      <div className="flex items-start gap-4">
-        <div className="flex-1 space-y-1.5">
-          {/* Type label + time */}
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "text-[11px] font-semibold uppercase tracking-wider",
-                config.labelColor,
-              )}
-            >
+      <div className="flex items-start gap-3">
+        {/* Type icon */}
+        <div className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl mt-0.5 transition-transform duration-200",
+          "group-hover:scale-110",
+          config.iconBg,
+        )}>
+          <config.Icon className={cn("h-4 w-4", config.iconColor)} aria-hidden="true" />
+        </div>
+
+        <div className="flex-1 min-w-0 space-y-1.5">
+          {/* Type badge + time — Iter 51 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={cn(
+              "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
+              config.badgeBg,
+            )}>
               {config.label}
             </span>
+            {/* Iter 51 — time with icon */}
             {activity.type === "location" && activity.start_time && (
-              <span className="text-xs text-muted-foreground">
-                · {activity.start_time}
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                {activity.start_time}
                 {activity.end_time ? ` – ${activity.end_time}` : ""}
+              </span>
+            )}
+            {/* Iter 53 — todo: completed count */}
+            {activity.type === "todo" && activity.payload && (
+              <span className="text-xs text-muted-foreground">
+                {(() => {
+                  const p = activity.payload as TodoPayload
+                  const done = p.items.filter((i) => i.completed).length
+                  return `${done} / ${p.items.length} done`
+                })()}
               </span>
             )}
           </div>
 
           {/* Title */}
-          <h4 className="text-base font-semibold text-foreground">
+          <h4 className="text-sm font-semibold text-foreground leading-snug">
             {activity.title}
           </h4>
 
@@ -89,13 +118,13 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
           <ActivityBody activity={activity} />
         </div>
 
-        {/* Actions — always visible */}
-        <div className="flex shrink-0 items-center gap-1">
+        {/* Iter 54 — Actions: always visible on mobile, hover/focus on desktop */}
+        <div className="flex shrink-0 items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity duration-150">
           <button
             type="button"
             aria-label="Edit activity"
             onClick={onEdit}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:opacity-100"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
@@ -107,7 +136,7 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
               e.stopPropagation()
               onDelete()
             }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive focus-visible:opacity-100"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -126,11 +155,28 @@ function ActivityBody({ activity }: { activity: Activity }) {
       return (
         <div className="space-y-0.5 text-sm text-muted-foreground">
           {p.location_name && (
-            <p className="font-medium text-foreground/80">{p.location_name}</p>
+            <p className="font-medium text-foreground/80 text-sm">{p.location_name}</p>
           )}
-          {p.address && <p className="text-xs">{p.address}</p>}
+          {/* Iter 52 — address with maps link */}
+          {p.address && (
+            <div className="flex items-start gap-1">
+              <p className="text-xs flex-1">{p.address}</p>
+              {p.lat && p.lng && (
+                <a
+                  href={`https://maps.google.com/?q=${p.lat},${p.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open in Google Maps"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 text-primary/60 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
+                >
+                  <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                </a>
+              )}
+            </div>
+          )}
           {p.notes && (
-            <p className="mt-1 whitespace-pre-wrap text-sm">{p.notes}</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground/80">{p.notes}</p>
           )}
         </div>
       )
@@ -138,35 +184,54 @@ function ActivityBody({ activity }: { activity: Activity }) {
     case "note": {
       const p = activity.payload as NotePayload
       return (
-        <p className="whitespace-pre-wrap text-sm italic text-muted-foreground">
-          {p.content}
-        </p>
+        /* Iter 55 — quote styling: left accent border */
+        <blockquote className="mt-1 border-l-2 border-amber-400/60 pl-2.5">
+          <p className="whitespace-pre-wrap text-sm italic text-muted-foreground leading-relaxed">
+            {p.content}
+          </p>
+        </blockquote>
       )
     }
     case "todo": {
       const p = activity.payload as TodoPayload
+      const doneCount = p.items.filter((i) => i.completed).length
+      const totalCount = p.items.length
+      const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
       return (
-        <ul className="space-y-1">
-          {p.items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={item.completed}
-                readOnly
-                className="h-3.5 w-3.5 rounded border-muted-foreground/30 accent-primary"
+        <div className="space-y-2">
+          {/* Iter 53 — mini progress bar for todos */}
+          {totalCount > 0 && (
+            <div className="h-1 w-full rounded-full bg-muted overflow-hidden" aria-hidden="true">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-slate-400 to-slate-600 transition-all duration-500"
+                style={{ width: `${pct}%` }}
               />
-              <span
-                className={cn(
-                  item.completed
-                    ? "line-through text-muted-foreground"
-                    : "text-foreground/80",
-                )}
-              >
-                {item.text}
-              </span>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+          <ul className="space-y-1">
+            {p.items.map((item) => (
+              <li key={item.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={item.completed}
+                  readOnly
+                  aria-label={item.text}
+                  className="h-3.5 w-3.5 rounded border-muted-foreground/30 accent-primary shrink-0"
+                />
+                <span
+                  className={cn(
+                    "leading-snug",
+                    item.completed
+                      ? "line-through text-muted-foreground/60"
+                      : "text-foreground/80",
+                  )}
+                >
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )
     }
   }

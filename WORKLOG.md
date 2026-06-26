@@ -8,6 +8,7 @@ Progress log for Navisha development. Update at the start and end of each sessio
 
 | Date | Title |
 |------|-------|
+| 2026-06-27 | [UX Revamp: GenerateChatWizard Icons + Generate Button Shimmer + Double-Call 429 Fix](#2026-06-27--ux-revamp-generatechatwizard-icons--generate-button-shimmer--double-call-429-fix) |
 | 2026-06-26 | [Phase 4: Mutation Invalidation, Rate Limiting, UI Polish](#2026-06-26--phase-4-mutation-invalidation-rate-limiting-ui-polish) |
 | 2026-06-26 | [Fix LLM Regenerate Loop + CSRF VPS + Timeout Tuning](#2026-06-26--fix-llm-regenerate-loop--csrf-vps--timeout-tuning) |
 | 2026-06-26 | [Fix Localhost CSP + Cookie Debug â€” App Running End-to-End](#2026-06-26--fix-localhost-csp--cookie-debug--app-running-end-to-end) |

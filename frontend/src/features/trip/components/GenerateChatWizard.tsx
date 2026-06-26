@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { Sparkles, Send, ChevronDown, RefreshCw, AlertCircle } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import type { GenerateTripInput } from "../types"
 
@@ -147,29 +148,38 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
     }
   }
 
+  // Step progress indicator
+  const STEPS: StepId[] = ["destination", "description", "dates", "currency", "review"]
+  const stepIdx = STEPS.indexOf(step)
+
   return (
-    <div className="rounded-xl border border-surface-container-high bg-white shadow-sm overflow-hidden">
+    <div className="glass rounded-2xl overflow-hidden">
+      {/* Progress bar */}
+      <div className="h-1 bg-border/30">
+        <div
+          className="h-full bg-gradient-to-r from-primary to-chromatic-aurora transition-all duration-500"
+          style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }}
+        />
+      </div>
+
       {/* Chat transcript */}
-      <div ref={scrollRef} className="max-h-[380px] overflow-y-auto p-6 space-y-4">
+      <div ref={scrollRef} className="max-h-[360px] overflow-y-auto p-5 space-y-4">
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex items-end gap-2 ${m.from === "user" ? "justify-end" : "justify-start"}`}
             style={{ animation: "fadeSlide 0.3s ease-out" }}
           >
             {m.from === "bot" && (
-              <span
-                className="material-symbols-outlined text-primary mr-2 mt-1 shrink-0"
-                style={{ fontSize: 22 }}
-              >
-                auto_awesome
-              </span>
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mb-0.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              </div>
             )}
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 font-body-md text-body-md ${
+              className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 m.from === "user"
-                  ? "bg-primary text-on-primary rounded-br-sm"
-                  : "bg-surface-container text-on-surface rounded-bl-sm"
+                  ? "bg-primary text-white rounded-br-sm shadow-sm shadow-primary/20"
+                  : "bg-muted/60 text-foreground rounded-bl-sm border border-border/30"
               }`}
             >
               {m.text}
@@ -180,25 +190,30 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 
       {/* Input area — changes per step */}
       {step !== "review" && (
-        <div className="border-t border-surface-container-high p-4 space-y-3">
-          {error && <p className="text-body-sm text-error">{error}</p>}
+        <div className="border-t border-border/20 bg-background/50 p-4 space-y-3">
+          {error && (
+            <p className="flex items-center gap-1.5 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {error}
+            </p>
+          )}
 
           {step === "destination" && (
             <div className="space-y-2">
               <input
                 autoFocus
                 className={inputBase}
-                placeholder="mis. Tokyo, Jepang"
+                placeholder="e.g. Tokyo, Japan"
                 maxLength={MAX_DESTINATION}
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleDestination()}
               />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-on-surface-variant">{draftText.length}/{MAX_DESTINATION}</span>
+                <span className="text-xs text-muted-foreground">{draftText.length}/{MAX_DESTINATION}</span>
                 <button type="button" onClick={handleDestination} className={sendBtn}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
-                  Kirim
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                  Send
                 </button>
               </div>
             </div>
@@ -209,21 +224,21 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
               <input
                 autoFocus
                 className={inputBase}
-                placeholder="mis. suka anime, kuliner, budget hemat"
+                placeholder="e.g. foodie, adventure, budget-friendly"
                 maxLength={MAX_DESCRIPTION}
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleDescription(false)}
               />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-on-surface-variant">{draftText.length}/{MAX_DESCRIPTION}</span>
+                <span className="text-xs text-muted-foreground">{draftText.length}/{MAX_DESCRIPTION}</span>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleDescription(true)} className={ghostBtn}>
                     Skip
                   </button>
                   <button type="button" onClick={() => handleDescription(false)} className={sendBtn}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
-                    Kirim
+                    <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                    Send
                   </button>
                 </div>
               </div>
@@ -233,7 +248,7 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
           {step === "dates" && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-xs text-on-surface-variant">Rentang Tanggal</label>
+                <label className="text-xs font-semibold text-muted-foreground">Date Range</label>
                 <div className="flex rounded-lg border border-outline-variant focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-surface-container-lowest">
                   <input
                     type="date"
@@ -258,11 +273,12 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-on-surface-variant">
-                  {span > 0 ? `${span} days` : "Select date range"}
+                <span className={`text-xs font-medium ${span > MAX_DAYS ? "text-destructive" : "text-muted-foreground"}`}>
+                  {span > 0 ? `${span} day${span > 1 ? "s" : ""}` : "Select date range"}
+                  {span > MAX_DAYS && ` — max ${MAX_DAYS}`}
                 </span>
                 <button type="button" onClick={handleDates} className={sendBtn}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
                   Continue
                 </button>
               </div>
@@ -287,16 +303,11 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
                     ))
                   )}
                 </select>
-                <span
-                  className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline"
-                  style={{ fontSize: 20 }}
-                >
-                  expand_more
-                </span>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <div className="flex justify-end">
                 <button type="button" onClick={handleCurrency} className={sendBtn}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>send</span>
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
                   Continue
                 </button>
               </div>
@@ -307,30 +318,37 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 
       {/* Review / generate */}
       {step === "review" && (
-        <div className="border-t border-surface-container-high p-5 space-y-4">
-          <div className="rounded-lg bg-surface-container-low p-4 space-y-1.5 text-body-sm">
-            <Recap label="Tujuan" value={destination} />
-            {description && <Recap label="Preferensi" value={description} />}
-            <Recap label="Date" value={`${startDate} → ${endDate} (${span} days)`} />
-            <Recap label="Mata uang" value={currency} />
+        <div className="border-t border-border/20 bg-background/50 p-5 space-y-4">
+          <div className="rounded-xl border border-border/30 bg-muted/30 p-4 space-y-2 text-sm">
+            <Recap label="Destination" value={destination} />
+            {description && <Recap label="Preferences" value={description} />}
+            <Recap label="Dates" value={`${startDate} → ${endDate} (${span} day${span > 1 ? "s" : ""})`} />
+            <Recap label="Currency" value={currency} />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
+            {/* Generate button with shimmer/spark effect */}
             <button
               type="button"
               onClick={handleGenerate}
               disabled={disabled}
-              className="flex-1 sm:flex-none px-8 py-3 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:opacity-90 transition-all active:scale-95 shadow-md shadow-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
+              className="relative flex flex-1 sm:flex-initial items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary to-chromatic-aurora px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/30 transition-all hover:shadow-lg hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>auto_fix_high</span>
+              {/* Shimmer sweep animation */}
+              <span
+                className="pointer-events-none absolute inset-0 animate-[shimmer-sweep_2.5s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                aria-hidden="true"
+              />
+              <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
               Generate Itinerary
             </button>
             <button
               type="button"
               onClick={restart}
               disabled={disabled}
-              className="px-6 py-3 text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors disabled:opacity-60"
+              className="flex items-center justify-center gap-1.5 rounded-2xl border border-border/50 px-6 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-60"
             >
-              Ulangi dari awal
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              Start Over
             </button>
           </div>
         </div>
@@ -340,15 +358,15 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 }
 
 const sendBtn =
-  "inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:opacity-90 transition-all active:scale-95"
+  "inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 const ghostBtn =
-  "px-4 py-2 text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container transition-colors"
+  "rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 
 function Recap({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2">
-      <span className="text-on-surface-variant min-w-[90px]">{label}</span>
-      <span className="text-on-surface font-medium">{value}</span>
+    <div className="flex gap-3">
+      <span className="text-muted-foreground min-w-[80px] shrink-0">{label}</span>
+      <span className="text-foreground font-semibold">{value}</span>
     </div>
   )
 }

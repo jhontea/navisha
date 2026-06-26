@@ -5,6 +5,7 @@ import { useTrip } from "@/features/trip/hooks/useTrips"
 import { TransportationSection } from "@/features/transportation/components/TransportationSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function TripTransportPage() {
   const params = useParams<{ id: string }>()
@@ -13,7 +14,6 @@ export default function TripTransportPage() {
 
   return (
     <main className="flex flex-col pb-4">
-      {/* Phase 3B-2: Visual hero */}
       {trip && (
         <TripHero
           title={trip.title}
@@ -21,17 +21,16 @@ export default function TripTransportPage() {
           startDate={trip.start_date}
           endDate={trip.end_date}
           baseCurrency={trip.base_currency}
+          coverImageUrl={trip.cover_image_url}
         />
       )}
       {!trip && isLoading && (
-        <div className="h-40 w-full animate-pulse bg-muted" />
+        <Skeleton variant="glass" className="h-40 w-full rounded-none" />
       )}
 
-      {/* Tab navigation */}
       <TripTabBar tripId={id} />
 
-      {/* Content */}
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
+      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in">
         <TransportationSection
           tripId={id}
           tripBaseCurrency={trip?.base_currency ?? "IDR"}

@@ -93,24 +93,29 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-6">
+    <form onSubmit={handleSubmit(submit)} className="space-y-5">
       {/* Trip Title */}
-      <div className="space-y-2">
-        <label className="font-label-md text-label-md text-on-surface" htmlFor="trip-title">
-          Trip Title
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-foreground" htmlFor="trip-title">
+          Trip Title <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <input
           id="trip-title"
-          className={`${inputBase} ${errors.title ? "border-error" : "border-outline-variant"}`}
+          className={`${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
           placeholder="e.g., Summer in Tokyo"
           {...register("title")}
         />
-        {errors.title && <p className="text-xs text-error">{errors.title.message}</p>}
+        {errors.title && (
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            {errors.title.message}
+          </p>
+        )}
       </div>
 
       {/* Destination */}
-      <div className="space-y-2">
-        <label className="font-label-md text-label-md text-on-surface" htmlFor="destination">
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-foreground" htmlFor="destination">
           Destination
         </label>
         <div className="flex items-center rounded-lg border bg-surface-container-lowest transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
@@ -150,10 +155,13 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           />
         </div>
         {errors.destination && (
-          <p className="text-xs text-error">{errors.destination.message}</p>
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            {errors.destination.message}
+          </p>
         )}
-        <p className="text-xs text-on-surface-variant">
-          Pick a city, province, or country. We&apos;ll grab a cover photo automatically.
+        <p className="text-xs text-muted-foreground">
+          Pick a city, province, or country — we&apos;ll grab a cover photo automatically.
         </p>
 
         {/* Cover preview — shows the auto-fetched destination photo */}
@@ -180,9 +188,9 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
 
       {/* Date Range — unified single field */}
-      <div className="space-y-2">
-        <label className="font-label-md text-label-md text-on-surface">
-          Date Range
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-foreground">
+          Date Range <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <div className={`flex rounded-lg border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-surface-container-lowest ${errors.start_date || errors.end_date ? "border-error" : "border-outline-variant"}`}>
           <input
@@ -208,17 +216,18 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           />
         </div>
         {(errors.start_date || errors.end_date) && (
-          <p className="text-xs text-error">
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
             {errors.start_date?.message || errors.end_date?.message || "Please select both dates"}
           </p>
         )}
       </div>
 
       {/* Budget (optional) */}
-      <div className="space-y-2">
-        <label className="font-label-md text-label-md text-on-surface" htmlFor="budget">
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-foreground" htmlFor="budget">
           Budget{" "}
-          <span className="text-on-surface-variant font-normal text-xs">(optional)</span>
+          <span className="text-muted-foreground font-normal text-xs">(optional)</span>
         </label>
         <div className="flex items-center rounded-lg border bg-surface-container-lowest transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
           style={{ borderColor: errors.budget ? 'hsl(var(--error))' : undefined }}
@@ -251,18 +260,21 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             })}
           />
         </div>
-        <p className="text-xs text-on-surface-variant">
-          Set a total budget to track how much you&apos;ve spent vs remaining.
+        <p className="text-xs text-muted-foreground">
+          Set a total budget to track spending vs remaining.
         </p>
         {errors.budget && (
-          <p className="text-xs text-error">{errors.budget.message}</p>
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            {errors.budget.message}
+          </p>
         )}
       </div>
 
       {/* Base Currency — from backend */}
-      <div className="space-y-2">
-        <label className="font-label-md text-label-md text-on-surface" htmlFor="currency">
-          Base Currency
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-foreground" htmlFor="currency">
+          Base Currency <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <div className="relative">
           <Controller
@@ -298,36 +310,41 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           </span>
         </div>
         {errors.base_currency && (
-          <p className="text-xs text-error">{errors.base_currency.message}</p>
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            {errors.base_currency.message}
+          </p>
         )}
       </div>
 
       {/* Form Actions */}
-      <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
+      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-label-md text-label-md rounded-lg transition-all active:scale-95 shadow-md shadow-chromatic-sunset/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
+          className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {isSubmitting ? (
             <>
-              <span
-                className="material-symbols-outlined animate-spin"
-                style={{ fontSize: 18 }}
-              >
+              <span className="material-symbols-outlined animate-spin text-[18px]" aria-hidden="true">
                 progress_activity
               </span>
-              Creating...
+              {initial ? "Saving…" : "Creating…"}
             </>
           ) : (
-            submitLabel ?? (initial ? "Save changes" : "Create Trip")
+            <>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                {initial ? "check_circle" : "add_circle"}
+              </span>
+              {submitLabel ?? (initial ? "Save Changes" : "Create Trip")}
+            </>
           )}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
           disabled={isSubmitting}
-          className="glass w-full sm:w-auto px-8 py-3 text-foreground font-label-md text-label-md text-center hover:bg-white/25 transition-colors disabled:opacity-60 rounded-lg"
+          className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl border border-border/50 px-8 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Cancel
         </button>

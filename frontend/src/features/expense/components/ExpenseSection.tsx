@@ -14,17 +14,19 @@ import type { CreateExpenseInput, Expense, ExpenseCategory } from "../types"
 import { BudgetSummary } from "./BudgetSummary"
 import { ExpenseForm } from "./ExpenseForm"
 
+import { Hotel, Bus, UtensilsCrossed, Ticket, Gift, ShoppingBag, Receipt } from "lucide-react"
+
 const CATEGORY_CONFIG: Record<
   ExpenseCategory,
-  { bg: string; text: string; icon: string; label: string }
+  { bg: string; text: string; Icon: React.ElementType; label: string }
 > = {
-  accommodation: { bg: "bg-stay-purple", text: "text-[#7C3AED]", icon: "hotel", label: "Stay" },
-  transport: { bg: "bg-transport-blue", text: "text-primary", icon: "directions_subway", label: "Transport" },
-  food: { bg: "bg-budget-green", text: "text-emerald-700", icon: "restaurant", label: "Food" },
-  activity: { bg: "bg-[#FFEDD5]", text: "text-orange-700", icon: "local_activity", label: "Activity" },
-  souvenir: { bg: "bg-[#FCE7F3]", text: "text-pink-600", icon: "redeem", label: "Gift" },
-  shopping: { bg: "bg-[#FEF9C3]", text: "text-yellow-700", icon: "shopping_cart", label: "Shopping" },
-  other: { bg: "bg-muted", text: "text-muted-foreground", icon: "receipt", label: "Other" },
+  accommodation: { bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300", Icon: Hotel, label: "Stay" },
+  transport: { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-300", Icon: Bus, label: "Transport" },
+  food: { bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-300", Icon: UtensilsCrossed, label: "Food" },
+  activity: { bg: "bg-indigo-500/10", text: "text-indigo-700 dark:text-indigo-300", Icon: Ticket, label: "Activity" },
+  souvenir: { bg: "bg-pink-500/10", text: "text-pink-600 dark:text-pink-300", Icon: Gift, label: "Gift" },
+  shopping: { bg: "bg-yellow-400/10", text: "text-yellow-700 dark:text-yellow-300", Icon: ShoppingBag, label: "Shopping" },
+  other: { bg: "bg-muted", text: "text-muted-foreground", Icon: Receipt, label: "Other" },
 }
 
 function formatExpenseDate(dateStr: string): string {
@@ -98,7 +100,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
               onClick={onEditBudget}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-label-md hover:border-primary hover:text-primary transition-colors flex-shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">add</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
               Set Budget
             </button>
           )}
@@ -108,7 +110,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
               onClick={onEditBudget}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-label-md hover:border-primary hover:text-primary transition-colors flex-shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">edit</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit Budget
             </button>
           )}
@@ -134,7 +136,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                <span className="material-symbols-outlined text-primary text-[28px]">payments</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Log an expense</p>
@@ -253,7 +255,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
                                     cfg.bg, cfg.text,
                                   )}
                                 >
-                                  <span className="material-symbols-outlined text-[22px]">{cfg.icon}</span>
+                                  <cfg.Icon className="h-5 w-5" aria-hidden="true" />
                                 </div>
                                 <div>
                                   <h5 className="font-label-md text-foreground">{e.title}</h5>
