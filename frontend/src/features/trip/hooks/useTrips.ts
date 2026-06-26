@@ -90,6 +90,7 @@ export function useDeleteTrip() {
 export function useGenerateTripDraft() {
   return useMutation({
     mutationFn: (input: GenerateTripInput) => tripApi.generate(input),
+    retry: 0,
   })
 }
 

@@ -121,14 +121,9 @@ func (h *Handler) Me(c echo.Context) error {
 }
 
 func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken string) {
-	// When cookieDomain is set (production: .navisha.cloud), use cross-subdomain
-	// cookies with Secure + SameSite=None. On localhost (empty domain), use
-	// SameSite=Lax since we cannot set Secure on HTTP.
-	isSecure := h.cookieDomain != ""
-	sameSite := http.SameSiteLaxMode
-	if isSecure {
-		sameSite = http.SameSiteNoneMode
-	}
+	// Always use Secure + SameSite=None. On localhost, Chrome/Edge allow
+	// Secure cookies over HTTP (localhost exception). In production with
+	// .navisha.cloud domain, this is the standard cross-subdomain pattern.
 
 	c.SetCookie(&http.Cookie{
 		Name:     "access_token",
@@ -137,8 +132,8 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		Domain:   h.cookieDomain,
 		MaxAge:   h.accessTTL,
 		HttpOnly: true,
-		Secure:   isSecure,
-		SameSite: sameSite,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	})
 	c.SetCookie(&http.Cookie{
 		Name:     "refresh_token",
@@ -147,8 +142,8 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		Domain:   h.cookieDomain,
 		MaxAge:   h.refreshTTL,
 		HttpOnly: true,
-		Secure:   isSecure,
-		SameSite: sameSite,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	})
 }
 
@@ -161,7 +156,7 @@ func (h *Handler) clearTokenCookies(c echo.Context) {
 			Domain:   h.cookieDomain,
 			Expires:  time.Unix(0, 0),
 			MaxAge:   -1,
-			Secure:   h.cookieDomain != "",
+			Secure:   true,
 			SameSite: http.SameSiteNoneMode,
 		})
 	}

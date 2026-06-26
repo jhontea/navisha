@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable React StrictMode in development — it double-mounts components
+  // which causes LLM mutations (summary, generate) to fire multiple times
+  // on a single user click.
+  reactStrictMode: false,
   // Enable standalone output for Docker deployment
   // This produces a self-contained build in .next/standalone
   output: 'standalone',
@@ -37,7 +41,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com",
-              "connect-src 'self' https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
+              "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
               "frame-src 'self' https://accounts.google.com",
               "object-src 'none'",
               "base-uri 'self'",
@@ -59,7 +63,7 @@ const nextConfig = {
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "font-src 'self' https://fonts.gstatic.com",
                   "img-src 'self' data: blob: https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com",
-                  "connect-src 'self' https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
+                  "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
                   "frame-src 'self' https://accounts.google.com",
                   "object-src 'none'",
                   "base-uri 'self'",

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -194,7 +194,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 </div>
               </div>
             )}
-            <Button onClick={() => generate.mutate()} className="gap-2">
+            <Button onClick={() => generate.mutate()} disabled={generate.isPending} className="gap-2">
               <Sparkles className="h-4 w-4" />
               {isGenerateError ? "Try Again" : "Generate Summary"}
             </Button>

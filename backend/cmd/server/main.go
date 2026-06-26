@@ -235,11 +235,12 @@ func main() {
 	e.Use(appMiddleware.SecurityHeaders())
 
 	// CSRF protection via Double Submit Cookie pattern (Loop 11).
-	// Required because auth cookies use SameSite=None in production.
-	e.Use(appMiddleware.CSRF())
+	// Requires shared cookie domain in production (.navisha.cloud).
+	e.Use(appMiddleware.CSRF(cfg.App.CookieDomain))
 
-	// Loop 6: per-request timeout (30s default) to prevent hanging requests.
-	e.Use(appMiddleware.Timeout(30 * time.Second))
+	// Per-request timeout (300s) to prevent hanging requests while allowing
+	// slow LLM calls (summary/generate). Matches llm.timeout_seconds config.
+	e.Use(appMiddleware.Timeout(300 * time.Second))
 
 	// Loop 3: limit request body size to 1MB.
 	e.Use(appMiddleware.BodyLimit(1 << 20))

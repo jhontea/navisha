@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { APIProvider } from "@vis.gl/react-google-maps"
@@ -34,8 +34,11 @@ export default function GenerateTripPage() {
 
   const generate = useGenerateTripDraft()
   const create = useCreateTripFromDraft()
+  const generatingRef = useRef(false)
 
   const handleGenerate = async (input: GenerateTripInput) => {
+    if (generatingRef.current) return // guard: prevent concurrent generates
+    generatingRef.current = true
     setFormError(null)
     // Save destination for later use during Places resolution.
     setDestination(input.destination)
@@ -55,6 +58,8 @@ export default function GenerateTripPage() {
       setFormError(
         err instanceof ApiError ? err.message : "Failed to generate itinerary. Please try again.",
       )
+    } finally {
+      generatingRef.current = false
     }
   }
 

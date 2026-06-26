@@ -24,6 +24,7 @@ export function useTripSummary(tripId: string) {
     },
     enabled: !!tripId,
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 min — don't refetch immediately after generate
   })
 }
 
@@ -34,6 +35,9 @@ export function useGenerateSummary(tripId: string) {
     onSuccess: (data) => {
       qc.setQueryData(summaryKey(tripId), data)
     },
+    // Prevent double-generation: mutation must fully settle before retry.
+    // TanStack Query already enforces one-at-a-time, but this is belt-and-suspenders.
+    retry: 0,
   })
 }
 
