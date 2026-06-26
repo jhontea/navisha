@@ -16,5 +16,11 @@ FROM alpine:3.21
 WORKDIR /app
 COPY --from=builder /app/server .
 COPY config.yaml .
+COPY migrations/ ./migrations/
+
+# Loop 46: run as non-root user for defense-in-depth.
+RUN adduser -D -H -g '' navisha
+USER navisha
+
 EXPOSE 8090
 CMD ["./server"]

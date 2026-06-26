@@ -3,15 +3,25 @@ package trip
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 )
 
 const (
 	defaultListLimit = 20
 	maxListLimit     = 50
+
+	// Input validation limits (Loop 4: prevent overflow/DoS via oversized fields).
+	maxTitleLength       = 200
+	maxDescriptionLength = 5000
+	maxNotesLength       = 10000
+	maxCoverImageURLLen  = 2048
+	maxTripDurationDays  = 90 // prevent trips spanning years
+	minTitleLength       = 1  // title must not be empty
 )
 
 type UsecaseInterface interface {
@@ -61,9 +71,17 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 	if err := validateDates(in.StartDate, in.EndDate); err != nil {
 		return nil, err
 	}
+	if err := validateFields(in.Title, in.Description, in.Notes, in.CoverImageURL); err != nil {
+		return nil, err
+	}
 	if !currency.IsSupported(in.BaseCurrency) {
 		return nil, ErrInvalidCurrency
 	}
+
+	// Loop 14: strip HTML tags from user-provided text before storing.
+	in.Title = sanitize.Text(in.Title)
+	in.Description = sanitize.Text(in.Description)
+	in.Notes = sanitize.Text(in.Notes)
 
 	t := &Trip{
 		UserID:        userID,
@@ -159,9 +177,17 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	if err := validateDates(in.StartDate, in.EndDate); err != nil {
 		return nil, err
 	}
+	if err := validateFields(in.Title, in.Description, in.Notes, in.CoverImageURL); err != nil {
+		return nil, err
+	}
 	if !currency.IsSupported(in.BaseCurrency) {
 		return nil, ErrInvalidCurrency
 	}
+
+	// Loop 14: strip HTML tags from user-provided text before storing.
+	in.Title = sanitize.Text(in.Title)
+	in.Description = sanitize.Text(in.Description)
+	in.Notes = sanitize.Text(in.Notes)
 
 	datesChanged := !existing.StartDate.Equal(in.StartDate) || !existing.EndDate.Equal(in.EndDate)
 
@@ -237,6 +263,31 @@ func validateDates(start, end time.Time) error {
 	}
 	if end.Before(start) {
 		return ErrInvalidDates
+	}
+	// Loop 3: prevent trips spanning more than maxTripDurationDays.
+	if end.Sub(start) > time.Duration(maxTripDurationDays)*24*time.Hour {
+		return ErrTripTooLong
+	}
+	return nil
+}
+
+// validateFields enforces length limits on user-provided text fields (Loop 4).
+// This prevents excessively large inputs from reaching the database.
+func validateFields(title, description, notes, coverURL string) error {
+	if len(strings.TrimSpace(title)) < minTitleLength {
+		return ErrEmptyTitle
+	}
+	if len(title) > maxTitleLength {
+		return ErrTitleTooLong
+	}
+	if len(description) > maxDescriptionLength {
+		return ErrDescriptionTooLong
+	}
+	if len(notes) > maxNotesLength {
+		return ErrNotesTooLong
+	}
+	if len(coverURL) > maxCoverImageURLLen {
+		return ErrURLTooLong
 	}
 	return nil
 }

@@ -15,6 +15,13 @@ class ApiError extends Error {
   }
 }
 
+/** Read the CSRF token from the non-HTTP-only csrf_token cookie. */
+function getCSRFToken(): string {
+  if (typeof document === "undefined") return ""
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : ""
+}
+
 async function request<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const { params, ...init } = options
 
@@ -23,13 +30,20 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
   }
 
+  // Include CSRF token in mutation requests (Double Submit Cookie pattern).
+  const csrfToken = getCSRFToken()
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init.headers as Record<string, string>),
+  }
+  if (csrfToken && init.method && init.method !== "GET") {
+    headers["X-CSRF-Token"] = csrfToken
+  }
+
   const res = await fetch(url.toString(), {
     ...init,
     credentials: "include", // always send cookies
-    headers: {
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
+    headers,
   })
 
   if (!res.ok) {

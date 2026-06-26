@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/config"
@@ -49,7 +50,8 @@ func main() {
 	// Database — Phase 3D: tuned connection pool.
 	dbCfg, err := pgxpool.ParseConfig(cfg.DB.URL)
 	if err != nil {
-		slog.Error("failed to parse database url", "error", err)
+		// Do not log cfg.DB.URL — it contains the database password.
+		slog.Error("failed to parse database url", "error", "invalid connection string")
 		os.Exit(1)
 	}
 	if cfg.DB.PoolSize > 0 {
@@ -82,7 +84,8 @@ func main() {
 	// Redis — Phase 3D: tuned connection pool.
 	redisOpts, err := redis.ParseURL(cfg.Redis.URL)
 	if err != nil {
-		slog.Error("failed to parse redis url", "error", err)
+		// Do not log cfg.Redis.URL — it may contain a password.
+		slog.Error("failed to parse redis url", "error", "invalid connection string")
 		os.Exit(1)
 	}
 	if cfg.Redis.PoolSize > 0 {
@@ -95,6 +98,12 @@ func main() {
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		slog.Error("failed to ping redis", "error", err)
 		os.Exit(1)
+	}
+	// Loop 19: warn if Redis is not using TLS in a non-localhost environment.
+	if !strings.HasPrefix(cfg.Redis.URL, "rediss://") &&
+		!strings.Contains(cfg.Redis.URL, "localhost") &&
+		!strings.Contains(cfg.Redis.URL, "127.0.0.1") {
+		slog.Warn("redis is not using TLS — consider using rediss:// in production")
 	}
 	slog.Info("redis connected", "pool_size", redisOpts.PoolSize)
 	defer rdb.Close()
@@ -221,6 +230,14 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	// Security headers on every API response (defense in depth — Next.js also
+	// sets these for the frontend, but the API may be accessed directly).
+	e.Use(appMiddleware.SecurityHeaders())
+
+	// CSRF protection via Double Submit Cookie pattern (Loop 11).
+	// Required because auth cookies use SameSite=None in production.
+	e.Use(appMiddleware.CSRF())
+
 	// Loop 6: per-request timeout (30s default) to prevent hanging requests.
 	e.Use(appMiddleware.Timeout(30 * time.Second))
 
@@ -258,6 +275,17 @@ func main() {
 		})
 	})
 
+	// Loop 17: security.txt — vulnerability disclosure policy (RFC 9116).
+	e.GET("/.well-known/security.txt", func(c echo.Context) error {
+		c.Response().Header().Set("Content-Type", "text/plain; charset=utf-8")
+		return c.String(http.StatusOK,
+			"Contact: mailto:security@navisha.cloud\n"+
+				"Expires: 2027-12-31T23:59:59Z\n"+
+				"Preferred-Languages: en\n"+
+				"Canonical: https://navisha.cloud/.well-known/security.txt\n"+
+				"Policy: https://navisha.cloud/privacy\n")
+	})
+
 	// Auth middleware
 	authMiddleware := appMiddleware.Auth(jwtSvc)
 
@@ -276,7 +304,18 @@ func main() {
 	// Graceful shutdown
 	go func() {
 		addr := fmt.Sprintf(":%d", cfg.Server.Port)
-		slog.Info("server starting", "addr", addr)
+		// Loop 10: Configure server-level timeouts to protect against
+		// slow-loris attacks and hung connections.
+		e.Server.ReadTimeout = 15 * time.Second
+		e.Server.WriteTimeout = 30 * time.Second
+		e.Server.IdleTimeout = 120 * time.Second
+		// Loop 49: limit header size to prevent buffer exhaustion (default 1MB is too generous).
+		e.Server.MaxHeaderBytes = 1 << 18 // 256KB
+		slog.Info("server starting", "addr", addr,
+			"read_timeout", e.Server.ReadTimeout,
+			"write_timeout", e.Server.WriteTimeout,
+			"idle_timeout", e.Server.IdleTimeout,
+		)
 		if err := e.Start(addr); err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "error", err)
 			os.Exit(1)

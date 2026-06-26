@@ -24,11 +24,13 @@ func NewHandler(usecase UsecaseInterface, frontendURL, cookieDomain string, acce
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/auth/google", h.GoogleRedirect)
-	g.GET("/auth/google/callback", h.GoogleCallback)
-	g.POST("/auth/logout", h.Logout, authMiddleware)
-	g.POST("/auth/refresh", h.Refresh)
-	g.GET("/auth/me", h.Me, authMiddleware)
+	// Auth routes group with no-cache to prevent credential caching.
+	auth := g.Group("/auth", middleware.NoCache())
+	auth.GET("/google", h.GoogleRedirect)
+	auth.GET("/google/callback", h.GoogleCallback)
+	auth.POST("/logout", h.Logout, authMiddleware)
+	auth.POST("/refresh", h.Refresh)
+	auth.GET("/me", h.Me, authMiddleware)
 }
 
 // GoogleRedirect generates a random CSRF state, stores it in a short-lived cookie,
@@ -119,6 +121,15 @@ func (h *Handler) Me(c echo.Context) error {
 }
 
 func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken string) {
+	// When cookieDomain is set (production: .navisha.cloud), use cross-subdomain
+	// cookies with Secure + SameSite=None. On localhost (empty domain), use
+	// SameSite=Lax since we cannot set Secure on HTTP.
+	isSecure := h.cookieDomain != ""
+	sameSite := http.SameSiteLaxMode
+	if isSecure {
+		sameSite = http.SameSiteNoneMode
+	}
+
 	c.SetCookie(&http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
@@ -126,8 +137,8 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		Domain:   h.cookieDomain,
 		MaxAge:   h.accessTTL,
 		HttpOnly: true,
-		Secure:   h.cookieDomain != "",
-		SameSite: http.SameSiteNoneMode,
+		Secure:   isSecure,
+		SameSite: sameSite,
 	})
 	c.SetCookie(&http.Cookie{
 		Name:     "refresh_token",
@@ -136,8 +147,8 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		Domain:   h.cookieDomain,
 		MaxAge:   h.refreshTTL,
 		HttpOnly: true,
-		Secure:   h.cookieDomain != "",
-		SameSite: http.SameSiteNoneMode,
+		Secure:   isSecure,
+		SameSite: sameSite,
 	})
 }
 

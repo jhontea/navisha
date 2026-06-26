@@ -4,9 +4,11 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
@@ -37,6 +39,19 @@ func (h *Handler) Generate(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	// Loop 34: validate required fields before hitting LLM.
+	if strings.TrimSpace(req.Destination) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "destination is required")
+	}
+	if len(req.Destination) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "destination must be 200 characters or less")
+	}
+	if len(req.Description) > 2000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "description is too long")
+	}
+	// Loop 35: strip HTML/scripts from LLM-bound inputs to prevent prompt injection.
+	req.Destination = sanitize.Text(req.Destination)
+	req.Description = sanitize.Text(req.Description)
 	start, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid start_date (expect YYYY-MM-DD)")

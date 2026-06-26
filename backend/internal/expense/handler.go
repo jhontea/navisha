@@ -6,6 +6,7 @@ import (
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
@@ -66,6 +67,15 @@ func (h *Handler) Create(c echo.Context) error {
 	if strings.TrimSpace(req.Currency) == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "currency is required")
 	}
+	// Loop 33: additional validation.
+	if len(req.Title) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
+	}
+	if len(req.Note) > 2000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "note is too long")
+	}
+	req.Title = sanitize.Text(req.Title)
+	req.Note = sanitize.Text(req.Note)
 	e, err := h.usecase.Create(userID, tripID, CreateInput{
 		Title:       req.Title,
 		Amount:      req.Amount,
@@ -88,6 +98,20 @@ func (h *Handler) Update(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	if strings.TrimSpace(req.Title) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	}
+	if req.Amount <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than 0")
+	}
+	if len(req.Title) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
+	}
+	if len(req.Note) > 2000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "note is too long")
+	}
+	req.Title = sanitize.Text(req.Title)
+	req.Note = sanitize.Text(req.Note)
 	e, err := h.usecase.Update(userID, id, UpdateInput{
 		Title:       req.Title,
 		Amount:      req.Amount,

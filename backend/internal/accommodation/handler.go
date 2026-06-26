@@ -2,10 +2,12 @@ package accommodation
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
@@ -92,9 +94,23 @@ func (h *Handler) Create(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	// Loop 16: early validation before parsing dates.
+	if strings.TrimSpace(req.Name) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "name is required")
+	}
+	if len(req.Name) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "name must be 200 characters or less")
+	}
+	req.Name = sanitize.Text(req.Name)
+	req.Notes = sanitize.Text(req.Notes)
+	req.LocationName = sanitize.Text(req.LocationName)
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
+	}
+	// Validate check-in before check-out.
+	if !in.CheckOut.After(in.CheckIn) {
+		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be after check-in")
 	}
 	a, err := h.usecase.Create(c.Request().Context(), userID, tripID, in)
 	if err != nil {
@@ -110,9 +126,21 @@ func (h *Handler) Update(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
+	if strings.TrimSpace(req.Name) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "name is required")
+	}
+	if len(req.Name) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "name must be 200 characters or less")
+	}
+	req.Name = sanitize.Text(req.Name)
+	req.Notes = sanitize.Text(req.Notes)
+	req.LocationName = sanitize.Text(req.LocationName)
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
+	}
+	if !in.CheckOut.After(in.CheckIn) {
+		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be after check-in")
 	}
 	a, err := h.usecase.Update(userID, id, in)
 	if err != nil {
