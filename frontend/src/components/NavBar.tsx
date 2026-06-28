@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   User,
   ArrowLeftRight,
-  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/hooks";
@@ -137,23 +136,8 @@ export function NavBar() {
             })}
           </div>
 
-          {/* Right side: CTA + avatar */}
+          {/* Right side: avatar */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Iter 21 — New Trip CTA: gradient version */}
-            <Link
-              href="/trips/new"
-              aria-label="Create new trip"
-              className={cn(
-                "hidden lg:flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200",
-                "bg-gradient-to-r from-primary to-[hsl(250,70%,55%)] text-white shadow-sm shadow-primary/20",
-                "hover:shadow-md hover:shadow-primary/30 hover:scale-[1.02] active:scale-95",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              )}
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              New Trip
-            </Link>
-
             {/* Iter 24 — Profile: ring animation when active */}
             <Link
               href="/profile"
