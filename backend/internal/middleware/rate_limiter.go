@@ -100,8 +100,9 @@ func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 
 // bucketAndLimit returns the Redis key bucket name and per-minute limit for a path.
 func (rl *RateLimiter) bucketAndLimit(path string) (string, int) {
-	// LLM endpoints (expensive) — exact generate path or /trips/:id/summary suffix
-	if path == "/api/v1/trips/generate" || (strings.HasPrefix(path, "/api/v1/trips/") && strings.HasSuffix(path, "/summary")) {
+	// LLM endpoints (expensive) — exact generate path or /trips/:id/summary suffix.
+	// Must NOT match /trips/:id/expenses/summary — that's a cheap DB aggregate.
+	if path == "/api/v1/trips/generate" || isLLMSummaryPath(path) {
 		return "llm", rl.config.LLMPerMinute
 	}
 	// Auth endpoints
@@ -109,6 +110,18 @@ func (rl *RateLimiter) bucketAndLimit(path string) (string, int) {
 		return "auth", rl.config.AuthPerMinute
 	}
 	return "general", rl.config.GeneralPerMin
+}
+
+// isLLMSummaryPath checks if path is exactly /api/v1/trips/<uuid>/summary
+// (not /api/v1/trips/<uuid>/expenses/summary or other /summary variants).
+func isLLMSummaryPath(path string) bool {
+	if !strings.HasPrefix(path, "/api/v1/trips/") || !strings.HasSuffix(path, "/summary") {
+		return false
+	}
+	// Must NOT contain another slash between /trips/ and /summary
+	// (e.g. /trips/:id/expenses/summary has an extra /expenses/ segment).
+	inner := path[len("/api/v1/trips/") : len(path)-len("/summary")]
+	return !strings.Contains(inner, "/")
 }
 
 // matchPath is a simple prefix check. For more precise matching, we'd use
