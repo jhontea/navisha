@@ -23,6 +23,8 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
+          // Prevent browser caching in dev — avoids "hard reload needed" bugs
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
           // Prevent MIME type sniffing
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           // Prevent clickjacking by blocking all framing

@@ -9,7 +9,9 @@ import type {
 
 export const activityApi = {
   list: (dayId: string) =>
-    api.get<ActivityListResponse>(`/days/${dayId}/activities`),
+    api.get<ActivityListResponse>(`/days/${dayId}/activities`, {
+      params: { _t: String(Date.now()) },
+    }),
 
   create: (dayId: string, input: CreateActivityInput) =>
     api.post<Activity>(`/days/${dayId}/activities`, input),

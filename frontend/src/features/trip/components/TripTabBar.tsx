@@ -10,11 +10,11 @@ interface TripTabBarProps {
 }
 
 const TABS = [
-  { label: "Itinerary", href: "itinerary", icon: Calendar },
-  { label: "Overview",  href: "overview",  icon: Map },
-  { label: "Budget",    href: "budget",    icon: DollarSign },
-  { label: "Transport", href: "transport", icon: Bus },
-  { label: "Stay",      href: "stay",      icon: Hotel },
+  { label: "Overview",  href: "overview",   icon: Map,         key: "overview"   },
+  { label: "Itinerary", href: "",            icon: Calendar,    key: "itinerary"  },
+  { label: "Transport", href: "transport",   icon: Bus,         key: "transport"  },
+  { label: "Stay",      href: "stay",        icon: Hotel,       key: "stay"       },
+  { label: "Budget",    href: "budget",      icon: DollarSign,  key: "budget"     },
 ] as const
 
 /**
@@ -42,11 +42,10 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
         role="tablist"
       >
         {TABS.map((tab) => {
-          const href = `/trips/${tripId}/${tab.href}`
-          const isActive =
-            tab.href === "overview"
-              ? pathname === `/trips/${tripId}` || pathname === `/trips/${tripId}/overview`
-              : pathname.startsWith(href)
+          const href = tab.href ? `/trips/${tripId}/${tab.href}` : `/trips/${tripId}`
+          const isActive = tab.href === ""
+            ? pathname === `/trips/${tripId}`
+            : pathname.startsWith(`/trips/${tripId}/${tab.href}`)
 
           return (
             <Link

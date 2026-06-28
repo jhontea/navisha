@@ -313,6 +313,10 @@ func main() {
 	// (unverified — for bucketing only) or falls back to IP for public routes.
 	api.Use(rateLimiter.Limit())
 
+	// Prevent browsers from caching API responses — critical for mutation-heavy
+	// endpoints (reorder, CRUD) where stale cache causes "first reload old data".
+	api.Use(appMiddleware.NoCache())
+
 	userHandler.RegisterRoutes(api, authMiddleware)
 	tripHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)
