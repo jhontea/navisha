@@ -16,6 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   ArrowRight,
   Bus,
@@ -42,7 +43,7 @@ import {
 } from "../hooks/useActivities"
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
-import type { Activity, CreateActivityInput } from "../types"
+import type { Activity, ActivityListResponse, CreateActivityInput } from "../types"
 import type { Transportation } from "@/features/transportation/types"
 import type { Accommodation } from "@/features/accommodation/types"
 import { ActivityCard } from "./ActivityCard"
@@ -363,6 +364,7 @@ interface Props {
 }
 
 export function DayActivities({ tripId, dayId, date }: Props) {
+  const qc = useQueryClient()
   const { data: activitiesData, isLoading: loadingAct } = useActivities(dayId)
   const { data: transData } = useTransportations(tripId)
   const { data: accomData } = useAccommodations(tripId)
@@ -370,6 +372,7 @@ export function DayActivities({ tripId, dayId, date }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Activity | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [reorderKey, setReorderKey] = useState(0)
 
   const createMut = useCreateActivity(dayId)
   const updateMut = useUpdateActivity(editingId ?? "", dayId)
@@ -437,8 +440,25 @@ export function DayActivities({ tripId, dayId, date }: Props) {
     const oldIdx = activities.findIndex((a) => a.id === active.id)
     const newIdx = activities.findIndex((a) => a.id === over.id)
     if (oldIdx < 0 || newIdx < 0) return
-    const newOrder = arrayMove(activities, oldIdx, newIdx).map((a) => a.id)
-    reorderMut.mutate({ ids: newOrder })
+    const reordered = arrayMove(activities, oldIdx, newIdx)
+    const newOrder = reordered.map((a) => a.id)
+
+    // Defer to next frame: @dnd-kit resets internal transform state
+    // asynchronously after onDragEnd. If setQueryData runs synchronously,
+    // @dnd-kit's pending state reset may override our optimistic reorder.
+    requestAnimationFrame(() => {
+      qc.setQueryData<ActivityListResponse>(
+        ["activities", "list", dayId],
+        { items: reordered },
+      )
+      setReorderKey(k => k + 1)
+
+      reorderMut.mutate({ ids: newOrder }, {
+        onError: () => {
+          qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: 'all' })
+        },
+      })
+    })
   }
 
   const hasContent = activities.length > 0 || staticItems.length > 0
@@ -487,6 +507,7 @@ export function DayActivities({ tripId, dayId, date }: Props) {
           {/* Sortable activity items */}
           {activities.length > 0 && (
             <DndContext
+              key={reorderKey}
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={onDragEnd}

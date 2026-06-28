@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-query"
 import { activityApi } from "../api"
 import type {
-  ActivityListResponse,
   CreateActivityInput,
   ReorderInput,
   UpdateActivityInput,
@@ -20,7 +19,8 @@ export function useActivities(dayId: string, enabled = true) {
     queryKey: listKey(dayId),
     queryFn: () => activityApi.list(dayId),
     enabled: enabled && !!dayId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // always refetch — activities mutate frequently (reorder, add, delete)
+    structuralSharing: false, // reorder changes item order; structuralSharing may suppress re-render
   })
 }
 
@@ -52,25 +52,8 @@ export function useReorderActivities(dayId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: ReorderInput) => activityApi.reorder(dayId, input),
-    // Optimistic: rearrange the cache immediately so the card doesn't snap
-    // back while the request is in flight.
-    onMutate: async ({ ids }) => {
-      await qc.cancelQueries({ queryKey: listKey(dayId) })
-      const prev = qc.getQueryData<ActivityListResponse>(listKey(dayId))
-      if (prev) {
-        const map = new Map(prev.items.map((a) => [a.id, a]))
-        const reordered = ids
-          .map((id) => map.get(id))
-          .filter((a): a is NonNullable<typeof a> => !!a)
-        qc.setQueryData<ActivityListResponse>(listKey(dayId), {
-          items: reordered,
-        })
-      }
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(listKey(dayId), ctx.prev)
-    },
+    // Optimistic update is handled directly in DayActivities.onDragEnd
+    // via qc.setQueryData — faster and bypasses TanStack Mutation lifecycle.
     onSettled: () => qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: 'all' }),
   })
 }

@@ -2,6 +2,7 @@ package apperr
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -32,5 +33,7 @@ func MapHTTP(err error, mappings ...HTTPMapping) error {
 			return echo.NewHTTPError(m.Code, m.Message)
 		}
 	}
+	// Log unmapped errors so we can diagnose 500s.
+	slog.Error("apperr.MapHTTP: unmapped error", "error", err)
 	return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 }

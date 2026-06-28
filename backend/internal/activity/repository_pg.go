@@ -240,19 +240,13 @@ func (r *postgresRepository) BatchUpdateOrderTx(ctx context.Context, tx pgx.Tx, 
 	if len(orderMap) == 0 {
 		return nil
 	}
-	ids := make([]string, 0, len(orderMap))
-	idxs := make([]int, 0, len(orderMap))
 	for id, idx := range orderMap {
-		ids = append(ids, id)
-		idxs = append(idxs, idx)
-	}
-	_, err := tx.Exec(ctx,
-		`UPDATE activities SET order_index = v.idx, updated_at = NOW()
-		 FROM (SELECT * FROM unnest($1::text[], $2::int[])) AS v(id, idx)
-		 WHERE activities.id = v.id`,
-		ids, idxs)
-	if err != nil {
-		return fmt.Errorf("activity.BatchUpdateOrderTx: %w", err)
+		_, err := tx.Exec(ctx,
+			`UPDATE activities SET order_index = $1, updated_at = NOW() WHERE id = $2`,
+			idx, id)
+		if err != nil {
+			return fmt.Errorf("activity.BatchUpdateOrderTx: %w", err)
+		}
 	}
 	return nil
 }

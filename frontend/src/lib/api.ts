@@ -23,7 +23,7 @@ function getCSRFToken(): string {
 }
 
 async function request<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { params, ...init } = options
+  const { params, signal, ...init } = options
 
   const url = new URL(`${API_BASE}${path}`)
   if (params) {
@@ -42,8 +42,10 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
 
   const res = await fetch(url.toString(), {
     ...init,
-    credentials: "include", // always send cookies
+    cache: "no-store",
+    credentials: "include",
     headers,
+    signal: signal ?? null,
   })
 
   if (!res.ok) {
