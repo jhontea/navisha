@@ -3,7 +3,7 @@
 import { useAuth } from "@/features/auth/hooks"
 import { TripList } from "@/features/trip/components/TripList"
 import { StatsSection } from "@/features/trip/components/StatsSection"
-import { Sparkles, Compass, ArrowLeftRight, ChevronRight, Plus } from "lucide-react"
+import { Sparkles, Compass, ArrowLeftRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
 function getGreeting() {
@@ -31,25 +31,13 @@ export default function DashboardPage() {
     <div className="relative mx-auto max-w-max-width w-full px-4 md:px-8 pt-6 pb-28 md:pb-16">
 
       {/* ── Greeting Header ── */}
-      {/* Iter 29 — time-based emoji */}
-      <header className="mb-8 flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground tracking-wide">
-            {getGreeting()}, <span className="font-semibold text-foreground">{firstName}</span> {greetingEmoji}
-          </p>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold text-gradient-sunset leading-tight">
-            Your Adventures
-          </h1>
-        </div>
-        {/* Iter 32 — desktop: new trip inline action */}
-        <Link
-          href="/trips/new"
-          className="hidden md:inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[hsl(250,70%,55%)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          aria-label="Create new trip"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New Trip
-        </Link>
+      <header className="mb-8">
+        <p className="text-sm text-muted-foreground tracking-wide">
+          {getGreeting()}, <span className="font-semibold text-foreground">{firstName}</span> {greetingEmoji}
+        </p>
+        <h1 className="text-3xl md:text-4xl font-heading font-bold text-gradient-sunset leading-tight">
+          Your Adventures
+        </h1>
       </header>
 
       {/* ── Stats ── */}
@@ -137,14 +125,6 @@ export default function DashboardPage() {
         <TripList />
       </section>
 
-      {/* Iter 32 — mobile FAB: create new trip */}
-      <Link
-        href="/trips/new"
-        className="fixed bottom-[80px] right-4 z-40 md:hidden flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(250,70%,55%)] text-white shadow-lg shadow-primary/35 hover:shadow-xl hover:shadow-primary/45 hover:scale-105 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        aria-label="Create new trip"
-      >
-        <Plus className="h-6 w-6" aria-hidden="true" />
-      </Link>
     </div>
   )
 }
