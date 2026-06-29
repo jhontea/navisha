@@ -134,6 +134,8 @@ func matchPath(path, prefix string) bool {
 // Each request is recorded with a score equal to the current nanosecond
 // timestamp. Entries older than the window (60s) are trimmed, then the
 // count of remaining entries is compared against the limit.
+// IMPORTANT: the request is added to the sorted set AFTER the limit check
+// so that rate-limited requests do not pollute the window.
 func (rl *RateLimiter) check(ctx context.Context, redisKey string, limit int) (bool, error) {
 	now := time.Now()
 	windowStart := now.Add(-time.Minute)
@@ -143,11 +145,7 @@ func (rl *RateLimiter) check(ctx context.Context, redisKey string, limit int) (b
 	// Remove entries outside the sliding window.
 	pipe.ZRemRangeByScore(ctx, redisKey, "0", strconv.FormatInt(windowStart.UnixNano(), 10))
 
-	// Add current request.
-	member := strconv.FormatInt(now.UnixNano(), 10)
-	pipe.ZAdd(ctx, redisKey, redis.Z{Score: float64(now.UnixNano()), Member: member})
-
-	// Count entries still in the window.
+	// Count entries still in the window (before adding this request).
 	countCmd := pipe.ZCard(ctx, redisKey)
 
 	// Set expiry on the key so stale users don't accumulate.
@@ -162,5 +160,13 @@ func (rl *RateLimiter) check(ctx context.Context, redisKey string, limit int) (b
 		return false, fmt.Errorf("rate limit zcard: %w", err)
 	}
 
-	return count <= int64(limit), nil
+	// Only add this request if under the limit.
+	if count < int64(limit) {
+		member := strconv.FormatInt(now.UnixNano(), 10)
+		if err := rl.rdb.ZAdd(ctx, redisKey, redis.Z{Score: float64(now.UnixNano()), Member: member}).Err(); err != nil {
+			return false, fmt.Errorf("rate limit zadd: %w", err)
+		}
+	}
+
+	return count < int64(limit), nil
 }

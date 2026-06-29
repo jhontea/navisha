@@ -167,6 +167,10 @@ func (h *Handler) clearTokenCookies(c echo.Context) {
 
 func randomState() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand failure is extremely unlikely but if it occurs we must
+		// not silently produce a weak state value — fail loudly instead.
+		panic("randomState: crypto/rand unavailable: " + err.Error())
+	}
 	return base64.URLEncoding.EncodeToString(b)
 }

@@ -119,18 +119,21 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 	return u.repo.Save(tripID, content, u.model)
 }
 
-// Get returns the cached summary. Verifies ownership via the provider.
+// Get returns the cached summary. Verifies ownership via the repository's
+// trip owner lookup — much cheaper than GetTripContext which assembles the
+// full cross-domain snapshot (activities, expenses, etc.) just for an
+// ownership check.
 func (u *Usecase) Get(ctx context.Context, userID, tripID string) (*Summary, error) {
-	// Ownership check — provider returns ErrForbidden / not found as appropriate.
-	if _, err := u.provider.GetTripContext(ctx, userID, tripID); err != nil {
+	if err := u.repo.VerifyTripOwner(ctx, userID, tripID); err != nil {
 		return nil, err
 	}
 	return u.repo.GetByTripID(tripID)
 }
 
-// Delete removes the cached summary. Verifies ownership first.
+// Delete removes the cached summary. Verifies ownership first via the
+// lightweight repository check rather than the full trip context assembly.
 func (u *Usecase) Delete(ctx context.Context, userID, tripID string) error {
-	if _, err := u.provider.GetTripContext(ctx, userID, tripID); err != nil {
+	if err := u.repo.VerifyTripOwner(ctx, userID, tripID); err != nil {
 		return err
 	}
 	return u.repo.Delete(tripID)

@@ -2,10 +2,9 @@ package config
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -29,12 +28,14 @@ type ServerConfig struct {
 }
 
 type DBConfig struct {
-	URL             string
-	PoolSize        int           `mapstructure:"pool_size"`
-	MaxConns        int32         `mapstructure:"max_conns"`
-	MinConns        int32         `mapstructure:"min_conns"`
-	MaxConnLifetime time.Duration `mapstructure:"max_conn_lifetime"`
-	MaxConnIdleTime time.Duration `mapstructure:"max_conn_idle_time"`
+	URL      string
+	PoolSize int   `mapstructure:"pool_size"`
+	MaxConns int32 `mapstructure:"max_conns"`
+	MinConns int32 `mapstructure:"min_conns"`
+	// MaxConnLifetime and MaxConnIdleTime are in seconds (from config.yaml).
+	// main.go converts them to time.Duration when setting up the pool.
+	MaxConnLifetime int `mapstructure:"max_conn_lifetime"`
+	MaxConnIdleTime int `mapstructure:"max_conn_idle_time"`
 }
 
 type RedisConfig struct {
@@ -174,7 +175,7 @@ func Load() (*Config, error) {
 	// Load .env if present (dev only — ignored in prod).
 	// Log a warning on failure so misconfigured dev environments are visible.
 	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("config.Load: .env not loaded (this is fine in production): %v", err)
+		slog.Warn("config.Load: .env not loaded (this is fine in production)", "error", err)
 	}
 
 	v := viper.New()

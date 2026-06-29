@@ -46,12 +46,15 @@ func (h *Handler) Generate(c echo.Context) error {
 	tripID := c.Param("id")
 
 	// ── Per-user cooldown (Redis SETNX — same pattern as autogen) ──
+	// Key uses only userID so a single user cannot abuse the LLM by switching
+	// between different trips — all summary generations are throttled together
+	// per user regardless of which trip they target.
 	if h.rdb != nil && h.rateLimitSec > 0 {
 		key := fmt.Sprintf("ratelimit:summary:cooldown:%s", userID)
 		dur := time.Duration(h.rateLimitSec) * time.Second
 		ok, err := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
 		if err != nil {
-			slog.Warn("summary: cooldown check failed", "user_id", userID, "err", err)
+			slog.Warn("summary: cooldown check failed", "user_id", userID, "trip_id", tripID, "err", err)
 		} else if !ok {
 			ttl, _ := h.rdb.TTL(c.Request().Context(), key).Result()
 			retryAfter := int(ttl.Seconds())

@@ -64,10 +64,10 @@ func main() {
 		dbCfg.MinConns = cfg.DB.MinConns
 	}
 	if cfg.DB.MaxConnLifetime > 0 {
-		dbCfg.MaxConnLifetime = cfg.DB.MaxConnLifetime * time.Second
+		dbCfg.MaxConnLifetime = time.Duration(cfg.DB.MaxConnLifetime) * time.Second
 	}
 	if cfg.DB.MaxConnIdleTime > 0 {
-		dbCfg.MaxConnIdleTime = cfg.DB.MaxConnIdleTime * time.Second
+		dbCfg.MaxConnIdleTime = time.Duration(cfg.DB.MaxConnIdleTime) * time.Second
 	}
 	db, err := pgxpool.NewWithConfig(context.Background(), dbCfg)
 	if err != nil {
@@ -333,7 +333,10 @@ func main() {
 		// Loop 10: Configure server-level timeouts to protect against
 		// slow-loris attacks and hung connections.
 		e.Server.ReadTimeout = 15 * time.Second
-		e.Server.WriteTimeout = 30 * time.Second
+		// WriteTimeout must exceed the LLM call timeout (300s) otherwise the
+		// server cuts the TCP connection mid-stream on slow AI responses.
+		// Add 10s headroom above the per-request middleware timeout.
+		e.Server.WriteTimeout = 315 * time.Second
 		e.Server.IdleTimeout = 120 * time.Second
 		// Loop 49: limit header size to prevent buffer exhaustion (default 1MB is too generous).
 		e.Server.MaxHeaderBytes = 1 << 18 // 256KB

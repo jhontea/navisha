@@ -142,10 +142,12 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 func generateCSRFToken() string {
 	b := make([]byte, csrfTokenLen)
 	if _, err := rand.Read(b); err != nil {
-		// crypto/rand should never fail on normal systems, but if it does,
-		// fall back to a time-based fallback (less secure but better than a static token).
+		// crypto/rand should never fail on modern systems, but if it does,
+		// fill each byte with a distinct value derived from the nanosecond
+		// timestamp and position so the fallback token is not all-identical.
+		base := time.Now().UnixNano()
 		for i := range b {
-			b[i] = byte(time.Now().UnixNano() % 256)
+			b[i] = byte((base>>uint(i%8))>>uint(i%7)) ^ byte(i)
 		}
 	}
 	return base64.URLEncoding.EncodeToString(b)
