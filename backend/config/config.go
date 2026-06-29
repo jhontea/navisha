@@ -173,7 +173,7 @@ type OpenRouterConfig struct {
 func Load() (*Config, error) {
 	// Load .env if present (dev only — ignored in prod).
 	// Log a warning on failure so misconfigured dev environments are visible.
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Printf("config.Load: .env not loaded (this is fine in production): %v", err)
 	}
 

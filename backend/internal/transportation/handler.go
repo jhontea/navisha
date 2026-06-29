@@ -83,7 +83,10 @@ func parseOptTime(s *string) (*time.Time, error) {
 }
 
 func (h *Handler) List(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	tripID := c.Param("trip_id")
 	items, err := h.usecase.List(userID, tripID)
 	if err != nil {
@@ -97,7 +100,10 @@ func (h *Handler) List(c echo.Context) error {
 }
 
 func (h *Handler) Create(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	tripID := c.Param("trip_id")
 	var req request
 	if err := c.Bind(&req); err != nil {
@@ -129,7 +135,10 @@ func (h *Handler) Create(c echo.Context) error {
 }
 
 func (h *Handler) Update(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	id := c.Param("id")
 	var req request
 	if err := c.Bind(&req); err != nil {
@@ -160,7 +169,10 @@ func (h *Handler) Update(c echo.Context) error {
 }
 
 func (h *Handler) Delete(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	id := c.Param("id")
 	if err := h.usecase.Delete(userID, id); err != nil {
 		return mapErr(err)

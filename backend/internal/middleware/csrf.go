@@ -4,7 +4,9 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -78,9 +80,14 @@ func isSafeMethod(method string) bool {
 // cannot read cookies set by localhost:8090).
 func isLocalhost(c echo.Context) bool {
 	host := c.Request().Host
-	return host == "" ||
-		len(host) >= 9 && host[:9] == "localhost" ||
-		len(host) >= 9 && host[:9] == "127.0.0.1"
+	if host == "" {
+		return false
+	}
+	// Strip port if present.
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }
 
 func isOAuthCallback(path string) bool {
@@ -101,12 +108,17 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 	}
 
 	// Clear any old cookie that was set without Domain (scoped to api.* only).
-	// Without this, the browser sends two csrf_token cookies and the wrong
-	// one may be read.
+	// Must match the Domain attribute of the cookie being cleared, otherwise
+	// the browser keeps the old cookie and sends two cookies.
+	clearDomain := cookieDomain
+	if clearDomain == "" {
+		clearDomain = c.Request().URL.Hostname()
+	}
 	c.SetCookie(&http.Cookie{
 		Name:     csrfCookieName,
 		Value:    "",
 		Path:     "/",
+		Domain:   clearDomain,
 		MaxAge:   -1,
 		HttpOnly: false,
 		Secure:   true,
@@ -128,6 +140,12 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 
 func generateCSRFToken() string {
 	b := make([]byte, csrfTokenLen)
-	_, _ = rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand should never fail on normal systems, but if it does,
+		// fall back to a time-based fallback (less secure but better than a static token).
+		for i := range b {
+			b[i] = byte(time.Now().UnixNano() % 256)
+		}
+	}
 	return base64.URLEncoding.EncodeToString(b)
 }
