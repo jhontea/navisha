@@ -102,7 +102,10 @@ func (h *Handler) Refresh(c echo.Context) error {
 
 // Me returns the authenticated user's profile.
 func (h *Handler) Me(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 
 	usr, err := h.usecase.Me(userID)
 	if err != nil {

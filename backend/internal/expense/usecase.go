@@ -97,7 +97,11 @@ func (u *Usecase) CreateLinkedExpenseTx(
 	// Parse the caller-supplied date or default to today
 	var eDate time.Time
 	if expenseDate != "" {
-		eDate, _ = time.Parse("2006-01-02", expenseDate)
+		var err error
+		eDate, err = time.Parse("2006-01-02", expenseDate)
+		if err != nil {
+			return fmt.Errorf("expense.CreateLinkedExpenseTx: invalid expense_date %q: %w", expenseDate, err)
+		}
 	}
 	if eDate.IsZero() {
 		eDate = time.Now().UTC().Truncate(24 * time.Hour)
@@ -147,7 +151,11 @@ func (u *Usecase) Create(userID, tripID string, in CreateInput) (*Expense, error
 	// Parse optional expense date; default to today
 	var expDate time.Time
 	if in.ExpenseDate != "" {
-		expDate, _ = time.Parse("2006-01-02", in.ExpenseDate)
+		var err error
+		expDate, err = time.Parse("2006-01-02", in.ExpenseDate)
+		if err != nil {
+			return nil, fmt.Errorf("expense.Create: invalid expense_date %q: %w", in.ExpenseDate, err)
+		}
 	}
 	if expDate.IsZero() {
 		expDate = time.Now().UTC().Truncate(24 * time.Hour)
@@ -195,9 +203,11 @@ func (u *Usecase) Update(userID, expenseID string, in UpdateInput) (*Expense, er
 	}
 	// Parse optional expense date
 	if in.ExpenseDate != "" {
-		if d, err := time.Parse("2006-01-02", in.ExpenseDate); err == nil {
-			existing.ExpenseDate = d
+		d, err := time.Parse("2006-01-02", in.ExpenseDate)
+		if err != nil {
+			return nil, fmt.Errorf("expense.Update: invalid expense_date %q: %w", in.ExpenseDate, err)
 		}
+		existing.ExpenseDate = d
 	}
 
 	existing.ActivityID = in.ActivityID

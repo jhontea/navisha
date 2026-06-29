@@ -47,7 +47,10 @@ type reorderRequest struct {
 }
 
 func (h *Handler) List(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	dayID := c.Param("day_id")
 	out, err := h.usecase.List(userID, dayID)
 	if err != nil {
@@ -61,7 +64,10 @@ func (h *Handler) List(c echo.Context) error {
 }
 
 func (h *Handler) Create(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	dayID := c.Param("day_id")
 	var req createRequest
 	if err := c.Bind(&req); err != nil {
@@ -96,7 +102,10 @@ func (h *Handler) Create(c echo.Context) error {
 }
 
 func (h *Handler) Update(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	id := c.Param("id")
 	var req updateRequest
 	if err := c.Bind(&req); err != nil {
@@ -122,7 +131,10 @@ func (h *Handler) Update(c echo.Context) error {
 }
 
 func (h *Handler) Delete(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	id := c.Param("id")
 	if err := h.usecase.Delete(userID, id); err != nil {
 		return mapErr(err)
@@ -131,7 +143,10 @@ func (h *Handler) Delete(c echo.Context) error {
 }
 
 func (h *Handler) Reorder(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	dayID := c.Param("day_id")
 	var req reorderRequest
 	if err := c.Bind(&req); err != nil {
