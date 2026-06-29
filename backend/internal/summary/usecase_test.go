@@ -12,11 +12,12 @@ import (
 // --- fakes ---
 
 type fakeRepo struct {
-	saved   *Summary
-	stored  *Summary
-	getErr  error
-	saveErr error
-	delErr  error
+	saved          *Summary
+	stored         *Summary
+	getErr         error
+	saveErr        error
+	delErr         error
+	verifyOwnerErr error
 }
 
 func (f *fakeRepo) Save(tripID, content, model string) (*Summary, error) {
@@ -41,6 +42,10 @@ func (f *fakeRepo) GetByTripID(tripID string) (*Summary, error) {
 }
 
 func (f *fakeRepo) Delete(tripID string) error { return f.delErr }
+
+func (f *fakeRepo) VerifyTripOwner(ctx context.Context, userID, tripID string) error {
+	return f.verifyOwnerErr
+}
 
 type fakeLLM struct {
 	resp   string

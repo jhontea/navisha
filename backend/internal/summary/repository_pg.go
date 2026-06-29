@@ -60,3 +60,19 @@ func (r *postgresRepository) Delete(tripID string) error {
 	}
 	return nil
 }
+
+func (r *postgresRepository) VerifyTripOwner(ctx context.Context, userID, tripID string) error {
+	var ownerID string
+	err := r.db.QueryRow(ctx,
+		`SELECT user_id FROM trips WHERE id = $1`, tripID).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrForbidden
+		}
+		return fmt.Errorf("summary.VerifyTripOwner: %w", err)
+	}
+	if ownerID != userID {
+		return ErrForbidden
+	}
+	return nil
+}
