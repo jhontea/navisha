@@ -46,19 +46,51 @@ type generateRequest struct {
 }
 
 func (h *Handler) Generate(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
+
+	var req generateRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	// Validate required fields before consuming the rate-limit cooldown.
+	// Previously the cooldown was reserved at the top of the function, which
+	// meant a malformed request (missing destination, bad date) would consume
+	// the user's cooldown slot without actually generating a trip.
+	if strings.TrimSpace(req.Destination) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "destination is required")
+	}
+	if len(req.Destination) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "destination must be 200 characters or less")
+	}
+	if len(req.Description) > 2000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "description is too long")
+	}
+	// Strip HTML/scripts from LLM-bound inputs to prevent prompt injection.
+	req.Destination = sanitize.Text(req.Destination)
+	req.Description = sanitize.Text(req.Description)
+	start, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid start_date (expect YYYY-MM-DD)")
+	}
+	end, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
+	}
 
 	// ── Per-user cooldown (Redis SETNX — atomic check-and-reserve) ──
-	// SETNX ensures the check and reservation happen as a single atomic op.
-	// This prevents the classic race where two concurrent requests both pass
-	// a TTL check before either manages to set the cooldown key.
+	// Placed AFTER input validation so that invalid requests don't consume
+	// the cooldown slot. SETNX is atomic: check and reserve happen together,
+	// preventing the race where two concurrent requests both pass the TTL check.
 	if h.rdb != nil && h.generateRateLimitSec > 0 {
 		key := fmt.Sprintf("ratelimit:autogen:cooldown:%s", userID)
 		dur := time.Duration(h.generateRateLimitSec) * time.Second
-		ok, err := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
-		if err != nil {
-			slog.Warn("autogen: cooldown check failed", "user_id", userID, "err", err)
-		} else if !ok {
+		reserved, redisErr := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
+		if redisErr != nil {
+			slog.Warn("autogen: cooldown check failed", "user_id", userID, "err", redisErr)
+		} else if !reserved {
 			ttl, _ := h.rdb.TTL(c.Request().Context(), key).Result()
 			retryAfter := int(ttl.Seconds())
 			if retryAfter <= 0 {
@@ -72,32 +104,6 @@ func (h *Handler) Generate(c echo.Context) error {
 		}
 	}
 
-	var req generateRequest
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
-	}
-	// Loop 34: validate required fields before hitting LLM.
-	if strings.TrimSpace(req.Destination) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "destination is required")
-	}
-	if len(req.Destination) > 200 {
-		return echo.NewHTTPError(http.StatusBadRequest, "destination must be 200 characters or less")
-	}
-	if len(req.Description) > 2000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "description is too long")
-	}
-	// Loop 35: strip HTML/scripts from LLM-bound inputs to prevent prompt injection.
-	req.Destination = sanitize.Text(req.Destination)
-	req.Description = sanitize.Text(req.Description)
-	start, err := time.Parse("2006-01-02", req.StartDate)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid start_date (expect YYYY-MM-DD)")
-	}
-	end, err := time.Parse("2006-01-02", req.EndDate)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
-	}
-
 	draft, err := h.usecase.GenerateDraft(c.Request().Context(), userID, GenerateInput{
 		Destination:  req.Destination,
 		Description:  req.Description,
@@ -108,9 +114,6 @@ func (h *Handler) Generate(c echo.Context) error {
 	if err != nil {
 		return mapErr(err)
 	}
-
-	// Cooldown was already reserved at the top of Generate via SETNX.
-	// No need to set it again here.
 
 	return c.JSON(http.StatusOK, draftToResponse(draft, req.StartDate, req.EndDate))
 }
@@ -124,7 +127,10 @@ type fromDraftRequest struct {
 }
 
 func (h *Handler) CreateFromDraft(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	var req fromDraftRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")

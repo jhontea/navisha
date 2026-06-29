@@ -39,7 +39,10 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 }
 
 func (h *Handler) Generate(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	tripID := c.Param("id")
 
 	// ── Per-user cooldown (Redis SETNX — same pattern as autogen) ──
@@ -71,7 +74,10 @@ func (h *Handler) Generate(c echo.Context) error {
 }
 
 func (h *Handler) Get(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	tripID := c.Param("id")
 
 	s, err := h.usecase.Get(c.Request().Context(), userID, tripID)
@@ -82,7 +88,10 @@ func (h *Handler) Get(c echo.Context) error {
 }
 
 func (h *Handler) Delete(c echo.Context) error {
-	userID := c.Get(middleware.UserIDKey).(string)
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
 	tripID := c.Param("id")
 
 	if err := h.usecase.Delete(c.Request().Context(), userID, tripID); err != nil {

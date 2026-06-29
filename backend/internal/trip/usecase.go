@@ -77,6 +77,9 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 	if !currency.IsSupported(in.BaseCurrency) {
 		return nil, ErrInvalidCurrency
 	}
+	if err := validateBudget(in.Budget); err != nil {
+		return nil, err
+	}
 
 	// Loop 14: strip HTML tags from user-provided text before storing.
 	in.Title = sanitize.Text(in.Title)
@@ -145,6 +148,11 @@ func (u *Usecase) ListUpcoming(userID string, limit int) ([]Trip, error) {
 	if limit <= 0 {
 		limit = 6
 	}
+	// Cap upcoming trips to prevent oversized DB queries.
+	const maxUpcomingLimit = 20
+	if limit > maxUpcomingLimit {
+		limit = maxUpcomingLimit
+	}
 	return u.repo.ListUpcoming(userID, limit)
 }
 
@@ -182,6 +190,11 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	}
 	if !currency.IsSupported(in.BaseCurrency) {
 		return nil, ErrInvalidCurrency
+	}
+	if in.Budget != nil {
+		if err := validateBudget(*in.Budget); err != nil {
+			return nil, err
+		}
 	}
 
 	// Loop 14: strip HTML tags from user-provided text before storing.
@@ -288,6 +301,14 @@ func validateFields(title, description, notes, coverURL string) error {
 	}
 	if len(coverURL) > maxCoverImageURLLen {
 		return ErrURLTooLong
+	}
+	return nil
+}
+
+// validateBudget rejects negative budget values. Zero is allowed (no budget set).
+func validateBudget(budget float64) error {
+	if budget < 0 {
+		return ErrInvalidBudget
 	}
 	return nil
 }

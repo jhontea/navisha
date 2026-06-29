@@ -54,9 +54,13 @@ HTTP Request → Handler (Echo) → Usecase (business logic) → Repository (DB/
 ```bash
 go run ./cmd/server           # Development server
 go build ./...                # Compile check
-go test ./...                 # Run all tests
+go test ./...                 # Run all unit tests (CI-safe, no infra required)
 go test ./internal/<pkg>/...  # Run specific domain tests
 go test -v -run TestName ./... # Run specific test
+
+# Integration tests require a running server + DB + Redis.
+# They are excluded from go test ./... by default (build tag: integration).
+go test -tags integration ./tests/integration/... -v -count=1 -timeout=300s
 ```
 
 ## Configuration
