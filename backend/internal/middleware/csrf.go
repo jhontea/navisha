@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -92,10 +93,10 @@ func isLocalhost(c echo.Context) bool {
 
 func isOAuthCallback(path string) bool {
 	// OAuth callbacks arrive as GET from Google, so they'd pass isSafeMethod.
-	// But also skip POST/PUT/DELETE to auth endpoints in case OAuth providers
-	// use different methods in the future.
-	return (len(path) >= 21 && path[len(path)-21:] == "/auth/google/callback") ||
-		(len(path) >= 14 && path[len(path)-14:] == "/auth/callback")
+	// Using strings.HasSuffix is more readable and less error-prone than
+	// manual length-and-slice arithmetic (which breaks if the constant is wrong).
+	return strings.HasSuffix(path, "/auth/google/callback") ||
+		strings.HasSuffix(path, "/auth/callback")
 }
 
 func ensureCSRFCookie(c echo.Context, cookieDomain string) {

@@ -58,6 +58,9 @@ func (h *Handler) Convert(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid amount")
 	}
+	if amount <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than zero")
+	}
 
 	converted, rate, err := h.usecase.Convert(from, to, amount)
 	if err != nil {

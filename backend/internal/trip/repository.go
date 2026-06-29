@@ -18,6 +18,7 @@ var (
 	ErrNotesTooLong       = errors.New("notes exceed maximum length")
 	ErrURLTooLong         = errors.New("cover image url exceeds maximum length")
 	ErrTripTooLong        = errors.New("trip duration exceeds maximum (90 days)")
+	ErrInvalidBudget      = errors.New("budget must not be negative")
 )
 
 // ListResult carries a page of trips plus the cursor for the next page.
