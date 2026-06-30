@@ -37,24 +37,33 @@ function getStyle(type?: string) {
   return TRANSPORT_COLOR[key] ?? TRANSPORT_COLOR.other
 }
 
-/** Format ISO datetime string as "HH:MM" */
+/**
+ * Format ISO datetime string as "HH:MM".
+ *
+ * The DB stores TIMESTAMPTZ as "2026-05-10T06:30:00+00:00" or "...Z".
+ * The user entered 06:30 and expects to see 06:30 — so we read the
+ * HH:MM components literally from the string without any tz conversion.
+ *
+ * "2026-05-10T06:30:00+00:00" → "06:30"
+ * "2026-05-10T06:30:00Z"      → "06:30"
+ * "2026-05-10T06:30:00"       → "06:30"
+ */
 function formatTime(dt?: string | null): string | null {
   if (!dt) return null
-  try {
-    return new Date(dt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-  } catch {
-    return null
-  }
+  const m = dt.match(/T(\d{2}):(\d{2})/)
+  return m ? `${m[1]}:${m[2]}` : null
 }
 
-/** Format ISO datetime string as "MMM D" */
+/**
+ * Format ISO datetime string as "MMM D".
+ * Reads date components literally to avoid off-by-one from tz conversion.
+ */
 function formatDate(dt?: string | null): string | null {
   if (!dt) return null
-  try {
-    return new Date(dt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-  } catch {
-    return null
-  }
+  const m = dt.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0)
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 
 /**

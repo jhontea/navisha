@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Calendar, Map, DollarSign, Bus, Hotel } from "lucide-react"
 
@@ -24,9 +25,67 @@ const TABS = [
  * Iter 48 — icons on all tabs (not just mobile)
  * Iter 49 — scrollable on mobile with snap
  * Iter 50 — hide label on xs, show on sm+
+ * Iter 90 — swipe left/right navigates to adjacent tab
  */
 export function TripTabBar({ tripId }: TripTabBarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Swipe gesture — track touch on the document so any swipe on the page works
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+
+  const activeIndex = TABS.findIndex((tab) =>
+    tab.href === ""
+      ? pathname === `/trips/${tripId}`
+      : pathname.startsWith(`/trips/${tripId}/${tab.href}`)
+  )
+
+  // Keep a stable ref to activeIndex so the effect closure doesn't go stale
+  const activeIndexRef = useRef(activeIndex)
+  activeIndexRef.current = activeIndex
+
+  function tabHref(tab: (typeof TABS)[number]) {
+    return tab.href ? `/trips/${tripId}/${tab.href}` : `/trips/${tripId}`
+  }
+
+  useEffect(() => {
+    function onTouchStart(e: TouchEvent) {
+      touchStartX.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      if (touchStartX.current === null || touchStartY.current === null) return
+
+      const dx = e.changedTouches[0].clientX - touchStartX.current
+      const dy = e.changedTouches[0].clientY - touchStartY.current
+
+      touchStartX.current = null
+      touchStartY.current = null
+
+      // Only fire for clearly horizontal swipes (≥ 50px, x dominates y)
+      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return
+
+      const idx = activeIndexRef.current
+      const nextIndex = dx < 0
+        ? Math.max(idx - 1, 0)               // swipe left → previous tab
+        : Math.min(idx + 1, TABS.length - 1) // swipe right → next tab
+
+      if (nextIndex !== idx) {
+        router.push(tabHref(TABS[nextIndex]))
+      }
+    }
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true })
+    document.addEventListener("touchend", onTouchEnd, { passive: true })
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart)
+      document.removeEventListener("touchend", onTouchEnd)
+    }
+    // router is stable; tabHref is a pure function of tripId which doesn't change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId, router])
 
   return (
     <nav
@@ -42,7 +101,7 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
         role="tablist"
       >
         {TABS.map((tab) => {
-          const href = tab.href ? `/trips/${tripId}/${tab.href}` : `/trips/${tripId}`
+          const href = tabHref(tab)
           const isActive = tab.href === ""
             ? pathname === `/trips/${tripId}`
             : pathname.startsWith(`/trips/${tripId}/${tab.href}`)

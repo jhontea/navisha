@@ -385,29 +385,30 @@ export function TransportationForm({
   )
 }
 
-// Convert ISO 8601 from API (UTC) to <input type="datetime-local"> shape.
-// The API stores datetime as UTC; we display it as-is (treating stored time
-// as the "intended" local departure time, not converting to browser timezone).
+// Convert a stored datetime string to <input type="datetime-local"> shape.
+// The DB stores TIMESTAMPTZ as e.g. "2026-05-10T06:30:00+00:00".
+// We strip the timezone suffix so the input shows the wall-clock digits (06:30).
 function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return ""
-  // Strip the Z/offset so the datetime is treated as local, not UTC
-  // e.g. "2026-07-01T06:30:00Z" → "2026-07-01T06:30"
-  const bare = iso.replace(/Z$|[+-]\d{2}:\d{2}$/, "")
-  const d = new Date(bare)
-  if (isNaN(d.getTime())) return ""
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  // Strip seconds and any tz suffix:
+  // "2026-05-10T06:30:00+00:00" → "2026-05-10T06:30"
+  // "2026-05-10T06:30:00Z"      → "2026-05-10T06:30"
+  // "2026-05-10T06:30:00"       → "2026-05-10T06:30"
+  return iso
+    .replace(/Z$|[+-]\d{2}:\d{2}$/, "") // remove tz offset
+    .replace(/:\d{2}(\.\d+)?$/, "")      // remove seconds (and ms)
 }
 
-// Convert datetime-local value back to RFC3339 for the API; empty → null.
-// We send the time as UTC+00:00 (appending Z) so the backend stores the
-// time exactly as entered by the user, without any timezone conversion.
+// Convert datetime-local value to RFC3339 for the API.
+// The backend parseOptTime uses time.Parse(time.RFC3339) which requires a tz offset.
+// We append Z (UTC) so "2026-05-10T06:30" → "2026-05-10T06:30:00Z".
+// The DB stores this as 06:30 UTC. Display code extracts T06:30 literally → "06:30". ✓
 function fromLocalInput(local: string | undefined): string | null {
   if (!local) return null
-  // local is "YYYY-MM-DDTHH:mm" — treat as UTC by appending Z
-  // This preserves the intended time value without shifting it.
-  if (!/Z$|[+-]\d{2}:\d{2}$/.test(local)) {
-    return local + ":00Z"
-  }
-  return local
+  // "YYYY-MM-DDTHH:mm" (16 chars) → add seconds + Z
+  const withSec = local.length === 16 ? local + ":00" : local
+  // Ensure Z suffix for RFC3339
+  return withSec.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(withSec)
+    ? withSec
+    : withSec + "Z"
 }

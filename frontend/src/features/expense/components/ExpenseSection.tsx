@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { Pencil, Trash2, X } from "lucide-react"
+import { ChevronDown, Pencil, Trash2, X } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import {
   useCreateExpense,
@@ -64,6 +64,17 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
   const [addOpen, setAddOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Expense | null>(null)
+  // Track which date groups are collapsed; all expanded by default
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  function toggleGroup(date: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(date)) next.delete(date)
+      else next.add(date)
+      return next
+    })
+  }
 
   const createMut = useCreateExpense(tripId)
   const updateMut = useUpdateExpense(editingId ?? "", tripId)
@@ -196,20 +207,34 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
                 const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
                 const baseCurrency = group.expenses[0]?.base_currency ?? tripBaseCurrency
 
+                const isCollapsed = collapsedGroups.has(group.date)
+
                 return (
                   <div key={group.date}>
-                    {/* Date group header */}
-                    <div className="flex items-center justify-between mb-3">
+                    {/* Date group header — click to collapse/expand */}
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.date)}
+                      aria-expanded={!isCollapsed}
+                      className="w-full flex items-center justify-between mb-3 group/header rounded-lg px-1 py-0.5 -mx-1 hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
                       <div className="flex items-center gap-2">
+                        <ChevronDown
+                          className={cn(
+                            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+                            isCollapsed && "-rotate-90",
+                          )}
+                          aria-hidden="true"
+                        />
                         <span className="font-label-md text-foreground">{formatGroupDate(group.date)}</span>
                         <span className="text-label-sm text-muted-foreground">· {formatExpenseDate(group.date)}</span>
                       </div>
                       <span className="text-label-sm text-muted-foreground font-medium">
                         {formatCurrency(groupTotal, baseCurrency)}
                       </span>
-                    </div>
+                    </button>
 
-                    <div className="glass overflow-hidden rounded-xl">
+                    <div className={cn("glass overflow-hidden rounded-xl transition-all duration-200", isCollapsed && "hidden")}>
                       <div className="divide-y divide-border/30">
                         {group.expenses.map((e) => {
                           const isEditing = editingId === e.id
