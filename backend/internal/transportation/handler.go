@@ -180,6 +180,19 @@ func (h *Handler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// formatTimeUTC returns an RFC3339 string in UTC, or nil if t is nil.
+// We always serialize datetimes as UTC so the frontend can extract the
+// literal HH:MM digits (e.g. "06:30" from "T06:30:00Z") without any
+// timezone conversion. The pgx driver returns TIMESTAMPTZ in the server's
+// local timezone (+07:00) which would shift the displayed time.
+func formatTimeUTC(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.UTC().Format(time.RFC3339)
+	return &s
+}
+
 func toResponse(t *Transportation) map[string]any {
 	return map[string]any{
 		"id":                 t.ID,
@@ -190,8 +203,8 @@ func toResponse(t *Transportation) map[string]any {
 		"reference_number":   t.ReferenceNumber,
 		"from_location":      t.FromLocation,
 		"to_location":        t.ToLocation,
-		"departure_datetime": t.DepartureDatetime,
-		"arrival_datetime":   t.ArrivalDatetime,
+		"departure_datetime": formatTimeUTC(t.DepartureDatetime),
+		"arrival_datetime":   formatTimeUTC(t.ArrivalDatetime),
 		"notes":              t.Notes,
 		"created_at":         t.CreatedAt,
 		"updated_at":         t.UpdatedAt,

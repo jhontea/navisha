@@ -62,20 +62,32 @@ type TimelineItem =
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Strip timezone suffix so the stored datetime is treated as local time,
-// matching the convention used in TransportationForm.
-function stripTz(iso: string): string {
-  return iso.replace(/Z$|[+-]\d{2}:\d{2}$/, "")
+/**
+ * Extract "HH:MM" literally from an ISO datetime string — no timezone conversion.
+ * DB stores "2026-05-10T06:30:00+00:00". User entered 06:30 and expects to see 06:30.
+ * So we read T<HH>:<MM> directly from the string.
+ */
+function extractTime(v: string | null | undefined): string | null {
+  if (!v) return null
+  const m = v.match(/T(\d{2}):(\d{2})/)
+  return m ? `${m[1]}:${m[2]}` : null
+}
+
+/**
+ * Extract "YYYY-MM-DD" literally from a datetime string — no timezone conversion.
+ * Reads the date portion before the T, so "2026-05-10T06:30:00+00:00" → "2026-05-10".
+ */
+function extractDate(v: string | null | undefined): string | null {
+  if (!v) return null
+  const m = v.match(/^(\d{4}-\d{2}-\d{2})/)
+  return m ? m[1] : null
 }
 
 function toSortKey(v: string | null | undefined): string {
   if (!v) return "99:99"
   if (v.includes("T")) {
-    const bare = stripTz(v)
-    const t = new Date(bare)
-    if (!isNaN(t.getTime())) {
-      return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`
-    }
+    const t = extractTime(v)
+    if (t) return t
   }
   return v
 }
@@ -86,13 +98,7 @@ function dateMatches(
 ): boolean {
   if (!datetimeStr) return false
   if (datetimeStr.length === 10) return datetimeStr === date
-  const bare = stripTz(datetimeStr)
-  const d = new Date(bare)
-  if (isNaN(d.getTime())) return false
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${y}-${m}-${day}` === date
+  return extractDate(datetimeStr) === date
 }
 
 // ---------------------------------------------------------------------------
@@ -115,20 +121,8 @@ const TRANSPORT_ICON: Record<string, typeof Plane> = {
 
 function TransportTimelineCard({ t }: { t: Transportation }) {
   const Icon = TRANSPORT_ICON[t.type] ?? Boxes
-  const depTime = t.departure_datetime
-    ? new Date(stripTz(t.departure_datetime)).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-    : null
-  const arrTime = t.arrival_datetime
-    ? new Date(stripTz(t.arrival_datetime)).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-    : null
+  const depTime = extractTime(t.departure_datetime)
+  const arrTime = extractTime(t.arrival_datetime)
 
   return (
     <div className="rounded-2xl border-l-4 border-l-blue-500 border border-border/30 bg-blue-500/5 p-4 shadow-sm">
