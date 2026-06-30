@@ -8,6 +8,9 @@ frontend/.env.*
 backend/bin/
 backend/*.exe
 backend/vendor/
+backend/*.log
+*.exe
+*.log
 
 # Node
 frontend/node_modules/

@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -51,11 +50,11 @@ func main() {
 			os.Exit(1)
 		}
 		if len(pending) == 0 {
-			fmt.Println("All migrations applied.")
+			slog.Info("All migrations applied.")
 		} else {
-			fmt.Printf("%d pending migration(s):\n", len(pending))
+			slog.Info("pending migrations", "count", len(pending))
 			for _, name := range pending {
-				fmt.Printf("  - %s\n", name)
+				slog.Info("pending migration", "name", name)
 			}
 		}
 		return
@@ -68,8 +67,8 @@ func main() {
 	}
 
 	if n == 0 {
-		fmt.Println("All migrations already applied — nothing to do.")
+		slog.Info("All migrations already applied — nothing to do.")
 	} else {
-		fmt.Printf("Successfully applied %d migration(s).\n", n)
+		slog.Info("migrations applied", "count", n)
 	}
 }

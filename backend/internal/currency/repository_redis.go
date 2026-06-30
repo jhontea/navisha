@@ -10,9 +10,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// CurrencyFreaks returns rates with USD as the only base. We cache the full
-// USD-keyed map in Redis and derive cross-rates client-side via
-// `from→to = rates[to] / rates[from]`.
+// redisRepository implements currency.Repository using CurrencyFreaks as the
+// upstream source and Redis as a cache. Rates are fetched with USD as base,
+// then cross-rates are derived client-side.
 
 type redisRepository struct {
 	rdb    *redis.Client
@@ -74,7 +74,10 @@ func (r *redisRepository) GetRate(base, target string) (*Rate, error) {
 		return &Rate{Base: base, Target: target, Rate: 1.0, FetchedAt: time.Now()}, nil
 	}
 
-	usd, err := r.fetchUSD(context.Background())
+	// Use a cancellable context so upstream fetches respect request deadlines.
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	usd, err := r.fetchUSD(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +97,9 @@ func (r *redisRepository) GetRates(base string) ([]Rate, error) {
 	if !IsSupported(base) {
 		return nil, ErrUnsupported
 	}
-	usd, err := r.fetchUSD(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	usd, err := r.fetchUSD(ctx)
 	if err != nil {
 		return nil, err
 	}
