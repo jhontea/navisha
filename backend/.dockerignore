@@ -1,0 +1,55 @@
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build cache
+.cover/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dependencies
+vendor/
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Logs
+*.log
+backend.log
+backend-err.log
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config with secrets
+.env
+.env.local
+
+# Graphify output
+graphify-out/
+
+# Test coverage
+coverage.html
+coverage.out
+
+# Temporary files
+tmp/
+temp/

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -106,6 +107,34 @@ func (c *Client) WithTimeout(d time.Duration) *Client {
 
 // Provider returns the provider identifier ("deepseek" or "openrouter").
 func (c *Client) Provider() string { return c.provider }
+
+// Model returns the configured model name.
+func (c *Client) Model() string { return c.model }
+
+// Ping checks whether the LLM provider is reachable by sending a minimal
+// chat completion request with max_tokens=1. Returns true if the provider
+// responds with HTTP 200, false otherwise.
+func (c *Client) Ping(ctx context.Context) bool {
+	if c.apiKey == "" {
+		return false
+	}
+	payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"hi"}],"max_tokens":1}`, c.model)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		c.baseURL+"/chat/completions",
+		strings.NewReader(payload))
+	if err != nil {
+		return false
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
 
 // SupportsJSONSchema reports whether this provider supports the
 // response_format json_schema mode with strict:true (OpenAI extension).

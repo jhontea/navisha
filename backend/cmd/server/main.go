@@ -119,8 +119,9 @@ func main() {
 		slog.Info("migrations applied", "count", n)
 	}
 
-	// Populate supported currencies from config
+	// Populate supported currencies from config and rebuild the O(1) lookup map.
 	currency.SupportedCurrencies = cfg.Currency.Supported
+	currency.UpdateSupportedSet()
 
 	// Services
 	jwtSvc := jwt.NewService(
@@ -258,7 +259,8 @@ func main() {
 	e.Use(appMiddleware.Timeout(300 * time.Second))
 
 	// Loop 3: limit request body size to 1MB.
-	e.Use(appMiddleware.BodyLimit(1 << 20))
+	const maxBodySize = 1 << 20 // 1MB
+	e.Use(appMiddleware.BodyLimit(maxBodySize))
 
 	// Phase 3D: per-user rate limiting via Redis sliding window.
 	// Uses JWT extraction to identify users even before auth middleware runs,
@@ -273,7 +275,7 @@ func main() {
 	// Loop 2: API version header on all responses.
 	e.Use(appMiddleware.APIVersionHeader())
 
-	// Health check — includes DB and Redis status (Loop 5: robustness)
+	// Health check — DB and Redis status (Loop 5: robustness).
 	e.GET("/health", func(c echo.Context) error {
 		healthy := true
 		dbOk := db.Ping(c.Request().Context()) == nil
@@ -332,18 +334,21 @@ func main() {
 		addr := fmt.Sprintf(":%d", cfg.Server.Port)
 		// Loop 10: Configure server-level timeouts to protect against
 		// slow-loris attacks and hung connections.
-		e.Server.ReadTimeout = 15 * time.Second
-		// WriteTimeout must exceed the LLM call timeout (300s) otherwise the
-		// server cuts the TCP connection mid-stream on slow AI responses.
-		// Add 10s headroom above the per-request middleware timeout.
-		e.Server.WriteTimeout = 315 * time.Second
-		e.Server.IdleTimeout = 120 * time.Second
-		// Loop 49: limit header size to prevent buffer exhaustion (default 1MB is too generous).
-		e.Server.MaxHeaderBytes = 1 << 18 // 256KB
-		slog.Info("server starting", "addr", addr,
-			"read_timeout", e.Server.ReadTimeout,
-			"write_timeout", e.Server.WriteTimeout,
-			"idle_timeout", e.Server.IdleTimeout,
+		const (
+			serverReadTimeout  = 15 * time.Second
+			serverWriteTimeout = 315 * time.Second // exceeds 300s LLM timeout + 10s headroom
+			serverIdleTimeout  = 120 * time.Second
+			maxHeaderBytes     = 1 << 18 // 256KB (default 1MB is too generous)
+		)
+		e.Server.ReadTimeout = serverReadTimeout
+		e.Server.WriteTimeout = serverWriteTimeout
+		e.Server.IdleTimeout = serverIdleTimeout
+		e.Server.MaxHeaderBytes = maxHeaderBytes
+		slog.Info("server timeouts configured",
+			"read_timeout", serverReadTimeout,
+			"write_timeout", serverWriteTimeout,
+			"idle_timeout", serverIdleTimeout,
+			"max_header_bytes", maxHeaderBytes,
 		)
 		if err := e.Start(addr); err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "error", err)
