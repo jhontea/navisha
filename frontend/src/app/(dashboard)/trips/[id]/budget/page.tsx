@@ -1,9 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { useParams } from "next/navigation"
+import { Check } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
 
-import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
+import { BottomSheet } from "@/components/BottomSheet"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
+import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
@@ -12,18 +16,61 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default function TripBudgetPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
+  const router = useRouter()
   const { data: trip, isLoading } = useTrip(id)
-  const updateTripMut = useUpdateTrip(id)
+  const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(id)
+  const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
+
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState("")
+  const [editStartDate, setEditStartDate] = useState("")
+  const [editEndDate, setEditEndDate] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const [editCover, setEditCover] = useState("")
 
   const [editingBudget, setEditingBudget] = useState(false)
   const [displayBudget, setDisplayBudget] = useState("")
   const [rawBudget, setRawBudget] = useState("")
 
+  const startEditing = () => {
+    if (!trip) return
+    setEditTitle(trip.title)
+    setEditDescription(trip.description ?? "")
+    setEditStartDate(trip.start_date)
+    setEditEndDate(trip.end_date)
+    setEditCover(trip.cover_image_url ?? "")
+    setIsEditing(true)
+  }
+
+  const saveEdits = () => {
+    if (!editTitle.trim() || !trip) return
+    updateTrip(
+      {
+        title: editTitle.trim(),
+        description: editDescription,
+        start_date: editStartDate,
+        end_date: editEndDate,
+        base_currency: trip.base_currency,
+        budget: trip.budget,
+        cover_image_url: editCover,
+        notes: trip.notes,
+      },
+      { onSettled: () => setIsEditing(false) },
+    )
+  }
+
+  const onDelete = () => {
+    deleteTrip(id, {
+      onSuccess: () => router.push("/dashboard"),
+    })
+  }
+
   const handleSaveBudget = async () => {
     if (!trip) return
     const budget = Number(rawBudget)
     if (isNaN(budget) || budget < 0) return
-    await updateTripMut.mutateAsync({
+    updateTrip({
       title: trip.title,
       description: trip.description,
       start_date: trip.start_date,
@@ -55,6 +102,9 @@ export default function TripBudgetPage() {
           endDate={trip.end_date}
           baseCurrency={trip.base_currency}
           coverImageUrl={trip.cover_image_url}
+          onEdit={startEditing}
+          onDelete={() => setConfirmDelete(true)}
+          isDeleting={isDeleting}
         />
       )}
       {!trip && isLoading && (
@@ -118,10 +168,10 @@ export default function TripBudgetPage() {
                 <button
                   type="button"
                   onClick={handleSaveBudget}
-                  disabled={updateTripMut.isPending || !rawBudget}
+                  disabled={isUpdating || !rawBudget}
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
-                  {updateTripMut.isPending ? (
+                  {isUpdating ? (
                     <>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                       Saving…
@@ -152,6 +202,65 @@ export default function TripBudgetPage() {
           onEditBudget={openEditBudget}
         />
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete "${trip?.title}"?`}
+        description="This will permanently remove the trip and all its days, activities, and expenses. This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        isPending={isDeleting}
+        onConfirm={onDelete}
+      />
+
+      <BottomSheet open={isEditing} onClose={() => setIsEditing(false)} title="Edit Trip">
+        <div className="space-y-3">
+          <input
+            autoFocus
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            placeholder="Trip title"
+            className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-lg font-bold focus:outline-none"
+            disabled={isUpdating}
+          />
+          <DestinationAutocomplete
+            value={editDescription}
+            onChange={setEditDescription}
+            onSelect={(place) => {
+              setEditDescription(place.description)
+              setEditCover(place.photoUrl || "")
+            }}
+            placeholder="Search city, province, or country"
+            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+          />
+          {editCover && (
+            <div className="relative h-28 w-full overflow-hidden rounded-lg border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={editCover} alt="Cover preview" className="h-full w-full object-cover" onError={() => setEditCover("")} />
+              <button type="button" onClick={() => setEditCover("")} className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">Remove</button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start date</label>
+              <input type="date" value={editStartDate} onChange={(e) => setEditStartDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none" disabled={isUpdating} />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End date</label>
+              <input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none" disabled={isUpdating} />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={saveEdits} disabled={isUpdating || !editTitle.trim()} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
+              <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
+            </button>
+            <button type="button" onClick={() => setIsEditing(false)} disabled={isUpdating} className="flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </main>
   )
 }

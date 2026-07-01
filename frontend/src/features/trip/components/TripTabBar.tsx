@@ -89,15 +89,11 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
 
   return (
     <nav
-      className={cn(
-        "sticky z-30 top-[calc(3rem+1px)] md:top-[calc(3.5rem+1px)]",
-        "bg-background/90 backdrop-blur-xl border-b border-border/20",
-        "shadow-[0_1px_0_0_hsl(var(--border)/0.15)]",
-      )}
+      className="sticky z-30 top-0 mt-3 md:mt-4 md:top-[calc(3.5rem+1px)] w-full"
       aria-label="Trip sections"
     >
       <div
-        className="flex overflow-x-auto scrollbar-none px-2 md:px-4 gap-0.5 max-w-6xl mx-auto snap-x snap-mandatory"
+        className="flex items-center justify-center gap-1 px-4 md:px-8 py-1 w-full max-w-max-width mx-auto border-b border-border/30 bg-background/90 backdrop-blur-xl"
         role="tablist"
       >
         {TABS.map((tab) => {
@@ -114,15 +110,14 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
               aria-current={isActive ? "page" : undefined}
               aria-label={tab.label}
               className={cn(
-                "relative flex shrink-0 snap-start items-center gap-1.5 px-4 py-3.5 text-sm font-medium transition-all duration-200",
+                "relative flex shrink-0 snap-start items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
-                "rounded-t-lg",
+                "rounded-full",
                 isActive
-                  ? "text-primary"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
               )}
             >
-              {/* Iter 48 — icons always shown */}
               <tab.icon
                 className={cn(
                   "h-4 w-4 shrink-0 transition-all",
@@ -131,17 +126,7 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
                 strokeWidth={isActive ? 2.5 : 2}
                 aria-hidden="true"
               />
-
-              {/* Iter 50 — label: hidden on xs, visible on sm+ */}
               <span className="hidden sm:inline">{tab.label}</span>
-
-              {/* Iter 47 — active: gradient underline */}
-              {isActive && (
-                <span
-                  className="absolute bottom-0 left-1 right-1 h-0.5 rounded-full bg-gradient-to-r from-primary to-[hsl(250,70%,55%)]"
-                  aria-hidden="true"
-                />
-              )}
             </Link>
           )
         })}
