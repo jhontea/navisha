@@ -25,12 +25,14 @@ import { APIProvider } from "@vis.gl/react-google-maps"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
 import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizard"
 import { GeneratingItinerarySkeleton } from "@/features/trip/components/GeneratingItinerarySkeleton"
+import { ShimmerOverlay } from "@/features/summary/components/ShimmerOverlay"
 import {
   useCreateTripFromDraft,
   useGenerateTripDraft,
 } from "@/features/trip/hooks/useTrips"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
+import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
 import { ApiError } from "@/lib/api"
 import { useCooldown } from "@/lib/useCooldown"
@@ -176,12 +178,12 @@ export default function GenerateTripPage() {
   return (
     <APIProvider apiKey={MAPS_API_KEY} libraries={["places"]}>
     <div className="mx-auto max-w-3xl w-full px-margin-mobile md:px-margin-desktop pt-8 pb-28">
-      <BackLink href="/trips" variant="glass" className="mb-6" />
+      <BackLink href="/dashboard" className="mb-6" />
 
       <header className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-chromatic-aurora/20">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></svg>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/20">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></svg>
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -206,9 +208,12 @@ export default function GenerateTripPage() {
         <div className="relative animate-fade-in-up">
           {/* Skeleton overlay during generation — covers wizard but doesn't unmount it */}
           {generate.isPending && (
-            <div className="absolute inset-0 z-20 glass rounded-2xl p-6">
+            <ShimmerOverlay
+              active
+              className="absolute inset-0 z-20 rounded-2xl border border-border/40 bg-card/95 p-6 shadow-sm backdrop-blur-md"
+            >
               <GeneratingItinerarySkeleton days={pendingDays} />
-            </div>
+            </ShimmerOverlay>
           )}
           <div className={generate.isPending ? "opacity-20 pointer-events-none select-none" : ""}>
             <GenerateChatWizard key={generationKey} onSubmit={handleGenerate} disabled={generate.isPending} />
@@ -245,7 +250,7 @@ export default function GenerateTripPage() {
               type="button"
               onClick={handleCreate}
               disabled={saving}
-              className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className={primaryTripActionButtonClassName}
             >
               {saving ? (
                 <>

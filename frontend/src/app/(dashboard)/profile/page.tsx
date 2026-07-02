@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useAuth, useLogout } from "@/features/auth/hooks"
 import { StatsSection } from "@/features/trip/components/StatsSection"
-import { LogOut, ChevronRight, Shield, FileText, Mail } from "lucide-react"
+import { ArrowLeftRight, LogOut, ChevronRight, Shield, FileText, Mail } from "lucide-react"
 
 /**
  * Profile page — Iter 86-92
@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const { mutate: logout, isPending: loggingOut } = useLogout()
 
   return (
-    <div className="mx-auto max-w-lg px-4 pt-6 pb-28 animate-fade-in">
+    <div className="mx-auto w-full max-w-max-width px-margin-mobile md:px-margin-desktop pt-6 pb-28 animate-fade-in">
 
       {/* Page header */}
       <header className="mb-6">
@@ -104,8 +104,8 @@ export default function ProfilePage() {
             href="/currency"
             className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary" aria-hidden="true"><path d="M2 12h20"/><path d="m16 6 6 6-6 6"/><path d="m8 6-6 6 6 6"/></svg>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/20">
+              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
             </div>
             <span className="flex-1 text-sm font-medium text-foreground">Currency Converter</span>
             <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

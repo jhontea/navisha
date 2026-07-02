@@ -1,5 +1,7 @@
 "use client"
 
+import { cn } from "@/lib/utils"
+
 interface ShimmerOverlayProps {
   children: React.ReactNode
   active: boolean
@@ -12,7 +14,7 @@ export function ShimmerOverlay({ children, active, className = "" }: ShimmerOver
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={cn("relative overflow-hidden", className)}>
       {children}
       {/* Shimmer overlay */}
       <div className="pointer-events-none absolute inset-0 z-10">

@@ -2,9 +2,14 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Calendar, Map, DollarSign, Bus, Hotel } from "lucide-react"
+import { accommodationApi } from "@/features/accommodation/api"
+import { expenseApi } from "@/features/expense/api"
+import { transportationApi } from "@/features/transportation/api"
+import { tripApi } from "@/features/trip/api"
 
 interface TripTabBarProps {
   tripId: string
@@ -30,6 +35,7 @@ const TABS = [
 export function TripTabBar({ tripId }: TripTabBarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   // Swipe gesture — track touch on the document so any swipe on the page works
   const touchStartX = useRef<number | null>(null)
@@ -47,6 +53,64 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
 
   function tabHref(tab: (typeof TABS)[number]) {
     return tab.href ? `/trips/${tripId}/${tab.href}` : `/trips/${tripId}`
+  }
+
+  function prefetchTab(tab: (typeof TABS)[number]) {
+    if (!tripId) return
+
+    void queryClient.prefetchQuery({
+      queryKey: ["trips", "detail", tripId],
+      queryFn: () => tripApi.get(tripId),
+    })
+
+    if (tab.key === "overview") {
+      void queryClient.prefetchQuery({
+        queryKey: ["accommodations", "list", tripId],
+        queryFn: () => accommodationApi.list(tripId),
+        staleTime: 5 * 60 * 1000,
+      })
+      void queryClient.prefetchQuery({
+        queryKey: ["transportations", "list", tripId],
+        queryFn: () => transportationApi.list(tripId),
+        staleTime: 5 * 60 * 1000,
+      })
+      void queryClient.prefetchQuery({
+        queryKey: ["expenses", "summary", tripId],
+        queryFn: () => expenseApi.summary(tripId),
+        staleTime: 5 * 60 * 1000,
+      })
+      return
+    }
+
+    if (tab.key === "transport") {
+      void queryClient.prefetchQuery({
+        queryKey: ["transportations", "list", tripId],
+        queryFn: () => transportationApi.list(tripId),
+        staleTime: 5 * 60 * 1000,
+      })
+      return
+    }
+
+    if (tab.key === "stay") {
+      void queryClient.prefetchQuery({
+        queryKey: ["accommodations", "list", tripId],
+        queryFn: () => accommodationApi.list(tripId),
+        staleTime: 5 * 60 * 1000,
+      })
+      return
+    }
+
+    if (tab.key === "budget") {
+      void queryClient.prefetchQuery({
+        queryKey: ["expenses", "list", tripId],
+        queryFn: () => expenseApi.list(tripId),
+      })
+      void queryClient.prefetchQuery({
+        queryKey: ["expenses", "summary", tripId],
+        queryFn: () => expenseApi.summary(tripId),
+        staleTime: 5 * 60 * 1000,
+      })
+    }
   }
 
   useEffect(() => {
@@ -110,6 +174,9 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
             <Link
               key={tab.href}
               href={href}
+              onPointerEnter={() => prefetchTab(tab)}
+              onTouchStart={() => prefetchTab(tab)}
+              onFocus={() => prefetchTab(tab)}
               role="tab"
               aria-current={isActive ? "page" : undefined}
               aria-label={tab.label}

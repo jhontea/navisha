@@ -142,7 +142,9 @@ export default function TripDetailPage() {
             onClick={() => setViewMode("list")}
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
-              viewMode === "list" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+              viewMode === "list"
+                ? "bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/25"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
             )}
             aria-pressed={viewMode === "list"}
           >
@@ -154,7 +156,9 @@ export default function TripDetailPage() {
             onClick={() => setViewMode("map")}
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
-              viewMode === "map" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+              viewMode === "map"
+                ? "bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/25"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
             )}
             aria-pressed={viewMode === "map"}
           >

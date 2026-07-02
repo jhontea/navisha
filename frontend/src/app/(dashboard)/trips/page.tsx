@@ -79,7 +79,7 @@ export default function TripsPage() {
       {/* ── Filter tabs ── */}
       {!isLoading && allTrips.length > 0 && (
         <div
-          className="mb-6 flex gap-1 overflow-x-auto rounded-2xl glass p-1.5 scrollbar-none"
+          className="mb-6 flex items-center gap-1 overflow-x-auto rounded-full border border-border/30 bg-background/90 p-1 backdrop-blur-xl scrollbar-none"
           role="tablist"
           aria-label="Filter trips by status"
         >
@@ -91,10 +91,10 @@ export default function TripsPage() {
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+                "relative flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                 activeTab === tab.id
-                  ? "bg-primary text-white shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/10",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
               )}
             >
               {tab.label}
@@ -103,7 +103,7 @@ export default function TripsPage() {
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none",
                     activeTab === tab.id
-                      ? "bg-white/20 text-white"
+                      ? "bg-primary/15 text-primary"
                       : "bg-muted text-muted-foreground",
                   )}
                 >
@@ -139,7 +139,7 @@ export default function TripsPage() {
           action={
             <Link
               href="/trips/new"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[hsl(250,70%,55%)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-md hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               Create My First Trip
             </Link>

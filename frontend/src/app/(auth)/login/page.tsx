@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Compass } from "lucide-react"
 import { LoginButton } from "@/features/auth/components/LoginButton"
 
 interface Props {
@@ -23,10 +24,8 @@ export default async function LoginPage({ searchParams }: Props) {
         <div className="glass-lg w-full max-w-[420px] rounded-2xl p-8 md:p-10">
           {/* Brand */}
           <div className="flex flex-col items-center mb-6">
-            <Link href="/" className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-chromatic-sunset to-chromatic-coral mb-4 transition-transform hover:scale-105 shadow-md">
-              <span className="material-symbols-outlined text-white text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                explore
-              </span>
+            <Link href="/" className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-md transition-transform hover:scale-105">
+              <Compass className="h-6 w-6 text-white" aria-hidden="true" />
             </Link>
             <Link href="/" className="text-gradient-sunset text-headline-md font-bold tracking-tight hover:opacity-80 transition-opacity">
               Navisha
