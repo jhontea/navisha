@@ -33,7 +33,10 @@ export default function TripsPage() {
     isFetchingNextPage,
   } = useTrips()
 
-  const allTrips = data?.pages.flatMap((p) => p.items) ?? []
+  const allTrips = useMemo(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data]
+  )
 
   // Client-side filter by status
   const trips = useMemo(() => {
