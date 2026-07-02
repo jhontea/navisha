@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { BackLink } from "@/components/BackLink"
+import { Button } from "@/components/ui/button"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { TripHero } from "@/features/trip/components/TripHero"
 import {
@@ -95,9 +96,9 @@ function getActivityIcon(type: string) {
 function getActivityColor(type: string): string {
   switch (type) {
     case "location":
-      return "bg-blue-500/10 text-blue-700 dark:text-blue-300"
+      return "bg-primary/10 text-primary"
     case "note":
-      return "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+      return "bg-chromatic-amber/10 text-chromatic-amber"
     case "todo":
       return "bg-muted text-muted-foreground"
     default:
@@ -460,24 +461,23 @@ export default function TripOverviewPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button
-                type="button"
+              <Button
+                size="sm"
                 onClick={saveEdits}
                 disabled={isUpdating || !editTitle.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
               >
                 <Check className="h-3.5 w-3.5" />
                 {isUpdating ? "Saving…" : "Save"}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={cancelEditing}
                 disabled={isUpdating}
-                className="flex items-center gap-1.5 rounded-lg border px-4 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"
               >
                 <X className="h-3.5 w-3.5" />
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -510,7 +510,7 @@ export default function TripOverviewPage() {
           {/* Iter 94 — stat chips: 2x2 grid on sm, row on md */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {/* Activities */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/15 p-4 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-primary/10 border border-primary/15 p-4 text-center">
               <Calendar className="mb-1.5 h-5 w-5 text-primary" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground tabular-nums">
                 {activitiesLoaded ? totalActivities : "—"}
@@ -518,24 +518,24 @@ export default function TripOverviewPage() {
               <span className="text-xs text-muted-foreground">Activities</span>
             </div>
             {/* Stays */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-violet-500/10 border border-violet-500/15 p-4 text-center">
-              <Hotel className="mb-1.5 h-5 w-5 text-violet-500" aria-hidden="true" />
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-aurora/10 border border-chromatic-aurora/15 p-4 text-center">
+              <Hotel className="mb-1.5 h-5 w-5 text-chromatic-aurora" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground tabular-nums">
                 {accommodations?.items.length ?? 0}
               </span>
               <span className="text-xs text-muted-foreground">Stays</span>
             </div>
             {/* Transport */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-sky-500/10 border border-sky-500/15 p-4 text-center">
-              <Plane className="mb-1.5 h-5 w-5 text-sky-500" aria-hidden="true" />
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-ocean/10 border border-chromatic-ocean/15 p-4 text-center">
+              <Plane className="mb-1.5 h-5 w-5 text-chromatic-ocean" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground tabular-nums">
                 {transportations?.items.length ?? 0}
               </span>
               <span className="text-xs text-muted-foreground">Transport</span>
             </div>
             {/* Spent */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/15 p-4 text-center">
-              <Wallet className="mb-1.5 h-5 w-5 text-emerald-600" aria-hidden="true" />
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-mint/10 border border-chromatic-mint/15 p-4 text-center">
+              <Wallet className="mb-1.5 h-5 w-5 text-chromatic-mint" aria-hidden="true" />
               <span className="text-base font-bold text-foreground tabular-nums leading-tight">
                 {expenseSummary
                   ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)

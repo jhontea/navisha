@@ -12,6 +12,7 @@ import {
   type Expense,
   type ExpenseCategory,
 } from "../types"
+import { getCategoryColor } from "../categoryColors"
 
 // Returns today's date as YYYY-MM-DD in the user's local timezone.
 function localDateString(): string {
@@ -22,22 +23,15 @@ function localDateString(): string {
 
 const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW", "MYR", "THB", "EUR", "VND"] as const
 
-const CATEGORY_OPTIONS: {
-  value: ExpenseCategory
-  label: string
-  icon: string
-  bg: string
-  text: string
-  placeholder: string
-}[] = [
-  { value: "food", label: "Food & Dining", icon: "restaurant", bg: "bg-[#DCFCE7]", text: "text-emerald-700", placeholder: "e.g., Lunch at Ichiran" },
-  { value: "transport", label: "Transport", icon: "directions_subway", bg: "bg-[#DBEAFE]", text: "text-primary", placeholder: "e.g., Suica Top-up" },
-  { value: "accommodation", label: "Stay", icon: "hotel", bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300", placeholder: "e.g., Park Hyatt Night 1" },
-  { value: "activity", label: "Activity", icon: "local_activity", bg: "bg-[#E0E7FF]", text: "text-indigo-600", placeholder: "e.g., TeamLab Tickets" },
-  { value: "souvenir", label: "Gift", icon: "redeem", bg: "bg-[#FCE7F3]", text: "text-pink-600", placeholder: "e.g., Tokyo snacks" },
-  { value: "shopping", label: "Shopping", icon: "shopping_cart", bg: "bg-[#FEF9C3]", text: "text-yellow-700", placeholder: "e.g., Uniqlo haul" },
-  { value: "other", label: "Other", icon: "receipt", bg: "bg-muted", text: "text-muted-foreground", placeholder: "e.g., Entry fee" },
-]
+const CATEGORY_OPTIONS = [
+  { value: "food"          as ExpenseCategory, label: "Food & Dining",  icon: "restaurant",       placeholder: "e.g., Lunch at Ichiran" },
+  { value: "transport"     as ExpenseCategory, label: "Transport",       icon: "directions_subway", placeholder: "e.g., Suica Top-up" },
+  { value: "accommodation" as ExpenseCategory, label: "Stay",            icon: "hotel",             placeholder: "e.g., Park Hyatt Night 1" },
+  { value: "activity"      as ExpenseCategory, label: "Activity",        icon: "local_activity",    placeholder: "e.g., TeamLab Tickets" },
+  { value: "souvenir"      as ExpenseCategory, label: "Gift",            icon: "redeem",            placeholder: "e.g., Tokyo snacks" },
+  { value: "shopping"      as ExpenseCategory, label: "Shopping",        icon: "shopping_cart",     placeholder: "e.g., Uniqlo haul" },
+  { value: "other"         as ExpenseCategory, label: "Other",           icon: "receipt",           placeholder: "e.g., Entry fee" },
+].map(o => ({ ...o, ...getCategoryColor(o.value) }))
 
 const schema = z.object({
   title: z.string().min(1, "Title is required").max(200),

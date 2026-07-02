@@ -441,7 +441,7 @@ function GeocodingLayer({
           <span className="material-symbols-outlined animate-spin text-primary" style={{ fontSize: 32 }}>
             progress_activity
           </span>
-          <p className="mt-2 text-sm font-medium text-on-surface-variant">
+          <p className="mt-2 text-sm font-medium text-muted-foreground">
             Resolving locations…
           </p>
         </div>

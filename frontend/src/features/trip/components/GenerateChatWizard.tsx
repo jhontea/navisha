@@ -249,10 +249,10 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground">Date Range</label>
-                <div className="flex rounded-lg border border-outline-variant focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-surface-container-lowest">
+                <div className="flex rounded-lg border border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-background">
                   <input
                     type="date"
-                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
+                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
                     value={startDate}
                     onClick={openPicker}
                     onChange={(e) => {
@@ -260,11 +260,11 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
                       setTimeout(() => endDateRef.current?.showPicker?.(), 100)
                     }}
                   />
-                  <span className="flex items-center text-on-surface-variant/30 text-sm px-0.5 select-none">—</span>
+                  <span className="flex items-center text-foreground-variant/30 text-sm px-0.5 select-none">—</span>
                   <input
                     ref={endDateRef}
                     type="date"
-                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
+                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
                     value={endDate}
                     min={startDate || undefined}
                     onClick={openPicker}

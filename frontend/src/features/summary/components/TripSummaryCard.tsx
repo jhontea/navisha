@@ -240,7 +240,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
       </div>
 
       {isRateLimited && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100 sm:mb-4 sm:p-3 sm:text-sm">
+        <div className="mb-3 flex items-start gap-2 rounded-lg bg-chromatic-amber/10 p-2 text-xs text-chromatic-amber sm:mb-4 sm:p-3 sm:text-sm">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
           <div>
             <p className="font-medium text-[11px] sm:text-sm">Please wait a moment</p>

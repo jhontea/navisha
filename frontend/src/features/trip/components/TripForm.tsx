@@ -118,7 +118,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <label className="text-sm font-semibold text-foreground" htmlFor="destination">
           Destination
         </label>
-        <div className="flex items-center rounded-lg border bg-surface-container-lowest transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
+        <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
           style={{ borderColor: errors.destination ? 'hsl(var(--error))' : undefined }}
         >
           {/* Icon area */}
@@ -132,7 +132,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             </span>
           </div>
           {/* Divider */}
-          <span className="h-6 w-px bg-outline-variant shrink-0" />
+          <span className="h-6 w-px bg-border shrink-0" />
           {/* Input — Google Places autocomplete (city/province/country only) */}
           <Controller
             name="destination"
@@ -140,7 +140,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             render={({ field }) => (
               <DestinationAutocomplete
                 id="destination"
-                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
+                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-foreground-variant/50"
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -166,7 +166,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
         {/* Cover preview — shows the auto-fetched destination photo */}
         {coverPreview && (
-          <div className="relative mt-2 h-32 w-full overflow-hidden rounded-lg border border-outline-variant">
+          <div className="relative mt-2 h-32 w-full overflow-hidden rounded-lg border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={coverPreview}
@@ -192,10 +192,10 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <label className="text-sm font-semibold text-foreground">
           Date Range <span className="text-destructive" aria-hidden="true">*</span>
         </label>
-        <div className={`flex rounded-lg border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-surface-container-lowest ${errors.start_date || errors.end_date ? "border-error" : "border-outline-variant"}`}>
+        <div className={`flex rounded-lg border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-background ${errors.start_date || errors.end_date ? "border-error" : "border-border"}`}>
           <input
             type="date"
-            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
+            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
             onClick={openPicker}
             {...register("start_date", {
               onChange: () => {
@@ -206,11 +206,11 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               },
             })}
           />
-          <span className="flex items-center text-on-surface-variant/30 text-sm px-0.5 select-none">—</span>
+          <span className="flex items-center text-foreground-variant/30 text-sm px-0.5 select-none">—</span>
           <input
             id="end-date"
             type="date"
-            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-on-surface bg-transparent border-none outline-none rounded-none [color-scheme:light]"
+            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
             onClick={openPicker}
             {...register("end_date")}
           />
@@ -229,7 +229,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           Budget{" "}
           <span className="text-muted-foreground font-normal text-xs">(optional)</span>
         </label>
-        <div className="flex items-center rounded-lg border bg-surface-container-lowest transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
+        <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
           style={{ borderColor: errors.budget ? 'hsl(var(--error))' : undefined }}
         >
           <div className="flex items-center justify-center px-4 shrink-0">
@@ -241,12 +241,12 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               payments
             </span>
           </div>
-          <span className="h-6 w-px bg-outline-variant shrink-0" />
+          <span className="h-6 w-px bg-border shrink-0" />
           <input
             id="budget"
             type="text"
             inputMode="numeric"
-            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
+            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-foreground-variant/50"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {
@@ -287,7 +287,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 onChange={field.onChange}
                 disabled={currenciesLoading}
                 className={`${inputBase} appearance-none pr-10 ${
-                  errors.base_currency ? "border-error" : "border-outline-variant"
+                  errors.base_currency ? "border-error" : "border-border"
                 } disabled:opacity-60`}
               >
                 {currenciesLoading ? (

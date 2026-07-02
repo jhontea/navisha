@@ -10,24 +10,13 @@ import {
   useExpenses,
   useUpdateExpense,
 } from "../hooks/useExpenses"
-import type { CreateExpenseInput, Expense, ExpenseCategory } from "../types"
+import type { CreateExpenseInput, Expense } from "../types"
 import { BudgetSummary } from "./BudgetSummary"
 import { ExpenseForm } from "./ExpenseForm"
 
-import { Hotel, Bus, UtensilsCrossed, Ticket, Gift, ShoppingBag, Receipt } from "lucide-react"
+import { CATEGORY_COLORS } from "../categoryColors"
 
-const CATEGORY_CONFIG: Record<
-  ExpenseCategory,
-  { bg: string; text: string; Icon: React.ElementType; label: string }
-> = {
-  accommodation: { bg: "bg-violet-500/10", text: "text-violet-700 dark:text-violet-300", Icon: Hotel, label: "Stay" },
-  transport: { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-300", Icon: Bus, label: "Transport" },
-  food: { bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-300", Icon: UtensilsCrossed, label: "Food" },
-  activity: { bg: "bg-indigo-500/10", text: "text-indigo-700 dark:text-indigo-300", Icon: Ticket, label: "Activity" },
-  souvenir: { bg: "bg-pink-500/10", text: "text-pink-600 dark:text-pink-300", Icon: Gift, label: "Gift" },
-  shopping: { bg: "bg-yellow-400/10", text: "text-yellow-700 dark:text-yellow-300", Icon: ShoppingBag, label: "Shopping" },
-  other: { bg: "bg-muted", text: "text-muted-foreground", Icon: Receipt, label: "Other" },
-}
+const CATEGORY_CONFIG = CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS[string]>
 
 function formatExpenseDate(dateStr: string): string {
   if (!dateStr) return ""

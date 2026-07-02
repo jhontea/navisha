@@ -10,7 +10,7 @@ export function LoginButton() {
       onClick={() => {
         window.location.href = `${API_BASE}/auth/google`
       }}
-      className="w-full gap-3 py-3 px-4 rounded-lg font-label-md text-on-surface hover:shadow-chromatic transition-all duration-200 group active:scale-[0.98]"
+      className="w-full gap-3 py-3 px-4 rounded-lg font-label-md text-foreground hover:shadow-chromatic transition-all duration-200 group active:scale-[0.98]"
       variant="glass"
     >
       <GoogleIcon />

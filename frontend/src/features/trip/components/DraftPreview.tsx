@@ -15,13 +15,13 @@ export function DraftPreview({ draft }: Props) {
     <div className="space-y-6">
       {/* Header summary */}
       <div className="glass-lg rounded-xl p-6">
-        <h3 className="font-headline-md text-headline-md text-on-surface mb-1">
+        <h3 className="font-headline-md text-headline-md text-foreground mb-1">
           {draft.title}
         </h3>
         {draft.summary && (
-          <p className="font-body-md text-on-surface-variant mb-4">{draft.summary}</p>
+          <p className="font-body-md text-foreground-variant mb-4">{draft.summary}</p>
         )}
-        <div className="flex flex-wrap gap-4 text-body-sm text-on-surface-variant">
+        <div className="flex flex-wrap gap-4 text-body-sm text-foreground-variant">
           <span className="inline-flex items-center gap-1.5">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>calendar_month</span>
             {draft.days.length} hari
@@ -44,20 +44,20 @@ export function DraftPreview({ draft }: Props) {
         {draft.days.map((day) => (
           <div
             key={day.day_number}
-            className="rounded-xl border border-outline-variant bg-white p-5"
+            className="rounded-xl border border-border bg-white p-5"
           >
             <div className="mb-3 flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary font-label-sm text-label-sm">
                 {day.day_number}
               </span>
-              <span className="font-label-md text-label-md text-on-surface">
+              <span className="font-label-md text-label-md text-foreground">
                 Hari {day.day_number}
               </span>
-              <span className="text-body-sm text-on-surface-variant">{day.date}</span>
+              <span className="text-body-sm text-foreground-variant">{day.date}</span>
             </div>
 
             {day.activities.length === 0 ? (
-              <p className="pl-10 text-body-sm text-on-surface-variant italic">
+              <p className="pl-10 text-body-sm text-foreground-variant italic">
                 Belum ada aktivitas
               </p>
             ) : (
@@ -71,20 +71,20 @@ export function DraftPreview({ draft }: Props) {
                       {a.type === "location" ? "location_on" : "sticky_note_2"}
                     </span>
                     <div className="min-w-0">
-                      <p className="font-body-md text-on-surface">
+                      <p className="font-body-md text-foreground">
                         {a.title}
                         {(a.start_time || a.end_time) && (
-                          <span className="ml-2 text-body-sm text-on-surface-variant">
+                          <span className="ml-2 text-body-sm text-foreground-variant">
                             {a.start_time}
                             {a.end_time ? `–${a.end_time}` : ""}
                           </span>
                         )}
                       </p>
                       {a.type === "location" && a.location_name && (
-                        <p className="text-body-sm text-on-surface-variant">{a.location_name}</p>
+                        <p className="text-body-sm text-foreground-variant">{a.location_name}</p>
                       )}
                       {a.notes && (
-                        <p className="text-body-sm text-on-surface-variant">{a.notes}</p>
+                        <p className="text-body-sm text-foreground-variant">{a.notes}</p>
                       )}
                     </div>
                   </li>

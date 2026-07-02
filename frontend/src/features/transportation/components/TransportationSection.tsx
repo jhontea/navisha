@@ -59,7 +59,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
-                <Plane className="h-7 w-7 text-blue-600" />
+                <Plane className="h-7 w-7 text-chromatic-ocean" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">

@@ -50,7 +50,7 @@ export default function TripsPage() {
   }), [allTrips])
 
   return (
-    <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-6 pb-28">
+    <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-6 pb-28 animate-fade-in">
       {/* Back to dashboard */}
       <BackLink href="/dashboard" />
 
