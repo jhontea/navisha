@@ -10,7 +10,7 @@ export function TripCTAs() {
   return (
     <>
       <Link href="/trips/generate" className={cn(buttonVariants({ variant: "glass" }))}>
-        <Sparkles className="h-4 w-4 text-chromatic-sky" />
+        <Sparkles className="h-4 w-4 text-primary" />
         Generate with AI
       </Link>
       <Link href="/trips/new" className={cn(buttonVariants({ variant: "gradient" }))}>

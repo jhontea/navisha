@@ -1,7 +1,17 @@
 "use client"
 
-import { memo } from "react"
-import { Calendar, MapPin, Pencil, Trash2, Hash } from "lucide-react"
+import { memo, type ComponentType } from "react"
+import {
+  Bed,
+  Building2,
+  Calendar,
+  Hash,
+  Hotel,
+  House,
+  MapPin,
+  Pencil,
+  Trash2,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Accommodation } from "../types"
 
@@ -12,11 +22,14 @@ interface Props {
   isDeleting: boolean
 }
 
-const TYPE_CONFIG: Record<string, { emoji: string; bg: string; border: string }> = {
-  hotel:     { emoji: "🏨", bg: "bg-primary/10",          border: "border-l-primary" },
-  hostel:    { emoji: "🏠", bg: "bg-chromatic-ocean/10",  border: "border-l-chromatic-ocean" },
-  apartment: { emoji: "🏢", bg: "bg-chromatic-aurora/10", border: "border-l-chromatic-aurora" },
-  other:     { emoji: "🛖", bg: "bg-chromatic-amber/10",  border: "border-l-chromatic-amber" },
+const TYPE_CONFIG: Record<
+  string,
+  { Icon: ComponentType<{ className?: string }>; bg: string; text: string; border: string }
+> = {
+  hotel: { Icon: Hotel, bg: "bg-primary/10", text: "text-primary", border: "border-l-primary" },
+  hostel: { Icon: House, bg: "bg-chromatic-ocean/10", text: "text-chromatic-ocean", border: "border-l-chromatic-ocean" },
+  apartment: { Icon: Building2, bg: "bg-chromatic-aurora/10", text: "text-chromatic-aurora", border: "border-l-chromatic-aurora" },
+  other: { Icon: Bed, bg: "bg-chromatic-amber/10", text: "text-chromatic-amber", border: "border-l-chromatic-amber" },
 }
 
 function getTypeConfig(type?: string) {
@@ -24,12 +37,6 @@ function getTypeConfig(type?: string) {
   return TYPE_CONFIG[type.toLowerCase()] ?? TYPE_CONFIG.other
 }
 
-/**
- * Accommodation card — Iter 71-75
- * Uses actual Accommodation type fields:
- *   name, accommodation_type, location_name, check_in, check_out,
- *   confirmation_number, notes
- */
 export const AccommodationCard = memo(function AccommodationCard({
   accommodation,
   onEdit,
@@ -37,6 +44,7 @@ export const AccommodationCard = memo(function AccommodationCard({
   isDeleting,
 }: Props) {
   const cfg = getTypeConfig(accommodation.accommodation_type)
+  const Icon = cfg.Icon
 
   const nights =
     accommodation.check_in && accommodation.check_out
@@ -59,19 +67,18 @@ export const AccommodationCard = memo(function AccommodationCard({
       )}
     >
       <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        {/* Iter 71 — type emoji chip */}
         <div
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl transition-transform duration-200 group-hover:scale-110",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110",
             cfg.bg,
+            cfg.text,
           )}
           aria-hidden="true"
         >
-          {cfg.emoji}
+          <Icon className="h-5 w-5" />
         </div>
 
         <div className="flex-1 min-w-0 space-y-1">
-          {/* Name + type badge */}
           <div className="flex items-start justify-between gap-2">
             <h4 className="truncate text-sm font-bold text-foreground leading-snug">
               {accommodation.name}
@@ -83,7 +90,6 @@ export const AccommodationCard = memo(function AccommodationCard({
             )}
           </div>
 
-          {/* Iter 73 — location */}
           {accommodation.location_name && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -91,12 +97,11 @@ export const AccommodationCard = memo(function AccommodationCard({
             </div>
           )}
 
-          {/* Iter 73 — check-in → check-out with nights count */}
           {(accommodation.check_in || accommodation.check_out) && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
               <span className="tabular-nums">
-                {accommodation.check_in ?? "?"} → {accommodation.check_out ?? "?"}
+                {accommodation.check_in ?? "?"} - {accommodation.check_out ?? "?"}
               </span>
               {nights !== null && (
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-foreground/70">
@@ -106,7 +111,6 @@ export const AccommodationCard = memo(function AccommodationCard({
             </div>
           )}
 
-          {/* Iter 78 — confirmation number: monospace pill */}
           {accommodation.confirmation_number && (
             <div className="flex items-center gap-1.5">
               <Hash className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
@@ -116,7 +120,6 @@ export const AccommodationCard = memo(function AccommodationCard({
             </div>
           )}
 
-          {/* Notes */}
           {accommodation.notes && (
             <p className="text-xs text-muted-foreground/80 line-clamp-2 italic">
               {accommodation.notes}
@@ -124,7 +127,6 @@ export const AccommodationCard = memo(function AccommodationCard({
           )}
         </div>
 
-        {/* Iter 74 — action buttons: hover reveal on desktop */}
         <div className="flex shrink-0 flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
           <button
             type="button"

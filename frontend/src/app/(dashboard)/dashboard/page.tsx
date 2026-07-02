@@ -35,8 +35,10 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground tracking-wide">
           {getGreeting()}, <span className="font-semibold text-foreground">{firstName}</span> {greetingEmoji}
         </p>
-        <h1 className="text-3xl md:text-4xl font-heading font-bold text-gradient-sunset leading-tight">
+        <h1 className="text-2xl font-bold tracking-tight font-heading md:text-3xl">
+          <span className="text-gradient-sunset">
           Your Adventures
+          </span>
         </h1>
       </header>
 

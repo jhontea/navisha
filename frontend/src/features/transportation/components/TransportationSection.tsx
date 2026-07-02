@@ -58,8 +58,8 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
-                <Plane className="h-7 w-7 text-chromatic-ocean" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-md shadow-primary/20">
+                <Plane className="h-7 w-7" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">
@@ -72,7 +72,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-6 py-2.5 font-semibold text-white shadow-md shadow-primary/25 transition-all hover:shadow-lg hover:shadow-primary/35 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <Plus className="h-4 w-4" />
                 Add Transport

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
   Compass,
@@ -10,7 +11,10 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { currencyApi } from "@/features/currency/api";
 import { useAuth } from "@/features/auth/hooks";
+import { tripApi } from "@/features/trip/api";
+import type { TripListResponse } from "@/features/trip/types";
 
 const NAV_ITEMS = [
   { label: "Home",     href: "/dashboard", icon: LayoutDashboard },
@@ -28,6 +32,7 @@ const NAV_ITEMS = [
  */
 export function NavBar() {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const prevPath = useRef(pathname);
@@ -48,6 +53,36 @@ export function NavBar() {
     }
   }, [pathname]);
 
+  function prefetchNav(href: string) {
+    if (href === "/dashboard") {
+      void queryClient.prefetchQuery({
+        queryKey: ["trips", "upcoming", 6],
+        queryFn: () => tripApi.listUpcoming(6),
+        staleTime: 2 * 60 * 1000,
+      });
+      return;
+    }
+
+    if (href === "/trips") {
+      void queryClient.prefetchInfiniteQuery({
+        queryKey: ["trips", "list"],
+        queryFn: ({ pageParam }) =>
+          tripApi.list({ cursor: pageParam as string, limit: 20 }),
+        initialPageParam: "",
+        getNextPageParam: (last: TripListResponse) => last.next_cursor || undefined,
+      });
+      return;
+    }
+
+    if (href === "/currency") {
+      void queryClient.prefetchQuery({
+        queryKey: ["currency", "supported"],
+        queryFn: () => currencyApi.supported(),
+        staleTime: 60 * 60 * 1000,
+      });
+    }
+  }
+
   return (
     <>
       {/* Iter 23 — Skip to main content: larger, more polished */}
@@ -65,7 +100,7 @@ export function NavBar() {
           "transition-all duration-300",
           scrolled
             ? "bg-background/95 backdrop-blur-2xl border-b border-border/40 shadow-[0_1px_0_0_hsl(var(--border)/0.3)]"
-            : "bg-background/80 backdrop-blur-xl border-b border-transparent",
+            : "bg-background/90 backdrop-blur-xl border-b border-border/30",
         )}
         role="banner"
       >
@@ -76,10 +111,13 @@ export function NavBar() {
           {/* Brand */}
           <Link
             href="/dashboard"
+            onPointerEnter={() => prefetchNav("/dashboard")}
+            onTouchStart={() => prefetchNav("/dashboard")}
+            onFocus={() => prefetchNav("/dashboard")}
             className="flex items-center gap-2.5 group shrink-0"
             aria-label="Navisha home"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(250,70%,55%)] shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
               <Compass className="h-4 w-4 text-white" aria-hidden="true" />
             </div>
             {/* Iter 21 — gradient brand text */}
@@ -104,6 +142,9 @@ export function NavBar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onPointerEnter={() => prefetchNav(item.href)}
+                  onTouchStart={() => prefetchNav(item.href)}
+                  onFocus={() => prefetchNav(item.href)}
                   role="listitem"
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
@@ -111,7 +152,7 @@ export function NavBar() {
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                     isActive
                       ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-black/5",
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
                   )}
                 >
                   {/* Iter 21 — active: bottom indicator dot */}
@@ -141,6 +182,9 @@ export function NavBar() {
             {/* Iter 24 — Profile: ring animation when active */}
             <Link
               href="/profile"
+              onPointerEnter={() => prefetchNav("/profile")}
+              onTouchStart={() => prefetchNav("/profile")}
+              onFocus={() => prefetchNav("/profile")}
               aria-current={pathname === "/profile" ? "page" : undefined}
               aria-label={`View profile: ${user?.name ?? "Account"}`}
               className={cn(
@@ -148,7 +192,7 @@ export function NavBar() {
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 pathname === "/profile"
                   ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-black/5",
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
               )}
             >
               {user?.avatar_url ? (
@@ -165,7 +209,7 @@ export function NavBar() {
                 />
               ) : (
                 <div
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[hsl(250,70%,55%)] text-xs font-bold text-white shadow-sm"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-chromatic-aurora text-xs font-bold text-white shadow-sm"
                   aria-hidden="true"
                 >
                   {user?.name?.charAt(0).toUpperCase() ?? "?"}
@@ -192,12 +236,10 @@ export function NavBar() {
       >
         <div
           className={cn(
-            "mx-3 mb-3 flex items-center justify-around rounded-2xl px-1 pt-2",
+            "mx-3 mb-3 flex items-center justify-around rounded-2xl border border-border/40 bg-background/95 px-1 pt-2 shadow-xl backdrop-blur-2xl",
             "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
             "transition-all duration-300",
-            scrolled
-              ? "bg-background/95 backdrop-blur-2xl shadow-xl border border-border/40"
-              : "bg-white/90 backdrop-blur-2xl shadow-lg border border-white/40",
+            scrolled && "shadow-2xl",
           )}
         >
           {NAV_ITEMS.map((item) => {
@@ -214,23 +256,26 @@ export function NavBar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onPointerEnter={() => prefetchNav(item.href)}
+                onTouchStart={() => prefetchNav(item.href)}
+                onFocus={() => prefetchNav(item.href)}
                 aria-current={isActive ? "page" : undefined}
                 title={item.label}
                 aria-label={item.label}
                 className={cn(
-                  "relative flex min-h-[52px] min-w-[52px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-2",
+                  "group relative flex min-h-[52px] min-w-[52px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-2",
                   "text-[11px] font-medium",
                   "transition-all duration-200 active:scale-95",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
                 )}
               >
                 {/* Iter 22 — active: top pill indicator */}
                 {isActive && (
                   <span
-                    className="absolute top-1 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-gradient-to-r from-primary to-chromatic-aurora"
+                    className="absolute top-1 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-primary"
                     aria-hidden="true"
                   />
                 )}
@@ -239,7 +284,7 @@ export function NavBar() {
                   className={cn(
                     "flex h-8 w-9 items-center justify-center rounded-xl transition-all duration-200",
                     isActive
-                      ? "bg-primary/12"
+                      ? "bg-primary/10"
                       : "group-hover:bg-muted/60",
                   )}
                 >

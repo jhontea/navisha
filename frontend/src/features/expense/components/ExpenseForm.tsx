@@ -24,13 +24,13 @@ function localDateString(): string {
 const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW", "MYR", "THB", "EUR", "VND"] as const
 
 const CATEGORY_OPTIONS = [
-  { value: "food"          as ExpenseCategory, label: "Food & Dining",  icon: "restaurant",       placeholder: "e.g., Lunch at Ichiran" },
-  { value: "transport"     as ExpenseCategory, label: "Transport",       icon: "directions_subway", placeholder: "e.g., Suica Top-up" },
-  { value: "accommodation" as ExpenseCategory, label: "Stay",            icon: "hotel",             placeholder: "e.g., Park Hyatt Night 1" },
-  { value: "activity"      as ExpenseCategory, label: "Activity",        icon: "local_activity",    placeholder: "e.g., TeamLab Tickets" },
-  { value: "souvenir"      as ExpenseCategory, label: "Gift",            icon: "redeem",            placeholder: "e.g., Tokyo snacks" },
-  { value: "shopping"      as ExpenseCategory, label: "Shopping",        icon: "shopping_cart",     placeholder: "e.g., Uniqlo haul" },
-  { value: "other"         as ExpenseCategory, label: "Other",           icon: "receipt",           placeholder: "e.g., Entry fee" },
+  { value: "food"          as ExpenseCategory, label: "Food & Dining",  placeholder: "e.g., Lunch at Ichiran" },
+  { value: "transport"     as ExpenseCategory, label: "Transport",      placeholder: "e.g., Suica Top-up" },
+  { value: "accommodation" as ExpenseCategory, label: "Stay",           placeholder: "e.g., Park Hyatt Night 1" },
+  { value: "activity"      as ExpenseCategory, label: "Activity",       placeholder: "e.g., TeamLab Tickets" },
+  { value: "souvenir"      as ExpenseCategory, label: "Gift",           placeholder: "e.g., Tokyo snacks" },
+  { value: "shopping"      as ExpenseCategory, label: "Shopping",       placeholder: "e.g., Uniqlo haul" },
+  { value: "other"         as ExpenseCategory, label: "Other",          placeholder: "e.g., Entry fee" },
 ].map(o => ({ ...o, ...getCategoryColor(o.value) }))
 
 const schema = z.object({
@@ -129,16 +129,11 @@ export function ExpenseForm({
                         ? cn("border-primary", opt.bg, opt.text)
                         : "border-border bg-background text-muted-foreground hover:border-primary/40",
                     )}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn(isSelected ? opt.text : "text-muted-foreground")} aria-hidden="true">
-                      {opt.value === "food" && <><path d="M3 11l19-9-9 19-2-8-8-2z"/></>}
-                      {opt.value === "transport" && <><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>}
-                      {opt.value === "accommodation" && <><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></>}
-                      {opt.value === "activity" && <><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></>}
-                      {opt.value === "souvenir" && <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>}
-                      {opt.value === "shopping" && <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>}
-                      {opt.value === "other" && <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>}
-                    </svg>
+                    >
+                    <opt.Icon
+                      className={cn("h-4 w-4", isSelected ? opt.text : "text-muted-foreground")}
+                      aria-hidden="true"
+                    />
                     {opt.label}
                   </button>
                 )
@@ -157,16 +152,12 @@ export function ExpenseForm({
         <div className="relative flex items-center">
           {selectedCategory && (() => {
             const catOpt = CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)
+            if (!catOpt) return null
             return (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("absolute left-3.5 pointer-events-none", catOpt?.text ?? "text-muted-foreground")} aria-hidden="true">
-                {selectedCategory === "food" && <><path d="M3 11l19-9-9 19-2-8-8-2z"/></>}
-                {selectedCategory === "transport" && <><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>}
-                {selectedCategory === "accommodation" && <><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></>}
-                {selectedCategory === "activity" && <><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></>}
-                {selectedCategory === "souvenir" && <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>}
-                {selectedCategory === "shopping" && <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>}
-                {selectedCategory === "other" && <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>}
-              </svg>
+              <catOpt.Icon
+                className={cn("absolute left-3.5 h-4 w-4 pointer-events-none", catOpt.text)}
+                aria-hidden="true"
+              />
             )
           })()}
           <input

@@ -20,6 +20,7 @@ import { BackLink } from "@/components/BackLink"
 import { Button } from "@/components/ui/button"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { TripHero } from "@/features/trip/components/TripHero"
+import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
 import {
   useTrip,
   useDeleteTrip,
@@ -249,10 +250,8 @@ function DayCard({ day, tripId }: { day: Day; tripId: string }) {
         {/* View day CTA */}
         <div
           className={cn(
-            "flex items-center justify-center gap-1.5 w-full rounded-xl py-2 text-xs font-semibold transition-colors",
-            isToday
-              ? "bg-primary text-primary-foreground"
-              : "border border-primary/40 text-primary group-hover:bg-primary/5"
+            primaryTripActionButtonClassName,
+            "w-full flex-none rounded-xl px-4 py-2 text-xs shadow-sm shadow-primary/20 group-hover:shadow-md group-hover:shadow-primary/30 sm:flex-none"
           )}
           aria-hidden="true"
         >
@@ -534,8 +533,8 @@ export default function TripOverviewPage() {
               <span className="text-xs text-muted-foreground">Transport</span>
             </div>
             {/* Spent */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-mint/10 border border-chromatic-mint/15 p-4 text-center">
-              <Wallet className="mb-1.5 h-5 w-5 text-chromatic-mint" aria-hidden="true" />
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-sunset/10 border border-chromatic-sunset/20 p-4 text-center">
+              <Wallet className="mb-1.5 h-5 w-5 text-chromatic-sunset" aria-hidden="true" />
               <span className="text-base font-bold text-foreground tabular-nums leading-tight">
                 {expenseSummary
                   ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)

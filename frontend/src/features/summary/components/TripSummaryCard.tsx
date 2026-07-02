@@ -7,6 +7,8 @@ import remarkGfm from "remark-gfm"
 import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { sanitizeText } from "@/lib/sanitize"
+import { cn } from "@/lib/utils"
+import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
 import {
   useTripSummary,
   useGenerateSummary,
@@ -15,6 +17,11 @@ import {
 import { GeneratingIndicator } from "./GeneratingIndicator"
 import { ShimmerOverlay } from "./ShimmerOverlay"
 import type { TripSummary } from "../types"
+
+const summaryActionButtonClassName = cn(
+  primaryTripActionButtonClassName,
+  "flex-none rounded-2xl px-5 py-2 text-sm shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30 sm:flex-none",
+)
 
 // Custom component mapping for rich rendering
 const markdownComponents: Components = {
@@ -194,7 +201,11 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 </div>
               </div>
             )}
-            <Button onClick={() => generate.mutate()} disabled={generate.isPending} className="gap-2">
+            <Button
+              onClick={() => generate.mutate()}
+              disabled={generate.isPending}
+              className={summaryActionButtonClassName}
+            >
               <Sparkles className="h-4 w-4" />
               {isGenerateError ? "Try Again" : "Generate Summary"}
             </Button>
@@ -223,11 +234,13 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
           </div>
         )}
         <Button
-          variant="outline"
           size="sm"
           onClick={() => generate.mutate()}
           disabled={generate.isPending}
-          className="w-full shrink-0 gap-1.5 text-xs sm:w-auto sm:text-sm md:gap-2 md:text-sm"
+          className={cn(
+            summaryActionButtonClassName,
+            "w-full px-4 py-2 text-xs sm:w-auto sm:text-sm md:gap-2",
+          )}
         >
           {generate.isPending ? (
             <Loader2 className="h-3 w-3 animate-spin" />

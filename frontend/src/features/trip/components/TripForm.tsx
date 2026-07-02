@@ -9,6 +9,7 @@ import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel } from "@/lib/currency"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import type { CreateTripInput, Trip } from "../types"
+import { primaryTripActionButtonClassName } from "../lib/styles"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -322,7 +323,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className={`${primaryTripActionButtonClassName} disabled:cursor-not-allowed`}
         >
           {isSubmitting ? (
             <>

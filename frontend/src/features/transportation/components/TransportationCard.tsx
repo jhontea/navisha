@@ -1,7 +1,20 @@
 "use client"
 
-import { memo } from "react"
-import { ArrowRight, Clock, Hash, Pencil, Trash2 } from "lucide-react"
+import { memo, type ComponentType } from "react"
+import {
+  ArrowRight,
+  Boxes,
+  Bus,
+  Car,
+  Clock,
+  Hash,
+  Pencil,
+  Plane,
+  Ship,
+  TramFront,
+  Train,
+  Trash2,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Transportation } from "../types"
 
@@ -12,24 +25,24 @@ interface Props {
   isDeleting: boolean
 }
 
-const TRANSPORT_EMOJI: Record<string, string> = {
-  flight: "✈️",
-  train:  "🚆",
-  bus:    "🚌",
-  ferry:  "⛴️",
-  ship:   "\u{1F6A2}",
-  car:    "\u{1F697}",
-  other:  "🚀",
+const TRANSPORT_ICON: Record<string, ComponentType<{ className?: string }>> = {
+  flight: Plane,
+  train: Train,
+  bus: Bus,
+  ferry: TramFront,
+  ship: Ship,
+  car: Car,
+  other: Boxes,
 }
 
-const TRANSPORT_COLOR: Record<string, { bg: string; border: string }> = {
-  flight: { bg: "bg-chromatic-aurora/10",  border: "border-l-chromatic-aurora" },
-  train:  { bg: "bg-primary/10",           border: "border-l-primary" },
-  bus:    { bg: "bg-chromatic-ocean/10",   border: "border-l-chromatic-ocean" },
-  ferry:  { bg: "bg-chromatic-sky/10",     border: "border-l-chromatic-sky" },
-  ship:   { bg: "bg-chromatic-ice/10",     border: "border-l-chromatic-ice" },
-  car:    { bg: "bg-chromatic-amber/10",   border: "border-l-chromatic-amber" },
-  other:  { bg: "bg-muted",               border: "border-l-border" },
+const TRANSPORT_COLOR: Record<string, { bg: string; text: string; border: string }> = {
+  flight: { bg: "bg-chromatic-aurora/10", text: "text-chromatic-aurora", border: "border-l-chromatic-aurora" },
+  train: { bg: "bg-primary/10", text: "text-primary", border: "border-l-primary" },
+  bus: { bg: "bg-chromatic-ocean/10", text: "text-chromatic-ocean", border: "border-l-chromatic-ocean" },
+  ferry: { bg: "bg-chromatic-sky/10", text: "text-chromatic-sky", border: "border-l-chromatic-sky" },
+  ship: { bg: "bg-chromatic-ice/10", text: "text-chromatic-ice", border: "border-l-chromatic-ice" },
+  car: { bg: "bg-chromatic-amber/10", text: "text-chromatic-amber", border: "border-l-chromatic-amber" },
+  other: { bg: "bg-muted", text: "text-muted-foreground", border: "border-l-border" },
 }
 
 function getStyle(type?: string) {
@@ -37,27 +50,12 @@ function getStyle(type?: string) {
   return TRANSPORT_COLOR[key] ?? TRANSPORT_COLOR.other
 }
 
-/**
- * Format ISO datetime string as "HH:MM".
- *
- * The DB stores TIMESTAMPTZ as "2026-05-10T06:30:00+00:00" or "...Z".
- * The user entered 06:30 and expects to see 06:30 — so we read the
- * HH:MM components literally from the string without any tz conversion.
- *
- * "2026-05-10T06:30:00+00:00" → "06:30"
- * "2026-05-10T06:30:00Z"      → "06:30"
- * "2026-05-10T06:30:00"       → "06:30"
- */
 function formatTime(dt?: string | null): string | null {
   if (!dt) return null
   const m = dt.match(/T(\d{2}):(\d{2})/)
   return m ? `${m[1]}:${m[2]}` : null
 }
 
-/**
- * Format ISO datetime string as "MMM D".
- * Reads date components literally to avoid off-by-one from tz conversion.
- */
 function formatDate(dt?: string | null): string | null {
   if (!dt) return null
   const m = dt.match(/^(\d{4})-(\d{2})-(\d{2})/)
@@ -66,12 +64,6 @@ function formatDate(dt?: string | null): string | null {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 
-/**
- * Transportation card — Iter 76-85
- * Uses actual Transportation type fields:
- *   type, label, operator, reference_number,
- *   from_location, to_location, departure_datetime, arrival_datetime, notes
- */
 export const TransportationCard = memo(function TransportationCard({
   transportation,
   onEdit,
@@ -79,7 +71,7 @@ export const TransportationCard = memo(function TransportationCard({
   isDeleting,
 }: Props) {
   const type = transportation.type?.toLowerCase() ?? "other"
-  const emoji = TRANSPORT_EMOJI[type] ?? TRANSPORT_EMOJI.other
+  const Icon = TRANSPORT_ICON[type] ?? TRANSPORT_ICON.other
   const style = getStyle(transportation.type)
 
   const depTime = formatTime(transportation.departure_datetime)
@@ -95,19 +87,18 @@ export const TransportationCard = memo(function TransportationCard({
       )}
     >
       <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        {/* Iter 76 — emoji icon with type color */}
         <div
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl transition-transform duration-200 group-hover:scale-110",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110",
             style.bg,
+            style.text,
           )}
           aria-hidden="true"
         >
-          {emoji}
+          <Icon className="h-5 w-5" />
         </div>
 
         <div className="flex-1 min-w-0 space-y-1.5">
-          {/* Iter 76 — type badge + label/operator */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {transportation.type}
@@ -124,18 +115,17 @@ export const TransportationCard = memo(function TransportationCard({
             )}
           </div>
 
-          {/* Iter 77 — from_location → to_location with times */}
           {(transportation.from_location || transportation.to_location) && (
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-foreground leading-snug">
-                  {transportation.from_location || "–"}
+                  {transportation.from_location || "-"}
                 </p>
                 {depTime && (
                   <p className="flex items-center gap-0.5 text-[11px] text-muted-foreground tabular-nums">
                     <Clock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
                     {depTime}
-                    {depDate && <span className="ml-0.5">· {depDate}</span>}
+                    {depDate && <span className="ml-0.5">- {depDate}</span>}
                   </p>
                 )}
               </div>
@@ -145,7 +135,7 @@ export const TransportationCard = memo(function TransportationCard({
               />
               <div className="min-w-0 flex-1 text-right">
                 <p className="truncate text-xs font-semibold text-foreground leading-snug">
-                  {transportation.to_location || "–"}
+                  {transportation.to_location || "-"}
                 </p>
                 {arrTime && (
                   <p className="flex items-center justify-end gap-0.5 text-[11px] text-muted-foreground tabular-nums">
@@ -157,7 +147,6 @@ export const TransportationCard = memo(function TransportationCard({
             </div>
           )}
 
-          {/* Iter 78 — reference number: monospace pill */}
           {transportation.reference_number && (
             <div className="flex items-center gap-1.5">
               <Hash className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
@@ -167,7 +156,6 @@ export const TransportationCard = memo(function TransportationCard({
             </div>
           )}
 
-          {/* Notes */}
           {transportation.notes && (
             <p className="text-xs text-muted-foreground/80 line-clamp-2 italic">
               {transportation.notes}
@@ -175,7 +163,6 @@ export const TransportationCard = memo(function TransportationCard({
           )}
         </div>
 
-        {/* Iter 80 — actions: hover reveal on desktop */}
         <div className="flex shrink-0 flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
           <button
             type="button"

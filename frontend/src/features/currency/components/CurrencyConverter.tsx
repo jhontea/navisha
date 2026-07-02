@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -50,7 +49,7 @@ export function CurrencyConverter() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="mb-12 text-center">
-        <h1 className="text-headline-lg font-headline-lg text-on-background mb-2">Currency Converter</h1>
+        <h1 className="text-headline-lg font-headline-lg text-gradient-sunset mb-2">Currency Converter</h1>
         <p className="text-muted-foreground font-body-md">Real-time exchange rates for your next adventure.</p>
       </div>
 
@@ -92,15 +91,14 @@ export function CurrencyConverter() {
         </div>
 
         {/* Swap Button */}
-        <Button
-          variant="default"
-          size="sm"
+        <button
+          type="button"
           onClick={swap}
           aria-label="Swap currencies"
-          className="swap-button z-10 w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-all duration-300 md:absolute md:left-1/2 md:-translate-x-1/2"
+          className="swap-button z-10 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:absolute md:left-1/2 md:-translate-x-1/2 [&_.material-symbols-outlined]:text-white"
         >
           <MaterialIcon name="swap_horiz" size={28} />
-        </Button>
+        </button>
 
         {/* To Card */}
         <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
