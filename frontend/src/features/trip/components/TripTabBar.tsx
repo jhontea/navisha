@@ -51,6 +51,8 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
 
   useEffect(() => {
     function onTouchStart(e: TouchEvent) {
+      // Iter 91 — skip if touch starts inside a no-swipe zone (e.g. map)
+      if ((e.target as Element).closest("[data-no-swipe]")) return
       touchStartX.current = e.touches[0].clientX
       touchStartY.current = e.touches[0].clientY
     }
@@ -73,15 +75,17 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
         : Math.min(idx + 1, TABS.length - 1) // swipe right → next tab
 
       if (nextIndex !== idx) {
+        // Iter 91 — write slide direction for page transition animation
+        document.body.dataset.slideDir = dx < 0 ? "left" : "right"
         router.push(tabHref(TABS[nextIndex]))
       }
     }
 
     document.addEventListener("touchstart", onTouchStart, { passive: true })
-    document.addEventListener("touchend", onTouchEnd, { passive: true })
+    document.addEventListener("touchend",   onTouchEnd,   { passive: true })
     return () => {
       document.removeEventListener("touchstart", onTouchStart)
-      document.removeEventListener("touchend", onTouchEnd)
+      document.removeEventListener("touchend",   onTouchEnd)
     }
     // router is stable; tabHref is a pure function of tripId which doesn't change
     // eslint-disable-next-line react-hooks/exhaustive-deps
