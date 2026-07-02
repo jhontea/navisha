@@ -51,17 +51,17 @@ export function CurrencyConverter() {
       {/* Header */}
       <div className="mb-12 text-center">
         <h1 className="text-headline-lg font-headline-lg text-on-background mb-2">Currency Converter</h1>
-        <p className="text-on-surface-variant font-body-md">Real-time exchange rates for your next adventure.</p>
+        <p className="text-muted-foreground font-body-md">Real-time exchange rates for your next adventure.</p>
       </div>
 
       {/* Converter Interface */}
       <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
         {/* From Card */}
         <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
-          <Label className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4 block">From</Label>
+          <Label className="text-label-sm font-label-sm text-muted-foreground uppercase tracking-wider mb-4 block">From</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={from} onValueChange={(v) => v && setFrom(v)}>
-              <SelectTrigger className="w-auto bg-surface-container-low border-none hover:bg-surface-container-high transition-colors font-headline-sm text-headline-sm text-on-surface px-4 py-2 rounded-lg">
+              <SelectTrigger className="w-auto bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-6 rounded-sm bg-primary/10 flex items-center justify-center">
                     <MaterialIcon name="flag" size={18} className="text-primary" />
@@ -84,7 +84,7 @@ export function CurrencyConverter() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="w-full bg-transparent border-none text-display font-display text-on-surface focus:ring-0 p-0"
+            className="w-full bg-transparent border-none text-display font-display text-foreground focus:ring-0 p-0"
           />
           <p className="text-label-md font-label-md text-outline mt-2">
             {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
@@ -97,17 +97,17 @@ export function CurrencyConverter() {
           size="sm"
           onClick={swap}
           aria-label="Swap currencies"
-          className="swap-button z-10 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary-container transition-all duration-300 md:absolute md:left-1/2 md:-translate-x-1/2"
+          className="swap-button z-10 w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-all duration-300 md:absolute md:left-1/2 md:-translate-x-1/2"
         >
           <MaterialIcon name="swap_horiz" size={28} />
         </Button>
 
         {/* To Card */}
         <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
-          <Label className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-4 block">To</Label>
+          <Label className="text-label-sm font-label-sm text-muted-foreground uppercase tracking-wider mb-4 block">To</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={to} onValueChange={(v) => v && setTo(v)}>
-              <SelectTrigger className="w-auto bg-surface-container-low border-none hover:bg-surface-container-high transition-colors font-headline-sm text-headline-sm text-on-surface px-4 py-2 rounded-lg">
+              <SelectTrigger className="w-auto bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-6 rounded-sm bg-tertiary/10 flex items-center justify-center">
                     <MaterialIcon name="flag" size={18} className="text-tertiary" />
@@ -126,7 +126,7 @@ export function CurrencyConverter() {
           </div>
           <div className="w-full bg-transparent border-none text-display font-display text-primary focus:ring-0 p-0">
             {isLoading ? (
-              <p className="text-on-surface-variant">Converting...</p>
+              <p className="text-muted-foreground">Converting...</p>
             ) : result ? (
               <p className="text-primary">
                 {result.converted_amount.toLocaleString(undefined, {

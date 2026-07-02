@@ -293,8 +293,9 @@ html {
 .shadow-soft {
   box-shadow: 0 10px 25px -5px hsla(var(--primary) / 0.08), 0 8px 10px -6px hsla(var(--primary) / 0.04);
 }
+/* ponytail: alias kept for legacy usage in CurrencyConverter */
 .soft-shadow {
-  box-shadow: 0px 12px 24px hsla(var(--primary) / 0.06);
+  box-shadow: 0 10px 25px -5px hsla(var(--primary) / 0.08), 0 8px 10px -6px hsla(var(--primary) / 0.04);
 }
 .shadow-chromatic {
   box-shadow: 0 8px 32px hsla(var(--chromatic-sunset) / 0.12), 0 2px 8px hsla(var(--chromatic-ocean) / 0.06);

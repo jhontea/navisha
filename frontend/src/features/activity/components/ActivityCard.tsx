@@ -27,27 +27,27 @@ interface Props {
 const TYPE_CONFIG = {
   location: {
     Icon: MapPin,
-    iconBg: "bg-blue-500/10 dark:bg-blue-400/10",
-    iconColor: "text-blue-600 dark:text-blue-400",
-    borderColor: "border-l-blue-500",
+    iconBg: "bg-primary/10",
+    iconColor: "text-primary",
+    borderColor: "border-l-primary",
     label: "Location",
-    badgeBg: "bg-blue-500/10 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300",
+    badgeBg: "bg-primary/10 text-primary",
   },
   note: {
     Icon: StickyNote,
-    iconBg: "bg-amber-500/10 dark:bg-amber-400/10",
-    iconColor: "text-amber-600 dark:text-amber-400",
-    borderColor: "border-l-amber-400",
+    iconBg: "bg-chromatic-amber/10",
+    iconColor: "text-chromatic-amber",
+    borderColor: "border-l-chromatic-amber",
     label: "Note",
-    badgeBg: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
+    badgeBg: "bg-chromatic-amber/10 text-chromatic-amber",
   },
   todo: {
     Icon: ListChecks,
-    iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
-    iconColor: "text-slate-600 dark:text-slate-400",
-    borderColor: "border-l-slate-400",
+    iconBg: "bg-muted",
+    iconColor: "text-muted-foreground",
+    borderColor: "border-l-border",
     label: "Todo",
-    badgeBg: "bg-slate-500/10 text-slate-700 dark:bg-slate-400/10 dark:text-slate-300",
+    badgeBg: "bg-muted text-muted-foreground",
   },
 }
 
@@ -185,7 +185,7 @@ function ActivityBody({ activity }: { activity: Activity }) {
       const p = activity.payload as NotePayload
       return (
         /* Iter 55 — quote styling: left accent border */
-        <blockquote className="mt-1 border-l-2 border-amber-400/60 pl-2.5">
+        <blockquote className="mt-1 border-l-2 border-chromatic-amber/60 pl-2.5">
           <p className="whitespace-pre-wrap text-sm italic text-muted-foreground leading-relaxed">
             {p.content}
           </p>
@@ -203,7 +203,7 @@ function ActivityBody({ activity }: { activity: Activity }) {
           {totalCount > 0 && (
             <div className="h-1 w-full rounded-full bg-muted overflow-hidden" aria-hidden="true">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-slate-400 to-slate-600 transition-all duration-500"
+                className="h-full rounded-full bg-gradient-to-r from-muted-foreground/40 to-muted-foreground/60 transition-all duration-500"
                 style={{ width: `${pct}%` }}
               />
             </div>

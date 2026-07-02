@@ -23,13 +23,13 @@ const TRANSPORT_EMOJI: Record<string, string> = {
 }
 
 const TRANSPORT_COLOR: Record<string, { bg: string; border: string }> = {
-  flight: { bg: "bg-violet-500/10", border: "border-l-violet-400" },
-  train:  { bg: "bg-blue-500/10",   border: "border-l-blue-400" },
-  bus:    { bg: "bg-green-500/10",  border: "border-l-green-400" },
-  ferry:  { bg: "bg-cyan-500/10",   border: "border-l-cyan-400" },
-  ship:   { bg: "bg-sky-500/10",    border: "border-l-sky-400" },
-  car:    { bg: "bg-amber-500/10",  border: "border-l-amber-400" },
-  other:  { bg: "bg-slate-500/10",  border: "border-l-slate-300" },
+  flight: { bg: "bg-chromatic-aurora/10",  border: "border-l-chromatic-aurora" },
+  train:  { bg: "bg-primary/10",           border: "border-l-primary" },
+  bus:    { bg: "bg-chromatic-ocean/10",   border: "border-l-chromatic-ocean" },
+  ferry:  { bg: "bg-chromatic-sky/10",     border: "border-l-chromatic-sky" },
+  ship:   { bg: "bg-chromatic-ice/10",     border: "border-l-chromatic-ice" },
+  car:    { bg: "bg-chromatic-amber/10",   border: "border-l-chromatic-amber" },
+  other:  { bg: "bg-muted",               border: "border-l-border" },
 }
 
 function getStyle(type?: string) {

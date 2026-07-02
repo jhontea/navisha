@@ -230,7 +230,7 @@ export function NavBar() {
                 {/* Iter 22 — active: top pill indicator */}
                 {isActive && (
                   <span
-                    className="absolute top-1 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-gradient-to-r from-primary to-[hsl(250,70%,55%)]"
+                    className="absolute top-1 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-gradient-to-r from-primary to-chromatic-aurora"
                     aria-hidden="true"
                   />
                 )}

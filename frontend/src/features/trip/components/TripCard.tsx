@@ -11,7 +11,7 @@ import type { Trip } from "../types"
 
 const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
   upcoming: { chip: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
-  active:   { chip: "bg-[hsl(185,80%,40%)]/15 text-[hsl(185,80%,40%)] border-[hsl(185,80%,40%)]/30", dot: "bg-[hsl(185,80%,40%)] animate-pulse" },
+  active:   { chip: "bg-chromatic-ocean/15 text-chromatic-ocean border-chromatic-ocean/30", dot: "bg-chromatic-ocean animate-pulse" },
   past:     { chip: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" },
 }
 

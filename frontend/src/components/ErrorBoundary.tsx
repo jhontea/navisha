@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   children: ReactNode;
@@ -41,16 +42,15 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
               An unexpected error occurred. Please try refreshing the page.
             </p>
-            <button
-              type="button"
+            <Button
+              className="mt-6"
               onClick={() => {
                 this.setState({ hasError: false, error: null });
                 window.location.reload();
               }}
-              className="mt-6 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
             >
               Refresh Page
-            </button>
+            </Button>
           </div>
         )
       );

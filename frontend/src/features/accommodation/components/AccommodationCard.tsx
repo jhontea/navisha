@@ -13,10 +13,10 @@ interface Props {
 }
 
 const TYPE_CONFIG: Record<string, { emoji: string; bg: string; border: string }> = {
-  hotel:     { emoji: "🏨", bg: "bg-blue-500/10",    border: "border-l-blue-400" },
-  hostel:    { emoji: "🏠", bg: "bg-green-500/10",   border: "border-l-green-400" },
-  apartment: { emoji: "🏢", bg: "bg-violet-500/10",  border: "border-l-violet-400" },
-  other:     { emoji: "🛖", bg: "bg-amber-500/10",   border: "border-l-amber-400" },
+  hotel:     { emoji: "🏨", bg: "bg-primary/10",          border: "border-l-primary" },
+  hostel:    { emoji: "🏠", bg: "bg-chromatic-ocean/10",  border: "border-l-chromatic-ocean" },
+  apartment: { emoji: "🏢", bg: "bg-chromatic-aurora/10", border: "border-l-chromatic-aurora" },
+  other:     { emoji: "🛖", bg: "bg-chromatic-amber/10",  border: "border-l-chromatic-amber" },
 }
 
 function getTypeConfig(type?: string) {

@@ -3,47 +3,11 @@
 import { cn, formatCurrency } from "@/lib/utils"
 import { useExpenseSummary } from "../hooks/useExpenses"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CATEGORY_COLORS } from "../categoryColors"
 
-const CATEGORY_CONFIG: Record<
-  string,
-  { bar: string; dot: string; label: string }
-> = {
-  accommodation: {
-    bar: "bg-primary",
-    dot: "bg-primary",
-    label: "Stay",
-  },
-  transport: {
-    bar: "bg-[#DBEAFE]",
-    dot: "bg-[#DBEAFE]",
-    label: "Transport",
-  },
-  food: {
-    bar: "bg-[#DCFCE7]",
-    dot: "bg-[#DCFCE7]",
-    label: "Food",
-  },
-  activity: {
-    bar: "bg-[#FFEDD5]",
-    dot: "bg-[#FFEDD5]",
-    label: "Activity",
-  },
-  souvenir: {
-    bar: "bg-[#FCE7F3]",
-    dot: "bg-[#FCE7F3]",
-    label: "Gift",
-  },
-  shopping: {
-    bar: "bg-[#FEF9C3]",
-    dot: "bg-[#FEF9C3]",
-    label: "Shopping",
-  },
-  other: {
-    bar: "bg-muted",
-    dot: "bg-muted",
-    label: "Other",
-  },
-}
+const CATEGORY_CONFIG = Object.fromEntries(
+  Object.entries(CATEGORY_COLORS).map(([k, v]) => [k, { bar: v.bar, dot: v.bar, label: v.label }])
+)
 
 const CIRCUMFERENCE = 2 * Math.PI * 58 // r=58
 
@@ -184,7 +148,7 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
                 </span>
                 <span className={cn(
                   "text-xs font-medium",
-                  tripBudget - total < 0 ? "text-destructive" : "text-emerald-600"
+                  tripBudget - total < 0 ? "text-destructive" : "text-chromatic-mint"
                 )}>
                   {tripBudget - total < 0 ? "Over " : "Left: "}
                   {formatCurrency(Math.abs(tripBudget - total), data.base_currency)}
@@ -251,7 +215,7 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
                   <span
                     className={cn(
                       "font-label-md text-right truncate cursor-default",
-                      tripBudget - total < 0 ? "text-destructive" : "text-emerald-600"
+                      tripBudget - total < 0 ? "text-destructive" : "text-chromatic-mint"
                     )}
                     title={`${data.base_currency} ${Math.abs(tripBudget - total).toLocaleString(undefined, { maximumFractionDigits: 2 })}${tripBudget - total < 0 ? " over budget" : " remaining"}`}
                   >

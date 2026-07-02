@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const greetingEmoji = hour < 12 ? "☀️" : hour < 17 ? "👋" : "🌙"
 
   return (
-    <div className="relative mx-auto max-w-max-width w-full px-4 md:px-8 pt-6 pb-28 md:pb-16">
+    <div className="relative mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-6 pb-28 md:pb-16 animate-fade-in">
 
       {/* ── Greeting Header ── */}
       <header className="mb-8">
@@ -88,7 +88,7 @@ export default function DashboardPage() {
             href="/currency"
             className="group glass flex items-center gap-3 rounded-2xl p-4 transition-all duration-300 hover:shadow-chromatic hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shadow-emerald-500/20" aria-hidden="true">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-chromatic-mint to-chromatic-ocean text-white shadow-sm shadow-chromatic-mint/20" aria-hidden="true">
               <ArrowLeftRight className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">

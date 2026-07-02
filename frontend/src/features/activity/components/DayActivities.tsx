@@ -125,14 +125,14 @@ function TransportTimelineCard({ t }: { t: Transportation }) {
   const arrTime = extractTime(t.arrival_datetime)
 
   return (
-    <div className="rounded-2xl border-l-4 border-l-blue-500 border border-border/30 bg-blue-500/5 p-4 shadow-sm">
+    <div className="rounded-2xl border-l-4 border-l-primary border border-border/30 bg-primary/5 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
               Transport
             </span>
-            <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-semibold capitalize text-blue-700 dark:text-blue-300">
+            <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold capitalize text-primary">
               <Icon className="h-3 w-3" />
               {t.type}
             </span>
@@ -172,18 +172,18 @@ function AccommodationTimelineCard({
   const EventIcon = isCheckin ? LogIn : LogOut
 
   return (
-    <div className="rounded-2xl border-l-4 border-l-violet-500 border border-border/30 bg-violet-500/5 p-4 shadow-sm">
+    <div className="rounded-2xl border-l-4 border-l-chromatic-aurora border border-border/30 bg-chromatic-aurora/5 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-chromatic-aurora">
               Stay
             </span>
             <span
               className={cn(
                 "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
                 isCheckin
-                  ? "bg-violet-500/10 text-violet-700 dark:text-violet-300"
+                  ? "bg-chromatic-aurora/10 text-chromatic-aurora"
                   : "bg-muted text-muted-foreground",
               )}
             >
@@ -235,7 +235,7 @@ function TimelineDot({
   }
   const bgMap: Record<string, string> = {
     location: "bg-[#DBEAFE] text-primary",
-    note: "bg-[#FEF9C3] text-amber-700",
+    note: "bg-chromatic-amber/10 text-chromatic-amber",
     todo: "bg-muted text-muted-foreground",
   }
   const bg = bgMap[activityType ?? "location"] ?? bgMap.location

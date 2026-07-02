@@ -10,6 +10,7 @@ import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { BottomSheet } from "@/components/BottomSheet"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function TripTransportPage() {
@@ -138,12 +139,12 @@ export default function TripTransportPage() {
             </div>
           </div>
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={saveEdits} disabled={isUpdating || !editTitle.trim()} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
+            <Button onClick={saveEdits} disabled={isUpdating || !editTitle.trim()} className="flex-1">
               <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
-            </button>
-            <button type="button" onClick={() => setIsEditing(false)} disabled={isUpdating} className="flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted">
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isUpdating}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </BottomSheet>

@@ -23,9 +23,9 @@ export function HeroSection() {
       {/* Iter 12 — animated gradient blobs: larger, softer, more layers */}
       <div className="absolute inset-0 pointer-events-none -z-10" aria-hidden="true">
         <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-primary/8 blur-[160px] animate-float-orb" />
-        <div className="absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-[hsl(185,80%,40%)]/8 blur-[160px] animate-float-orb" style={{ animationDelay: "-6s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-[hsl(250,70%,55%)]/6 blur-[120px] animate-float-orb" style={{ animationDelay: "-3s" }} />
-        <div className="absolute top-1/4 right-1/4 h-[200px] w-[200px] rounded-full bg-[hsl(200,90%,60%)]/5 blur-[80px] animate-float-orb" style={{ animationDelay: "-9s" }} />
+        <div className="absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-chromatic-ocean/8 blur-[160px] animate-float-orb" style={{ animationDelay: "-6s" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-chromatic-aurora/6 blur-[120px] animate-float-orb" style={{ animationDelay: "-3s" }} />
+        <div className="absolute top-1/4 right-1/4 h-[200px] w-[200px] rounded-full bg-chromatic-sky/5 blur-[80px] animate-float-orb" style={{ animationDelay: "-9s" }} />
       </div>
 
       {/* Iter 13 — social proof badge: more polished pill with count */}
@@ -34,7 +34,7 @@ export function HeroSection() {
         role="note"
         style={{ animationDelay: "0ms" }}
       >
-        <span className="flex h-2 w-2 rounded-full bg-[hsl(185,80%,40%)] animate-pulse" aria-hidden="true" />
+        <span className="flex h-2 w-2 rounded-full bg-chromatic-ocean animate-pulse" aria-hidden="true" />
         <span className="font-semibold">10,000+ trips planned this month</span>
         <span className="hidden sm:inline text-primary/60">•</span>
         <span className="hidden sm:inline text-primary/80 font-medium">Join free</span>
@@ -66,7 +66,7 @@ export function HeroSection() {
       >
         <Link
           href="/login"
-          className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary via-[hsl(250,70%,55%)] to-[hsl(185,80%,40%)] px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[200px] justify-center"
+          className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[200px] justify-center"
         >
           {/* Google G icon */}
           <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -97,7 +97,7 @@ export function HeroSection() {
       >
         {/* Glow under card */}
         <div className="absolute inset-x-12 bottom-0 h-20 bg-primary/12 blur-3xl rounded-full" aria-hidden="true" />
-        <div className="absolute inset-x-24 bottom-0 h-12 bg-[hsl(250,70%,55%)]/8 blur-2xl rounded-full" aria-hidden="true" />
+        <div className="absolute inset-x-24 bottom-0 h-12 bg-chromatic-aurora/8 blur-2xl rounded-full" aria-hidden="true" />
 
         <div className="glass-lg relative overflow-hidden rounded-3xl shadow-2xl p-5 md:p-7">
           {/* Mock app header */}
@@ -107,7 +107,7 @@ export function HeroSection() {
               <h2 className="text-lg font-bold text-foreground">Your Adventures</h2>
             </div>
             {/* Iter 11 — AI Generate badge: inline SVG sparkle instead of material */}
-            <div className="h-8 rounded-xl bg-gradient-to-r from-primary to-[hsl(250,70%,55%)] flex items-center justify-center gap-1.5 px-3">
+            <div className="h-8 rounded-xl bg-gradient-to-r from-primary to-chromatic-aurora flex items-center justify-center gap-1.5 px-3">
               <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2L9.5 9.5H2L7.5 14L5.5 21L12 17L18.5 21L16.5 14L22 9.5H14.5L12 2Z"/>
               </svg>
@@ -117,7 +117,7 @@ export function HeroSection() {
 
           {/* Mock trip cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/80 to-[hsl(185,80%,40%)]/80 h-32 p-4 flex flex-col justify-between">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/80 to-chromatic-ocean/80 h-32 p-4 flex flex-col justify-between">
               <div className="flex justify-between items-start">
                 <span className="text-white text-sm font-semibold">Tokyo, Japan 🇯🇵</span>
                 <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] text-white font-semibold backdrop-blur-sm">Active</span>
@@ -130,7 +130,7 @@ export function HeroSection() {
                 <p className="text-white/60 text-[10px] mt-1">Day 9 of 15</p>
               </div>
             </div>
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(250,70%,55%)]/30 to-[hsl(200,90%,60%)]/30 h-32 p-4 flex flex-col justify-between border border-border/30">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-chromatic-aurora/30 to-chromatic-sky/30 h-32 p-4 flex flex-col justify-between border border-border/30">
               <div className="flex justify-between items-start">
                 <span className="text-foreground text-sm font-semibold">Paris, France 🇫🇷</span>
                 <span className="rounded-full bg-primary/12 border border-primary/20 px-2.5 py-0.5 text-[10px] text-primary font-semibold">Upcoming</span>

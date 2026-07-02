@@ -54,7 +54,7 @@ export function Navbar() {
           className="flex items-center gap-2.5 group shrink-0"
           aria-label="Navisha home"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(250,70%,55%)] shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
             <Compass className="h-4 w-4 text-white" aria-hidden="true" />
           </div>
           {/* Iter 19 — brand text: gradient + tighter tracking */}
@@ -108,7 +108,7 @@ export function Navbar() {
             role="listitem"
             className={cn(
               "inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold",
-              "bg-gradient-to-r from-primary to-[hsl(250,70%,55%)] text-white",
+              "bg-gradient-to-r from-primary to-chromatic-aurora text-white",
               "shadow-md shadow-primary/25",
               "hover:shadow-lg hover:shadow-primary/35 hover:scale-[1.02]",
               "active:scale-[0.98] transition-all duration-200",
@@ -185,7 +185,7 @@ export function Navbar() {
             onClick={() => setMenuOpen(false)}
             className={cn(
               "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold mt-1",
-              "bg-gradient-to-r from-primary to-[hsl(250,70%,55%)] text-white",
+              "bg-gradient-to-r from-primary to-chromatic-aurora text-white",
               "shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30",
               "transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             )}

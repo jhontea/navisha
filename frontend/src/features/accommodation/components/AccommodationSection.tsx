@@ -58,8 +58,8 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100">
-                <Hotel className="h-7 w-7 text-violet-600" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-chromatic-aurora/15">
+                <Hotel className="h-7 w-7 text-chromatic-aurora" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">
@@ -100,7 +100,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
             <div className="space-y-3">
               {[1, 2].map((i) => (
                 <div key={i} className="rounded-2xl border border-border/20 bg-card p-5 animate-pulse overflow-hidden relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-violet-200 rounded-l-2xl" />
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-chromatic-aurora/20 rounded-l-2xl" />
                   <div className="pl-2 flex items-start gap-4">
                     <div className="h-12 w-12 rounded-2xl bg-muted shrink-0" />
                     <div className="flex-1 space-y-2">
