@@ -134,18 +134,15 @@ export default function TripDetailPage() {
       {/* Phase 3B-2: Tab navigation for trip sub-sections */}
       <TripTabBar tripId={id} />
 
-      {/* Main content */}
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-        {/* View mode toggle */}
+      {/* View mode toggle — always in same position */}
+      <div className="mx-auto w-full max-w-max-width px-margin-mobile pt-6 md:px-margin-desktop">
         <div role="group" aria-label="View mode" className="mb-5 flex w-full gap-1 rounded-2xl border border-border/40 bg-muted/30 p-1">
           <button
             type="button"
             onClick={() => setViewMode("list")}
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
-              viewMode === "list"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+              viewMode === "list" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
             )}
             aria-pressed={viewMode === "list"}
           >
@@ -157,9 +154,7 @@ export default function TripDetailPage() {
             onClick={() => setViewMode("map")}
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
-              viewMode === "map"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+              viewMode === "map" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
             )}
             aria-pressed={viewMode === "map"}
           >
@@ -167,9 +162,18 @@ export default function TripDetailPage() {
             Map
           </button>
         </div>
+      </div>
 
-        {viewMode === "list" ? (
-          trip.days.length === 0 ? (
+      {/* Main content */}
+      {viewMode === "map" ? (
+        <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 md:px-margin-desktop md:pb-8">
+          <div className="animate-fade-in-up" data-no-swipe>
+            <TripMap days={trip.days} />
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 md:px-margin-desktop md:pb-8">
+          {trip.days.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/50 py-14 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                 <List className="h-6 w-6 text-primary" aria-hidden="true" />
@@ -193,13 +197,9 @@ export default function TripDetailPage() {
                 />
               ))}
             </div>
-          )
-        ) : (
-          <div className="animate-fade-in-up">
-            <TripMap days={trip.days} />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirmDelete}

@@ -52,7 +52,7 @@ export const TripHero = memo(function TripHero({
       className={cn(
         "relative w-full overflow-hidden",
         "min-h-[180px] sm:min-h-[220px] md:h-[240px]",
-        "md:max-w-max-width md:mx-auto md:rounded-2xl",
+        "-mt-4 md:mt-0 md:max-w-max-width md:mx-auto md:rounded-2xl",
         className,
       )}
     >
