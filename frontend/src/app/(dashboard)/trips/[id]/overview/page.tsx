@@ -563,11 +563,11 @@ export default function TripOverviewPage() {
 
           {/* Iter 95 — Trip progress bar */}
           <div className="glass mb-6 rounded-2xl p-5">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <h4 className="text-sm font-semibold text-foreground">
                 Trip Progress
               </h4>
-              <span className="text-sm text-muted-foreground">
+              <span className="shrink-0 text-right text-sm text-muted-foreground">
                 {started
                   ? `Day ${currentDay} of ${totalDays}`
                   : "Not started yet"}
