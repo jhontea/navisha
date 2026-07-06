@@ -1,3 +1,5 @@
+import { toast } from "@/lib/toast"
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v1"
 
 interface FetchOptions extends RequestInit {
@@ -22,8 +24,64 @@ function getCSRFToken(): string {
   return match ? decodeURIComponent(match[1]) : ""
 }
 
+// ponytail: single-flight refresh — concurrent 401s all share one /auth/refresh call
+let refreshInFlight: Promise<boolean> | null = null
+async function refreshSession(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      })
+      return res.ok
+    } catch {
+      return false
+    } finally {
+      refreshInFlight = null
+    }
+  })()
+  return refreshInFlight
+}
+
+// Set to true while the user is intentionally logging out so the 401 handler
+// below doesn't mistake the cleared cookies for a session-expiry and toast/
+// redirect. Call setLoggingOut(true) *before* the logout call; reset is
+// optional — the page navigates away either way.
+let isLoggingOut = false
+export function setLoggingOut(value: boolean): void {
+  isLoggingOut = value
+}
+
+// ponytail: guard against multiple 401s all toasting + redirecting at once
+let bailing = false
+/** Notify the user the session has expired, then bounce to /login. */
+function bailToLoginOnError(): never {
+  if (bailing) return new Promise<never>(() => {}) as never
+  bailing = true
+  if (typeof window !== "undefined") {
+    toast("Your session has expired. Redirecting to login…", "info", 2500)
+    // Let the toast paint before the reload so the user sees the message.
+    window.setTimeout(() => {
+      window.location.href = `/login?reason=session-expired`
+    }, 1200)
+  }
+  // Block the rejected promise from resolving after the redirect fires.
+  return new Promise<never>(() => {}) as never
+}
+
 async function request<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const { params, signal, ...init } = options
+
+  // ponytail: while the user is intentionally logging out, suppress all
+  // other requests — cookies are about to be (or already are) gone, and any
+  // fetch here would just 401 and pollute the console. The logout call itself
+  // is exempt (path==="/auth/logout"). Pending TanStack queries get rejected
+  // immediately, which is fine: clear() / unmount absorbs them.
+  if (isLoggingOut && path !== "/auth/logout") {
+    throw new ApiError(0, "LOGGING_OUT", "Session ending")
+  }
 
   const url = new URL(`${API_BASE}${path}`)
   if (params) {
@@ -40,13 +98,33 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     headers["X-CSRF-Token"] = csrfToken
   }
 
-  const res = await fetch(url.toString(), {
+  let res = await fetch(url.toString(), {
     ...init,
     cache: "no-store",
     credentials: "include",
     headers,
     signal: signal ?? null,
   })
+
+  // ponytail: 401 → try /auth/refresh once, then retry the original request.
+  // If refresh fails, the session is gone — surface it to the user instead of
+  // silently failing. Skip for the /auth/refresh path itself to avoid recursion.
+  // Skip when the user is intentionally logging out — those 401s are expected.
+  if (res.status === 401 && path !== "/auth/refresh" && !isLoggingOut) {
+    const ok = await refreshSession()
+    if (ok) {
+      // Replay the original request with fresh cookies.
+      res = await fetch(url.toString(), {
+        ...init,
+        cache: "no-store",
+        credentials: "include",
+        headers,
+        signal: signal ?? null,
+      })
+    } else {
+      bailToLoginOnError()
+    }
+  }
 
   if (!res.ok) {
     let code = "UNKNOWN_ERROR"

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { api, ApiError } from "@/lib/api"
+import { api, ApiError, setLoggingOut } from "@/lib/api"
 import { useAuthStore } from "./store"
 import type { User } from "./types"
 
@@ -45,8 +45,18 @@ export function useLogout() {
   const router = useRouter()
 
   return useMutation({
-    mutationFn: () => api.post("/auth/logout"),
-    onSuccess: () => {
+    mutationFn: async () => {
+      // Mark intentional logout so any in-flight background request that 401s
+      // after the server clears cookies won't trigger the toast + redirect.
+      setLoggingOut(true)
+      return api.post("/auth/logout")
+    },
+    onSuccess: async () => {
+      // Cancel in-flight queries *first* so their abort signals fire and stop
+      // background fetches (e.g. /trips list, /auth/me) before the cookie is
+      // gone — otherwise those fetches 401 and pollute the console. `clear()`
+      // alone sends a `destroy` notification that doesn't abort the network.
+      await queryClient.cancelQueries()
       setUser(null)
       queryClient.clear()
       router.push("/login")
@@ -60,6 +70,12 @@ export function useLogout() {
  * interaction time. Only calls /auth/refresh when the user has been active
  * within INACTIVITY_THRESHOLD_MS. Stops refreshing once the tab is inactive
  * so the token can naturally expire in the background.
+ *
+ * Note: if this proactive refresh is missed and the access token expires,
+ * lib/api.ts also performs an on-demand refresh-and-retry on any 401
+ * before bouncing the user to /login?reason=session-expired. This hook
+ * only runs on the client — it does NOT cover server-side `middleware.ts`
+ * route checks, which still rely on the cookie alone.
  *
  * Mount this once in the dashboard layout.
  */
@@ -85,9 +101,9 @@ export function useTokenRefresh() {
       try {
         await api.post("/auth/refresh")
       } catch {
-        // Refresh failed (token already expired or network error).
-        // The next API call will return 401 and the middleware will
-        // redirect to /login automatically.
+        // Refresh failed (token already expired, network error, or refresh
+        // cookie gone). lib/api.ts will surface this on the next 401 by
+        // redirecting to /login?reason=session-expired.
       }
     }, REFRESH_INTERVAL_MS)
 
