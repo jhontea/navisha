@@ -155,7 +155,7 @@ export function AccommodationForm({
           control={control}
           name="accommodation_type"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {ACCOMMODATION_TYPES.map((t) => {
                 const selected = field.value === t
                 const Icon = TYPE_ICON[t]
@@ -165,16 +165,21 @@ export function AccommodationForm({
                     type="button"
                     onClick={() => field.onChange(t)}
                     className={cn(
-                      "flex items-center gap-2 py-3 px-4 rounded-xl border-2 transition-all active:scale-95",
+                      "flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all",
+                      "font-label-md text-sm",
                       selected
                         ? "border-primary bg-primary/5 text-primary"
-                        : "border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary",
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40",
                     )}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-sm font-semibold">
-                      {ACCOMMODATION_TYPE_LABELS[t]}
-                    </span>
+                    <Icon
+                      className={cn(
+                        "h-4 w-4",
+                        selected ? "text-primary" : "text-muted-foreground",
+                      )}
+                      aria-hidden="true"
+                    />
+                    {ACCOMMODATION_TYPE_LABELS[t]}
                   </button>
                 )
               })}
@@ -184,89 +189,94 @@ export function AccommodationForm({
       </div>
 
       {/* Main fields grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Accommodation Name */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Accommodation Name
-          </label>
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-              placeholder="e.g. Park Hyatt Tokyo"
-              {...register("name")}
-            />
-          </div>
-          {errors.name && (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
-          )}
-        </div>
-
-        {/* Location — Google Places */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Address / Location
-          </label>
-          <Controller
-            control={control}
-            name="location_name"
-            render={({ field }) => (
-              <LocationAutocomplete
-                value={field.value ?? ""}
-                onChange={field.onChange}
-                placeholder="Search for a location..."
-                onPlaceSelect={(p) => {
-                  field.onChange(p.location_name || p.address)
-                  setValue("lat", String(p.lat))
-                  setValue("lng", String(p.lng))
-                  setValue("google_place_id", p.google_place_id)
-                }}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Accommodation Name */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Accommodation Name
+            </label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                placeholder="e.g. Park Hyatt Tokyo"
+                {...register("name")}
               />
+            </div>
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
             )}
-          />
-          {/* Hidden lat/lng/place_id */}
-          <input type="hidden" {...register("lat")} />
-          <input type="hidden" {...register("lng")} />
-          <input type="hidden" {...register("google_place_id")} />
+          </div>
+
+          {/* Location — Google Places */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Address / Location
+            </label>
+            <Controller
+              control={control}
+              name="location_name"
+              render={({ field }) => (
+                <LocationAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="Search for a location..."
+                  onPlaceSelect={(p) => {
+                    field.onChange(p.location_name || p.address)
+                    setValue("lat", String(p.lat))
+                    setValue("lng", String(p.lng))
+                    setValue("google_place_id", p.google_place_id)
+                  }}
+                />
+              )}
+            />
+            {/* Hidden lat/lng/place_id */}
+            <input type="hidden" {...register("lat")} />
+            <input type="hidden" {...register("lng")} />
+            <input type="hidden" {...register("google_place_id")} />
+          </div>
         </div>
 
-        {/* Check-in */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Check-in Date
-          </label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="date"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-              onClick={openPicker}
-              {...register("check_in")}
-            />
+        {/* Check-in / Check-out row */}
+        <div className="grid grid-cols-2 gap-4 md:gap-6">
+          {/* Check-in */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Check-in Date
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="date"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                onClick={openPicker}
+                {...register("check_in")}
+              />
+            </div>
+            {errors.check_in && (
+              <p className="text-xs text-destructive">{errors.check_in.message}</p>
+            )}
           </div>
-          {errors.check_in && (
-            <p className="text-xs text-destructive">{errors.check_in.message}</p>
-          )}
-        </div>
 
-        {/* Check-out */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Check-out Date
-          </label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="date"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-              onClick={openPicker}
-              {...register("check_out")}
-            />
+          {/* Check-out */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Check-out Date
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="date"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                onClick={openPicker}
+                {...register("check_out")}
+              />
+            </div>
+            {errors.check_out && (
+              <p className="text-xs text-destructive">{errors.check_out.message}</p>
+            )}
           </div>
-          {errors.check_out && (
-            <p className="text-xs text-destructive">{errors.check_out.message}</p>
-          )}
         </div>
       </div>
 

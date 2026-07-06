@@ -5,7 +5,6 @@ import { Check } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
-import { cn } from "@/lib/utils"
 import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
@@ -13,7 +12,6 @@ import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { BottomSheet } from "@/components/BottomSheet"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useSlideDirection } from "@/hooks/useSlideDirection"
 
 export default function TripStayPage() {
   const params = useParams<{ id: string }>()
@@ -24,7 +22,6 @@ export default function TripStayPage() {
   const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
 
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const slideClass = useSlideDirection()
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState("")
   const [editStartDate, setEditStartDate] = useState("")
@@ -86,7 +83,7 @@ export default function TripStayPage() {
 
       <TripTabBar tripId={id} />
 
-      <div className={cn("mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in", slideClass)}>
+      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in">
         <AccommodationSection
           tripId={id}
           tripBaseCurrency={trip?.base_currency ?? "IDR"}

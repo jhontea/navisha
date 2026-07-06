@@ -1,9 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Calendar, Map, DollarSign, Bus, Hotel } from "lucide-react"
 import { accommodationApi } from "@/features/accommodation/api"
@@ -29,27 +28,11 @@ const TABS = [
  * Iter 47 — active: gradient underline pill, not just color
  * Iter 48 — icons on all tabs (not just mobile)
  * Iter 49 — scrollable on mobile with snap
- * Iter 50 — hide label on xs, show on sm+
- * Iter 90 — swipe left/right navigates to adjacent tab
+* Iter 50 — hide label on xs, show on sm+
  */
 export function TripTabBar({ tripId }: TripTabBarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const queryClient = useQueryClient()
-
-  // Swipe gesture — track touch on the document so any swipe on the page works
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
-
-  const activeIndex = TABS.findIndex((tab) =>
-    tab.href === ""
-      ? pathname === `/trips/${tripId}`
-      : pathname.startsWith(`/trips/${tripId}/${tab.href}`)
-  )
-
-  // Keep a stable ref to activeIndex so the effect closure doesn't go stale
-  const activeIndexRef = useRef(activeIndex)
-  activeIndexRef.current = activeIndex
 
   function tabHref(tab: (typeof TABS)[number]) {
     return tab.href ? `/trips/${tripId}/${tab.href}` : `/trips/${tripId}`
@@ -112,48 +95,6 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
       })
     }
   }
-
-  useEffect(() => {
-    function onTouchStart(e: TouchEvent) {
-      // Iter 91 — skip if touch starts inside a no-swipe zone (e.g. map)
-      if ((e.target as Element).closest("[data-no-swipe]")) return
-      touchStartX.current = e.touches[0].clientX
-      touchStartY.current = e.touches[0].clientY
-    }
-
-    function onTouchEnd(e: TouchEvent) {
-      if (touchStartX.current === null || touchStartY.current === null) return
-
-      const dx = e.changedTouches[0].clientX - touchStartX.current
-      const dy = e.changedTouches[0].clientY - touchStartY.current
-
-      touchStartX.current = null
-      touchStartY.current = null
-
-      // Only fire for clearly horizontal swipes (≥ 50px, x dominates y)
-      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return
-
-      const idx = activeIndexRef.current
-      const nextIndex = dx < 0
-        ? Math.max(idx - 1, 0)               // swipe left → previous tab
-        : Math.min(idx + 1, TABS.length - 1) // swipe right → next tab
-
-      if (nextIndex !== idx) {
-        // Iter 91 — write slide direction for page transition animation
-        document.body.dataset.slideDir = dx < 0 ? "left" : "right"
-        router.push(tabHref(TABS[nextIndex]))
-      }
-    }
-
-    document.addEventListener("touchstart", onTouchStart, { passive: true })
-    document.addEventListener("touchend",   onTouchEnd,   { passive: true })
-    return () => {
-      document.removeEventListener("touchstart", onTouchStart)
-      document.removeEventListener("touchend",   onTouchEnd)
-    }
-    // router is stable; tabHref is a pure function of tripId which doesn't change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripId, router])
 
   return (
     <nav

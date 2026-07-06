@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { ChevronDown, Pencil, Trash2, X } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
@@ -55,6 +55,14 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
   const [confirmingDelete, setConfirmingDelete] = useState<Expense | null>(null)
   // Track which date groups are collapsed; all expanded by default
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  // ponytail: scroll the Add Expense card into view when it opens, so the form is reachable on mobile
+  const addCardRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (addOpen && addCardRef.current) {
+      addCardRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [addOpen])
 
   function toggleGroup(date: string) {
     setCollapsedGroups((prev) => {
@@ -119,7 +127,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
       </section>
 
       {/* Add Expense Form */}
-      <section>
+      <section ref={addCardRef}>
         <div className="glass rounded-xl p-8">
           <h3 className="font-display text-headline-sm text-foreground mb-6">Add New Expense</h3>
 

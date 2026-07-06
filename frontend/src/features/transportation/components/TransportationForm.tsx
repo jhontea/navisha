@@ -160,7 +160,7 @@ export function TransportationForm({
           control={control}
           name="type"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {TRANSPORTATION_TYPES
                 .filter((t) => (lockType ? t === field.value : true))
                 .map((t) => {
@@ -174,15 +174,22 @@ export function TransportationForm({
                       onClick={() => !lockType && field.onChange(t)}
                       disabled={lockType}
                       className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all w-[5.5rem]",
+                        "flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all",
+                        "font-label-md text-sm",
                         selected
                           ? "border-primary bg-primary/5 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary",
+                          : "border-border bg-background text-muted-foreground hover:border-primary/40",
                         lockType && "cursor-default",
                       )}
                     >
-                      <Icon className="h-6 w-6" />
-                      <span className="text-xs font-semibold">{meta.label}</span>
+                      <Icon
+                        className={cn(
+                          "h-4 w-4",
+                          selected ? "text-primary" : "text-muted-foreground",
+                        )}
+                        aria-hidden="true"
+                      />
+                      {meta.label}
                     </button>
                   )
                 })}
@@ -195,105 +202,110 @@ export function TransportationForm({
       </div>
 
       {/* Input Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* From Location — Google Places Autocomplete */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            From Location
-          </label>
-          <Controller
-            control={control}
-            name="from_location"
-            render={({ field }) => (
-              <LocationAutocomplete
-                value={field.value ?? ""}
-                onChange={field.onChange}
-                placeholder="e.g. Jakarta Airport"
-                onPlaceSelect={(p) => {
-                  field.onChange(p.location_name || p.address)
-                }}
-              />
-            )}
-          />
-          {errors.from_location && (
-            <p className="text-xs text-destructive">{errors.from_location.message}</p>
-          )}
-        </div>
-
-        {/* To Location — Google Places Autocomplete */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            To Location
-          </label>
-          <Controller
-            control={control}
-            name="to_location"
-            render={({ field }) => (
-              <LocationAutocomplete
-                value={field.value ?? ""}
-                onChange={field.onChange}
-                placeholder="e.g. Bali Airport"
-                onPlaceSelect={(p) => {
-                  field.onChange(p.location_name || p.address)
-                }}
-              />
-            )}
-          />
-          {errors.to_location && (
-            <p className="text-xs text-destructive">{errors.to_location.message}</p>
-          )}
-        </div>
-
-        {/* Label / Flight Number */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Label / Flight Number
-          </label>
-          <div className="relative">
-            <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-              placeholder="e.g. GA 420"
-              {...register("label")}
+      <div className="space-y-6">
+        {/* From / To / Label row */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          {/* From Location — Google Places Autocomplete */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              From Location
+            </label>
+            <Controller
+              control={control}
+              name="from_location"
+              render={({ field }) => (
+                <LocationAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="e.g. Jakarta Airport"
+                  onPlaceSelect={(p) => {
+                    field.onChange(p.location_name || p.address)
+                  }}
+                />
+              )}
             />
+            {errors.from_location && (
+              <p className="text-xs text-destructive">{errors.from_location.message}</p>
+            )}
           </div>
-          {errors.label && (
-            <p className="text-xs text-destructive">{errors.label.message}</p>
-          )}
+
+          {/* To Location — Google Places Autocomplete */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              To Location
+            </label>
+            <Controller
+              control={control}
+              name="to_location"
+              render={({ field }) => (
+                <LocationAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="e.g. Bali Airport"
+                  onPlaceSelect={(p) => {
+                    field.onChange(p.location_name || p.address)
+                  }}
+                />
+              )}
+            />
+            {errors.to_location && (
+              <p className="text-xs text-destructive">{errors.to_location.message}</p>
+            )}
+          </div>
+
+          {/* Label / Flight Number */}
+          <div className="space-y-2 col-span-2 md:col-span-1">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Label / Flight Number
+            </label>
+            <div className="relative">
+              <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                placeholder="e.g. GA 420"
+                {...register("label")}
+              />
+            </div>
+            {errors.label && (
+              <p className="text-xs text-destructive">{errors.label.message}</p>
+            )}
+          </div>
         </div>
 
-        {/* Departure */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Departure Time
-          </label>
-          <input
-            type="datetime-local"
-            className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-            onClick={openPicker}
-            {...register("departure_datetime")}
-          />
-          {errors.departure_datetime && (
-            <p className="text-xs text-destructive">{errors.departure_datetime.message}</p>
-          )}
-        </div>
+        {/* Departure / Arrival row */}
+        <div className="grid grid-cols-2 gap-4 md:gap-6">
+          {/* Departure */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Departure Time
+            </label>
+            <input
+              type="datetime-local"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              onClick={openPicker}
+              {...register("departure_datetime")}
+            />
+            {errors.departure_datetime && (
+              <p className="text-xs text-destructive">{errors.departure_datetime.message}</p>
+            )}
+          </div>
 
-        {/* Arrival */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-muted-foreground">
-            Arrival Time
-          </label>
-          <input
-            type="datetime-local"
-            className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-            onClick={openPicker}
-            {...register("arrival_datetime")}
-          />
-          {errors.arrival_datetime && (
-            <p className="text-xs text-destructive">{errors.arrival_datetime.message}</p>
-          )}
+          {/* Arrival */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-muted-foreground">
+              Arrival Time
+            </label>
+            <input
+              type="datetime-local"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              onClick={openPicker}
+              {...register("arrival_datetime")}
+            />
+            {errors.arrival_datetime && (
+              <p className="text-xs text-destructive">{errors.arrival_datetime.message}</p>
+            )}
+          </div>
         </div>
-
       </div>
 
       {/* Operator */}

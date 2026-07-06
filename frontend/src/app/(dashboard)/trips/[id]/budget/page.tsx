@@ -9,12 +9,10 @@ import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
-import { cn } from "@/lib/utils"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useSlideDirection } from "@/hooks/useSlideDirection"
 
 export default function TripBudgetPage() {
   const params = useParams<{ id: string }>()
@@ -25,7 +23,6 @@ export default function TripBudgetPage() {
   const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
 
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const slideClass = useSlideDirection()
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState("")
   const [editStartDate, setEditStartDate] = useState("")
@@ -116,7 +113,7 @@ export default function TripBudgetPage() {
       )}
       <TripTabBar tripId={id} />
 
-      <div className={cn("mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in", slideClass)}>
+      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in">
         {editingBudget && (
           <div className="mb-6 rounded-2xl border border-primary/25 bg-primary/5 p-6 shadow-sm animate-scale-in" role="dialog" aria-label="Edit budget">
             <div className="mb-5 flex items-center justify-between">
