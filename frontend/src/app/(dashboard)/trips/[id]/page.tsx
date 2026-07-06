@@ -171,7 +171,7 @@ export default function TripDetailPage() {
       {/* Main content */}
       {viewMode === "map" ? (
         <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 md:px-margin-desktop md:pb-8">
-          <div className="animate-fade-in-up" data-no-swipe>
+          <div className="animate-fade-in-up">
             <TripMap days={trip.days} />
           </div>
         </div>

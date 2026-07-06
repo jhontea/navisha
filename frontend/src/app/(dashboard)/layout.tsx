@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { NavBar } from "@/components/NavBar"
-import { FAB } from "@/components/FAB"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { useTokenRefresh } from "@/features/auth/hooks"
 
@@ -30,7 +29,6 @@ export default function DashboardLayout({
         </main>
 
         <NavBar />
-        <FAB />
 
         {/* Footer — visible on desktop only; legal links for every dashboard page */}
         <footer className="hidden md:block border-t border-white/10 bg-muted/20 px-4 py-4 mt-auto relative z-10">

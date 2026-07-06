@@ -493,18 +493,6 @@ html {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Iter 91 — swipe slide transition */
-@keyframes slide-in-from-right {
-  from { transform: translateX(8%); opacity: 0; }
-  to   { transform: translateX(0);  opacity: 1; }
-}
-@keyframes slide-in-from-left {
-  from { transform: translateX(-8%); opacity: 0; }
-  to   { transform: translateX(0);   opacity: 1; }
-}
-.animate-slide-from-right { animation: slide-in-from-right 220ms ease-out both; }
-.animate-slide-from-left  { animation: slide-in-from-left  220ms ease-out both; }
-
 /* No-scrollbar utility */
 .no-scrollbar {
   scrollbar-width: none;
@@ -532,8 +520,6 @@ html {
   .animate-shimmer,
   .animate-gradient-shift,
   .animate-pop,
-  .animate-slide-from-right,
-  .animate-slide-from-left,
   .skeleton-shimmer {
     animation: none !important;
   }
