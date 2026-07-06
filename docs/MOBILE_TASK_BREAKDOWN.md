@@ -45,38 +45,80 @@ Acceptance:
 
 ## Phase 1 - Scaffold
 
+Status: Complete.
+
 Goal: create the mobile app shell.
 
 Tasks:
 
-- Create an Expo app in `mobile/`.
-- Configure TypeScript.
-- Configure Expo Router.
-- Configure path aliases if needed.
-- Add `.env.example`.
-- Add `EXPO_PUBLIC_API_URL` documentation in the env example.
-- Add base scripts:
+- [x] Create an Expo app in `mobile/`.
+- [x] Configure TypeScript.
+- [x] Configure Expo Router.
+- [x] Configure path aliases if needed. Not added yet; relative imports are enough for the scaffold.
+- [x] Add `.env.example`.
+- [x] Add `EXPO_PUBLIC_API_URL` documentation in the env example.
+- [x] Add base scripts:
   - `start`
   - `android`
   - `lint`
   - `test`
   - `test:watch`
-- Add Jest with `jest-expo`.
-- Add React Native Testing Library.
-- Add a basic navigation shell:
+- [x] Add Jest with `jest-expo`.
+- [x] Add React Native Testing Library.
+- [x] Add a basic navigation shell:
   - loading route
   - login route
   - protected trips route
-- Add shared app providers:
+- [x] Add shared app providers:
   - TanStack Query provider
   - auth/session provider
 
 Acceptance:
 
-- `cd mobile && npm install` succeeds.
-- `npx expo start` opens the app.
-- Android emulator can render the initial route.
-- `npm test` runs at least one simple test.
+- [x] `cd mobile && npm install` succeeds.
+- [x] `npx expo start` opens the app. Metro is running at `http://localhost:8081`.
+- [ ] Android emulator can render the initial route. Not launched from this session.
+- [x] `npm test` runs at least one simple test.
+
+---
+
+## Phase 1.5 - UI Shell
+
+Status: Complete.
+
+Goal: make the scaffold feel like Navisha before real auth/data lands.
+
+Tasks:
+
+- [x] Add a small mobile theme token file for colors, spacing, and radius.
+- [x] Add shared UI primitives:
+  - card
+  - button
+  - screen with footer slot
+- [x] Add product shell components:
+  - app header
+  - bottom nav preview
+  - quick actions
+- [x] Restyle login into a product-style mobile entry screen.
+- [x] Restyle trips shell into a dashboard preview with:
+  - upcoming trip card
+  - itinerary quick actions
+  - today preview
+  - API target note
+- [x] Add icon support with `@expo/vector-icons`.
+- [x] Align the Phase 1.5 shell colors with the web brand direction:
+  - Navisha primary blue
+  - blue-to-purple gradient accents
+  - soft blue and aurora surfaces
+- [x] Keep all data as static placeholder data until Phase 2-4.
+
+Acceptance:
+
+- [x] `/login` looks like a Navisha mobile screen, not a default scaffold.
+- [x] `/trips` looks like a mobile dashboard shell.
+- [x] Bottom navigation preview is visible.
+- [x] No backend is required.
+- [x] `npx tsc --noEmit`, `npm test -- --runInBand`, and `npm run lint` pass.
 
 ---
 
