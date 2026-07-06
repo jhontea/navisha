@@ -17,7 +17,7 @@ currency:
   cache_ttl: 3600
 
 jwt:
-  access_ttl: 3600     # 1 hour
+  access_ttl: 10800    # 3 hours
   refresh_ttl: 604800  # 7 days
 
 # ── LLM Provider ──

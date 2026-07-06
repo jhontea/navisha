@@ -3,12 +3,13 @@ import { Compass } from "lucide-react"
 import { LoginButton } from "@/features/auth/components/LoginButton"
 
 interface Props {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; reason?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams
   const isNotAllowed = params.error === "not_allowed"
+  const sessionExpired = params.reason === "session-expired"
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
@@ -44,6 +45,19 @@ export default async function LoginPage({ searchParams }: Props) {
                 <p className="text-sm font-semibold text-destructive">Access restricted</p>
                 <p className="text-xs text-destructive/80 mt-0.5">
                   Your account is not on the allowed list. Please contact the administrator.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Session expired */}
+          {sessionExpired && (
+            <div className="mb-5 flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+              <span className="material-symbols-outlined text-primary text-[18px] mt-0.5 shrink-0">schedule</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Your session has expired</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Please sign in again to continue planning your trip.
                 </p>
               </div>
             </div>
