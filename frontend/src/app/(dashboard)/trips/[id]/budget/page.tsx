@@ -113,7 +113,30 @@ export default function TripBudgetPage() {
       )}
       <TripTabBar tripId={id} />
 
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in">
+      {isLoading && !trip ? (
+        <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 space-y-10 animate-fade-in">
+          <div>
+            <div className="h-6 w-40 rounded bg-muted animate-pulse mb-4" />
+            <div className="h-32 rounded-2xl bg-muted/40 animate-pulse" />
+          </div>
+          <div>
+            <div className="h-6 w-36 rounded bg-muted animate-pulse mb-4" />
+            <div className="rounded-xl glass p-8 animate-pulse">
+              <div className="mx-auto h-16 w-16 rounded-2xl bg-muted" />
+              <div className="mx-auto mt-4 h-4 w-32 rounded bg-muted" />
+            </div>
+          </div>
+          <div>
+            <div className="h-6 w-32 rounded bg-muted animate-pulse mb-4" />
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-20 rounded-xl bg-muted/30 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 animate-fade-in">
         {editingBudget && (
           <div className="mb-6 rounded-2xl border border-primary/25 bg-primary/5 p-6 shadow-sm animate-scale-in" role="dialog" aria-label="Edit budget">
             <div className="mb-5 flex items-center justify-between">
@@ -203,6 +226,7 @@ export default function TripBudgetPage() {
           onEditBudget={openEditBudget}
         />
       </div>
+      )}
 
       <ConfirmDialog
         open={confirmDelete}

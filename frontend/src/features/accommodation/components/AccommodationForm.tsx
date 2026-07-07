@@ -148,7 +148,7 @@ export function AccommodationForm({
     <form onSubmit={handleSubmit(submit)} className="space-y-8">
       {/* Stay Type Selector */}
       <div>
-        <label className="block text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
+        <label className="font-label-md text-muted-foreground mb-4 uppercase tracking-wider">
           Stay Type
         </label>
         <Controller
@@ -193,13 +193,13 @@ export function AccommodationForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Accommodation Name */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Accommodation Name
             </label>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 placeholder="e.g. Park Hyatt Tokyo"
                 {...register("name")}
               />
@@ -211,7 +211,7 @@ export function AccommodationForm({
 
           {/* Location — Google Places */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Address / Location
             </label>
             <Controller
@@ -242,14 +242,14 @@ export function AccommodationForm({
         <div className="grid grid-cols-2 gap-4 md:gap-6">
           {/* Check-in */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Check-in Date
             </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="date"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 onClick={openPicker}
                 {...register("check_in")}
               />
@@ -261,14 +261,14 @@ export function AccommodationForm({
 
           {/* Check-out */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Check-out Date
             </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="date"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 onClick={openPicker}
                 {...register("check_out")}
               />
@@ -282,13 +282,13 @@ export function AccommodationForm({
 
       {/* Confirmation Number */}
       <div className="space-y-2">
-        <label className="block text-sm font-semibold text-muted-foreground">
+        <label className="font-label-md text-muted-foreground">
           Confirmation Number (optional)
         </label>
         <div className="relative">
           <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             placeholder="Optional: 1234-ABCD"
             {...register("confirmation_number")}
           />
@@ -298,7 +298,7 @@ export function AccommodationForm({
       {/* Cost field */}
       {withCost && (
         <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <Label className="font-label-md text-xs text-muted-foreground uppercase tracking-wider">
             Cost (optional — adds an expense to the trip budget)
           </Label>
           <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
@@ -320,7 +320,7 @@ export function AccommodationForm({
                 e.target.value = formatted
                 setValue("amount", normalised || "", { shouldValidate: false })
               }}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             />
             <Controller
               control={control}
@@ -349,7 +349,7 @@ export function AccommodationForm({
 
       {/* Notes */}
       <div className="space-y-2">
-        <label className="block text-sm font-semibold text-muted-foreground">
+        <label className="font-label-md text-muted-foreground">
           Notes (optional)
         </label>
         <Textarea rows={2} placeholder="Any additional details…" {...register("notes")} />
@@ -360,7 +360,7 @@ export function AccommodationForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center justify-center gap-2 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-semibold px-6 py-3 rounded-xl shadow-md shadow-chromatic-sunset/20 transition-all active:scale-95 disabled:opacity-60 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-chromatic-sunset/20 transition-all active:scale-95 disabled:opacity-60 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
         >
           {isSubmitting ? (
             <>
@@ -381,7 +381,7 @@ export function AccommodationForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
         >
           Cancel
         </button>

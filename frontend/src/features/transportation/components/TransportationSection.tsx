@@ -36,7 +36,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
       {/* Add Transportation Section */}
       <section>
         <div className="mb-6">
-          <h3 className="text-xl font-bold text-foreground mb-1">
+          <h3 className="font-display text-headline-sm text-foreground mb-1">
             Add Transportation
           </h3>
           <p className="text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
       {(isLoading || items.length > 0 || isError) && (
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-foreground">
+            <h3 className="font-display text-headline-sm text-foreground">
               Upcoming Travel
             </h3>
             {!isLoading && (
