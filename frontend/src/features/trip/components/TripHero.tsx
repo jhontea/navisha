@@ -76,7 +76,7 @@ export const TripHero = memo(function TripHero({
 
       {/* ── Content — bottom anchored ── */}
       <div className="absolute bottom-0 left-0 right-0 z-10">
-        <div className="mx-auto w-full max-w-max-width px-4 pb-5 max-[380px]:pb-4 sm:px-6 md:px-8 md:pb-7">
+        <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-5 max-[380px]:pb-4 md:px-margin-desktop md:pb-7">
 
           {/* Title row: title + action buttons inline */}
           <div className="flex items-start justify-between gap-2 min-[390px]:gap-3">

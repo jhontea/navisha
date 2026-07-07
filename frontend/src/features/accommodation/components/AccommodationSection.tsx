@@ -86,7 +86,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
       {(isLoading || items.length > 0 || isError) && (
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-foreground">
+            <h3 className="font-display text-headline-sm text-foreground">
               Planned Stays
             </h3>
             {!isLoading && (

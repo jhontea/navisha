@@ -289,7 +289,7 @@ export function ExpenseForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-5 py-2.5 rounded-lg border border-border text-foreground font-label-md hover:bg-muted transition-colors disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl border border-border text-foreground font-label-md hover:bg-muted transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
@@ -297,7 +297,7 @@ export function ExpenseForm({
           type="submit"
           disabled={isSubmitting}
           className={cn(
-            "px-5 py-2.5 rounded-lg bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-label-md",
+            "px-5 py-2.5 rounded-xl bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-label-md",
             "shadow-md shadow-chromatic-sunset/20 hover:shadow-lg hover:shadow-chromatic-sunset/30 transition-all active:scale-[0.98]",
             "disabled:opacity-60",
           )}

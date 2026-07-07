@@ -102,7 +102,7 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
       aria-label="Trip sections"
     >
       <div
-        className="flex items-center justify-center gap-1 px-4 md:px-8 py-1 w-full max-w-max-width mx-auto border-b border-border/30 bg-background/90 backdrop-blur-xl"
+        className="flex items-center justify-center gap-1 px-margin-mobile md:px-margin-desktop py-1 w-full max-w-max-width mx-auto border-b border-border/30 bg-background/90 backdrop-blur-xl"
         role="tablist"
       >
         {TABS.map((tab) => {

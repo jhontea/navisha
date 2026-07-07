@@ -5,6 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  CreditCard,
+  Loader2,
+  MapPin,
+  Plus,
+} from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel } from "@/lib/currency"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
@@ -97,7 +106,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     <form onSubmit={handleSubmit(submit)} className="space-y-5">
       {/* Trip Title */}
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="trip-title">
+        <label className="font-label-md text-muted-foreground" htmlFor="trip-title">
           Trip Title <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <input
@@ -108,7 +117,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         />
         {errors.title && (
           <p className="flex items-center gap-1 text-xs text-destructive">
-            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors.title.message}
           </p>
         )}
@@ -116,7 +125,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
       {/* Destination */}
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="destination">
+        <label className="font-label-md text-muted-foreground" htmlFor="destination">
           Destination
         </label>
         <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
@@ -124,13 +133,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         >
           {/* Icon area */}
           <div className="flex items-center justify-center px-4 shrink-0">
-            <span
-              className="material-symbols-outlined text-outline pointer-events-none"
-              style={{ fontSize: 20 }}
-              aria-hidden="true"
-            >
-              location_on
-            </span>
+            <MapPin className="h-5 w-5 text-muted-foreground pointer-events-none" aria-hidden="true" />
           </div>
           {/* Divider */}
           <span className="h-6 w-px bg-border shrink-0" />
@@ -141,14 +144,12 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             render={({ field }) => (
               <DestinationAutocomplete
                 id="destination"
-                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-foreground-variant/50"
+                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
                 onSelect={(place) => {
                   field.onChange(place.description)
-                  // Use the destination's Google Places photo as the cover.
-                  // Falls back to the gradient placeholder when none is found.
                   setCoverPreview(place.photoUrl || null)
                 }}
               />
@@ -157,7 +158,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         </div>
         {errors.destination && (
           <p className="flex items-center gap-1 text-xs text-destructive">
-            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors.destination.message}
           </p>
         )}
@@ -190,7 +191,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
       {/* Date Range — unified single field */}
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-foreground">
+        <label className="font-label-md text-muted-foreground">
           Date Range <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <div className={`flex rounded-lg border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-background ${errors.start_date || errors.end_date ? "border-error" : "border-border"}`}>
@@ -207,7 +208,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               },
             })}
           />
-          <span className="flex items-center text-foreground-variant/30 text-sm px-0.5 select-none">—</span>
+          <span className="flex items-center text-muted-foreground/30 text-sm px-0.5 select-none">—</span>
           <input
             id="end-date"
             type="date"
@@ -218,7 +219,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         </div>
         {(errors.start_date || errors.end_date) && (
           <p className="flex items-center gap-1 text-xs text-destructive">
-            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors.start_date?.message || errors.end_date?.message || "Please select both dates"}
           </p>
         )}
@@ -226,35 +227,27 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
       {/* Budget (optional) */}
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="budget">
+        <label className="font-label-md text-muted-foreground" htmlFor="budget">
           Budget{" "}
-          <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+          <span className="font-normal text-xs text-muted-foreground/70">(optional)</span>
         </label>
         <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
           style={{ borderColor: errors.budget ? 'hsl(var(--error))' : undefined }}
         >
           <div className="flex items-center justify-center px-4 shrink-0">
-            <span
-              className="material-symbols-outlined text-outline pointer-events-none"
-              style={{ fontSize: 20 }}
-              aria-hidden="true"
-            >
-              payments
-            </span>
+            <CreditCard className="h-5 w-5 text-muted-foreground pointer-events-none" aria-hidden="true" />
           </div>
           <span className="h-6 w-px bg-border shrink-0" />
           <input
             id="budget"
             type="text"
             inputMode="numeric"
-            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-foreground-variant/50"
+            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {
-                // Strip non-numeric, format with thousand separators for display
                 const raw = e.target.value.replace(/[^0-9]/g, "")
                 e.target.value = raw ? Number(raw).toLocaleString() : ""
-                // Store raw number in form
                 return raw
               },
               setValueAs: (v) => v ? String(Number(String(v).replace(/[^0-9]/g, ""))) : "",
@@ -266,7 +259,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         </p>
         {errors.budget && (
           <p className="flex items-center gap-1 text-xs text-destructive">
-            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors.budget.message}
           </p>
         )}
@@ -274,7 +267,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
       {/* Base Currency — from backend */}
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-foreground" htmlFor="currency">
+        <label className="font-label-md text-muted-foreground" htmlFor="currency">
           Base Currency <span className="text-destructive" aria-hidden="true">*</span>
         </label>
         <div className="relative">
@@ -303,16 +296,14 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               </select>
             )}
           />
-          <span
-            className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline"
-            style={{ fontSize: 20 }}
-          >
-            expand_more
-          </span>
+          <ChevronDown
+            className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none text-muted-foreground"
+            aria-hidden="true"
+          />
         </div>
         {errors.base_currency && (
           <p className="flex items-center gap-1 text-xs text-destructive">
-            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">error</span>
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors.base_currency.message}
           </p>
         )}
@@ -327,16 +318,12 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         >
           {isSubmitting ? (
             <>
-              <span className="material-symbols-outlined animate-spin text-[18px]" aria-hidden="true">
-                progress_activity
-              </span>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               {initial ? "Saving…" : "Creating…"}
             </>
           ) : (
             <>
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
-                {initial ? "check_circle" : "add_circle"}
-              </span>
+              {initial ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
               {submitLabel ?? (initial ? "Save Changes" : "Create Trip")}
             </>
           )}
@@ -345,7 +332,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           type="button"
           onClick={() => router.back()}
           disabled={isSubmitting}
-          className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl border border-border/50 px-8 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Cancel
         </button>

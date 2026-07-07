@@ -153,7 +153,7 @@ export function TransportationForm({
     <form onSubmit={handleSubmit(submit)} className="space-y-8">
       {/* Transportation Type */}
       <div>
-        <label className="block text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
+        <label className="font-label-md text-muted-foreground mb-4 uppercase tracking-wider">
           Transportation Type
         </label>
         <Controller
@@ -207,7 +207,7 @@ export function TransportationForm({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {/* From Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               From Location
             </label>
             <Controller
@@ -231,7 +231,7 @@ export function TransportationForm({
 
           {/* To Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               To Location
             </label>
             <Controller
@@ -255,13 +255,13 @@ export function TransportationForm({
 
           {/* Label / Flight Number */}
           <div className="space-y-2 col-span-2 md:col-span-1">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Label / Flight Number
             </label>
             <div className="relative">
               <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                 placeholder="e.g. GA 420"
                 {...register("label")}
               />
@@ -276,12 +276,12 @@ export function TransportationForm({
         <div className="grid grid-cols-2 gap-4 md:gap-6">
           {/* Departure */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Departure Time
             </label>
             <input
               type="datetime-local"
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
               onClick={openPicker}
               {...register("departure_datetime")}
             />
@@ -292,12 +292,12 @@ export function TransportationForm({
 
           {/* Arrival */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-muted-foreground">
+            <label className="font-label-md text-muted-foreground">
               Arrival Time
             </label>
             <input
               type="datetime-local"
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
               onClick={openPicker}
               {...register("arrival_datetime")}
             />
@@ -310,7 +310,7 @@ export function TransportationForm({
 
       {/* Operator */}
       <div className="space-y-2">
-        <label className="block text-sm font-semibold text-muted-foreground">
+        <label className="font-label-md text-muted-foreground">
           Operator (optional)
         </label>
         <Input placeholder="e.g. Garuda Indonesia" {...register("operator")} />
@@ -319,7 +319,7 @@ export function TransportationForm({
       {/* Cost field */}
       {withCost && (
         <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <Label className="font-label-md text-xs text-muted-foreground uppercase tracking-wider">
             Cost (optional — adds an expense to the trip budget)
           </Label>
           <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
@@ -356,7 +356,7 @@ export function TransportationForm({
 
       {/* Notes */}
       <div className="space-y-2">
-        <label className="block text-sm font-semibold text-muted-foreground">
+        <label className="font-label-md text-muted-foreground">
           Notes (optional)
         </label>
         <Textarea rows={2} placeholder="Any additional details…" {...register("notes")} />
@@ -367,7 +367,7 @@ export function TransportationForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center justify-center gap-2 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-semibold px-6 py-3 rounded-xl shadow-md shadow-chromatic-sunset/20 transition-all active:scale-95 disabled:opacity-60 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-chromatic-sunset/20 transition-all active:scale-95 disabled:opacity-60 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
         >
           {isSubmitting ? (
             <>
@@ -388,7 +388,7 @@ export function TransportationForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
