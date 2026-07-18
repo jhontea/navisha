@@ -63,6 +63,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          # A cold multi-stage Docker rebuild can exceed the action's 10-minute
+          # default, especially after changing base images or dependencies.
+          command_timeout: 30m
           # Stop on first error, fail on unset vars, fail piped commands.
           script_stop: true
           script: |
