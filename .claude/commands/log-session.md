@@ -53,4 +53,4 @@ Run this at the **end of each work session** to record what was done.
 
 5. **Update the Sessions TOC** at the top of WORKLOG.md — add a new row to the table in chronological order (newest at top).
 
-6. **Update `docs/FEATURES.md` checkboxes** if any feature milestones were completed.
+ 6. **Update WORKLOG.md** with any feature milestones completed.

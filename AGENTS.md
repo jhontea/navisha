@@ -15,7 +15,6 @@ Travel itinerary app. Users create trips, build day-by-day itineraries, view map
 navisha/
 ├── backend/       # Go service
 ├── frontend/      # Next.js app
-├── docs/          # Architecture, API, Features docs
 └── docker-compose.yml
 ```
 

@@ -166,15 +166,10 @@ navisha/
 │   ├── src/features/     # Feature-slice architecture
 │   ├── src/components/   # Shared UI components
 │   └── src/lib/          # Utilities, API client, categories
-├── docs/                 # Architecture, API reference, feature specs
 ├── deploy/               # Nginx config for production
 ├── docker-compose.yml    # Dev infrastructure (PostgreSQL + Redis)
 └── docker-compose.prod.yml
 ```
-
-- [Architecture](docs/ARCHITECTURE.md) — System design and decisions
-- [API Reference](docs/API.md) — Full REST API documentation
-- [Features](docs/FEATURES.md) — Feature specifications and history
 
 ## Links
 

@@ -39,4 +39,4 @@ Example: `/be-add-migration create-trips-table`
    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
    ```
 
-5. **Reference**: Check `docs/ARCHITECTURE.md` for the full entity model to ensure schema consistency.
+ 5. **Reference**: Check `backend/CLAUDE.md` for the entity model to ensure schema consistency.

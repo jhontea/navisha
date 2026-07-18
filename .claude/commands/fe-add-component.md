@@ -47,6 +47,6 @@ Example: `/fe-add-component trip TripCard "Card showing trip summary on dashboar
 
 5. **coss ui**: Import from `@/components/ui/` — never modify files in that folder. Consult `frontend/.agents/skills/coss/SKILL.md` for composition rules (Field, render prop vs asChild, etc.).
 
-6. **Types**: Add or reuse types from the relevant feature slice (`src/features/{feature}/types.ts`). Match shape returned by `docs/API.md`.
+ 6. **Types**: Add or reuse types from the relevant feature slice (`src/features/{feature}/types.ts`). Match shape returned by the backend API.
 
 7. **Exports**: Use named exports (not default exports) for all components.

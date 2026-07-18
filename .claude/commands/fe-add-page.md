@@ -38,4 +38,4 @@ Example: `/fe-add-page trips/[id] "Trip detail page with itinerary and map"`
 
 8. **Navigation**: Update nav links or add to any sidebar/tab component if the page needs to be discoverable.
 
-9. **Reference**: Check `docs/API.md` for the endpoint this page consumes.
+ 9. **Reference**: Check `backend/CLAUDE.md` for the endpoint this page consumes.

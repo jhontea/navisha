@@ -33,7 +33,5 @@ npx tsc --noEmit # Type check
 ## Related Docs
 
 - Root project: [`../README.md`](../README.md)
-- Architecture: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
-- API reference: [`../docs/API.md`](../docs/API.md)
 - Agent context: [`./CLAUDE.md`](./CLAUDE.md)
 - Design system: [`./template/DESIGN.md`](./template/DESIGN.md)
