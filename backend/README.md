@@ -78,7 +78,5 @@ Exchange rates from CurrencyFreaks API (USD-anchored), cached in Redis.
 ## Related Docs
 
 - Root project: [`../README.md`](../README.md)
-- Architecture: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
-- API reference: [`../docs/API.md`](../docs/API.md)
 - Agent context: [`./CLAUDE.md`](./CLAUDE.md)
 - Deploy guide: [`../DEPLOY.md`](../DEPLOY.md)

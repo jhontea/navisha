@@ -8,7 +8,7 @@ Example: `/be-add-endpoint trip POST /trips`
 
 ## Steps
 
-1. **Read context first**: Check `backend/CLAUDE.md` and `docs/API.md` for conventions and the endpoint contract.
+ 1. **Read context first**: Check `backend/CLAUDE.md` for conventions and the endpoint contract.
 
 2. **Domain layer** (`backend/internal/domain/`):
    - Add or update the entity struct if needed
@@ -29,8 +29,8 @@ Example: `/be-add-endpoint trip POST /trips`
    - Parse and bind request
    - Call usecase
    - Map domain errors to HTTP status codes
-   - Return JSON response matching `docs/API.md` contract
+   - Return JSON response matching the backend API contract
 
 6. **Register route** in `backend/cmd/server/main.go` or the relevant route group file.
 
-7. **Verify**: Check the endpoint against `docs/API.md` — request body, response shape, and error codes must match.
+ 7. **Verify**: Check the endpoint — request body, response shape, and error codes must match the contract.

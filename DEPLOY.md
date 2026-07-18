@@ -123,16 +123,16 @@ nano backend/.env
 Isi dengan nilai production:
 
 ```env
-DATABASE_URL=postgres://user:password@ep-xxx.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgres://<user>:<password>@<host>/neondb?sslmode=require
 REDIS_URL=redis://redis:6379
 JWT_SECRET=<random string panjang, minimal 32 karakter>
 JWT_REFRESH_SECRET=<random string lain, minimal 32 karakter>
-GOOGLE_CLIENT_ID=<>
-GOOGLE_CLIENT_SECRET=GOCSPX-...
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 GOOGLE_REDIRECT_URL=https://api.navisha.cloud/api/v1/auth/google/callback
 FRONTEND_URL=https://navisha.cloud
 COOKIE_DOMAIN=.navisha.cloud
-CURRENCYFREAKS_API_KEY=45205f...
+CURRENCYFREAKS_API_KEY=<your-currencyfreaks-key>
 ```
 
 > **Penting:** `REDIS_URL` pakai `redis://redis:6379` (service name Docker), bukan `localhost`.
@@ -150,7 +150,7 @@ openssl rand -base64 48
 ```bash
 cat > /opt/navisha/.env.prod << 'EOF'
 NEXT_PUBLIC_API_URL=https://api.navisha.cloud/api/v1
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSy...
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<your-google-maps-key>
 EOF
 
 # Tambahkan ke .gitignore jika belum ada
