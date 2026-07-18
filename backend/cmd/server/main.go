@@ -19,6 +19,7 @@ import (
 
 	"github.com/ahmadhafizh/navisha/backend/internal/expense"
 	"github.com/ahmadhafizh/navisha/backend/internal/integration"
+	"github.com/ahmadhafizh/navisha/backend/internal/location"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/ahmadhafizh/navisha/backend/internal/migrate"
 	"github.com/ahmadhafizh/navisha/backend/internal/summary"
@@ -150,6 +151,14 @@ func main() {
 	activityRepo := activity.NewPostgresRepository(db)
 	activityUsecase := activity.NewUsecase(activityRepo)
 	activityHandler := activity.NewHandler(activityUsecase)
+
+	// Location autocomplete (Geoapify key remains server-side).
+	locationClient := location.NewGeoapifyClient(
+		cfg.Location.GeoapifyAPIKey,
+		cfg.Location.GeoapifyBaseURL,
+		time.Duration(cfg.Location.GeoapifyTimeoutSecs)*time.Second,
+	)
+	locationHandler := location.NewHandler(locationClient)
 
 	// Currency domain
 	currencyClient := pkgcurrency.NewClient(cfg.Currency.APIKey)
@@ -322,6 +331,7 @@ func main() {
 	userHandler.RegisterRoutes(api, authMiddleware)
 	tripHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)
+	locationHandler.RegisterRoutes(api, authMiddleware)
 	currencyHandler.RegisterRoutes(api, authMiddleware)
 	expenseHandler.RegisterRoutes(api, authMiddleware)
 	transportationHandler.RegisterRoutes(api, authMiddleware)

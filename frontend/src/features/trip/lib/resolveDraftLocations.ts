@@ -16,6 +16,8 @@
 // With restriction, results are forced within ~50km of the destination center.
 
 import type { TripDraft, ActivityDraft } from "../types"
+import { searchLocationSuggestions } from "@/features/location/api"
+import { LOCATION_PROVIDER } from "@/features/location/config"
 
 /** ~50km in degrees latitude (used to build bounding box around destination). */
 const BOUND_KM = 50
@@ -56,6 +58,26 @@ export async function resolveDraftLocations(
     }
   }
   if (targets.length === 0) return cloned
+
+  if (LOCATION_PROVIDER === "geoapify") {
+    await Promise.allSettled(
+      targets.map(async ({ act, name }) => {
+        const query = destination ? `${name}, ${destination}` : name
+        const response = await searchLocationSuggestions(query, "place")
+        const suggestion = response.suggestions[0]
+        if (!suggestion) return
+
+        act.location_name = suggestion.name || act.location_name
+        act.address = suggestion.description
+        act.lat = suggestion.lat
+        act.lng = suggestion.lng
+        // Kept in the legacy field for API compatibility; provider is selected
+        // globally and the value is treated as an opaque external ID.
+        act.google_place_id = suggestion.external_id
+      }),
+    )
+    return cloned
+  }
 
   // Wait for the Maps & Places libraries (APIProvider loads them asynchronously).
   const places = await waitForPlaces()

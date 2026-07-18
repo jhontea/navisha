@@ -15,7 +15,7 @@
 
 ### Trip Planning
 - **Day-by-day itinerary** — Add activities (location pins, notes, to-dos) to each day
-- **Map visualization** — View all activity locations in order on Google Maps per day
+- **Map visualization** — View all activity locations and daily routes with MapLibre or Google Maps
 - **AI trip generation** — Describe your destination and let AI build a complete itinerary with 6 travel styles (Backpacker, Cultural, Luxury, Nature, Foodie, Balanced)
 - **AI trip summary** — Get a rich markdown summary with budget breakdowns, local tips, and recommendations in 5 style variants
 
@@ -45,7 +45,7 @@
 | Backend | Go 1.22+, Echo v4, pgx v5 (PostgreSQL 16), Redis 7 |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI) |
 | AI / LLM | DeepSeek V4, OpenRouter (multi-provider fallback) |
-| Maps | Google Maps JS API + Places API |
+| Maps | MapLibre GL JS + OpenStreetMap, optional Google Maps JS API |
 | Currency | CurrencyFreaks API |
 | Auth | Google OAuth 2.0 + JWT (httpOnly cookie) |
 | Infra (dev) | Docker Compose (PostgreSQL + Redis) |
@@ -68,7 +68,9 @@
 - Go 1.22+
 - Node.js 20+
 - Docker & Docker Compose
-- Google Cloud project with Maps JS API + OAuth credentials
+- Google OAuth credentials
+- Geoapify API key for the default location autocomplete provider
+- Optional Google Cloud project with Maps JS API when Google mode is enabled
 
 ### 1. Clone the repo
 
@@ -101,6 +103,7 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 JWT_SECRET=
 JWT_REFRESH_SECRET=
+GEOAPIFY_API_KEY=
 ```
 
 Non-secret config lives in `backend/config.yaml` — edit as needed.
@@ -118,8 +121,23 @@ go run ./cmd/server
 ```bash
 cd frontend
 cp .env.example .env.local
-# Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+# Default: Geoapify autocomplete, MapLibre + an OSM-based CARTO basemap
+# To restore Google: set NEXT_PUBLIC_LOCATION_PROVIDER=google,
+# NEXT_PUBLIC_MAP_PROVIDER=google, and NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ```
+
+Location and map providers are independent. Geoapify requests are proxied by
+the Go backend so its key stays private. Map view defaults to `maplibre`; set
+`NEXT_PUBLIC_MAP_PROVIDER=google` to restore Google or `disabled` to turn the
+map off. Google scripts are loaded only in Google mode. Changing a
+`NEXT_PUBLIC_*` value requires restarting/rebuilding the frontend.
+
+The default CARTO basemap uses OpenStreetMap data. For production traffic,
+review the provider terms or configure `NEXT_PUBLIC_MAP_TILE_URL` and
+`NEXT_PUBLIC_MAP_ATTRIBUTION` for another tile provider whose capacity and
+terms fit the deployment. The default same-origin tile route avoids browser
+cross-origin restrictions; its upstream can be changed with
+`MAP_TILE_UPSTREAM_URL`.
 
 ### 6. Run the frontend
 
@@ -181,7 +199,6 @@ MIT © 2025–2026 Navisha
 - [ ] Frontend: Map view
 - [ ] Frontend: Budget tracker
 - [ ] Frontend: Currency converter
-- [ ] Mobile (React Native)
 
 ---
 

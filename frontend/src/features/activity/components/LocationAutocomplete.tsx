@@ -6,6 +6,8 @@ import {
   useMapsLibrary,
 } from "@vis.gl/react-google-maps"
 import { Input } from "@/components/ui/input"
+import { GeoapifyAutocomplete } from "@/features/location/components/GeoapifyAutocomplete"
+import { LOCATION_PROVIDER } from "@/features/location/config"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 
@@ -25,6 +27,27 @@ interface Props {
 }
 
 export function LocationAutocomplete(props: Props) {
+  if (LOCATION_PROVIDER === "geoapify") {
+    return (
+      <GeoapifyAutocomplete
+        value={props.value}
+        onChange={props.onChange}
+        placeholder={props.placeholder}
+        kind="place"
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        onSelect={(suggestion) =>
+          props.onPlaceSelect({
+            location_name: suggestion.name,
+            address: suggestion.description,
+            lat: suggestion.lat,
+            lng: suggestion.lng,
+            google_place_id: suggestion.external_id,
+          })
+        }
+      />
+    )
+  }
+
   // Wrap in APIProvider with the `places` library so we can use the legacy
   // Autocomplete widget. vis.gl dedupes script loads across instances by key.
   return (

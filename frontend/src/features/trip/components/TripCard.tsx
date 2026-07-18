@@ -8,6 +8,7 @@ import {
   type TripStatus,
 } from "../lib/status"
 import type { Trip } from "../types"
+import { canRenderTripCover } from "../lib/cover"
 
 const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
   upcoming: { chip: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
@@ -25,7 +26,7 @@ const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
  */
 export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   const status = tripStatus(trip.start_date, trip.end_date)
-  const hasCover = Boolean(trip.cover_image_url)
+  const hasCover = canRenderTripCover(trip.cover_image_url)
   const style = STATUS_STYLE[status]
 
   const today = new Date()

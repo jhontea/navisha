@@ -35,7 +35,7 @@ func tokenFromRequest(c echo.Context) string {
 		return cookie.Value
 	}
 
-	// Fallback: Authorization header (useful for mobile/API testing)
+	// Fallback: Authorization header (useful for API testing)
 	bearer := c.Request().Header.Get("Authorization")
 	if strings.HasPrefix(bearer, "Bearer ") {
 		return strings.TrimPrefix(bearer, "Bearer ")

@@ -74,7 +74,9 @@ jobs:
             git reset --hard origin/main
 
             echo "==> Loading frontend build args"
-            # NEXT_PUBLIC_* values are baked into the bundle at build time.
+            # NEXT_PUBLIC_* values are baked into the bundle at build time;
+            # server-only values such as MAP_TILE_UPSTREAM_URL are passed to
+            # the frontend container by docker-compose.prod.yml.
             set -a
             source .env.prod
             set +a

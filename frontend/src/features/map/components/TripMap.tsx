@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   APIProvider,
   Map,
@@ -11,6 +11,7 @@ import {
 } from "@vis.gl/react-google-maps"
 import { ExternalLink, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MAP_PROVIDER } from "@/features/location/config"
 import {
   buildMapsDirectionsUrl,
   buildMapsPinUrl,
@@ -22,6 +23,7 @@ import {
   useTripLocations,
   type LocationPoint,
 } from "../hooks/useTripLocations"
+import { MapLibreCanvas } from "./MapLibreCanvas"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 const MAP_ID = "cc475d9a8bf16e26f8975c02"
@@ -66,18 +68,18 @@ export function TripMap({ days }: Props) {
   }
 
   // Open a single location's pin directly in Google Maps.
-  const openSingleInMaps = (p: LocationPoint) => {
+  const openSingleInMaps = useCallback((p: LocationPoint) => {
     const url = hasValidCoords(p.lat, p.lng)
       ? buildMapsPinUrl(p.lat, p.lng, p.title)
       : "https://www.google.com/maps/"
     window.open(url, "_blank", "noopener,noreferrer")
-  }
+  }, [])
 
-  if (!API_KEY) {
+  if (MAP_PROVIDER === "disabled" || (MAP_PROVIDER === "google" && !API_KEY)) {
     return (
       <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-        Map disabled — set <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in{" "}
-        <code>frontend/.env.local</code>.
+        Map disabled. Set <code>NEXT_PUBLIC_MAP_PROVIDER=maplibre</code>, or use
+        <code> google</code> with a valid Google Maps API key.
       </div>
     )
   }
@@ -299,7 +301,7 @@ export function TripMap({ days }: Props) {
               Add location-type activities to see the route
             </p>
           </div>
-        ) : (
+        ) : MAP_PROVIDER === "google" ? (
           <APIProvider apiKey={API_KEY}>
             <Map
               mapId={MAP_ID}
@@ -319,6 +321,11 @@ export function TripMap({ days }: Props) {
               />
             </Map>
           </APIProvider>
+        ) : (
+          <MapLibreCanvas
+            visibleByDay={visibleByDay}
+            onOpenInMaps={openSingleInMaps}
+          />
         )}
       </div>
     </div>

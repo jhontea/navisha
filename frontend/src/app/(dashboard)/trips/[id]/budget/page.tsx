@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
+import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
@@ -254,12 +255,11 @@ export default function TripBudgetPage() {
             onChange={setEditDescription}
             onSelect={(place) => {
               setEditDescription(place.description)
-              setEditCover(place.photoUrl || "")
             }}
             placeholder="Search city, province, or country"
             className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
           />
-          {editCover && (
+          {canRenderTripCover(editCover) && (
             <div className="relative h-28 w-full overflow-hidden rounded-lg border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={editCover} alt="Cover preview" className="h-full w-full object-cover" onError={() => setEditCover("")} />

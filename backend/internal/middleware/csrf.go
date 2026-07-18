@@ -22,34 +22,28 @@ const csrfTokenLen = 32
 // Without it, the cookie is scoped to the API subdomain only and the frontend
 // JS cannot read it. Pass empty string for localhost (CSRF is skipped there).
 //
-// On GET/HEAD/OPTIONS requests: sets a random csrf_token cookie (non-HTTP-only
-// so JavaScript can read it and include it in the X-CSRF-Token header).
-//
-// On POST/PUT/DELETE/PATCH requests: compares the csrf_token cookie value with
-// the X-CSRF-Token header. They must match.
-//
-// Exempts OAuth callback routes (which are redirects from Google, not
-// initiated by our frontend JS).
+// API clients using Authorization: Bearer are skipped because CSRF
+// protects automatically-sent browser cookies, not explicit auth headers.
 func CSRF(cookieDomain string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// Skip CSRF on localhost — cross-port cookie access is blocked.
 			if isLocalhost(c) || cookieDomain == "" {
 				return next(c)
 			}
 
-			// Skip CSRF check for safe methods — just ensure cookie is set.
 			if isSafeMethod(c.Request().Method) {
 				ensureCSRFCookie(c, cookieDomain)
 				return next(c)
 			}
 
-			// Skip CSRF check for OAuth callback (redirect from Google).
 			if isOAuthCallback(c.Request().URL.Path) {
 				return next(c)
 			}
 
-			// Unsafe method: verify double-submit.
+			if hasBearerAuthorization(c) {
+				return next(c)
+			}
+
 			cookie, err := c.Cookie(csrfCookieName)
 			if err != nil || cookie.Value == "" {
 				return echo.NewHTTPError(http.StatusForbidden, "csrf token missing")
@@ -75,32 +69,27 @@ func isSafeMethod(method string) bool {
 	return false
 }
 
-// isLocalhost returns true when the request comes from a localhost origin.
-// CSRF double-submit can't work across different ports on localhost because
-// the browser blocks cross-origin document.cookie access (localhost:3000
-// cannot read cookies set by localhost:8090).
 func isLocalhost(c echo.Context) bool {
 	host := c.Request().Host
 	if host == "" {
 		return false
 	}
-	// Strip port if present.
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}
 	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }
 
+func hasBearerAuthorization(c echo.Context) bool {
+	return strings.HasPrefix(c.Request().Header.Get(echo.HeaderAuthorization), "Bearer ")
+}
+
 func isOAuthCallback(path string) bool {
-	// OAuth callbacks arrive as GET from Google, so they'd pass isSafeMethod.
-	// Using strings.HasSuffix is more readable and less error-prone than
-	// manual length-and-slice arithmetic (which breaks if the constant is wrong).
 	return strings.HasSuffix(path, "/auth/google/callback") ||
 		strings.HasSuffix(path, "/auth/callback")
 }
 
 func ensureCSRFCookie(c echo.Context, cookieDomain string) {
-	// Reuse existing token if present, generate new one if missing.
 	token := ""
 	if ck, err := c.Cookie(csrfCookieName); err == nil && ck.Value != "" {
 		token = ck.Value
@@ -108,9 +97,6 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 		token = generateCSRFToken()
 	}
 
-	// Clear any old cookie that was set without Domain (scoped to api.* only).
-	// Must match the Domain attribute of the cookie being cleared, otherwise
-	// the browser keeps the old cookie and sends two cookies.
 	clearDomain := cookieDomain
 	if clearDomain == "" {
 		clearDomain = c.Request().URL.Hostname()
@@ -126,14 +112,13 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 		SameSite: http.SameSiteNoneMode,
 	})
 
-	// Set with the shared Domain so frontend JS on navisha.cloud can read it.
 	c.SetCookie(&http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
 		Path:     "/",
 		Domain:   cookieDomain,
-		MaxAge:   86400, // 24 hours
-		HttpOnly: false, // must be readable by JavaScript
+		MaxAge:   86400,
+		HttpOnly: false,
 		Secure:   true,
 		SameSite: http.SameSiteNoneMode,
 	})
@@ -142,9 +127,6 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 func generateCSRFToken() string {
 	b := make([]byte, csrfTokenLen)
 	if _, err := rand.Read(b); err != nil {
-		// crypto/rand should never fail on modern systems, but if it does,
-		// fill each byte with a distinct value derived from the nanosecond
-		// timestamp and position so the fallback token is not all-identical.
 		base := time.Now().UnixNano()
 		for i := range b {
 			b[i] = byte((base>>uint(i%8))>>uint(i%7)) ^ byte(i)
