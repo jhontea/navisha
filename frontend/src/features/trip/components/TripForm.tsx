@@ -19,6 +19,7 @@ import { getCurrencyLabel } from "@/lib/currency"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import type { CreateTripInput, Trip } from "../types"
 import { primaryTripActionButtonClassName } from "../lib/styles"
+import { canRenderTripCover } from "../lib/cover"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -59,8 +60,7 @@ const inputBase = "input-base"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
-  // coverPreview tracks the selected cover image; stored on submit. Auto-filled
-  // from the destination's Google Places photo when the user picks one.
+  // Preserve an existing cover until the user explicitly removes it.
   const [coverPreview, setCoverPreview] = useState<string | null>(
     initial?.cover_image_url ?? null
   )
@@ -128,7 +128,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <label className="font-label-md text-muted-foreground" htmlFor="destination">
           Destination
         </label>
-        <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
+        <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
           style={{ borderColor: errors.destination ? 'hsl(var(--error))' : undefined }}
         >
           {/* Icon area */}
@@ -150,7 +150,6 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 onChange={field.onChange}
                 onSelect={(place) => {
                   field.onChange(place.description)
-                  setCoverPreview(place.photoUrl || null)
                 }}
               />
             )}
@@ -163,11 +162,11 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          Pick a city, province, or country — we&apos;ll grab a cover photo automatically.
+          Pick a city, province, or country from the location suggestions.
         </p>
 
-        {/* Cover preview — shows the auto-fetched destination photo */}
-        {coverPreview && (
+        {/* Existing cover preview */}
+        {canRenderTripCover(coverPreview) && (
           <div className="relative mt-2 h-32 w-full overflow-hidden rounded-lg border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

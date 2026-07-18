@@ -4,6 +4,7 @@ import { memo } from "react";
 import { Calendar, Clock, CreditCard, MapPin, Pencil, Trash2 } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { canRenderTripCover } from "../lib/cover";
 
 interface TripHeroProps {
   title: string;
@@ -45,7 +46,7 @@ export const TripHero = memo(function TripHero({
     ) + 1
   );
 
-  const hasCover = Boolean(coverImageUrl);
+  const hasCover = canRenderTripCover(coverImageUrl);
 
   return (
     <div

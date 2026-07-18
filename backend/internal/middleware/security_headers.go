@@ -7,7 +7,7 @@ import (
 
 // SecurityHeaders adds HTTP security headers to every API response.
 // Next.js also sets these for the frontend, but the API should be self-protecting
-// in case it is accessed directly (curl, mobile apps, etc.).
+// in case it is accessed directly (curl, API clients, etc.).
 func SecurityHeaders() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {

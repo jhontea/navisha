@@ -26,7 +26,7 @@
 ### Itinerary Builder
 - [x] Days auto-generated from trip date range
 - [x] Add activity to a day — choose type:
-  - **Location**: payload validated (location_name required); Google Maps autofill enabled
+  - **Location**: payload validated (location_name required); provider-switchable location autocomplete enabled
   - **Note**: free-text content only
   - **Todo**: checklist with check/uncheck per item
 - [x] Edit / delete any activity
@@ -98,9 +98,6 @@
 - [~] Calendar export — removed (2026-06-25)
 - [ ] Export itinerary as PDF
 
-
-### Mobile
-- [ ] React Native app sharing same backend API
 
 ---
 

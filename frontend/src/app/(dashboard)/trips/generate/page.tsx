@@ -21,7 +21,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { BackLink } from "@/components/BackLink"
 import { useRouter } from "next/navigation"
-import { APIProvider } from "@vis.gl/react-google-maps"
+import { LocationProviderBoundary } from "@/features/location/components/LocationProviderBoundary"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
 import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizard"
 import { GeneratingItinerarySkeleton } from "@/features/trip/components/GeneratingItinerarySkeleton"
@@ -38,8 +38,6 @@ import { ApiError } from "@/lib/api"
 import { useCooldown } from "@/lib/useCooldown"
 
 const MAX_DAYS = 10
-const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
-
 export default function GenerateTripPage() {
   const router = useRouter()
 
@@ -133,13 +131,11 @@ export default function GenerateTripPage() {
     try {
       setResolving(true)
       let draft = result.draft
-      let coverImageUrl = ""
       let description = ""
       try {
         draft = await resolveDraftLocations(result.draft, destination)
         const meta = await resolveDestinationMeta(destination)
         if (meta) {
-          coverImageUrl = meta.coverImageUrl
           description = meta.description
         }
       } catch {
@@ -152,7 +148,7 @@ export default function GenerateTripPage() {
         start_date: result.start_date,
         end_date: result.end_date,
         draft,
-        cover_image_url: coverImageUrl,
+        cover_image_url: "",
         description,
       })
       router.push(`/trips/${trip_id}/overview`)
@@ -176,7 +172,7 @@ export default function GenerateTripPage() {
   }, [busy])
 
   return (
-    <APIProvider apiKey={MAPS_API_KEY} libraries={["places"]}>
+    <LocationProviderBoundary>
     <div className="mx-auto max-w-3xl w-full px-margin-mobile md:px-margin-desktop pt-8 pb-28">
       <BackLink href="/dashboard" className="mb-6" />
 
@@ -279,6 +275,6 @@ export default function GenerateTripPage() {
         </div>
       )}
     </div>
-    </APIProvider>
+    </LocationProviderBoundary>
   )
 }

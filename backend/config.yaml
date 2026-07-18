@@ -16,6 +16,10 @@ currency:
   supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
   cache_ttl: 3600
 
+location:
+  geoapify_base_url: https://api.geoapify.com/v1/geocode/autocomplete
+  geoapify_timeout_seconds: 8
+
 jwt:
   access_ttl: 10800    # 3 hours
   refresh_ttl: 604800  # 7 days
@@ -56,4 +60,3 @@ rate_limit:
   auth_per_minute: 20
   llm_per_minute: 5
   general_per_min: 100
-

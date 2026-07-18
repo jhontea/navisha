@@ -17,6 +17,7 @@ type Config struct {
 	Currency   CurrencyConfig
 	JWT        JWTConfig
 	Google     GoogleConfig
+	Location   LocationConfig
 	App        AppConfig
 	LLM        LLMConfig
 	OpenRouter OpenRouterConfig // legacy; used as fallback when LLM.Provider is empty
@@ -68,6 +69,12 @@ type GoogleConfig struct {
 	ClientID     string `mapstructure:"client_id"`
 	ClientSecret string `mapstructure:"client_secret"`
 	RedirectURL  string `mapstructure:"redirect_url"`
+}
+
+type LocationConfig struct {
+	GeoapifyAPIKey      string `mapstructure:"geoapify_api_key"`
+	GeoapifyBaseURL     string `mapstructure:"geoapify_base_url"`
+	GeoapifyTimeoutSecs int    `mapstructure:"geoapify_timeout_seconds"`
 }
 
 type AppConfig struct {
@@ -195,21 +202,23 @@ func Load() (*Config, error) {
 
 	// Explicit env bindings for secrets not in config.yaml
 	for key, envVar := range map[string]string{
-		"db.url":               "DATABASE_URL",
-		"redis.url":            "REDIS_URL",
-		"jwt.secret":           "JWT_SECRET",
-		"jwt.refresh_secret":   "JWT_REFRESH_SECRET",
-		"google.client_id":     "GOOGLE_CLIENT_ID",
-		"google.client_secret": "GOOGLE_CLIENT_SECRET",
-		"google.redirect_url":  "GOOGLE_REDIRECT_URL",
-		"app.frontend_url":     "FRONTEND_URL",
-		"app.cookie_domain":    "COOKIE_DOMAIN",
-		"currency.api_key":     "CURRENCYFREAKS_API_KEY",
-		"openrouter.api_key":   "OPENROUTER_API_KEY",
-		"openrouter.model":     "OPENROUTER_MODEL",
-		"llm.provider":         "LLM_PROVIDER",
-		"llm.deepseek_api_key": "DEEPSEEK_API_KEY",
-		"llm.deepseek_model":   "DEEPSEEK_MODEL",
+		"db.url":                     "DATABASE_URL",
+		"redis.url":                  "REDIS_URL",
+		"jwt.secret":                 "JWT_SECRET",
+		"jwt.refresh_secret":         "JWT_REFRESH_SECRET",
+		"google.client_id":           "GOOGLE_CLIENT_ID",
+		"google.client_secret":       "GOOGLE_CLIENT_SECRET",
+		"google.redirect_url":        "GOOGLE_REDIRECT_URL",
+		"location.geoapify_api_key":  "GEOAPIFY_API_KEY",
+		"location.geoapify_base_url": "GEOAPIFY_BASE_URL",
+		"app.frontend_url":           "FRONTEND_URL",
+		"app.cookie_domain":          "COOKIE_DOMAIN",
+		"currency.api_key":           "CURRENCYFREAKS_API_KEY",
+		"openrouter.api_key":         "OPENROUTER_API_KEY",
+		"openrouter.model":           "OPENROUTER_MODEL",
+		"llm.provider":               "LLM_PROVIDER",
+		"llm.deepseek_api_key":       "DEEPSEEK_API_KEY",
+		"llm.deepseek_model":         "DEEPSEEK_MODEL",
 	} {
 
 		if err := v.BindEnv(key, envVar); err != nil {

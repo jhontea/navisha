@@ -1,3 +1,0 @@
-go: pattern ./cmd/... matches multiple packages:
-	github.com/ahmadhafizh/navisha/backend/cmd/migrate
-	github.com/ahmadhafizh/navisha/backend/cmd/server
