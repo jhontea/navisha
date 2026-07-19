@@ -103,6 +103,17 @@ html {
     --ring: 215 100% 36%;
     --radius: 0.75rem;
 
+    /* ── Semantic Status Tokens (warning / info / success) ── */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-bg: 38 92% 95%;
+    --info: 200 90% 50%;
+    --info-foreground: 0 0% 100%;
+    --info-bg: 200 90% 95%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-bg: 142 71% 95%;
+
     /* Iter 4 — --glass-bg needs to be an RGB triplet for rgba() usage */
     --glass-bg: 255 255 255;
 

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, ChevronDown, Loader2, Map, Compass } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { EmptyTripsIllustration } from "@/components/illustrations/EmptyStateIllustrations"
 
 type FilterTab = "all" | "active" | "upcoming" | "past"
 
@@ -133,7 +134,7 @@ export default function TripsPage() {
       ) : allTrips.length === 0 ? (
         <EmptyState
           size="lg"
-          icon={Compass}
+          illustration={<EmptyTripsIllustration className="h-40 w-40" />}
           title="No trips yet"
           description="Start planning your first adventure. Create a trip manually or let AI generate one for you."
           action={

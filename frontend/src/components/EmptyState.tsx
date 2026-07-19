@@ -5,6 +5,8 @@ interface EmptyStateProps {
   icon?: LucideIcon
   /** Emoji shown instead of icon when no icon provided */
   emoji?: string
+  /** Custom illustration node (takes precedence over icon/emoji) */
+  illustration?: React.ReactNode
   title: string
   description?: string
   action?: React.ReactNode
@@ -24,6 +26,7 @@ interface EmptyStateProps {
 export function EmptyState({
   icon: Icon,
   emoji,
+  illustration,
   title,
   description,
   action,
@@ -53,8 +56,10 @@ export function EmptyState({
         className,
       )}
     >
-      {/* Iter 93 — icon wrapper with subtle bg circle */}
-      {(Icon || emoji) && (
+      {/* Custom illustration takes precedence */}
+      {illustration ? (
+        <div className="mb-2 text-primary">{illustration}</div>
+      ) : (Icon || emoji) ? (
         <div className="relative">
           {/* Iter 93 — animated bg blob */}
           <div
@@ -78,7 +83,7 @@ export function EmptyState({
             ) : null}
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="max-w-[280px] space-y-1.5">
         <p className={cn("text-foreground", t.title)}>{title}</p>

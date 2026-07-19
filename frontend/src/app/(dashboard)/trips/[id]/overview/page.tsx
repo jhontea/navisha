@@ -496,13 +496,13 @@ export default function TripOverviewPage() {
       )}
 
       {/* Phase 3B: Trip section tab navigation */}
+      <div className="mx-auto w-full max-w-max-width px-margin-mobile md:px-margin-desktop">
+        <BackLink href="/dashboard" className="mb-2" />
+      </div>
       <TripTabBar tripId={tripId} />
 
       {/* Content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-        <div className="mb-4">
-          <BackLink href="/dashboard" />
-        </div>
 
         {/* Iter 93 — Hero summary section: bento grid on md+ */}
         <section className="mb-8 animate-fade-in">

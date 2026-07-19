@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 
 interface SkeletonProps {
   className?: string
-  variant?: "default" | "glass" | "card" | "text" | "avatar" | "button"
+  variant?: "default" | "glass" | "card" | "text" | "avatar" | "button" | "circle"
 }
 
 /** Glass skeleton loader — shimmer overlay on glass background.
@@ -17,6 +17,7 @@ export function Skeleton({ className, variant = "default" }: SkeletonProps) {
     text: "h-4 rounded bg-muted/50",
     avatar: "h-10 w-10 rounded-full bg-muted/50",
     button: "h-9 w-24 rounded-xl bg-muted/50",
+    circle: "rounded-full bg-muted/50",
   }
 
   return (
@@ -63,6 +64,43 @@ export function StatsSkeleton({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <Skeleton key={i} variant="card" className="h-24" />
       ))}
+    </div>
+  )
+}
+
+/** Grid of trip card skeletons — matches trips list layout. */
+export function TripCardGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <TripCardSkeleton key={i} />
+      ))}
+    </div>
+  )
+}
+
+/** Profile card skeleton. */
+export function ProfileCardSkeleton() {
+  return (
+    <div className="glass-lg mb-6 rounded-2xl p-6 flex flex-col items-center text-center">
+      <Skeleton variant="circle" className="h-20 w-20 mb-4" />
+      <Skeleton variant="text" className="w-40 mb-2" />
+      <Skeleton variant="text" className="w-56 h-3" />
+    </div>
+  )
+}
+
+/** Page-level skeleton — full page placeholder. */
+export function PageSkeleton({ lines = 4 }: { lines?: number }) {
+  return (
+    <div className="space-y-4">
+      <Skeleton variant="text" className="w-48 h-6" />
+      <Skeleton variant="card" className="h-32" />
+      <div className="space-y-2">
+        {Array.from({ length: lines }).map((_, i) => (
+          <Skeleton key={i} variant="text" className="w-full" />
+        ))}
+      </div>
     </div>
   )
 }

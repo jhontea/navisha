@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: Props) {
       </div>
 
       {/* Content */}
-      <div className="flex-grow flex items-center justify-center p-4 relative z-10 min-h-screen">
+      <div className="flex-grow flex flex-col items-center justify-center p-4 relative z-10 min-h-screen gap-8">
         <div className="glass-lg w-full max-w-[420px] rounded-2xl p-8 md:p-10">
           {/* Brand */}
           <div className="flex flex-col items-center mb-6">
@@ -65,6 +65,20 @@ export default async function LoginPage({ searchParams }: Props) {
 
           {/* Login */}
           <LoginButton />
+        </div>
+
+        {/* Trust signals */}
+        <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground/60 relative z-10">
+          {[
+            "Free forever",
+            "No credit card",
+            "Cancel anytime",
+          ].map((label) => (
+            <span key={label} className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-chromatic-ocean/60" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              {label}
+            </span>
+          ))}
         </div>
       </div>
 

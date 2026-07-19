@@ -3,7 +3,7 @@ import { Compass, Heart } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/30 bg-gradient-to-b from-background to-muted">
+    <footer className="mt-12 border-t border-border/30 bg-gradient-to-b from-background to-muted">
       <div className="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* Brand column */}
