@@ -175,19 +175,19 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
     return (
       <ShimmerOverlay
         active={generate.isPending}
-        className="rounded-2xl border border-border/40 bg-card p-6 text-center shadow-sm md:p-8"
+        className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/5 via-card to-chromatic-aurora/5 p-6 text-center shadow-sm md:p-8"
       >
         {generate.isPending ? (
           <GeneratingIndicator />
         ) : (
           <>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Sparkles className="h-6 w-6 text-primary" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-chromatic-aurora/20 shadow-sm">
+              <Sparkles className="h-7 w-7 text-primary" />
             </div>
             <h3 className="mb-2 text-lg font-semibold text-foreground">
               AI Trip Summary
             </h3>
-            <p className="mb-6 text-sm text-muted-foreground">
+            <p className="mb-6 text-sm text-muted-foreground max-w-md mx-auto">
               Generate a personalized AI summary of your trip, itinerary, stays, transport, and budget.
             </p>
             {isGenerateError && (

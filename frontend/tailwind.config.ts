@@ -104,6 +104,22 @@ const config: Config = {
         "on-tertiary-fixed": "hsl(var(--on-tertiary-fixed))",
         "on-tertiary": "hsl(var(--on-tertiary))",
         "surface-variant": "hsl(var(--surface-variant))",
+        // ── Semantic status tokens (warning / info / success) ──
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        "warning-bg": "hsl(var(--warning-bg))",
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        "info-bg": "hsl(var(--info-bg))",
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        "success-bg": "hsl(var(--success-bg))",
       },
       borderRadius: {
         DEFAULT: "0.25rem",

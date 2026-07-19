@@ -9,7 +9,7 @@ const itineraryVisual = (
       { Icon: UtensilsCrossed, time: "19:00", label: "Dinner at Ichiran Ramen", color: "text-chromatic-aurora" },
     ].map((item) => (
       <div key={item.label} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/60 border border-white/40 shadow-sm">
-        <item.Icon className={`h-4 w-4 shrink-0 ${item.color}`} aria-hidden="true" />
+        <item.Icon className={`h-5 w-5 shrink-0 ${item.color}`} aria-hidden="true" />
         <span className="text-xs text-muted-foreground tabular-nums w-10 shrink-0">{item.time}</span>
         <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
       </div>

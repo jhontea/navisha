@@ -12,5 +12,11 @@
         "genfity/claude-opus-4.7": { "name": "Claude Opus 4.7" }
       }
     }
+  },
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "@playwright/mcp@latest"]
+    }
   }
 }

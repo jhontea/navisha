@@ -69,7 +69,7 @@ export function StatsSection() {
   return (
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {/* Trips Completed */}
-      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
+      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300 cursor-default">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-sunset/15">
           <Plane className="h-5 w-5 text-chromatic-sunset" aria-hidden="true" />
         </div>
@@ -82,7 +82,7 @@ export function StatsSection() {
       </div>
 
       {/* Upcoming */}
-      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
+      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300 cursor-default">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
           <CalendarCheck className="h-5 w-5 text-primary" aria-hidden="true" />
         </div>
@@ -95,7 +95,7 @@ export function StatsSection() {
       </div>
 
       {/* Currencies Used */}
-      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
+      <div className="glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300 cursor-default">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-ocean/15">
           <Globe className="h-5 w-5 text-chromatic-ocean" aria-hidden="true" />
         </div>
@@ -108,7 +108,7 @@ export function StatsSection() {
       </div>
 
       {/* Traveler Level */}
-      <div className="col-span-2 lg:col-span-1 glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic transition-all duration-300">
+      <div className="col-span-2 lg:col-span-1 glass flex flex-col gap-3 rounded-2xl p-5 hover:bg-white/20 hover:shadow-chromatic hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300 cursor-default">
         <div className="flex items-center justify-between">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-aurora/15">
             <LevelIcon className="h-5 w-5 text-chromatic-aurora" aria-hidden="true" />

@@ -48,14 +48,44 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
   // can see their budget at a glance even before adding expenses.
   if (data.by_category.length === 0) {
     return (
-      <div className="rounded-xl glass p-8 text-center text-sm text-muted-foreground mb-8">
-        <p className="mb-4">No expenses yet. Add one below to see the breakdown.</p>
-        {tripBudget && tripBudget > 0 ? (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-foreground">
-            <span className="text-label-sm text-muted-foreground">Budget:</span>
-            <span className="font-medium">{formatCurrency(tripBudget, data.base_currency)}</span>
+      <div className="glass rounded-xl p-6 sm:p-8 mb-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          {/* Budget ring — 0% used */}
+          <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 128 128">
+              <circle className="text-muted" cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="8" />
+              <circle
+                className="text-chromatic-mint"
+                cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="8"
+                strokeDasharray={CIRCUMFERENCE}
+                strokeDashoffset={0}
+                strokeLinecap="round"
+                style={{ transition: "stroke-dashoffset 1s ease-out" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="font-display text-2xl text-chromatic-mint">0%</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Used</span>
+            </div>
           </div>
-        ) : null}
+          {/* Budget stats */}
+          <div className="flex-1 text-center sm:text-left">
+            <p className="text-sm text-muted-foreground mb-1">No expenses yet</p>
+            {tripBudget && tripBudget > 0 ? (
+              <>
+                <p className="font-display text-2xl sm:text-3xl text-foreground mb-1">
+                  {formatCurrency(tripBudget, data.base_currency)}
+                </p>
+                <p className="text-sm text-chromatic-mint font-medium">
+                  {formatCurrency(tripBudget, data.base_currency)} available
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Set a budget to track your spending</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">Add an expense below to see the breakdown.</p>
+          </div>
+        </div>
       </div>
     )
   }
