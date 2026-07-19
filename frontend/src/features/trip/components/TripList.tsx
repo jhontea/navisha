@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useUpcomingTrips } from "../hooks/useTrips"
 import { TripCard } from "./TripCard"
 import { OnboardingCard } from "./OnboardingCard"
