@@ -18,9 +18,11 @@ import {
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { BackLink } from "@/components/BackLink"
 import { Button } from "@/components/ui/button"
+import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
+import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
 import {
   useTrip,
   useDeleteTrip,
@@ -286,6 +288,11 @@ export default function TripOverviewPage() {
   const [editDescription, setEditDescription] = useState("")
   // Cover photo auto-fetched from the destination's Google Places photo.
   const [editCover, setEditCover] = useState("")
+  const tripSaveDisabledReason = getTripSaveDisabledReason({
+    title: editTitle,
+    startDate: editStartDate,
+    endDate: editEndDate,
+  })
 
 
 
@@ -443,11 +450,16 @@ export default function TripOverviewPage() {
                 setEditEndDate(range.endDate)
               }}
             />
+            <ActionDisabledHint
+              id="trip-save-disabled-reason"
+              reason={tripSaveDisabledReason}
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
                 onClick={saveEdits}
-                disabled={isUpdating || !editTitle.trim() || !editStartDate || !editEndDate}
+                disabled={isUpdating || Boolean(tripSaveDisabledReason)}
+                aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
               >
                 <Check className="h-3.5 w-3.5" />
                 {isUpdating ? "Saving…" : "Save"}
@@ -480,9 +492,6 @@ export default function TripOverviewPage() {
       )}
 
       {/* Phase 3B: Trip section tab navigation */}
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile md:px-margin-desktop">
-        <BackLink href="/dashboard" className="mb-2" />
-      </div>
       <TripTabBar tripId={tripId} />
 
       {/* Content */}

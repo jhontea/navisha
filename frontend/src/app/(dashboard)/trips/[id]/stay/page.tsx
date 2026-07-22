@@ -6,6 +6,8 @@ import { useParams, useRouter } from "next/navigation"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
 import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
+import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
+import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
 import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
 import { TripHero } from "@/features/trip/components/TripHero"
@@ -30,6 +32,11 @@ export default function TripStayPage() {
   const [editEndDate, setEditEndDate] = useState("")
   const [editDescription, setEditDescription] = useState("")
   const [editCover, setEditCover] = useState("")
+  const tripSaveDisabledReason = getTripSaveDisabledReason({
+    title: editTitle,
+    startDate: editStartDate,
+    endDate: editEndDate,
+  })
 
   const startEditing = () => {
     if (!trip) return
@@ -158,8 +165,17 @@ export default function TripStayPage() {
               setEditEndDate(range.endDate)
             }}
           />
+          <ActionDisabledHint
+            id="trip-save-disabled-reason"
+            reason={tripSaveDisabledReason}
+          />
           <div className="flex gap-2 pt-2">
-            <Button onClick={saveEdits} disabled={isUpdating || !editTitle.trim() || !editStartDate || !editEndDate} className="flex-1">
+            <Button
+              onClick={saveEdits}
+              disabled={isUpdating || Boolean(tripSaveDisabledReason)}
+              aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
+              className="flex-1"
+            >
               <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
             </Button>
             <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isUpdating}>
