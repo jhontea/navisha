@@ -17,6 +17,8 @@ var ErrInvalidInput = errors.New("invalid generate input")
 // returns a draft that fails structural validation. Maps to HTTP 422.
 var ErrInvalidPrompt = errors.New("prompt did not describe a valid trip")
 
+var ErrDayNotFound = errors.New("trip day not found")
+
 // hasLetter requires at least one unicode letter — rejects pure-symbol/number garbage.
 var hasLetter = regexp.MustCompile(`\p{L}`)
 

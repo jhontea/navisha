@@ -204,7 +204,9 @@ func main() {
 	// Auto-generate trip domain (F5). Reuses the LLM client and an
 	// integration adapter that persists the approved draft via trip + activity.
 	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase)
-	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel())
+	autogenDayContext := integration.NewAutogenDayContextProvider(tripUsecase, activityUsecase)
+	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel()).
+		WithDayContextProvider(autogenDayContext)
 	autogenHandler := autogen.NewHandler(autogenUsecase).
 		WithGenerateRateLimit(rdb, cfg.LLM.GenerateRateLimitSeconds)
 

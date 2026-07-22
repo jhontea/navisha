@@ -201,14 +201,16 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 </div>
               </div>
             )}
-            <Button
-              onClick={() => generate.mutate()}
-              disabled={generate.isPending}
-              className={summaryActionButtonClassName}
-            >
-              <Sparkles className="h-4 w-4" />
-              {isGenerateError ? "Try Again" : "Generate Summary"}
-            </Button>
+            <div className="flex w-full justify-center">
+              <Button
+                onClick={() => generate.mutate()}
+                disabled={generate.isPending}
+                className={summaryActionButtonClassName}
+              >
+                <Sparkles className="h-4 w-4" />
+                {isGenerateError ? "Try Again" : "Generate Summary"}
+              </Button>
+            </div>
           </>
         )}
       </ShimmerOverlay>

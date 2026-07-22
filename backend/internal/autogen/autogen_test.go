@@ -228,3 +228,46 @@ func TestJSONSchema_Shape(t *testing.T) {
 		}
 	}
 }
+
+func TestParseAndValidateDayPreview_PreservesAnchorsAndSanitizesSuggestions(t *testing.T) {
+	ctx := DayContext{
+		Destination: "Tokyo, Japan",
+		Existing: []DayActivityContext{{
+			Title: "Tokyo Tower", LocationName: "Tokyo Tower", StartTime: "09:00", EndTime: "10:00",
+		}},
+	}
+	raw := `{
+		"ok": true,
+		"reason": "",
+		"theme": "Tokyo highlights",
+		"activities": [
+			{"type":"location","title":"Tokyo Tower","start_time":"09:00","end_time":"10:00","location_name":"Tokyo Tower","address":"fake","lat":1,"lng":2,"google_place_id":"fake","category":"budaya","notes":"duplicate"},
+			{"type":"location","title":"Overlapping place","start_time":"09:30","end_time":"10:30","location_name":"Overlapping place","address":"","lat":null,"lng":null,"google_place_id":"","category":"budaya","notes":"overlap"},
+			{"type":"location","title":"Senso-ji","start_time":"11:00","end_time":"12:30","location_name":"Senso-ji Temple","address":"fake","lat":35.7,"lng":139.7,"google_place_id":"fake","category":"budaya","notes":"visit"}
+		]
+	}`
+
+	preview, err := ParseAndValidateDayPreview(raw, ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(preview.Activities) != 1 || preview.Activities[0].Title != "Senso-ji" {
+		t.Fatalf("expected only the new suggestion, got %#v", preview.Activities)
+	}
+	if preview.Activities[0].Lat != nil || preview.Activities[0].Lng != nil || preview.Activities[0].Address != "" || preview.Activities[0].GooglePlaceID != "" {
+		t.Fatal("expected untrusted place data to be stripped")
+	}
+}
+
+func TestBuildDayPrompt_IncludesExistingAnchors(t *testing.T) {
+	ctx := DayContext{
+		TripTitle: "Tokyo Trip", Destination: "Tokyo", DayNumber: 2, Date: "2026-07-02",
+		Existing: []DayActivityContext{{Title: "Tokyo Station", StartTime: "10:00", EndTime: "11:00"}},
+	}
+	_, user := BuildDayPrompt(ctx, "more local food")
+	for _, expected := range []string{"Tokyo Station", "10:00-11:00", "more local food"} {
+		if !strings.Contains(user, expected) {
+			t.Errorf("day prompt missing %q", expected)
+		}
+	}
+}

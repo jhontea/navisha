@@ -15,9 +15,41 @@ const MaxActivitiesPerDay = 6
 
 // MaxDestinationLen / MaxDescriptionLen bound the free-text inputs.
 const (
-	MaxDestinationLen = 60
-	MaxDescriptionLen = 100
+	MaxDestinationLen    = 60
+	MaxDescriptionLen    = 100
+	MaxDayInstructionLen = 500
 )
+
+// DayContext is the persisted context used to generate suggestions for one
+// itinerary day. Existing activities are anchors and are never replaced.
+type DayContext struct {
+	TripID      string
+	DayID       string
+	Destination string
+	TripTitle   string
+	DayNumber   int
+	Date        string
+	DayTitle    string
+	Existing    []DayActivityContext
+}
+
+type DayActivityContext struct {
+	Title        string
+	StartTime    string
+	EndTime      string
+	LocationName string
+}
+
+type GenerateDayInput struct {
+	TripID      string
+	DayID       string
+	Instruction string
+}
+
+type DayPreview struct {
+	Theme      string          `json:"theme"`
+	Activities []ActivityDraft `json:"activities"`
+}
 
 // GenerateInput is the user-supplied form data for an auto-generate request.
 type GenerateInput struct {
@@ -76,4 +108,11 @@ type llmResponse struct {
 	OK     bool       `json:"ok"`
 	Reason string     `json:"reason"`
 	Trip   *TripDraft `json:"trip"`
+}
+
+type dayLLMResponse struct {
+	OK         bool            `json:"ok"`
+	Reason     string          `json:"reason"`
+	Theme      string          `json:"theme"`
+	Activities []ActivityDraft `json:"activities"`
 }

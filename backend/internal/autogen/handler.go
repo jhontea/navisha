@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
@@ -35,6 +36,33 @@ func (h *Handler) WithGenerateRateLimit(rdb *redis.Client, seconds int) *Handler
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	g.POST("/trips/generate", h.Generate, authMiddleware)
 	g.POST("/trips/from-draft", h.CreateFromDraft, authMiddleware)
+	g.POST("/trips/:trip_id/days/:day_id/generate-preview", h.GenerateDayPreview, authMiddleware)
+}
+
+type generateDayRequest struct {
+	Instruction string `json:"instruction"`
+}
+
+func (h *Handler) GenerateDayPreview(c echo.Context) error {
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
+	var req generateDayRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	if len(req.Instruction) > MaxDayInstructionLen {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("instruction must be %d characters or less", MaxDayInstructionLen))
+	}
+	req.Instruction = sanitize.Text(req.Instruction)
+	preview, err := h.usecase.GenerateDayPreview(c.Request().Context(), userID, GenerateDayInput{
+		TripID: c.Param("trip_id"), DayID: c.Param("day_id"), Instruction: req.Instruction,
+	})
+	if err != nil {
+		return mapErr(err)
+	}
+	return c.JSON(http.StatusOK, preview)
 }
 
 type generateRequest struct {
@@ -176,6 +204,10 @@ func mapErr(err error) error {
 			"code":    "LLM_UNAVAILABLE",
 			"message": "Gagal membuat itinerary saat ini. Silakan coba lagi sebentar lagi.",
 		})
+	case errors.Is(err, ErrDayNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, "trip day not found")
+	case errors.Is(err, apperr.ErrForbidden):
+		return echo.NewHTTPError(http.StatusForbidden, "forbidden")
 	default:
 		slog.Error("autogen: internal error", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")

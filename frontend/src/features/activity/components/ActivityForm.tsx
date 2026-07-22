@@ -595,16 +595,16 @@ export function ActivityForm({
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-border/30">
+      <div className="flex items-center justify-end gap-2 border-t border-border/30 pt-2">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-muted"
+          className="h-7 rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
           Cancel
         </button>
-        <Button type="submit" size="sm" variant="gradient" disabled={isSubmitting} className="min-w-[100px]">
+        <Button type="submit" size="sm" variant="gradient" disabled={isSubmitting} className="min-w-[100px] rounded-full px-5">
           {isSubmitting ? (
             <span className="flex items-center gap-1.5">
               <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
