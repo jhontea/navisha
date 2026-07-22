@@ -1,9 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CalendarDays, Clock3, MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
+import { CalendarDays, ChevronDown, Clock3, MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   FormFieldError,
@@ -153,6 +154,12 @@ export function ActivityForm({
   context,
 }: Props) {
   const defaults = buildDefaults(initial)
+  const hasInitialAdditionalDetails = Boolean(
+    defaults.address?.trim() || defaults.location_notes?.trim(),
+  )
+  const [additionalDetailsOpen, setAdditionalDetailsOpen] = useState(
+    hasInitialAdditionalDetails,
+  )
   const {
     register,
     handleSubmit,
@@ -451,22 +458,46 @@ export function ActivityForm({
           <input type="hidden" {...register("lng")} />
           <input type="hidden" {...register("google_place_id")} />
 
-          <Field label="Address" htmlFor="activity-address" optional>
-            <Input
-              id="activity-address"
-              placeholder="Auto-filled from location search"
-              {...register("address")}
-            />
-          </Field>
+          <details
+            className="group rounded-xl border border-border/30 bg-muted/15"
+            open={additionalDetailsOpen}
+            onToggle={(event) =>
+              setAdditionalDetailsOpen(event.currentTarget.open)
+            }
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
+              <span>
+                <span className="block text-sm font-medium text-foreground">
+                  Additional details
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Address and notes
+                </span>
+              </span>
+              <ChevronDown
+                className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              />
+            </summary>
+            <div className="space-y-4 border-t border-border/30 px-3 pb-3 pt-4">
+              <Field label="Address" htmlFor="activity-address" optional>
+                <Input
+                  id="activity-address"
+                  placeholder="Auto-filled from location search"
+                  {...register("address")}
+                />
+              </Field>
 
-          <Field label="Notes" htmlFor="activity-location-notes" optional>
-            <Textarea
-              id="activity-location-notes"
-              rows={2}
-              placeholder="Any notes about this place…"
-              {...register("location_notes")}
-            />
-          </Field>
+              <Field label="Notes" htmlFor="activity-location-notes" optional>
+                <Textarea
+                  id="activity-location-notes"
+                  rows={2}
+                  placeholder="Any notes about this place…"
+                  {...register("location_notes")}
+                />
+              </Field>
+            </div>
+          </details>
         </>
       )}
 
