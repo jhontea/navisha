@@ -28,7 +28,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 - [ ] **PLAN-01 — Itinerary/map split view (P1)**: tampilkan daftar itinerary dan map secara bersamaan pada desktop; klik item memfokuskan pin terkait.
 - [ ] **PLAN-02 — Reorder activity (P1)**: dukung drag/reorder aktivitas dalam satu hari dan pindah aktivitas antar-hari dengan optimistic UI.
 - [ ] **PLAN-03 — Map category filters (P2)**: filter Places, Stays, Food, Transport, dan Experiences tanpa menghilangkan konteks itinerary.
-- [ ] **PLAN-04 — Route summary (P2)**: tampilkan estimasi jarak/waktu antar aktivitas dan indikator hari yang terlalu padat.
+- [ ] **PLAN-04 — Route summary (P2)**: tampilkan estimasi jarak/waktu antar aktivitas dan indikator hari yang terlalu padat. **Progress:** peringatan jadwal overlap selesai untuk aktivitas dengan rentang waktu valid; estimasi perjalanan dan kepadatan hari masih ditunda.
 - [ ] **PLAN-05 — Shareable read-only itinerary (P1)**: buat link publik read-only untuk dibagikan ke tripmates tanpa login.
 
 ## AI trip assistant

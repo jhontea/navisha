@@ -31,6 +31,7 @@ import {
   Boxes,
   LogIn,
   LogOut,
+  AlertTriangle,
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { cn } from "@/lib/utils"
@@ -48,6 +49,7 @@ import type { Transportation } from "@/features/transportation/types"
 import type { Accommodation } from "@/features/accommodation/types"
 import { ActivityCard } from "./ActivityCard"
 import { ActivityForm } from "./ActivityForm"
+import { findActivityOverlaps } from "../lib/time"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -273,6 +275,7 @@ interface SortableRowProps {
   isSubmitting: boolean
   onDelete: () => void
   isDeleting: boolean
+  overlapTitles: string[]
 }
 
 function SortableActivityRow({
@@ -284,6 +287,7 @@ function SortableActivityRow({
   isSubmitting,
   onDelete,
   isDeleting,
+  overlapTitles,
 }: SortableRowProps) {
   const {
     attributes,
@@ -339,6 +343,7 @@ function SortableActivityRow({
               onEdit={onEdit}
               onDelete={onDelete}
               isDeleting={isDeleting}
+              overlapTitles={overlapTitles}
             />
           )}
         </div>
@@ -396,6 +401,9 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
   }
 
   const activities = activitiesData?.items ?? []
+  const overlapByActivity = findActivityOverlaps(
+    activities.filter((activity) => activity.type === "location"),
+  )
   const transportations = transData?.items ?? []
   const accommodations = accomData?.items ?? []
 
@@ -461,6 +469,22 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
 
   return (
     <div className="space-y-3">
+      {overlapByActivity.size > 0 && (
+        <div
+          className="flex items-start gap-2 rounded-xl border border-chromatic-amber/25 bg-chromatic-amber/10 px-3 py-2.5 text-sm text-foreground"
+          role="status"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-chromatic-amber" aria-hidden="true" />
+          <div>
+            <p className="font-medium">
+              {overlapByActivity.size} activities have overlapping times
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Review the highlighted activities or keep them if the overlap is intentional.
+            </p>
+          </div>
+        </div>
+      )}
       {hasContent && (
         <div className="relative">
           {/* Connecting line */}
@@ -535,6 +559,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
                         deleteMut.isPending &&
                         confirmingDelete?.id === a.id
                       }
+                      overlapTitles={overlapByActivity.get(a.id) ?? []}
                     />
                   ))}
                 </div>

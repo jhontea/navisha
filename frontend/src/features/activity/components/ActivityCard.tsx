@@ -8,6 +8,7 @@ import {
   Trash2,
   Clock,
   ExternalLink,
+  AlertTriangle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatActivityTimeRange } from "../lib/time"
@@ -23,6 +24,7 @@ interface Props {
   onEdit: () => void
   onDelete: () => void
   isDeleting: boolean
+  overlapTitles?: string[]
 }
 
 const TYPE_CONFIG = {
@@ -60,8 +62,15 @@ const TYPE_CONFIG = {
  * Iter 54 — action buttons: hover states, show on focus too (not just visible)
  * Iter 55 — note: better quote styling with left border accent
  */
-export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) {
+export function ActivityCard({
+  activity,
+  onEdit,
+  onDelete,
+  isDeleting,
+  overlapTitles = [],
+}: Props) {
   const config = TYPE_CONFIG[activity.type]
+  const hasOverlap = overlapTitles.length > 0
   const timeLabel = formatActivityTimeRange(
     activity.start_time,
     activity.end_time,
@@ -73,6 +82,7 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
         "group relative rounded-2xl border border-border/30 border-l-4 bg-card p-4 shadow-sm transition-all duration-200",
         "hover:shadow-md hover:border-border/50 hover:-translate-y-0.5",
         config.borderColor,
+        hasOverlap && "ring-1 ring-chromatic-amber/30",
       )}
     >
       <div className="flex items-start gap-3">
@@ -118,6 +128,13 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
             {activity.title}
           </h4>
 
+          {hasOverlap && (
+            <p className="flex items-start gap-1.5 text-xs font-medium text-chromatic-amber" role="note">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{formatOverlapMessage(overlapTitles)}</span>
+            </p>
+          )}
+
           {/* Type-specific body */}
           <ActivityBody activity={activity} />
         </div>
@@ -148,6 +165,11 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
       </div>
     </div>
   )
+}
+
+function formatOverlapMessage(titles: string[]): string {
+  if (titles.length === 1) return `Overlaps with ${titles[0]}`
+  return `Overlaps with ${titles[0]} and ${titles.length - 1} more`
 }
 
 function ActivityBody({ activity }: { activity: Activity }) {
