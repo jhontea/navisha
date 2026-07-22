@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatActivityTimeRange } from "../lib/time"
+import { normalizeExternalUrl } from "../lib/externalUrl"
 import type {
   Activity,
   LocationPayload,
@@ -178,6 +179,7 @@ function ActivityBody({ activity }: { activity: Activity }) {
   switch (activity.type) {
     case "location": {
       const p = activity.payload as LocationPayload
+      const externalUrl = normalizeExternalUrl(p.external_url ?? "")
       return (
         <div className="space-y-0.5 text-sm text-muted-foreground">
           {p.location_name && (
@@ -203,6 +205,18 @@ function ActivityBody({ activity }: { activity: Activity }) {
           )}
           {p.notes && (
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground/80">{p.notes}</p>
+          )}
+          {externalUrl && (
+            <a
+              href={externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => event.stopPropagation()}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              Open link
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            </a>
           )}
         </div>
       )

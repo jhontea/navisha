@@ -7,6 +7,7 @@ export interface LocationPayload {
   google_place_id: string
   address: string
   notes: string
+  external_url?: string
   image_urls: string[]
 }
 
