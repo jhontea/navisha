@@ -13,7 +13,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 
 ## Detailed form patterns from Holicay
 
-- [ ] **FORM-07 - Context-first add activity flow (P1)**: gunakan destinasi dan hari aktif sebagai default saat menambah aktivitas sehingga user tidak perlu memilih ulang konteks trip.
+- [x] **FORM-07 - Context-first add activity flow (P1)**: gunakan destinasi dan hari aktif sebagai default saat menambah aktivitas sehingga user tidak perlu memilih ulang konteks trip.
 - [ ] **FORM-08 - Activity type selector (P1)**: pisahkan alur tambah item berdasarkan tipe `Place`, `Food`, `Stay`, `Transportation`, dan `Experience`, lalu tampilkan field yang relevan saja.
 - [ ] **FORM-09 - Search-first with manual fallback (P1)**: sediakan pencarian lokasi sebagai jalur utama dan tombol `Add manually` jika lokasi tidak ditemukan.
 - [ ] **FORM-10 - Custom activity form essentials (P1)**: dukung nama, alamat, hari, jam mulai, durasi, catatan, dan biaya opsional untuk aktivitas manual.

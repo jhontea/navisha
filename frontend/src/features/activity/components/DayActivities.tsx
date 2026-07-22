@@ -355,9 +355,11 @@ interface Props {
   tripId: string
   dayId: string
   date: string
+  dayNumber: number
+  destination?: string
 }
 
-export function DayActivities({ tripId, dayId, date }: Props) {
+export function DayActivities({ tripId, dayId, date, dayNumber, destination }: Props) {
   const qc = useQueryClient()
   const { data: activitiesData, isLoading: loadingAct } = useActivities(dayId)
   const { data: transData } = useTransportations(tripId)
@@ -551,6 +553,7 @@ export function DayActivities({ tripId, dayId, date }: Props) {
         {addOpen ? (
           <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-md">
             <ActivityForm
+              context={{ dayNumber, date, destination }}
               onCancel={() => setAddOpen(false)}
               isSubmitting={createMut.isPending}
               onSubmit={async (input: CreateActivityInput) => {
@@ -566,7 +569,7 @@ export function DayActivities({ tripId, dayId, date }: Props) {
             className="group flex w-full items-center gap-2 rounded-2xl border border-dashed border-border/50 px-4 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-primary hover:text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Plus className="h-4 w-4 transition-transform group-hover:rotate-90 duration-200" />
-            Add activity
+            Add activity to Day {dayNumber}
           </button>
         )}
       </div>

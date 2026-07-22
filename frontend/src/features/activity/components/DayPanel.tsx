@@ -11,6 +11,7 @@ interface Props {
   dayNumber: number
   date: string
   notes: string
+  destination?: string
   defaultExpanded?: boolean
 }
 
@@ -20,6 +21,7 @@ export function DayPanel({
   dayNumber,
   date,
   defaultExpanded = false,
+  destination,
 }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded)
 
@@ -86,6 +88,8 @@ export function DayPanel({
               tripId={tripId}
               dayId={dayId}
               date={date}
+              dayNumber={dayNumber}
+              destination={destination}
             />
           </div>
         </div>

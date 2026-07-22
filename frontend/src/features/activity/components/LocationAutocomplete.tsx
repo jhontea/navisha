@@ -30,6 +30,7 @@ interface Props {
   ariaDescribedBy?: string
   ariaLabel?: string
   ariaRequired?: boolean
+  searchContext?: string
 }
 
 export function LocationAutocomplete(props: Props) {
@@ -45,6 +46,7 @@ export function LocationAutocomplete(props: Props) {
         ariaDescribedBy={props.ariaDescribedBy}
         ariaLabel={props.ariaLabel}
         ariaRequired={props.ariaRequired}
+        searchContext={props.searchContext}
         kind="place"
         className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
         onSelect={(suggestion) =>
