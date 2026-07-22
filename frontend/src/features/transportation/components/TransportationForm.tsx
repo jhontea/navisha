@@ -1,13 +1,17 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Bus,
   Car,
+  ChevronDown,
+  Hash,
   Plane,
   Ship,
+  SlidersHorizontal,
   Ticket,
   Train,
   TramFront,
@@ -112,6 +116,14 @@ export function TransportationForm({
 }: Props) {
   const defaultCurrency =
     (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(
+    Boolean(
+      initial?.label ||
+      initial?.operator ||
+      initial?.reference_number ||
+      initial?.notes,
+    ),
+  )
   const {
     register,
     handleSubmit,
@@ -140,6 +152,21 @@ export function TransportationForm({
   void watch("type")
   const departureDateTime = watch("departure_datetime")
   const arrivalDateTime = watch("arrival_datetime") ?? ""
+  const optionalValues = watch(["label", "operator", "reference_number", "amount", "notes"])
+  const additionalDetailCount = optionalValues.filter((value) => Boolean(value?.trim())).length
+
+  useEffect(() => {
+    if (
+      errors.label ||
+      errors.operator ||
+      errors.reference_number ||
+      errors.amount ||
+      errors.currency ||
+      errors.notes
+    ) {
+      setShowAdditionalDetails(true)
+    }
+  }, [errors.amount, errors.currency, errors.label, errors.notes, errors.operator, errors.reference_number])
 
   const submit = async (v: FormValues) => {
     const amount = v.amount ? Number(v.amount) : 0
@@ -151,8 +178,7 @@ export function TransportationForm({
       type: v.type,
       label: v.label,
       operator: v.operator,
-      // Save label value to reference_number as well so it’s stored on both fields
-      reference_number: v.label,
+      reference_number: v.reference_number,
       from_location: v.from_location,
       to_location: v.to_location,
       departure_datetime: fromLocalInput(v.departure_datetime),
@@ -165,10 +191,10 @@ export function TransportationForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-8" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="contents">
+      <fieldset disabled={isSubmitting} className="space-y-8">
       {/* Transportation Type */}
       <div>
-        <FormFieldLabel required className="mb-4 uppercase tracking-wider">
+        <FormFieldLabel required className="mb-3 block uppercase tracking-wider">
           Transportation Type
         </FormFieldLabel>
         <Controller
@@ -217,8 +243,8 @@ export function TransportationForm({
 
       {/* Input Grid */}
       <div className="space-y-6">
-        {/* From / To / Label row */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        {/* Route stays visible as a core field. */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           {/* From Location — Google Places Autocomplete */}
           <div className="space-y-2">
             <FormFieldLabel required>From Location</FormFieldLabel>
@@ -258,28 +284,6 @@ export function TransportationForm({
             />
             <FormFieldError>{errors.to_location?.message}</FormFieldError>
           </div>
-
-          {/* Label / Flight Number */}
-          <div className="space-y-2 col-span-2 md:col-span-1">
-            <FormFieldLabel htmlFor="transport-label" optional>
-              Label / Flight Number
-            </FormFieldLabel>
-            <div className="relative">
-              <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                id="transport-label"
-                aria-invalid={Boolean(errors.label)}
-                aria-describedby={errors.label ? "transport-label-error" : undefined}
-                className={cn(
-                  "w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
-                  errors.label ? "border-destructive ring-1 ring-destructive/20" : "border-border",
-                )}
-                placeholder="e.g. GA 420"
-                {...register("label")}
-              />
-            </div>
-            <FormFieldError id="transport-label-error">{errors.label?.message}</FormFieldError>
-          </div>
         </div>
 
         <input type="hidden" {...register("departure_datetime")} />
@@ -305,56 +309,137 @@ export function TransportationForm({
         />
       </div>
 
-      {/* Operator */}
-      <div className="space-y-2">
-        <FormFieldLabel htmlFor="transport-operator" optional>Operator</FormFieldLabel>
-        <Input id="transport-operator" placeholder="e.g. Garuda Indonesia" {...register("operator")} />
-      </div>
+      {/* Optional fields stay out of the primary completion path. */}
+      <section className="overflow-hidden rounded-xl border border-border/70 bg-muted/10">
+        <button
+          type="button"
+          aria-expanded={showAdditionalDetails}
+          aria-controls="transport-additional-details"
+          onClick={() => setShowAdditionalDetails((open) => !open)}
+          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-foreground">Additional details</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Label, operator, booking reference, cost, and notes
+            </span>
+          </span>
+          {additionalDetailCount > 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {additionalDetailCount}
+            </span>
+          )}
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+              showAdditionalDetails && "rotate-180",
+            )}
+            aria-hidden="true"
+          />
+        </button>
 
-      {/* Cost field */}
-      {withCost && (
-        <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-          <FormFieldLabel optional className="text-xs uppercase tracking-wider">Cost</FormFieldLabel>
-          <FormFieldDescription className="mt-1">
-            Adds an expense to the trip budget when an amount is entered.
-          </FormFieldDescription>
-          <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="0"
-              {...register("amount")}
-            />
-            <Controller
-              control={control}
-              name="currency"
-              render={({ field }) => (
-                <Select
-                  value={field.value ?? defaultCurrency}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+        {showAdditionalDetails && (
+          <div
+            id="transport-additional-details"
+            className="space-y-5 border-t border-border/60 bg-background/50 p-4"
+          >
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <FormFieldLabel htmlFor="transport-label" optional>Transport label</FormFieldLabel>
+                <div className="relative">
+                  <Ticket className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <input
+                    id="transport-label"
+                    aria-invalid={Boolean(errors.label)}
+                    aria-describedby={errors.label ? "transport-label-error" : undefined}
+                    className={cn(
+                      "w-full rounded-lg border bg-background py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
+                      errors.label ? "border-destructive ring-1 ring-destructive/20" : "border-border",
+                    )}
+                    placeholder="e.g. GA 420 or Airport shuttle"
+                    {...register("label")}
+                  />
+                </div>
+                <FormFieldError id="transport-label-error">{errors.label?.message}</FormFieldError>
+              </div>
+
+              <div className="space-y-2">
+                <FormFieldLabel htmlFor="transport-operator" optional>Operator</FormFieldLabel>
+                <Input id="transport-operator" placeholder="e.g. Garuda Indonesia" {...register("operator")} />
+                <FormFieldError>{errors.operator?.message}</FormFieldError>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <FormFieldLabel htmlFor="transport-reference" optional>Booking reference</FormFieldLabel>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Input
+                    id="transport-reference"
+                    className="pl-10"
+                    placeholder="e.g. ABC123 or e-ticket number"
+                    aria-invalid={Boolean(errors.reference_number)}
+                    {...register("reference_number")}
+                  />
+                </div>
+                <FormFieldError>{errors.reference_number?.message}</FormFieldError>
+              </div>
+            </div>
+
+            {withCost && (
+              <div className="rounded-xl border border-dashed bg-muted/30 p-4">
+                <FormFieldLabel optional className="text-xs uppercase tracking-wider">Cost</FormFieldLabel>
+                <FormFieldDescription className="mt-1">
+                  Adds an expense to the trip budget when an amount is entered.
+                </FormFieldDescription>
+                <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    {...register("amount")}
+                  />
+                  <Controller
+                    control={control}
+                    name="currency"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value ?? defaultCurrency}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger aria-label="Cost currency">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUPPORTED_CURRENCIES.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <FormFieldLabel htmlFor="transport-notes" optional>Notes</FormFieldLabel>
+              <Textarea
+                id="transport-notes"
+                rows={3}
+                placeholder="Terminal, check-in instructions, or other details…"
+                aria-invalid={Boolean(errors.notes)}
+                {...register("notes")}
+              />
+              <FormFieldError>{errors.notes?.message}</FormFieldError>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Notes */}
-      <div className="space-y-2">
-        <FormFieldLabel htmlFor="transport-notes" optional>Notes</FormFieldLabel>
-        <Textarea id="transport-notes" rows={2} placeholder="Any additional details…" {...register("notes")} />
-      </div>
+        )}
+      </section>
 
       {/* Form actions */}
       <div className="flex items-center gap-3">

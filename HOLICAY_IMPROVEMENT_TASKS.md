@@ -8,7 +8,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 - [x] **FORM-02 — Destination autocomplete polish (P1)**: tampilkan format `City, Country`, highlight query, loading/empty state, tombol clear, Escape-to-close, keyboard navigation, dan simpan lokasi setelah suggestion dipilih.
 - [x] **FORM-03 — AI toggle pada trip form (P1)**: tambahkan pilihan `Generate a draft with AI` di bawah destination/date sehingga manual dan AI menjadi satu flow.
 - [x] **FORM-04 — Consistent field states (P1)**: samakan label, helper text, focus state, error message, disabled state, dan required marker di Trip, Expense, Stay, Activity, dan Transportation forms.
-- [ ] **FORM-05 — Progressive disclosure transportation form (P2)**: tampilkan field inti terlebih dahulu; pindahkan operator, reference number, notes, dan detail tambahan ke bagian `Additional details`.
+- [x] **FORM-05 — Progressive disclosure transportation form (P2)**: tampilkan field inti terlebih dahulu; pindahkan operator, reference number, notes, dan detail tambahan ke bagian `Additional details`.
 - [ ] **FORM-06 — Form accessibility pass (P1)**: pastikan semua input punya label terhubung, selector chip memakai `aria-pressed`, error memakai `aria-describedby`, dan suggestion list mendukung keyboard.
 
 ## Detailed form patterns from Holicay

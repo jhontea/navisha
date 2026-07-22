@@ -125,7 +125,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="contents">
+      <fieldset disabled={isSubmitting} className="space-y-5">
       {/* Trip Title */}
       <div className="space-y-1.5">
         <FormFieldLabel htmlFor="trip-title" required>Trip Title</FormFieldLabel>

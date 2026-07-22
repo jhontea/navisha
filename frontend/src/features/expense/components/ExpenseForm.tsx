@@ -110,7 +110,7 @@ export function ExpenseForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-5" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="contents">
+      <fieldset disabled={isSubmitting} className="flex flex-col gap-5">
       {/* Category icon picker */}
       <div className="flex flex-col gap-2">
         <FormFieldLabel required>Category</FormFieldLabel>
