@@ -81,6 +81,7 @@ export default function TripStayPage() {
           endDate={trip.end_date}
           baseCurrency={trip.base_currency}
           coverImageUrl={trip.cover_image_url}
+          shareTripId={id}
           onEdit={startEditing}
           onDelete={() => setConfirmDelete(true)}
           isDeleting={isDeleting}

@@ -1,10 +1,11 @@
 "use client";
 
-import { memo } from "react";
-import { Calendar, Clock, CreditCard, MapPin, Pencil, Trash2 } from "lucide-react";
+import { memo, useState } from "react";
+import { Calendar, Clock, CreditCard, MapPin, Pencil, Share2, Trash2 } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { canRenderTripCover } from "../lib/cover";
+import { TripShareDialog } from "./TripShareDialog";
 
 interface TripHeroProps {
   title: string;
@@ -15,6 +16,8 @@ interface TripHeroProps {
   coverImageUrl?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onShare?: () => void;
+  shareTripId?: string;
   isDeleting?: boolean;
   className?: string;
 }
@@ -36,9 +39,12 @@ export const TripHero = memo(function TripHero({
   coverImageUrl,
   onEdit,
   onDelete,
+  onShare,
+  shareTripId,
   isDeleting,
   className,
 }: TripHeroProps) {
+  const [shareOpen, setShareOpen] = useState(false);
   const totalDays = Math.max(
     1,
     Math.ceil(
@@ -96,8 +102,13 @@ export const TripHero = memo(function TripHero({
               </h1>
             </div>
 
-            {(onEdit || onDelete) && (
+            {(onEdit || onDelete || onShare || shareTripId) && (
               <div className="flex shrink-0 gap-1.5 pt-1">
+                {(onShare || shareTripId) && (
+                  <button type="button" onClick={onShare ?? (() => setShareOpen(true))} title="Share itinerary" className="flex h-8 w-8 items-center justify-center rounded-xl bg-black/35 text-white backdrop-blur-md hover:bg-black/55 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 min-[390px]:h-9 min-[390px]:w-9" aria-label="Share itinerary">
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                )}
                 {onEdit && (
                   <button
                     type="button"
@@ -144,6 +155,7 @@ export const TripHero = memo(function TripHero({
           </div>
         </div>
       </div>
+      {shareTripId && <TripShareDialog tripId={shareTripId} open={shareOpen} onOpenChange={setShareOpen} />}
     </div>
   );
 });

@@ -10,6 +10,8 @@ import type {
   TripListResponse,
   UpdateTripInput,
   DayPreview,
+  ShareDurationDays,
+  TripShareLink,
 } from "./types"
 
 
@@ -57,4 +59,13 @@ export const tripApi = {
 
   generateDayPreview: (tripId: string, dayId: string, instruction = "") =>
     api.post<DayPreview>(`/trips/${tripId}/days/${dayId}/generate-preview`, { instruction }),
+
+  createShareLink: (tripId: string, durationDays: ShareDurationDays) =>
+    api.post<TripShareLink>(`/trips/${tripId}/share-links`, { duration_days: durationDays }),
+
+  getActiveShareLink: (tripId: string) =>
+    api.get<TripShareLink>(`/trips/${tripId}/share-links/active`),
+
+  revokeShareLink: (tripId: string) =>
+    api.delete<void>(`/trips/${tripId}/share-links/active`),
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/summary"
 	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
+	"github.com/ahmadhafizh/navisha/backend/internal/tripshare"
 	"github.com/ahmadhafizh/navisha/backend/internal/user"
 	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
@@ -146,6 +147,14 @@ func main() {
 	tripRepo := trip.NewPostgresRepository(db)
 	tripUsecase := trip.NewUsecase(tripRepo)
 	tripHandler := trip.NewHandler(tripUsecase)
+	shareSecret := cfg.App.ShareLinkSecret
+	if shareSecret == "" {
+		shareSecret = cfg.JWT.Secret
+		slog.Warn("SHARE_LINK_SECRET is not set; using JWT_SECRET fallback")
+	}
+	tripShareRepo := tripshare.NewPostgresRepository(db)
+	tripShareUsecase := tripshare.NewUsecase(tripShareRepo, shareSecret)
+	tripShareHandler := tripshare.NewHandler(tripShareUsecase)
 
 	// Activity domain
 	activityRepo := activity.NewPostgresRepository(db)
@@ -332,6 +341,7 @@ func main() {
 
 	userHandler.RegisterRoutes(api, authMiddleware)
 	tripHandler.RegisterRoutes(api, authMiddleware)
+	tripShareHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)
 	locationHandler.RegisterRoutes(api, authMiddleware)
 	currencyHandler.RegisterRoutes(api, authMiddleware)
