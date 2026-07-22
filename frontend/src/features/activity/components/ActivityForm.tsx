@@ -19,6 +19,7 @@ import {
   formatDuration,
   getDurationMinutes,
 } from "../lib/time"
+import { normalizeExternalUrl } from "../lib/externalUrl"
 import type {
   Activity,
   ActivityType,
@@ -77,6 +78,13 @@ const schema = z
     address: z.string().optional(),
     google_place_id: z.string().optional(),
     location_notes: z.string().optional(),
+    external_url: z
+      .string()
+      .optional()
+      .refine(
+        (value) => !value?.trim() || normalizeExternalUrl(value) !== null,
+        "Enter a valid website address",
+      ),
     // note
     note_content: z.string().optional(),
     // todo
@@ -155,7 +163,9 @@ export function ActivityForm({
 }: Props) {
   const defaults = buildDefaults(initial)
   const hasInitialAdditionalDetails = Boolean(
-    defaults.address?.trim() || defaults.location_notes?.trim(),
+    defaults.address?.trim() ||
+      defaults.location_notes?.trim() ||
+      defaults.external_url?.trim(),
   )
   const [additionalDetailsOpen, setAdditionalDetailsOpen] = useState(
     hasInitialAdditionalDetails,
@@ -471,7 +481,7 @@ export function ActivityForm({
                   Additional details
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  Address and notes
+                  Address, link, and notes
                 </span>
               </span>
               <ChevronDown
@@ -485,6 +495,26 @@ export function ActivityForm({
                   id="activity-address"
                   placeholder="Auto-filled from location search"
                   {...register("address")}
+                />
+              </Field>
+
+              <Field
+                label="Website or booking link"
+                htmlFor="activity-external-url"
+                optional
+                error={errors.external_url?.message}
+                errorId="activity-external-url-error"
+              >
+                <Input
+                  id="activity-external-url"
+                  type="text"
+                  inputMode="url"
+                  placeholder="e.g. teamlab.art/tickets"
+                  aria-invalid={Boolean(errors.external_url)}
+                  aria-describedby={
+                    errors.external_url ? "activity-external-url-error" : undefined
+                  }
+                  {...register("external_url")}
                 />
               </Field>
 
@@ -601,6 +631,7 @@ function buildDefaults(initial?: Activity): FormValues {
       address: "",
       google_place_id: "",
       location_notes: "",
+      external_url: "",
       note_content: "",
       todo_items: [],
     }
@@ -616,6 +647,7 @@ function buildDefaults(initial?: Activity): FormValues {
     address: "",
     google_place_id: "",
     location_notes: "",
+    external_url: "",
     note_content: "",
     todo_items: [],
   }
@@ -631,6 +663,7 @@ function buildDefaults(initial?: Activity): FormValues {
         address: p.address ?? "",
         google_place_id: p.google_place_id ?? "",
         location_notes: p.notes ?? "",
+        external_url: p.external_url ?? "",
       }
     }
     case "note":
@@ -658,6 +691,7 @@ function buildPayload(v: FormValues) {
         google_place_id: v.google_place_id ?? "",
         address: v.address ?? "",
         notes: v.location_notes ?? "",
+        external_url: normalizeExternalUrl(v.external_url ?? "") ?? "",
         image_urls: [],
       }
     }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 )
@@ -194,6 +196,9 @@ func validatePayload(t Type, payload json.RawMessage) error {
 		if p.LocationName == "" {
 			return fmt.Errorf("location_name required: %w", ErrInvalidPayload)
 		}
+		if p.ExternalURL != "" && !validExternalURL(p.ExternalURL) {
+			return fmt.Errorf("external_url must use http or https: %w", ErrInvalidPayload)
+		}
 	case TypeNote:
 		var p NotePayload
 		if err := json.Unmarshal(payload, &p); err != nil {
@@ -206,6 +211,18 @@ func validatePayload(t Type, payload json.RawMessage) error {
 		}
 	}
 	return nil
+}
+
+func validExternalURL(value string) bool {
+	if len(value) > 2048 {
+		return false
+	}
+	parsed, err := url.ParseRequestURI(value)
+	if err != nil || parsed.Host == "" {
+		return false
+	}
+	return strings.EqualFold(parsed.Scheme, "http") ||
+		strings.EqualFold(parsed.Scheme, "https")
 }
 
 func sameSet(a, b []string) bool {

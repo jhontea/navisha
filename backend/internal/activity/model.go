@@ -47,6 +47,7 @@ type LocationPayload struct {
 	GooglePlaceID string   `json:"google_place_id"` // Google Places ID for linking
 	Address       string   `json:"address"`         // Full address
 	Notes         string   `json:"notes"`           // Location-specific notes
+	ExternalURL   string   `json:"external_url"`    // Optional official or booking URL
 	ImageURLs     []string `json:"image_urls"`      // Associated image URLs
 }
 

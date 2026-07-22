@@ -8,6 +8,9 @@ import (
 
 func TestValidatePayload(t *testing.T) {
 	loc, _ := json.Marshal(LocationPayload{LocationName: "Tokyo", Lat: 35.6, Lng: 139.7})
+	locWithURL, _ := json.Marshal(LocationPayload{LocationName: "Tokyo", ExternalURL: "https://example.com/tickets"})
+	locWithUnsafeURL, _ := json.Marshal(LocationPayload{LocationName: "Tokyo", ExternalURL: "javascript:alert(1)"})
+	locWithRelativeURL, _ := json.Marshal(LocationPayload{LocationName: "Tokyo", ExternalURL: "example.com/tickets"})
 	locNoName, _ := json.Marshal(LocationPayload{Lat: 35.6, Lng: 139.7})
 	note, _ := json.Marshal(NotePayload{Content: "hello"})
 	todo, _ := json.Marshal(TodoPayload{Items: []TodoItem{{ID: "1", Text: "x"}}})
@@ -20,6 +23,9 @@ func TestValidatePayload(t *testing.T) {
 	}{
 		{"empty payload allowed", TypeNote, nil, nil},
 		{"valid location", TypeLocation, loc, nil},
+		{"valid location external URL", TypeLocation, locWithURL, nil},
+		{"unsafe location external URL", TypeLocation, locWithUnsafeURL, ErrInvalidPayload},
+		{"relative location external URL", TypeLocation, locWithRelativeURL, ErrInvalidPayload},
 		{"location missing name", TypeLocation, locNoName, ErrInvalidPayload},
 		{"location wrong shape", TypeLocation, json.RawMessage(`{"lat":"bad"}`), ErrInvalidPayload},
 		{"valid note", TypeNote, note, nil},
