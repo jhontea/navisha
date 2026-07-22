@@ -31,6 +31,24 @@ const DAY_GENERATION_MESSAGES = [
   "Preparing your day plan...",
 ]
 
+const DAY_INTENTS = [
+  { id: "relaxed", label: "Relaxed pace", prompt: "Use a relaxed pace with enough breaks." },
+  { id: "food", label: "More local food", prompt: "Include more authentic local food experiences." },
+  { id: "indoor", label: "Mostly indoor", prompt: "Prefer mostly indoor activities." },
+  { id: "budget", label: "Budget-friendly", prompt: "Prioritize budget-friendly places and activities." },
+  { id: "family", label: "Family-friendly", prompt: "Keep the plan family-friendly." },
+  { id: "less-travel", label: "Less travel", prompt: "Minimize travel time between activities." },
+] as const
+
+const MAX_DAY_INSTRUCTION_LENGTH = 500
+
+function intentInstruction(selected: Set<string>) {
+  return DAY_INTENTS
+    .filter((intent) => selected.has(intent.id))
+    .map((intent) => intent.prompt)
+    .join(" ")
+}
+
 function suggestionKey(activity: ActivityDraft) {
   return [activity.title, activity.start_time, activity.end_time, activity.location_name].join("|")
 }
@@ -46,6 +64,7 @@ export function DayAIPlanner({
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [instruction, setInstruction] = useState("")
+  const [selectedIntents, setSelectedIntents] = useState<Set<string>>(new Set())
   const [preview, setPreview] = useState<DayPreview | null>(null)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const [isGenerating, setIsGenerating] = useState(false)
@@ -57,10 +76,16 @@ export function DayAIPlanner({
   const allSelected = Boolean(
     preview?.activities.length && selectedActivities.length === preview.activities.length,
   )
+  const selectedIntentInstruction = intentInstruction(selectedIntents)
+  const customInstructionLimit = Math.max(
+    0,
+    MAX_DAY_INSTRUCTION_LENGTH - selectedIntentInstruction.length - (selectedIntentInstruction ? 1 : 0),
+  )
 
   const closePlanner = () => {
     setPreview(null)
     setSelectedKeys(new Set())
+    setSelectedIntents(new Set())
     setInstruction("")
     setOpen(false)
   }
@@ -68,7 +93,12 @@ export function DayAIPlanner({
   const generate = async () => {
     setIsGenerating(true)
     try {
-      const nextPreview = await tripApi.generateDayPreview(tripId, dayId, instruction.trim())
+      const customInstruction = instruction.trim().slice(0, customInstructionLimit)
+      const combinedInstruction = [
+        selectedIntentInstruction,
+        ...(customInstruction ? [customInstruction] : []),
+      ].filter(Boolean).join(" ")
+      const nextPreview = await tripApi.generateDayPreview(tripId, dayId, combinedInstruction)
       setPreview(nextPreview)
       setSelectedKeys(new Set(nextPreview.activities.map(suggestionKey)))
     } catch (error) {
@@ -130,6 +160,7 @@ export function DayAIPlanner({
         toast(`${added} AI suggestion${added === 1 ? "" : "s"} added to Day ${dayNumber}.`)
         setPreview(null)
         setSelectedKeys(new Set())
+        setSelectedIntents(new Set())
         setInstruction("")
         setOpen(false)
       } else {
@@ -162,6 +193,19 @@ export function DayAIPlanner({
     setSelectedKeys(
       allSelected ? new Set() : new Set(preview.activities.map(suggestionKey)),
     )
+  }
+
+  const toggleIntent = (intentID: string) => {
+    const next = new Set(selectedIntents)
+    if (next.has(intentID)) next.delete(intentID)
+    else next.add(intentID)
+    const nextIntentInstruction = intentInstruction(next)
+    const nextCustomLimit = Math.max(
+      0,
+      MAX_DAY_INSTRUCTION_LENGTH - nextIntentInstruction.length - (nextIntentInstruction ? 1 : 0),
+    )
+    setSelectedIntents(next)
+    setInstruction((value) => value.slice(0, nextCustomLimit))
   }
 
   if (!open) {
@@ -205,15 +249,41 @@ export function DayAIPlanner({
           />
         ) : (
           <div className="space-y-3">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-foreground">What should AI focus on?</p>
+              <div className="flex flex-wrap gap-2" aria-label="AI planning preferences">
+                {DAY_INTENTS.map((intent) => {
+                  const selected = selectedIntents.has(intent.id)
+                  return (
+                    <button
+                      key={intent.id}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleIntent(intent.id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                        selected
+                          ? "border-primary/40 bg-primary/10 text-primary shadow-sm shadow-primary/5"
+                          : "border-border/50 bg-background text-muted-foreground hover:border-primary/30 hover:text-primary",
+                      )}
+                    >
+                      {intent.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <Textarea
               value={instruction}
-              onChange={(event) => setInstruction(event.target.value.slice(0, 500))}
-              placeholder="Optional: local food, relaxed pace, indoor places..."
+              onChange={(event) => setInstruction(event.target.value.slice(0, customInstructionLimit))}
+              maxLength={customInstructionLimit}
+              placeholder="Optional details, e.g. prioritize the Shibuya area..."
+              aria-label="Additional AI planning details"
               className="bg-background"
               rows={2}
             />
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-muted-foreground">{instruction.length}/500</span>
+              <span className="text-xs text-muted-foreground">{instruction.length}/{customInstructionLimit}</span>
               <Button type="button" size="sm" variant="gradient" onClick={generate} className="rounded-full px-5">
                 <Sparkles className="h-4 w-4" />
                 Generate plan
