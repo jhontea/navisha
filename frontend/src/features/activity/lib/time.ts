@@ -45,3 +45,43 @@ export function formatActivityTimeRange(
   const range = `${startTime}–${endTime}`
   return duration === null ? range : `${range} · ${formatDuration(duration)}`
 }
+
+interface SchedulableActivity {
+  id: string
+  title: string
+  start_time?: string
+  end_time?: string
+}
+
+export function findActivityOverlaps(
+  activities: SchedulableActivity[],
+): Map<string, string[]> {
+  const ranges = activities.flatMap((activity) => {
+    const start = timeToMinutes(activity.start_time ?? "")
+    const end = timeToMinutes(activity.end_time ?? "")
+    return start !== null && end !== null && end > start
+      ? [{ activity, start, end }]
+      : []
+  })
+  const overlaps = new Map<string, string[]>()
+
+  const addOverlap = (activityId: string, otherTitle: string) => {
+    const titles = overlaps.get(activityId) ?? []
+    if (!titles.includes(otherTitle)) titles.push(otherTitle)
+    overlaps.set(activityId, titles)
+  }
+
+  for (let index = 0; index < ranges.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < ranges.length; otherIndex += 1) {
+      const current = ranges[index]
+      const other = ranges[otherIndex]
+      const hasOverlap = current.start < other.end && other.start < current.end
+      if (!hasOverlap) continue
+
+      addOverlap(current.activity.id, other.activity.title)
+      addOverlap(other.activity.id, current.activity.title)
+    }
+  }
+
+  return overlaps
+}
