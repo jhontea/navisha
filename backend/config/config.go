@@ -78,9 +78,10 @@ type LocationConfig struct {
 }
 
 type AppConfig struct {
-	FrontendURL   string   `mapstructure:"frontend_url"`
-	CookieDomain  string   `mapstructure:"cookie_domain"`
-	AllowedEmails []string `mapstructure:"allowed_emails"`
+	FrontendURL     string   `mapstructure:"frontend_url"`
+	CookieDomain    string   `mapstructure:"cookie_domain"`
+	AllowedEmails   []string `mapstructure:"allowed_emails"`
+	ShareLinkSecret string   `mapstructure:"share_link_secret"`
 }
 
 // LLMConfig holds the active LLM provider configuration.
@@ -213,6 +214,7 @@ func Load() (*Config, error) {
 		"location.geoapify_base_url": "GEOAPIFY_BASE_URL",
 		"app.frontend_url":           "FRONTEND_URL",
 		"app.cookie_domain":          "COOKIE_DOMAIN",
+		"app.share_link_secret":      "SHARE_LINK_SECRET",
 		"currency.api_key":           "CURRENCYFREAKS_API_KEY",
 		"openrouter.api_key":         "OPENROUTER_API_KEY",
 		"openrouter.model":           "OPENROUTER_MODEL",

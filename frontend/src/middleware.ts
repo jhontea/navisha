@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hasToken = request.cookies.has("access_token")
 
-  if (OPEN_PATHS.includes(pathname)) {
+  if (OPEN_PATHS.includes(pathname) || pathname.startsWith("/share/")) {
     return NextResponse.next()
   }
 

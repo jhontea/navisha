@@ -126,3 +126,45 @@ export interface DayPreview {
   theme: string
   activities: ActivityDraft[]
 }
+
+export type ShareDurationDays = 1 | 3 | 7 | 14 | 30
+
+export interface TripShareLink {
+  token: string
+  expires_at: string
+}
+
+export interface PublicActivityPayload {
+  location_name?: string
+  address?: string
+  lat?: number
+  lng?: number
+  external_url?: string
+  image_urls?: string[]
+}
+
+export interface PublicTripActivity {
+  id: string
+  title: string
+  start_time: string
+  end_time: string
+  payload: PublicActivityPayload
+}
+
+export interface PublicTripDay {
+  id: string
+  date: string
+  day_number: number
+  title: string
+  activities: PublicTripActivity[]
+}
+
+export interface PublicItinerary {
+  title: string
+  description: string
+  start_date: string
+  end_date: string
+  cover_image_url: string
+  expires_at: string
+  days: PublicTripDay[]
+}

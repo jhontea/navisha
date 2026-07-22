@@ -137,6 +137,7 @@ export default function TripDetailPage() {
         coverImageUrl={trip.cover_image_url}
         onEdit={startEditing}
         onDelete={() => setConfirmDelete(true)}
+        shareTripId={id}
         isDeleting={isDeleting}
       />
 
