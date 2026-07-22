@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 
 interface FormFieldLabelProps {
   children: ReactNode
+  id?: string
   htmlFor?: string
   required?: boolean
   optional?: boolean
@@ -12,6 +13,7 @@ interface FormFieldLabelProps {
 
 export function FormFieldLabel({
   children,
+  id,
   htmlFor,
   required,
   optional,
@@ -20,13 +22,17 @@ export function FormFieldLabel({
   return (
     <label
       htmlFor={htmlFor}
+      id={id}
       className={cn("font-label-md text-muted-foreground", className)}
     >
       {children}
       {required && (
-        <span className="ml-1 text-destructive" aria-hidden="true">
-          *
-        </span>
+        <>
+          <span className="ml-1 text-destructive" aria-hidden="true">
+            *
+          </span>
+          <span className="sr-only"> required</span>
+        </>
       )}
       {optional && (
         <span className="ml-1 font-normal normal-case tracking-normal text-xs text-muted-foreground/70">

@@ -194,14 +194,19 @@ export function TransportationForm({
       <fieldset disabled={isSubmitting} className="space-y-8">
       {/* Transportation Type */}
       <div>
-        <FormFieldLabel required className="mb-3 block uppercase tracking-wider">
+        <FormFieldLabel id="transport-type-label" required className="mb-3 block uppercase tracking-wider">
           Transportation Type
         </FormFieldLabel>
         <Controller
           control={control}
           name="type"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-2">
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="transport-type-label"
+              aria-describedby={errors.type ? "transport-type-error" : undefined}
+            >
               {TRANSPORTATION_TYPES
                 .filter((t) => (lockType ? t === field.value : true))
                 .map((t) => {
@@ -238,7 +243,7 @@ export function TransportationForm({
             </div>
           )}
         />
-        <FormFieldError className="mt-1">{errors.type?.message}</FormFieldError>
+        <FormFieldError id="transport-type-error" className="mt-1">{errors.type?.message}</FormFieldError>
       </div>
 
       {/* Input Grid */}
@@ -247,14 +252,19 @@ export function TransportationForm({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           {/* From Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <FormFieldLabel required>From Location</FormFieldLabel>
+            <FormFieldLabel htmlFor="transport-from" required>From Location</FormFieldLabel>
             <Controller
               control={control}
               name="from_location"
               render={({ field }) => (
                 <LocationAutocomplete
+                  id="transport-from"
                   value={field.value ?? ""}
                   onChange={field.onChange}
+                  disabled={isSubmitting}
+                  ariaInvalid={Boolean(errors.from_location)}
+                  ariaRequired
+                  ariaDescribedBy={errors.from_location ? "transport-from-error" : undefined}
                   placeholder="e.g. Jakarta Airport"
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name || p.address)
@@ -262,19 +272,24 @@ export function TransportationForm({
                 />
               )}
             />
-            <FormFieldError>{errors.from_location?.message}</FormFieldError>
+            <FormFieldError id="transport-from-error">{errors.from_location?.message}</FormFieldError>
           </div>
 
           {/* To Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <FormFieldLabel required>To Location</FormFieldLabel>
+            <FormFieldLabel htmlFor="transport-to" required>To Location</FormFieldLabel>
             <Controller
               control={control}
               name="to_location"
               render={({ field }) => (
                 <LocationAutocomplete
+                  id="transport-to"
                   value={field.value ?? ""}
                   onChange={field.onChange}
+                  disabled={isSubmitting}
+                  ariaInvalid={Boolean(errors.to_location)}
+                  ariaRequired
+                  ariaDescribedBy={errors.to_location ? "transport-to-error" : undefined}
                   placeholder="e.g. Bali Airport"
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name || p.address)
@@ -282,7 +297,7 @@ export function TransportationForm({
                 />
               )}
             />
-            <FormFieldError>{errors.to_location?.message}</FormFieldError>
+            <FormFieldError id="transport-to-error">{errors.to_location?.message}</FormFieldError>
           </div>
         </div>
 
@@ -368,8 +383,14 @@ export function TransportationForm({
 
               <div className="space-y-2">
                 <FormFieldLabel htmlFor="transport-operator" optional>Operator</FormFieldLabel>
-                <Input id="transport-operator" placeholder="e.g. Garuda Indonesia" {...register("operator")} />
-                <FormFieldError>{errors.operator?.message}</FormFieldError>
+                <Input
+                  id="transport-operator"
+                  placeholder="e.g. Garuda Indonesia"
+                  aria-invalid={Boolean(errors.operator)}
+                  aria-describedby={errors.operator ? "transport-operator-error" : undefined}
+                  {...register("operator")}
+                />
+                <FormFieldError id="transport-operator-error">{errors.operator?.message}</FormFieldError>
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -381,10 +402,11 @@ export function TransportationForm({
                     className="pl-10"
                     placeholder="e.g. ABC123 or e-ticket number"
                     aria-invalid={Boolean(errors.reference_number)}
+                    aria-describedby={errors.reference_number ? "transport-reference-error" : undefined}
                     {...register("reference_number")}
                   />
                 </div>
-                <FormFieldError>{errors.reference_number?.message}</FormFieldError>
+                <FormFieldError id="transport-reference-error">{errors.reference_number?.message}</FormFieldError>
               </div>
             </div>
 
@@ -433,9 +455,10 @@ export function TransportationForm({
                 rows={3}
                 placeholder="Terminal, check-in instructions, or other details…"
                 aria-invalid={Boolean(errors.notes)}
+                aria-describedby={errors.notes ? "transport-notes-error" : undefined}
                 {...register("notes")}
               />
-              <FormFieldError>{errors.notes?.message}</FormFieldError>
+              <FormFieldError id="transport-notes-error">{errors.notes?.message}</FormFieldError>
             </div>
           </div>
         )}

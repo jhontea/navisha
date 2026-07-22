@@ -79,6 +79,7 @@ export function TransportationScheduleFields({
           <input
             id="departure-datetime"
             type="datetime-local"
+            aria-required="true"
             value={departure}
             disabled={disabled}
             aria-invalid={Boolean(departureError)}

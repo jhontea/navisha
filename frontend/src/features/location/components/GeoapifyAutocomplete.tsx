@@ -13,6 +13,11 @@ interface Props {
   placeholder?: string
   id?: string
   className?: string
+  disabled?: boolean
+  ariaInvalid?: boolean
+  ariaDescribedBy?: string
+  ariaLabel?: string
+  ariaRequired?: boolean
 }
 
 export function GeoapifyAutocomplete({
@@ -23,6 +28,11 @@ export function GeoapifyAutocomplete({
   placeholder,
   id,
   className,
+  disabled,
+  ariaInvalid,
+  ariaDescribedBy,
+  ariaLabel,
+  ariaRequired,
 }: Props) {
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -136,6 +146,11 @@ export function GeoapifyAutocomplete({
       <input
         ref={inputRef}
         id={id}
+        disabled={disabled}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
+        aria-label={ariaLabel}
+        aria-required={ariaRequired}
         className={`w-full pr-10 ${className ?? ""}`}
         value={value}
         onChange={(event) => {
@@ -151,6 +166,7 @@ export function GeoapifyAutocomplete({
         autoComplete="off"
         onKeyDown={handleKeyDown}
         role="combobox"
+        aria-busy={isLoading}
         aria-autocomplete="list"
         aria-expanded={isOpen}
         aria-controls={listboxId}
@@ -160,6 +176,13 @@ export function GeoapifyAutocomplete({
             : undefined
         }
       />
+      <span className="sr-only" role="status" aria-live="polite">
+        {isLoading
+          ? "Searching locations"
+          : isOpen && !error
+            ? `${suggestions.length} location suggestion${suggestions.length === 1 ? "" : "s"} available`
+            : ""}
+      </span>
       <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center">
         {isLoading ? (
           <Loader2
@@ -170,6 +193,7 @@ export function GeoapifyAutocomplete({
           <button
             type="button"
             onClick={clear}
+            disabled={disabled}
             className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label="Clear location"
           >
@@ -184,9 +208,9 @@ export function GeoapifyAutocomplete({
           className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl"
         >
           {error ? (
-            <p className="px-3 py-2 text-sm text-destructive">{error}</p>
+            <p role="alert" className="px-3 py-2 text-sm text-destructive">{error}</p>
           ) : suggestions.length === 0 && !isLoading ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">
+            <p role="status" className="px-3 py-2 text-sm text-muted-foreground">
               No locations found
             </p>
           ) : (

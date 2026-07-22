@@ -20,6 +20,7 @@ import {
   FormFieldDescription,
   FormFieldError,
   FormFieldLabel,
+  fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import {
@@ -131,6 +132,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <FormFieldLabel htmlFor="trip-title" required>Trip Title</FormFieldLabel>
         <input
           id="trip-title"
+          aria-required="true"
           aria-invalid={Boolean(errors.title)}
           aria-describedby={errors.title ? "trip-title-error" : undefined}
           className={`${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
@@ -163,6 +165,13 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
+                disabled={isSubmitting}
+                ariaInvalid={Boolean(errors.destination)}
+                ariaDescribedBy={fieldDescriptionIds(
+                  "trip-destination-description",
+                  "trip-destination-error",
+                  Boolean(errors.destination),
+                )}
                 onSelect={(place) => {
                   field.onChange(place.description)
                 }}
@@ -170,8 +179,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             )}
           />
         </div>
-        <FormFieldError>{errors.destination?.message}</FormFieldError>
-        <FormFieldDescription>
+        <FormFieldError id="trip-destination-error">{errors.destination?.message}</FormFieldError>
+        <FormFieldDescription id="trip-destination-description">
           Pick a city, province, or country from the location suggestions.
         </FormFieldDescription>
 
@@ -206,6 +215,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <input type="hidden" {...register("start_date")} />
         <input type="hidden" {...register("end_date")} />
         <TravelDateRangePicker
+          required
           startDate={startDate}
           endDate={endDate}
           duration={tripDuration}
@@ -337,6 +347,9 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 value={field.value}
                 onChange={field.onChange}
                 disabled={currenciesLoading}
+                aria-required="true"
+                aria-invalid={Boolean(errors.base_currency)}
+                aria-describedby={errors.base_currency ? "trip-currency-error" : undefined}
                 className={`${inputBase} appearance-none pr-10 ${
                   errors.base_currency ? "border-error" : "border-border"
                 } disabled:opacity-60`}
@@ -358,7 +371,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             aria-hidden="true"
           />
         </div>
-        <FormFieldError>{errors.base_currency?.message}</FormFieldError>
+        <FormFieldError id="trip-currency-error">{errors.base_currency?.message}</FormFieldError>
       </div>
 
       {/* Form Actions */}

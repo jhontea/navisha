@@ -24,6 +24,7 @@ import {
   FormFieldDescription,
   FormFieldError,
   FormFieldLabel,
+  fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
 import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
@@ -151,12 +152,12 @@ export function AccommodationForm({
       <fieldset disabled={isSubmitting} className="space-y-8">
       {/* Stay Type Selector */}
       <div>
-        <FormFieldLabel className="mb-3 block uppercase tracking-wider">Stay Type</FormFieldLabel>
+        <FormFieldLabel id="stay-type-label" className="mb-3 block uppercase tracking-wider">Stay Type</FormFieldLabel>
         <Controller
           control={control}
           name="accommodation_type"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="stay-type-label">
               {ACCOMMODATION_TYPES.map((t) => {
                 const selected = field.value === t
                 const Icon = TYPE_ICON[t]
@@ -200,6 +201,7 @@ export function AccommodationForm({
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 id="stay-name"
+                aria-required="true"
                 aria-invalid={Boolean(errors.name)}
                 aria-describedby={errors.name ? "stay-name-error" : undefined}
                 className={cn(
@@ -215,14 +217,22 @@ export function AccommodationForm({
 
           {/* Location — Google Places */}
           <div className="space-y-2">
-            <FormFieldLabel optional>Address / Location</FormFieldLabel>
+            <FormFieldLabel htmlFor="stay-location" optional>Address / Location</FormFieldLabel>
             <Controller
               control={control}
               name="location_name"
               render={({ field }) => (
                 <LocationAutocomplete
+                  id="stay-location"
                   value={field.value ?? ""}
                   onChange={field.onChange}
+                  disabled={isSubmitting}
+                  ariaInvalid={Boolean(errors.location_name)}
+                  ariaDescribedBy={fieldDescriptionIds(
+                    "stay-location-description",
+                    "stay-location-error",
+                    Boolean(errors.location_name),
+                  )}
                   placeholder="Search for a location..."
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name || p.address)
@@ -237,9 +247,10 @@ export function AccommodationForm({
             <input type="hidden" {...register("lat")} />
             <input type="hidden" {...register("lng")} />
             <input type="hidden" {...register("google_place_id")} />
-            <FormFieldDescription>
+            <FormFieldDescription id="stay-location-description">
               Search and select a place to keep its map location.
             </FormFieldDescription>
+            <FormFieldError id="stay-location-error">{errors.location_name?.message}</FormFieldError>
           </div>
         </div>
 
@@ -248,6 +259,7 @@ export function AccommodationForm({
           <input type="hidden" {...register("check_in")} />
           <input type="hidden" {...register("check_out")} />
           <TravelDateRangePicker
+            required
             startDate={checkIn}
             endDate={checkOut}
             duration={stayNights}
@@ -287,11 +299,14 @@ export function AccommodationForm({
           <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             id="stay-confirmation"
+            aria-invalid={Boolean(errors.confirmation_number)}
+            aria-describedby={errors.confirmation_number ? "stay-confirmation-error" : undefined}
             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60"
             placeholder="Optional: 1234-ABCD"
             {...register("confirmation_number")}
           />
         </div>
+        <FormFieldError id="stay-confirmation-error">{errors.confirmation_number?.message}</FormFieldError>
       </div>
 
       {/* Cost field */}
@@ -350,7 +365,15 @@ export function AccommodationForm({
       {/* Notes */}
       <div className="space-y-2">
         <FormFieldLabel htmlFor="stay-notes" optional>Notes</FormFieldLabel>
-        <Textarea id="stay-notes" rows={2} placeholder="Any additional details…" {...register("notes")} />
+        <Textarea
+          id="stay-notes"
+          rows={2}
+          placeholder="Any additional details…"
+          aria-invalid={Boolean(errors.notes)}
+          aria-describedby={errors.notes ? "stay-notes-error" : undefined}
+          {...register("notes")}
+        />
+        <FormFieldError id="stay-notes-error">{errors.notes?.message}</FormFieldError>
       </div>
 
       {/* Form actions */}

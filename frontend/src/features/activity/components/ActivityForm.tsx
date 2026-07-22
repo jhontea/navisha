@@ -168,7 +168,11 @@ export function ActivityForm({
       <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
       {/* Type switcher */}
       {!lockType && (
-        <div className="flex rounded-xl border border-border/30 bg-muted/30 p-1 gap-1">
+        <div
+          className="flex rounded-xl border border-border/30 bg-muted/30 p-1 gap-1"
+          role="group"
+          aria-label="Activity type"
+        >
           {TYPES.map((t) => {
             const meta = TYPE_META[t]
             const selected = type === t
@@ -176,6 +180,7 @@ export function ActivityForm({
               <button
                 key={t}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => setValue("type", t)}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
@@ -193,8 +198,12 @@ export function ActivityForm({
       )}
 
       {/* Title — always visible */}
-      <Field label="Title" required error={errors.title?.message}>
+      <Field label="Title" htmlFor="activity-title" required error={errors.title?.message} errorId="activity-title-error">
         <Input
+          id="activity-title"
+          aria-required="true"
+          aria-invalid={Boolean(errors.title)}
+          aria-describedby={errors.title ? "activity-title-error" : undefined}
           placeholder={
             type === "location"
               ? "e.g. Kuta Beach"
@@ -210,16 +219,22 @@ export function ActivityForm({
       {type === "location" && (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Start time" optional error={errors.start_time?.message}>
+            <Field label="Start time" htmlFor="activity-start-time" optional error={errors.start_time?.message} errorId="activity-start-time-error">
               <Input
+                id="activity-start-time"
                 type="time"
+                aria-invalid={Boolean(errors.start_time)}
+                aria-describedby={errors.start_time ? "activity-start-time-error" : undefined}
                 onClick={openPicker}
                 {...register("start_time")}
               />
             </Field>
-            <Field label="End time" optional error={errors.end_time?.message}>
+            <Field label="End time" htmlFor="activity-end-time" optional error={errors.end_time?.message} errorId="activity-end-time-error">
               <Input
+                id="activity-end-time"
                 type="time"
+                aria-invalid={Boolean(errors.end_time)}
+                aria-describedby={errors.end_time ? "activity-end-time-error" : undefined}
                 onClick={openPicker}
                 {...register("end_time")}
               />
@@ -228,16 +243,23 @@ export function ActivityForm({
 
           <Field
             label="Location name"
+            htmlFor="activity-location"
             required
             error={errors.location_name?.message}
+            errorId="activity-location-error"
           >
             <Controller
               control={control}
               name="location_name"
               render={({ field }) => (
                 <LocationAutocomplete
+                  id="activity-location"
                   value={field.value ?? ""}
                   onChange={field.onChange}
+                  disabled={isSubmitting}
+                  ariaInvalid={Boolean(errors.location_name)}
+                  ariaRequired
+                  ariaDescribedBy={errors.location_name ? "activity-location-error" : undefined}
                   placeholder="Search a place…"
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name)
@@ -256,15 +278,17 @@ export function ActivityForm({
           <input type="hidden" {...register("lng")} />
           <input type="hidden" {...register("google_place_id")} />
 
-          <Field label="Address" optional>
+          <Field label="Address" htmlFor="activity-address" optional>
             <Input
+              id="activity-address"
               placeholder="Auto-filled from location search"
               {...register("address")}
             />
           </Field>
 
-          <Field label="Notes" optional>
+          <Field label="Notes" htmlFor="activity-location-notes" optional>
             <Textarea
+              id="activity-location-notes"
               rows={2}
               placeholder="Any notes about this place…"
               {...register("location_notes")}
@@ -275,9 +299,12 @@ export function ActivityForm({
 
       {/* Note fields */}
       {type === "note" && (
-        <Field label="Note" required error={errors.note_content?.message}>
+        <Field label="Note" htmlFor="activity-note" required error={errors.note_content?.message} errorId="activity-note-error">
           <Textarea
+            id="activity-note"
             rows={4}
+            aria-invalid={Boolean(errors.note_content)}
+            aria-describedby={errors.note_content ? "activity-note-error" : undefined}
             placeholder="Write your notes here…"
             {...register("note_content")}
           />
@@ -287,14 +314,20 @@ export function ActivityForm({
       {/* Todo fields */}
       {type === "todo" && (
         <div className="flex flex-col gap-2">
-          <FormFieldLabel required>Todo items</FormFieldLabel>
-          <div className="space-y-2">
+          <FormFieldLabel id="activity-todo-label" required>Todo items</FormFieldLabel>
+          <div
+            className="space-y-2"
+            role="group"
+            aria-labelledby="activity-todo-label"
+            aria-describedby={errors.todo_items ? "activity-todo-error" : undefined}
+          >
             {todoArr.fields.map((field, i) => (
               <div key={field.id} className="flex items-center gap-2 group/item">
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center">
                   <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 group-hover/item:bg-primary/50 transition-colors" />
                 </div>
                 <Input
+                  aria-label={`Todo item ${i + 1}`}
                   placeholder={`Item ${i + 1}…`}
                   className="flex-1 h-8 text-sm"
                   {...register(`todo_items.${i}.text`)}
@@ -310,7 +343,7 @@ export function ActivityForm({
               </div>
             ))}
           </div>
-          <FormFieldError>{errors.todo_items?.message}</FormFieldError>
+          <FormFieldError id="activity-todo-error">{errors.todo_items?.message}</FormFieldError>
           <button
             type="button"
             onClick={() =>
@@ -433,22 +466,26 @@ function buildPayload(v: FormValues) {
 
 function Field({
   label,
+  htmlFor,
   error,
+  errorId,
   required,
   optional,
   children,
 }: {
   label: string
+  htmlFor?: string
   error?: string
+  errorId?: string
   required?: boolean
   optional?: boolean
   children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <FormFieldLabel required={required} optional={optional}>{label}</FormFieldLabel>
+      <FormFieldLabel htmlFor={htmlFor} required={required} optional={optional}>{label}</FormFieldLabel>
       {children}
-      <FormFieldError>{error}</FormFieldError>
+      <FormFieldError id={errorId}>{error}</FormFieldError>
     </div>
   )
 }
