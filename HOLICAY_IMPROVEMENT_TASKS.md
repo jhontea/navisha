@@ -35,7 +35,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 
 - [x] **AI-01 — Regenerate one day (P1)**: generate preview untuk satu hari kosong atau parsial, pertahankan aktivitas yang sudah ada sebagai anchor, lalu tambahkan saran hanya setelah user menyetujui preview. Mode replace sengaja tidak disediakan agar perubahan tetap aman.
 - [ ] **AI-02 — Edit intent actions (P1)**: dukung prompt seperti `buat lebih murah`, `kurangi perjalanan`, `tambah aktivitas foodie`, dan `ganti aktivitas ini`.
-- [ ] **AI-03 — Add recommendation directly to itinerary (P1)**: setiap rekomendasi AI memiliki CTA untuk menambahkan item ke hari tertentu.
+- [x] **AI-03 — Add recommendation directly to itinerary (P1)**: suggestion AI dapat dipilih satu per satu, dilengkapi Select/Clear all dan jumlah dinamis, lalu hanya pilihan aktif yang di-geocode dan ditambahkan ke hari terkait.
 - [ ] **AI-04 — Nearby recommendations (P2)**: rekomendasikan tempat berdasarkan aktivitas yang sudah ada dan jarak geografis.
 
 ## Group trip dan budget
