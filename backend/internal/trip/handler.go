@@ -36,6 +36,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	g.GET("/trips/:id", h.Get, authMiddleware)
 	g.PUT("/trips/:id", h.Update, authMiddleware)
 	g.DELETE("/trips/:id", h.Delete, authMiddleware)
+	g.PUT("/days/:day_id/title", h.UpdateDayTitle, authMiddleware)
 	g.PUT("/days/:day_id/notes", h.UpdateDayNotes, authMiddleware)
 }
 
@@ -230,6 +231,27 @@ type dayNotesRequest struct {
 	Notes string `json:"notes"`
 }
 
+type dayTitleRequest struct {
+	Title string `json:"title"`
+}
+
+func (h *Handler) UpdateDayTitle(c echo.Context) error {
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
+	dayID := c.Param("day_id")
+	var req dayTitleRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	d, err := h.usecase.UpdateDayTitle(userID, dayID, req.Title)
+	if err != nil {
+		return mapErr(err)
+	}
+	return c.JSON(http.StatusOK, toDayResponse(d))
+}
+
 func (h *Handler) UpdateDayNotes(c echo.Context) error {
 	userID, ok := c.Get(middleware.UserIDKey).(string)
 	if !ok || userID == "" {
@@ -249,13 +271,7 @@ func (h *Handler) UpdateDayNotes(c echo.Context) error {
 	if err != nil {
 		return mapErr(err)
 	}
-	return c.JSON(http.StatusOK, map[string]any{
-		"id":         d.ID,
-		"trip_id":    d.TripID,
-		"date":       d.Date.Format("2006-01-02"),
-		"day_number": d.DayNumber,
-		"notes":      d.Notes,
-	})
+	return c.JSON(http.StatusOK, toDayResponse(d))
 }
 
 func parseDates(start, end string) (time.Time, time.Time, error) {
@@ -290,15 +306,20 @@ func toTripResponse(t *Trip) map[string]any {
 func toDaysResponse(days []Day) []map[string]any {
 	out := make([]map[string]any, 0, len(days))
 	for _, d := range days {
-		out = append(out, map[string]any{
-			"id":         d.ID,
-			"trip_id":    d.TripID,
-			"date":       d.Date.Format("2006-01-02"),
-			"day_number": d.DayNumber,
-			"notes":      d.Notes,
-		})
+		out = append(out, toDayResponse(&d))
 	}
 	return out
+}
+
+func toDayResponse(d *Day) map[string]any {
+	return map[string]any{
+		"id":         d.ID,
+		"trip_id":    d.TripID,
+		"date":       d.Date.Format("2006-01-02"),
+		"day_number": d.DayNumber,
+		"title":      d.Title,
+		"notes":      d.Notes,
+	}
 }
 
 func mapErr(err error) error {
@@ -311,6 +332,7 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrInvalidCursor, Code: http.StatusBadRequest, Message: "invalid cursor"},
 		apperr.HTTPMapping{Err: ErrEmptyTitle, Code: http.StatusBadRequest, Message: "title must not be empty"},
 		apperr.HTTPMapping{Err: ErrTitleTooLong, Code: http.StatusBadRequest, Message: "title must be 200 characters or less"},
+		apperr.HTTPMapping{Err: ErrDayTitleTooLong, Code: http.StatusBadRequest, Message: "day title must be 80 characters or less"},
 		apperr.HTTPMapping{Err: ErrDescriptionTooLong, Code: http.StatusBadRequest, Message: "description is too long"},
 		apperr.HTTPMapping{Err: ErrNotesTooLong, Code: http.StatusBadRequest, Message: "notes are too long"},
 		apperr.HTTPMapping{Err: ErrURLTooLong, Code: http.StatusBadRequest, Message: "cover image url is too long"},

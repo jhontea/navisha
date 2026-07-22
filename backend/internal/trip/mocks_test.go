@@ -133,6 +133,10 @@ func (m *mockRepo) UpdateDayNotes(dayID, notes string) (*Day, error) {
 	return &Day{ID: dayID, Notes: notes}, nil
 }
 
+func (m *mockRepo) UpdateDayTitle(dayID, title string) (*Day, error) {
+	return &Day{ID: dayID, Title: title}, nil
+}
+
 // Test helpers
 
 func setupCurrencies() {

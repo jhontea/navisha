@@ -40,6 +40,7 @@ export interface Day {
   trip_id: string
   date: string
   day_number: number
+  title: string
   notes: string
 }
 
@@ -120,4 +121,3 @@ export interface GenerateTripResponse {
   end_date: string
   draft: TripDraft
 }
-

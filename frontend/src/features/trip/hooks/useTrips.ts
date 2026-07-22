@@ -129,3 +129,13 @@ export function useUpdateDayNotes(tripId: string) {
       qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: 'all' }),
   })
 }
+
+export function useUpdateDayTitle(tripId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ dayId, title }: { dayId: string; title: string }) =>
+      tripApi.updateDayTitle(dayId, title),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "all" }),
+  })
+}
