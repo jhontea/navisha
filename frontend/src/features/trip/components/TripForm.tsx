@@ -13,6 +13,7 @@ import {
   Loader2,
   MapPin,
   Plus,
+  Sparkles,
 } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel } from "@/lib/currency"
@@ -64,6 +65,7 @@ const inputBase = "input-base"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
+  const [generateWithAI, setGenerateWithAI] = useState(false)
   // Preserve an existing cover until the user explicitly removes it.
   const [coverPreview, setCoverPreview] = useState<string | null>(
     initial?.cover_image_url ?? null
@@ -90,6 +92,19 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
   const startDate = watch("start_date")
   const endDate = watch("end_date")
   const tripDuration = getInclusiveDayCount(startDate, endDate)
+  const destination = watch("destination")
+  const baseCurrency = watch("base_currency")
+
+  const continueWithAI = () => {
+    const params = new URLSearchParams()
+    if (destination?.trim()) params.set("destination", destination.trim())
+    if (startDate) params.set("start_date", startDate)
+    if (endDate) params.set("end_date", endDate)
+    if (baseCurrency) params.set("base_currency", baseCurrency)
+
+    const query = params.toString()
+    router.push(query ? `/trips/generate?${query}` : "/trips/generate")
+  }
 
   const submit = async (values: FormValues) => {
     await onSubmit({
@@ -226,6 +241,68 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         )}
       </fieldset>
 
+      {/* Creation mode — keep manual and AI planning in the same entry flow. */}
+      {!initial && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={generateWithAI}
+            onClick={() => setGenerateWithAI((enabled) => !enabled)}
+            className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              generateWithAI
+                ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
+                : "border-border/60 bg-background hover:border-primary/25 hover:bg-muted/30"
+            }`}
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/20">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-foreground">
+                Generate a draft with AI
+              </span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                Start with a day-by-day itinerary that you can review and edit.
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                generateWithAI ? "bg-primary" : "bg-muted-foreground/25"
+              }`}
+            >
+              <span
+                className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                  generateWithAI ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </span>
+          </button>
+
+          {generateWithAI && (
+            <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
+              <p className="text-sm text-foreground">
+                Your destination and travel dates will be carried into the AI planner.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                You can add travel preferences before Navisha generates the draft.
+              </p>
+              <button
+                type="button"
+                onClick={continueWithAI}
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                Continue with AI
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!generateWithAI && (
+        <>
       {/* Budget (optional) */}
       <div className="space-y-1.5">
         <label className="font-label-md text-muted-foreground" htmlFor="budget">
@@ -338,6 +415,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           Cancel
         </button>
       </div>
+        </>
+      )}
     </form>
   )
 }

@@ -18,9 +18,9 @@
 //
 // See: /memories/navisha-frontend-patterns.md
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { BackLink } from "@/components/BackLink"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { LocationProviderBoundary } from "@/features/location/components/LocationProviderBoundary"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
 import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizard"
@@ -39,7 +39,22 @@ import { useCooldown } from "@/lib/useCooldown"
 
 const MAX_DAYS = 10
 export default function GenerateTripPage() {
+  return (
+    <Suspense fallback={<GenerateTripPageFallback />}>
+      <GenerateTripPageContent />
+    </Suspense>
+  )
+}
+
+function GenerateTripPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialValues = useMemo<Partial<GenerateTripInput>>(() => ({
+    destination: searchParams.get("destination")?.slice(0, 60) ?? "",
+    start_date: searchParams.get("start_date") ?? "",
+    end_date: searchParams.get("end_date") ?? "",
+    base_currency: searchParams.get("base_currency") ?? "IDR",
+  }), [searchParams])
 
   const [result, setResult] = useState<GenerateTripResponse | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -212,7 +227,12 @@ export default function GenerateTripPage() {
             </ShimmerOverlay>
           )}
           <div className={generate.isPending ? "opacity-20 pointer-events-none select-none" : ""}>
-            <GenerateChatWizard key={generationKey} onSubmit={handleGenerate} disabled={generate.isPending} />
+            <GenerateChatWizard
+              key={generationKey}
+              onSubmit={handleGenerate}
+              disabled={generate.isPending}
+              initialValues={initialValues}
+            />
           </div>
           {formError && (
             <div className="mt-4 flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
@@ -276,5 +296,14 @@ export default function GenerateTripPage() {
       )}
     </div>
     </LocationProviderBoundary>
+  )
+}
+
+function GenerateTripPageFallback() {
+  return (
+    <div className="mx-auto w-full max-w-3xl px-margin-mobile pt-8 md:px-margin-desktop">
+      <div className="h-10 w-28 animate-pulse rounded-xl bg-muted" />
+      <div className="mt-8 h-72 animate-pulse rounded-2xl border border-border/40 bg-muted/40" />
+    </div>
   )
 }

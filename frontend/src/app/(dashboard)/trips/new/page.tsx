@@ -62,17 +62,6 @@ export default function NewTripPage() {
           </p>
         </div>
       </div>
-
-      {/* AI Alternative */}
-      <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <span>Rather let AI plan for you?</span>
-        <a
-          href="/trips/generate"
-          className="font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
-          Generate with AI →
-        </a>
-      </div>
     </div>
   )
 }

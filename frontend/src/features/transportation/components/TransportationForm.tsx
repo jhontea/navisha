@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
+import { TransportationScheduleFields } from "./TransportationScheduleFields"
 import {
   TRANSPORTATION_TYPES,
   type CreateTransportationInput,
@@ -47,27 +48,41 @@ const TYPE_META: Record<
 
 const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW", "MYR", "THB", "EUR", "VND"] as const
 
-const schema = z.object({
-  type: z.enum([
-    "flight",
-    "bus",
-    "train",
-    "ferry",
-    "ship",
-    "car",
-    "other",
-  ]),
-  label: z.string().max(120).optional(),
-  operator: z.string().max(120).optional(),
-  reference_number: z.string().max(120).optional(),
-  from_location: z.string().min(1, "From location is required").max(200),
-  to_location: z.string().min(1, "To location is required").max(200),
-  departure_datetime: z.string().min(1, "Departure time is required"),
-  arrival_datetime: z.string().optional(),
-  notes: z.string().max(2000).optional(),
-  amount: z.string().optional(),
-  currency: z.enum(SUPPORTED_CURRENCIES).optional(),
-})
+const schema = z
+  .object({
+    type: z.enum([
+      "flight",
+      "bus",
+      "train",
+      "ferry",
+      "ship",
+      "car",
+      "other",
+    ]),
+    label: z.string().max(120).optional(),
+    operator: z.string().max(120).optional(),
+    reference_number: z.string().max(120).optional(),
+    from_location: z.string().min(1, "From location is required").max(200),
+    to_location: z.string().min(1, "To location is required").max(200),
+    departure_datetime: z.string().min(1, "Departure time is required"),
+    arrival_datetime: z.string().optional(),
+    notes: z.string().max(2000).optional(),
+    amount: z.string().optional(),
+    currency: z.enum(SUPPORTED_CURRENCIES).optional(),
+  })
+  .superRefine((values, context) => {
+    if (
+      values.arrival_datetime &&
+      values.departure_datetime &&
+      values.arrival_datetime < values.departure_datetime
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["arrival_datetime"],
+        message: "Arrival must be after departure",
+      })
+    }
+  })
 
 type FormValues = z.infer<typeof schema>
 
@@ -97,6 +112,7 @@ export function TransportationForm({
     register,
     handleSubmit,
     control,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<FormValues>({
@@ -116,8 +132,10 @@ export function TransportationForm({
     },
   })
 
-  // watch type for potential future conditional rendering
+  // Watch schedule fields so the grouped editor stays in sync with RHF.
   void watch("type")
+  const departureDateTime = watch("departure_datetime")
+  const arrivalDateTime = watch("arrival_datetime") ?? ""
 
   const submit = async (v: FormValues) => {
     const amount = v.amount ? Number(v.amount) : 0
@@ -139,14 +157,6 @@ export function TransportationForm({
       cost,
     }
     await onSubmit(entity)
-  }
-
-  const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
-    try {
-      e.currentTarget.showPicker?.()
-    } catch {
-      // ignore
-    }
   }
 
   return (
@@ -272,40 +282,27 @@ export function TransportationForm({
           </div>
         </div>
 
-        {/* Departure / Arrival row */}
-        <div className="grid grid-cols-2 gap-4 md:gap-6">
-          {/* Departure */}
-          <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              Departure Time
-            </label>
-            <input
-              type="datetime-local"
-              className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-              onClick={openPicker}
-              {...register("departure_datetime")}
-            />
-            {errors.departure_datetime && (
-              <p className="text-xs text-destructive">{errors.departure_datetime.message}</p>
-            )}
-          </div>
-
-          {/* Arrival */}
-          <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              Arrival Time
-            </label>
-            <input
-              type="datetime-local"
-              className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-              onClick={openPicker}
-              {...register("arrival_datetime")}
-            />
-            {errors.arrival_datetime && (
-              <p className="text-xs text-destructive">{errors.arrival_datetime.message}</p>
-            )}
-          </div>
-        </div>
+        <input type="hidden" {...register("departure_datetime")} />
+        <input type="hidden" {...register("arrival_datetime")} />
+        <TransportationScheduleFields
+          departure={departureDateTime}
+          arrival={arrivalDateTime}
+          disabled={isSubmitting}
+          departureError={errors.departure_datetime?.message}
+          arrivalError={errors.arrival_datetime?.message}
+          onDepartureChange={(value) =>
+            setValue("departure_datetime", value, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          onArrivalChange={(value) =>
+            setValue("arrival_datetime", value, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+        />
       </div>
 
       {/* Operator */}
