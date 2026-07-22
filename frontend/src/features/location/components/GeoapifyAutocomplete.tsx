@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useRef, useState } from "react"
-import { Loader2, MapPin } from "lucide-react"
+import { Loader2, MapPin, X } from "lucide-react"
 import { searchLocationSuggestions } from "../api"
 import type { LocationSearchKind, LocationSuggestion } from "../types"
 
@@ -25,10 +25,12 @@ export function GeoapifyAutocomplete({
   className,
 }: Props) {
   const listboxId = useId()
-  const selectedValueRef = useRef("")
+  const inputRef = useRef<HTMLInputElement>(null)
+  const selectedValueRef = useRef(value)
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -37,6 +39,7 @@ export function GeoapifyAutocomplete({
     if (query.length < 3) {
       setSuggestions([])
       setIsOpen(false)
+      setActiveIndex(-1)
       setError("")
       return
     }
@@ -53,10 +56,12 @@ export function GeoapifyAutocomplete({
         )
         setSuggestions(response.suggestions)
         setIsOpen(true)
+        setActiveIndex(response.suggestions.length > 0 ? 0 : -1)
       } catch (requestError) {
         if (controller.signal.aborted) return
         setSuggestions([])
         setIsOpen(true)
+        setActiveIndex(-1)
         setError(
           requestError instanceof Error
             ? requestError.message
@@ -77,19 +82,65 @@ export function GeoapifyAutocomplete({
     selectedValueRef.current = suggestion.description
     setSuggestions([])
     setIsOpen(false)
+    setActiveIndex(-1)
     setError("")
     onChange(suggestion.description)
     onSelect(suggestion)
   }
 
+  const clear = () => {
+    selectedValueRef.current = ""
+    setSuggestions([])
+    setIsOpen(false)
+    setActiveIndex(-1)
+    setError("")
+    onChange("")
+    inputRef.current?.focus()
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIsOpen(false)
+      setActiveIndex(-1)
+      return
+    }
+
+    if (suggestions.length === 0) return
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      setIsOpen(true)
+      setActiveIndex((current) =>
+        current < suggestions.length - 1 ? current + 1 : 0,
+      )
+      return
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault()
+      setIsOpen(true)
+      setActiveIndex((current) =>
+        current > 0 ? current - 1 : suggestions.length - 1,
+      )
+      return
+    }
+
+    if (event.key === "Enter" && isOpen && activeIndex >= 0) {
+      event.preventDefault()
+      choose(suggestions[activeIndex])
+    }
+  }
+
   return (
     <div className="relative min-w-0 flex-1">
       <input
+        ref={inputRef}
         id={id}
-        className={`w-full ${className ?? ""}`}
+        className={`w-full pr-10 ${className ?? ""}`}
         value={value}
         onChange={(event) => {
           selectedValueRef.current = ""
+          setActiveIndex(-1)
           onChange(event.target.value)
         }}
         onFocus={() => {
@@ -98,17 +149,34 @@ export function GeoapifyAutocomplete({
         onBlur={() => window.setTimeout(() => setIsOpen(false), 150)}
         placeholder={placeholder ?? "Search location"}
         autoComplete="off"
+        onKeyDown={handleKeyDown}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={isOpen}
         aria-controls={listboxId}
+        aria-activedescendant={
+          isOpen && activeIndex >= 0
+            ? `${listboxId}-option-${activeIndex}`
+            : undefined
+        }
       />
-      {isLoading && (
-        <Loader2
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
-          aria-label="Searching locations"
-        />
-      )}
+      <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center">
+        {isLoading ? (
+          <Loader2
+            className="h-4 w-4 animate-spin text-muted-foreground"
+            aria-label="Searching locations"
+          />
+        ) : value ? (
+          <button
+            type="button"
+            onClick={clear}
+            className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Clear location"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
       {isOpen && (
         <div
           id={listboxId}
@@ -122,27 +190,41 @@ export function GeoapifyAutocomplete({
               No locations found
             </p>
           ) : (
-            suggestions.map((suggestion) => (
+            suggestions.map((suggestion, index) => {
+              const primaryText = formatSuggestionTitle(suggestion, kind)
+              const showDescription = primaryText !== suggestion.description
+
+              return (
               <button
                 key={`${suggestion.provider}:${suggestion.external_id}`}
+                id={`${listboxId}-option-${index}`}
                 type="button"
                 role="option"
-                aria-selected="false"
-                className="flex w-full items-start gap-2 rounded-md px-3 py-2 text-left hover:bg-accent focus:bg-accent focus:outline-none"
+                aria-selected={activeIndex === index}
+                className={`flex w-full items-start gap-2 rounded-md px-3 py-2 text-left focus:outline-none ${
+                  activeIndex === index ? "bg-accent" : "hover:bg-accent"
+                }`}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => choose(suggestion)}
+                onMouseEnter={() => setActiveIndex(index)}
               >
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">
-                    {suggestion.name}
+                    <HighlightedText text={primaryText} query={value} />
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {suggestion.description}
-                  </span>
+                  {showDescription && (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      <HighlightedText
+                        text={suggestion.description}
+                        query={value}
+                      />
+                    </span>
+                  )}
                 </span>
               </button>
-            ))
+              )
+            })
           )}
           <p className="border-t px-3 py-1.5 text-right text-[10px] text-muted-foreground">
             Powered by Geoapify
@@ -150,5 +232,42 @@ export function GeoapifyAutocomplete({
         </div>
       )}
     </div>
+  )
+}
+
+function formatSuggestionTitle(
+  suggestion: LocationSuggestion,
+  kind: LocationSearchKind,
+) {
+  if (kind !== "region") return suggestion.name
+
+  const country = suggestion.description
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .at(-1)
+
+  if (!country || suggestion.name.toLowerCase().includes(country.toLowerCase())) {
+    return suggestion.name
+  }
+
+  return `${suggestion.name}, ${country}`
+}
+
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  if (!normalizedQuery) return text
+
+  const index = text.toLocaleLowerCase().indexOf(normalizedQuery)
+  if (index < 0) return text
+
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="bg-transparent font-semibold text-foreground">
+        {text.slice(index, index + normalizedQuery.length)}
+      </mark>
+      {text.slice(index + normalizedQuery.length)}
+    </>
   )
 }
