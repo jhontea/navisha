@@ -11,7 +11,6 @@ import {
   Users,
   HelpCircle,
 } from "lucide-react"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -21,6 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import {
+  FormFieldDescription,
+  FormFieldError,
+  FormFieldLabel,
+} from "@/components/forms/FormFieldState"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
 import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
 import {
@@ -143,12 +147,11 @@ export function AccommodationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-8">
+    <form onSubmit={handleSubmit(submit)} className="space-y-8" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="contents">
       {/* Stay Type Selector */}
       <div>
-        <label className="font-label-md text-muted-foreground mb-4 uppercase tracking-wider">
-          Stay Type
-        </label>
+        <FormFieldLabel className="mb-4 uppercase tracking-wider">Stay Type</FormFieldLabel>
         <Controller
           control={control}
           name="accommodation_type"
@@ -161,6 +164,7 @@ export function AccommodationForm({
                   <button
                     key={t}
                     type="button"
+                    aria-pressed={selected}
                     onClick={() => field.onChange(t)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all",
@@ -191,27 +195,27 @@ export function AccommodationForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Accommodation Name */}
           <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              Accommodation Name
-            </label>
+            <FormFieldLabel htmlFor="stay-name" required>Accommodation Name</FormFieldLabel>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                id="stay-name"
+                aria-invalid={Boolean(errors.name)}
+                aria-describedby={errors.name ? "stay-name-error" : undefined}
+                className={cn(
+                  "w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
+                  errors.name ? "border-destructive ring-1 ring-destructive/20" : "border-border",
+                )}
                 placeholder="e.g. Park Hyatt Tokyo"
                 {...register("name")}
               />
             </div>
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
-            )}
+            <FormFieldError id="stay-name-error">{errors.name?.message}</FormFieldError>
           </div>
 
           {/* Location — Google Places */}
           <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              Address / Location
-            </label>
+            <FormFieldLabel optional>Address / Location</FormFieldLabel>
             <Controller
               control={control}
               name="location_name"
@@ -233,6 +237,9 @@ export function AccommodationForm({
             <input type="hidden" {...register("lat")} />
             <input type="hidden" {...register("lng")} />
             <input type="hidden" {...register("google_place_id")} />
+            <FormFieldDescription>
+              Search and select a place to keep its map location.
+            </FormFieldDescription>
           </div>
         </div>
 
@@ -266,22 +273,21 @@ export function AccommodationForm({
             }}
           />
           {(errors.check_in || errors.check_out) && (
-            <p id="stay-dates-error" className="text-xs text-destructive">
+            <FormFieldError id="stay-dates-error">
               {errors.check_in?.message || errors.check_out?.message}
-            </p>
+            </FormFieldError>
           )}
         </div>
       </div>
 
       {/* Confirmation Number */}
       <div className="space-y-2">
-        <label className="font-label-md text-muted-foreground">
-          Confirmation Number (optional)
-        </label>
+        <FormFieldLabel htmlFor="stay-confirmation" optional>Confirmation Number</FormFieldLabel>
         <div className="relative">
           <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            id="stay-confirmation"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60"
             placeholder="Optional: 1234-ABCD"
             {...register("confirmation_number")}
           />
@@ -291,9 +297,10 @@ export function AccommodationForm({
       {/* Cost field */}
       {withCost && (
         <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-          <Label className="font-label-md text-xs text-muted-foreground uppercase tracking-wider">
-            Cost (optional — adds an expense to the trip budget)
-          </Label>
+          <FormFieldLabel optional className="text-xs uppercase tracking-wider">Cost</FormFieldLabel>
+          <FormFieldDescription className="mt-1">
+            Adds an expense to the trip budget when an amount is entered.
+          </FormFieldDescription>
           <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
             {/* Hidden field for RHF */}
             <input {...register("amount")} type="hidden" />
@@ -342,10 +349,8 @@ export function AccommodationForm({
 
       {/* Notes */}
       <div className="space-y-2">
-        <label className="font-label-md text-muted-foreground">
-          Notes (optional)
-        </label>
-        <Textarea rows={2} placeholder="Any additional details…" {...register("notes")} />
+        <FormFieldLabel htmlFor="stay-notes" optional>Notes</FormFieldLabel>
+        <Textarea id="stay-notes" rows={2} placeholder="Any additional details…" {...register("notes")} />
       </div>
 
       {/* Form actions */}
@@ -379,6 +384,7 @@ export function AccommodationForm({
           Cancel
         </button>
       </div>
+      </fieldset>
     </form>
   )
 }

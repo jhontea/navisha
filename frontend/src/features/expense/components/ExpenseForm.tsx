@@ -5,6 +5,10 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
+import {
+  FormFieldError,
+  FormFieldLabel,
+} from "@/components/forms/FormFieldState"
 import { useConvert } from "@/features/currency/hooks/useCurrency"
 import {
   EXPENSE_CATEGORIES,
@@ -105,10 +109,11 @@ export function ExpenseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-5" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="contents">
       {/* Category icon picker */}
       <div className="flex flex-col gap-2">
-        <label className="font-label-md text-muted-foreground">Category</label>
+        <FormFieldLabel required>Category</FormFieldLabel>
         <Controller
           control={control}
           name="category"
@@ -121,6 +126,7 @@ export function ExpenseForm({
                   <button
                     key={cat}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => field.onChange(cat)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all",
@@ -141,14 +147,12 @@ export function ExpenseForm({
             </div>
           )}
         />
-        {errors.category && (
-          <p className="text-xs text-destructive">{errors.category.message}</p>
-        )}
+        <FormFieldError>{errors.category?.message}</FormFieldError>
       </div>
 
       {/* Title */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-label-md text-muted-foreground">Expense Title</label>
+        <FormFieldLabel htmlFor="expense-title" required>Expense Title</FormFieldLabel>
         <div className="relative flex items-center">
           {selectedCategory && (() => {
             const catOpt = CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)
@@ -161,7 +165,10 @@ export function ExpenseForm({
             )
           })()}
           <input
+            id="expense-title"
             {...register("title")}
+            aria-invalid={Boolean(errors.title)}
+            aria-describedby={errors.title ? "expense-title-error" : undefined}
             placeholder={CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.placeholder ?? "e.g., Entry fee"}
             className={cn(
               "w-full py-2.5 rounded-lg border bg-background text-foreground",
@@ -172,9 +179,7 @@ export function ExpenseForm({
             )}
           />
         </div>
-        {errors.title && (
-          <p className="text-xs text-destructive">{errors.title.message}</p>
-        )}
+        <FormFieldError id="expense-title-error">{errors.title?.message}</FormFieldError>
       </div>
 
       {/* Amount + Currency + Date row */}
@@ -183,11 +188,14 @@ export function ExpenseForm({
         <div className="flex flex-col gap-1.5">
           <div className="flex gap-3">
             <div className="flex-1 flex flex-col gap-1.5">
-              <label className="font-label-md text-muted-foreground">Amount</label>
+              <FormFieldLabel htmlFor="expense-amount" required>Amount</FormFieldLabel>
               <input {...register("amount")} type="hidden" />
               <input
+                id="expense-amount"
                 type="text"
                 inputMode="numeric"
+                aria-invalid={Boolean(errors.amount)}
+                aria-describedby={errors.amount ? "expense-amount-error" : undefined}
                 value={displayAmount}
                 placeholder="0"
                 onChange={(e) => {
@@ -209,17 +217,16 @@ export function ExpenseForm({
                   errors.amount ? "border-destructive" : "border-border",
                 )}
               />
-              {errors.amount && (
-                <p className="text-xs text-destructive">{errors.amount.message}</p>
-              )}
+              <FormFieldError id="expense-amount-error">{errors.amount?.message}</FormFieldError>
             </div>
             <div className="w-24 flex flex-col gap-1.5">
-              <label className="font-label-md text-muted-foreground">Currency</label>
+              <FormFieldLabel htmlFor="expense-currency" required>Currency</FormFieldLabel>
               <Controller
                 control={control}
                 name="currency"
                 render={({ field }) => (
                   <select
+                    id="expense-currency"
                     {...field}
                     className={cn(
                       "w-full px-3 py-2.5 rounded-lg border bg-background text-foreground",
@@ -249,8 +256,9 @@ export function ExpenseForm({
 
         {/* Date */}
         <div className="flex flex-col gap-1.5">
-          <label className="font-label-md text-muted-foreground">Date</label>
+          <FormFieldLabel htmlFor="expense-date" optional>Date</FormFieldLabel>
           <input
+            id="expense-date"
             {...register("expense_date")}
             type="date"
             className={cn(
@@ -266,11 +274,9 @@ export function ExpenseForm({
 
       {/* Note (optional) */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-label-md text-muted-foreground">
-          Note{" "}
-          <span className="font-normal text-xs text-muted-foreground/70">(optional)</span>
-        </label>
+        <FormFieldLabel htmlFor="expense-note" optional>Note</FormFieldLabel>
         <textarea
+          id="expense-note"
           {...register("note")}
           rows={2}
           placeholder="e.g., Split with 3 friends, or referral code used"
@@ -305,6 +311,7 @@ export function ExpenseForm({
           {isSubmitting ? "Saving…" : initial ? "Save changes" : "Add Expense"}
         </button>
       </div>
+      </fieldset>
     </form>
   )
 }

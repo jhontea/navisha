@@ -6,7 +6,6 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import {
-  AlertCircle,
   CheckCircle2,
   ChevronDown,
   CreditCard,
@@ -17,6 +16,11 @@ import {
 } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel } from "@/lib/currency"
+import {
+  FormFieldDescription,
+  FormFieldError,
+  FormFieldLabel,
+} from "@/components/forms/FormFieldState"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import {
   getInclusiveDayCount,
@@ -120,31 +124,25 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-5">
+    <form onSubmit={handleSubmit(submit)} className="space-y-5" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="contents">
       {/* Trip Title */}
       <div className="space-y-1.5">
-        <label className="font-label-md text-muted-foreground" htmlFor="trip-title">
-          Trip Title <span className="text-destructive" aria-hidden="true">*</span>
-        </label>
+        <FormFieldLabel htmlFor="trip-title" required>Trip Title</FormFieldLabel>
         <input
           id="trip-title"
+          aria-invalid={Boolean(errors.title)}
+          aria-describedby={errors.title ? "trip-title-error" : undefined}
           className={`${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
           placeholder="e.g., Summer in Tokyo"
           {...register("title")}
         />
-        {errors.title && (
-          <p className="flex items-center gap-1 text-xs text-destructive">
-            <AlertCircle className="h-3 w-3" aria-hidden="true" />
-            {errors.title.message}
-          </p>
-        )}
+        <FormFieldError id="trip-title-error">{errors.title?.message}</FormFieldError>
       </div>
 
       {/* Destination */}
       <div className="space-y-1.5">
-        <label className="font-label-md text-muted-foreground" htmlFor="destination">
-          Destination
-        </label>
+        <FormFieldLabel htmlFor="destination" optional>Destination</FormFieldLabel>
         <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
           style={{ borderColor: errors.destination ? 'hsl(var(--error))' : undefined }}
         >
@@ -172,15 +170,10 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             )}
           />
         </div>
-        {errors.destination && (
-          <p className="flex items-center gap-1 text-xs text-destructive">
-            <AlertCircle className="h-3 w-3" aria-hidden="true" />
-            {errors.destination.message}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
+        <FormFieldError>{errors.destination?.message}</FormFieldError>
+        <FormFieldDescription>
           Pick a city, province, or country from the location suggestions.
-        </p>
+        </FormFieldDescription>
 
         {/* Existing cover preview */}
         {canRenderTripCover(coverPreview) && (
@@ -230,15 +223,9 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             })
           }}
         />
-        {(errors.start_date || errors.end_date) && (
-          <p
-            id="travel-dates-error"
-            className="flex items-center gap-1 text-xs text-destructive"
-          >
-            <AlertCircle className="h-3 w-3" aria-hidden="true" />
-            {errors.start_date?.message || errors.end_date?.message || "Please select both dates"}
-          </p>
-        )}
+        <FormFieldError id="travel-dates-error">
+          {errors.start_date?.message || errors.end_date?.message}
+        </FormFieldError>
       </fieldset>
 
       {/* Creation mode — keep manual and AI planning in the same entry flow. */}
@@ -305,10 +292,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         <>
       {/* Budget (optional) */}
       <div className="space-y-1.5">
-        <label className="font-label-md text-muted-foreground" htmlFor="budget">
-          Budget{" "}
-          <span className="font-normal text-xs text-muted-foreground/70">(optional)</span>
-        </label>
+        <FormFieldLabel htmlFor="budget" optional>Budget</FormFieldLabel>
         <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
           style={{ borderColor: errors.budget ? 'hsl(var(--error))' : undefined }}
         >
@@ -320,6 +304,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             id="budget"
             type="text"
             inputMode="numeric"
+            aria-invalid={Boolean(errors.budget)}
+            aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
             className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
@@ -332,22 +318,15 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             })}
           />
         </div>
-        <p className="text-xs text-muted-foreground">
+        <FormFieldDescription id="trip-budget-description">
           Set a total budget to track spending vs remaining.
-        </p>
-        {errors.budget && (
-          <p className="flex items-center gap-1 text-xs text-destructive">
-            <AlertCircle className="h-3 w-3" aria-hidden="true" />
-            {errors.budget.message}
-          </p>
-        )}
+        </FormFieldDescription>
+        <FormFieldError id="trip-budget-error">{errors.budget?.message}</FormFieldError>
       </div>
 
       {/* Base Currency — from backend */}
       <div className="space-y-1.5">
-        <label className="font-label-md text-muted-foreground" htmlFor="currency">
-          Base Currency <span className="text-destructive" aria-hidden="true">*</span>
-        </label>
+        <FormFieldLabel htmlFor="currency" required>Base Currency</FormFieldLabel>
         <div className="relative">
           <Controller
             name="base_currency"
@@ -379,12 +358,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             aria-hidden="true"
           />
         </div>
-        {errors.base_currency && (
-          <p className="flex items-center gap-1 text-xs text-destructive">
-            <AlertCircle className="h-3 w-3" aria-hidden="true" />
-            {errors.base_currency.message}
-          </p>
-        )}
+        <FormFieldError>{errors.base_currency?.message}</FormFieldError>
       </div>
 
       {/* Form Actions */}
@@ -417,6 +391,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       </div>
         </>
       )}
+      </fieldset>
     </form>
   )
 }
