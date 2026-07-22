@@ -9,6 +9,7 @@ import type {
   TripDraft,
   TripListResponse,
   UpdateTripInput,
+  DayPreview,
 } from "./types"
 
 
@@ -53,4 +54,7 @@ export const tripApi = {
 
   createFromDraft: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
     api.post<{ trip_id: string }>("/trips/from-draft", params),
+
+  generateDayPreview: (tripId: string, dayId: string, instruction = "") =>
+    api.post<DayPreview>(`/trips/${tripId}/days/${dayId}/generate-preview`, { instruction }),
 }

@@ -26,6 +26,7 @@ import {
   Plane,
   Plus,
   Ship,
+  Sparkles,
   Train,
   TramFront,
   Boxes,
@@ -50,6 +51,7 @@ import type { Accommodation } from "@/features/accommodation/types"
 import { ActivityCard } from "./ActivityCard"
 import { ActivityForm } from "./ActivityForm"
 import { findActivityOverlaps } from "../lib/time"
+import { DayAIPlanner } from "./DayAIPlanner"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -569,6 +571,22 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
         </div>
       )}
 
+      {activities.length < 6 && (
+        <div className="relative pl-12">
+          <div className="absolute left-0 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-primary/30 bg-gradient-to-br from-primary/15 to-chromatic-aurora/15 text-primary shadow-sm shadow-primary/10">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <DayAIPlanner
+            tripId={tripId}
+            dayId={dayId}
+            date={date}
+            dayNumber={dayNumber}
+            destination={destination}
+            existingCount={activities.length}
+          />
+        </div>
+      )}
+
       {/* Inline Add Activity form */}
       <div className="relative pl-12">
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted-foreground">
@@ -591,7 +609,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="group flex w-full items-center gap-2 rounded-2xl border border-dashed border-border/50 px-4 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-primary hover:text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="group flex w-full items-center gap-2 rounded-full border border-dashed border-border/50 px-4 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-primary hover:text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Plus className="h-4 w-4 transition-transform group-hover:rotate-90 duration-200" />
             Add activity to Day {dayNumber}

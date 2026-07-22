@@ -121,3 +121,8 @@ export interface GenerateTripResponse {
   end_date: string
   draft: TripDraft
 }
+
+export interface DayPreview {
+  theme: string
+  activities: ActivityDraft[]
+}
