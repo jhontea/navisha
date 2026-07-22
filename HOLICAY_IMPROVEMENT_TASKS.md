@@ -19,7 +19,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 - [ ] **FORM-10 - Custom activity form essentials (P1)**: dukung nama, alamat, hari, jam mulai, durasi, catatan, dan biaya opsional untuk aktivitas manual.
 - [ ] **FORM-11 - Advanced activity details (P2)**: pindahkan external link, attachment, booking reference, dan detail tambahan ke bagian `Advanced options` agar form utama tetap ringkas.
 - [ ] **FORM-12 - Smart activity filters (P2)**: tambahkan filter ringan seperti `Popular`, `Nearby`, `Recommended`, dan `Budget-friendly` pada hasil pencarian tempat.
-- [ ] **FORM-13 - Actionable disabled states (P1)**: tampilkan alasan ketika aksi seperti optimize route belum tersedia, misalnya membutuhkan minimal dua aktivitas.
+- [x] **FORM-13 - Actionable disabled states (P1)**: tampilkan alasan ketika aksi belum tersedia; diterapkan pada penyimpanan detail trip dan budget untuk menjelaskan field yang masih perlu dilengkapi.
 - [ ] **FORM-14 - Inline day title editing (P2)**: izinkan judul hari diedit langsung dari itinerary tanpa membuka modal terpisah.
 - [x] **FORM-15 - Transportation schedule UX (P1)**: kelompokkan departure/arrival dalam satu schedule card, jadikan arrival opsional, tambahkan default, shortcut `Same day`/`+1 day`, durasi otomatis, dan validasi urutan waktu.
 

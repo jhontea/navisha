@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import { BottomSheet } from "@/components/BottomSheet"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Button } from "@/components/ui/button"
+import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
 import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
@@ -14,6 +15,10 @@ import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
+import {
+  getBudgetSaveDisabledReason,
+  getTripSaveDisabledReason,
+} from "@/features/trip/lib/actionability"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function TripBudgetPage() {
@@ -35,6 +40,12 @@ export default function TripBudgetPage() {
   const [editingBudget, setEditingBudget] = useState(false)
   const [displayBudget, setDisplayBudget] = useState("")
   const [rawBudget, setRawBudget] = useState("")
+  const tripSaveDisabledReason = getTripSaveDisabledReason({
+    title: editTitle,
+    startDate: editStartDate,
+    endDate: editEndDate,
+  })
+  const budgetSaveDisabledReason = getBudgetSaveDisabledReason(rawBudget)
 
   const startEditing = () => {
     if (!trip) return
@@ -190,11 +201,16 @@ export default function TripBudgetPage() {
                 </div>
               </div>
 
+              <ActionDisabledHint
+                id="budget-save-disabled-reason"
+                reason={budgetSaveDisabledReason}
+              />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleSaveBudget}
-                  disabled={isUpdating || !rawBudget}
+                  disabled={isUpdating || Boolean(budgetSaveDisabledReason)}
+                  aria-describedby={budgetSaveDisabledReason ? "budget-save-disabled-reason" : undefined}
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-primary/25 transition-all hover:shadow-lg hover:shadow-primary/35 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   {isUpdating ? (
@@ -276,8 +292,17 @@ export default function TripBudgetPage() {
               setEditEndDate(range.endDate)
             }}
           />
+          <ActionDisabledHint
+            id="trip-save-disabled-reason"
+            reason={tripSaveDisabledReason}
+          />
           <div className="flex gap-2 pt-2">
-            <Button onClick={saveEdits} disabled={isUpdating || !editTitle.trim() || !editStartDate || !editEndDate} className="flex-1">
+            <Button
+              onClick={saveEdits}
+              disabled={isUpdating || Boolean(tripSaveDisabledReason)}
+              aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
+              className="flex-1"
+            >
               <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
             </Button>
             <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isUpdating}>
