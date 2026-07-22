@@ -23,6 +23,7 @@ interface ChatMessage {
 interface Props {
   onSubmit: (input: GenerateTripInput) => void
   disabled?: boolean
+  initialValues?: Partial<GenerateTripInput>
 }
 
 function daySpan(start: string, end: string): number {
@@ -38,7 +39,7 @@ const inputBase = "input-base"
 // GenerateChatWizard collects the auto-generate inputs through a guided,
 // chat-style flow. Each answer becomes a bubble; the final step shows a recap
 // plus the Generate button. State is held locally and emitted via onSubmit.
-export function GenerateChatWizard({ onSubmit, disabled }: Props) {
+export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props) {
   const { data: currencyData } = useSupportedCurrencies()
   const currencies = currencyData?.supported ?? []
 
@@ -48,14 +49,14 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
   ])
 
   // Collected values
-  const [destination, setDestination] = useState("")
+  const [destination, setDestination] = useState(initialValues?.destination ?? "")
   const [description, setDescription] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [currency, setCurrency] = useState("IDR")
+  const [startDate, setStartDate] = useState(initialValues?.start_date ?? "")
+  const [endDate, setEndDate] = useState(initialValues?.end_date ?? "")
+  const [currency, setCurrency] = useState(initialValues?.base_currency ?? "IDR")
 
   // Current input field bindings
-  const [draftText, setDraftText] = useState("")
+  const [draftText, setDraftText] = useState(initialValues?.destination ?? "")
   const [error, setError] = useState<string | null>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
