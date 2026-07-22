@@ -5,6 +5,7 @@ import { Sparkles, Send, ChevronDown, RefreshCw, AlertCircle } from "lucide-reac
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { cn } from "@/lib/utils"
 import { primaryTripActionButtonClassName } from "../lib/styles"
+import { TravelDateRangePicker } from "./TravelDateRangePicker"
 import type { GenerateTripInput } from "../types"
 
 const MAX_DAYS = 10
@@ -57,7 +58,6 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
   const [draftText, setDraftText] = useState("")
   const [error, setError] = useState<string | null>(null)
 
-  const endDateRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -142,20 +142,12 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
     setError(null)
   }
 
-  const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
-    try {
-      e.currentTarget.showPicker?.()
-    } catch {
-      // native fallback
-    }
-  }
-
   // Step progress indicator
   const STEPS: StepId[] = ["destination", "description", "dates", "currency", "review"]
   const stepIdx = STEPS.indexOf(step)
 
   return (
-    <div className="glass rounded-2xl overflow-hidden">
+    <div className="glass rounded-2xl">
       {/* Progress bar */}
       <div className="h-1 bg-border/30">
         <div
@@ -249,31 +241,17 @@ export function GenerateChatWizard({ onSubmit, disabled }: Props) {
 
           {step === "dates" && (
             <div className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Date Range</label>
-                <div className="flex rounded-lg border border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-background">
-                  <input
-                    type="date"
-                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
-                    value={startDate}
-                    onClick={openPicker}
-                    onChange={(e) => {
-                      setStartDate(e.target.value)
-                      setTimeout(() => endDateRef.current?.showPicker?.(), 100)
-                    }}
-                  />
-                  <span className="flex items-center text-foreground-variant/30 text-sm px-0.5 select-none">—</span>
-                  <input
-                    ref={endDateRef}
-                    type="date"
-                    className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
-                    value={endDate}
-                    min={startDate || undefined}
-                    onClick={openPicker}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
+              <TravelDateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                duration={span || null}
+                hasError={Boolean(error)}
+                onChange={(range) => {
+                  setStartDate(range.startDate)
+                  setEndDate(range.endDate)
+                  setError(null)
+                }}
+              />
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-medium ${span > MAX_DAYS ? "text-destructive" : "text-muted-foreground"}`}>
                   {span > 0 ? `${span} day${span > 1 ? "s" : ""}` : "Select date range"}

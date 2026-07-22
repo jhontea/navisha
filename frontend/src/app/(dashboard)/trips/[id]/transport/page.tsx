@@ -5,6 +5,7 @@ import { Check } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
+import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
 import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { TransportationSection } from "@/features/transportation/components/TransportationSection"
 import { TripHero } from "@/features/trip/components/TripHero"
@@ -148,18 +149,17 @@ export default function TripTransportPage() {
               <button type="button" onClick={() => setEditCover("")} className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">Remove</button>
             </div>
           )}
-          <div className="flex gap-2">
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Start date</label>
-              <input type="date" value={editStartDate} onChange={(e) => setEditStartDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none" disabled={isUpdating} />
-            </div>
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">End date</label>
-              <input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none" disabled={isUpdating} />
-            </div>
-          </div>
+          <TravelDateRangePicker
+            startDate={editStartDate}
+            endDate={editEndDate}
+            disabled={isUpdating}
+            onChange={(range) => {
+              setEditStartDate(range.startDate)
+              setEditEndDate(range.endDate)
+            }}
+          />
           <div className="flex gap-2 pt-2">
-            <Button onClick={saveEdits} disabled={isUpdating || !editTitle.trim()} className="flex-1">
+            <Button onClick={saveEdits} disabled={isUpdating || !editTitle.trim() || !editStartDate || !editEndDate} className="flex-1">
               <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
             </Button>
             <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isUpdating}>

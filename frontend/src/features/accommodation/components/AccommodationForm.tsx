@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Building2,
-  Calendar,
   Hash,
   Hotel,
   Home,
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
+import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
 import {
   ACCOMMODATION_TYPES,
   ACCOMMODATION_TYPE_LABELS,
@@ -95,7 +95,9 @@ export function AccommodationForm({
     register,
     handleSubmit,
     control,
+    clearErrors,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -114,6 +116,10 @@ export function AccommodationForm({
       currency: defaultCurrency,
     },
   })
+
+  const checkIn = watch("check_in")
+  const checkOut = watch("check_out")
+  const stayNights = getStayNights(checkIn, checkOut)
 
   const submit = async (v: FormValues) => {
     const entity: CreateAccommodationInput = {
@@ -134,14 +140,6 @@ export function AccommodationForm({
         ? { amount, currency: v.currency }
         : null
     await onSubmit({ ...entity, cost })
-  }
-
-  const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
-    try {
-      e.currentTarget.showPicker?.()
-    } catch {
-      // ignore
-    }
   }
 
   return (
@@ -238,45 +236,40 @@ export function AccommodationForm({
           </div>
         </div>
 
-        {/* Check-in / Check-out row */}
-        <div className="grid grid-cols-2 gap-4 md:gap-6">
-          {/* Check-in */}
-          <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              Check-in Date
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="date"
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                onClick={openPicker}
-                {...register("check_in")}
-              />
-            </div>
-            {errors.check_in && (
-              <p className="text-xs text-destructive">{errors.check_in.message}</p>
-            )}
-          </div>
-
-          {/* Check-out */}
-          <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              Check-out Date
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="date"
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                onClick={openPicker}
-                {...register("check_out")}
-              />
-            </div>
-            {errors.check_out && (
-              <p className="text-xs text-destructive">{errors.check_out.message}</p>
-            )}
-          </div>
+        {/* Check-in and check-out use the same two-click range interaction. */}
+        <div className="space-y-2">
+          <input type="hidden" {...register("check_in")} />
+          <input type="hidden" {...register("check_out")} />
+          <TravelDateRangePicker
+            startDate={checkIn}
+            endDate={checkOut}
+            duration={stayNights}
+            durationUnit="night"
+            label="Stay dates"
+            emptyText="Select check-in and check-out"
+            endText="Select check-out"
+            startHint="Choose your check-in date"
+            endHint="Choose your check-out date"
+            hasError={Boolean(errors.check_in || errors.check_out)}
+            errorId="stay-dates-error"
+            disabled={isSubmitting}
+            onChange={(range, complete) => {
+              clearErrors(["check_in", "check_out"])
+              setValue("check_in", range.startDate, {
+                shouldDirty: true,
+                shouldValidate: complete,
+              })
+              setValue("check_out", range.endDate, {
+                shouldDirty: true,
+                shouldValidate: complete,
+              })
+            }}
+          />
+          {(errors.check_in || errors.check_out) && (
+            <p id="stay-dates-error" className="text-xs text-destructive">
+              {errors.check_in?.message || errors.check_out?.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -388,4 +381,16 @@ export function AccommodationForm({
       </div>
     </form>
   )
+}
+
+function getStayNights(checkIn: string, checkOut: string) {
+  if (!ISO_DATE.test(checkIn) || !ISO_DATE.test(checkOut)) return null
+
+  const start = Date.parse(`${checkIn}T00:00:00Z`)
+  const end = Date.parse(`${checkOut}T00:00:00Z`)
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    return null
+  }
+
+  return Math.floor((end - start) / 86_400_000)
 }

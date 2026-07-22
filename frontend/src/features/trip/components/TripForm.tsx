@@ -17,6 +17,10 @@ import {
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel } from "@/lib/currency"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
+import {
+  getInclusiveDayCount,
+  TravelDateRangePicker,
+} from "./TravelDateRangePicker"
 import type { CreateTripInput, Trip } from "../types"
 import { primaryTripActionButtonClassName } from "../lib/styles"
 import { canRenderTripCover } from "../lib/cover"
@@ -73,6 +77,9 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     register,
     handleSubmit,
     control,
+    clearErrors,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
 
@@ -80,6 +87,9 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     defaultValues: buildDefaults(initial),
   })
 
+  const startDate = watch("start_date")
+  const endDate = watch("end_date")
+  const tripDuration = getInclusiveDayCount(startDate, endDate)
 
   const submit = async (values: FormValues) => {
     await onSubmit({
@@ -92,14 +102,6 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       cover_image_url: coverPreview && !coverPreview.startsWith("blob:") ? coverPreview : "",
       notes: values.notes ?? "",
     })
-  }
-
-  const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
-    try {
-      e.currentTarget.showPicker?.()
-    } catch {
-      // fallback to native calendar
-    }
   }
 
   return (
@@ -188,41 +190,41 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
 
 
-      {/* Date Range — unified single field */}
-      <div className="space-y-1.5">
-        <label className="font-label-md text-muted-foreground">
-          Date Range <span className="text-destructive" aria-hidden="true">*</span>
-        </label>
-        <div className={`flex rounded-lg border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-background ${errors.start_date || errors.end_date ? "border-error" : "border-border"}`}>
-          <input
-            type="date"
-            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
-            onClick={openPicker}
-            {...register("start_date", {
-              onChange: () => {
-                setTimeout(() => {
-                  const el = document.getElementById("end-date") as HTMLInputElement | null
-                  el?.showPicker?.()
-                }, 100)
-              },
-            })}
-          />
-          <span className="flex items-center text-muted-foreground/30 text-sm px-0.5 select-none">—</span>
-          <input
-            id="end-date"
-            type="date"
-            className="flex-1 min-w-0 px-3 py-3 font-body-md text-body-md text-foreground bg-transparent border-none outline-none rounded-none [color-scheme:light]"
-            onClick={openPicker}
-            {...register("end_date")}
-          />
-        </div>
+      {/* A single field opens one calendar; first click starts the range. */}
+      <fieldset className="space-y-1.5">
+        <legend className="sr-only">
+          Travel dates <span aria-hidden="true">*</span>
+        </legend>
+        <input type="hidden" {...register("start_date")} />
+        <input type="hidden" {...register("end_date")} />
+        <TravelDateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          duration={tripDuration}
+          hasError={Boolean(errors.start_date || errors.end_date)}
+          errorId="travel-dates-error"
+          onChange={(range, complete) => {
+            clearErrors(["start_date", "end_date"])
+            setValue("start_date", range.startDate, {
+              shouldDirty: true,
+              shouldValidate: complete,
+            })
+            setValue("end_date", range.endDate, {
+              shouldDirty: true,
+              shouldValidate: complete,
+            })
+          }}
+        />
         {(errors.start_date || errors.end_date) && (
-          <p className="flex items-center gap-1 text-xs text-destructive">
+          <p
+            id="travel-dates-error"
+            className="flex items-center gap-1 text-xs text-destructive"
+          >
             <AlertCircle className="h-3 w-3" aria-hidden="true" />
             {errors.start_date?.message || errors.end_date?.message || "Please select both dates"}
           </p>
         )}
-      </div>
+      </fieldset>
 
       {/* Budget (optional) */}
       <div className="space-y-1.5">
