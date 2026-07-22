@@ -205,6 +205,7 @@ export default function TripDetailPage() {
                   dayId={d.id}
                   dayNumber={d.day_number}
                   date={d.date}
+                  title={d.title ?? ""}
                   notes={d.notes ?? ""}
                   destination={trip.description}
                   defaultExpanded={idx === 0}

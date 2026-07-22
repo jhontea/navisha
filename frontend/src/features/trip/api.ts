@@ -44,6 +44,9 @@ export const tripApi = {
   updateDayNotes: (dayId: string, notes: string) =>
     api.put<Day>(`/days/${dayId}/notes`, { notes }),
 
+  updateDayTitle: (dayId: string, title: string) =>
+    api.put<Day>(`/days/${dayId}/title`, { title }),
+
   // F5 — Auto-generate
   generate: (input: GenerateTripInput) =>
     api.post<GenerateTripResponse>("/trips/generate", input),
@@ -51,4 +54,3 @@ export const tripApi = {
   createFromDraft: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
     api.post<{ trip_id: string }>("/trips/from-draft", params),
 }
-

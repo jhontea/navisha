@@ -350,8 +350,8 @@ func (r *postgresRepository) UpdateDayNotes(dayID, notes string) (*Day, error) {
 	d := &Day{}
 	err := r.db.QueryRow(context.Background(),
 		`UPDATE days SET notes = $2 WHERE id = $1
-		 RETURNING id, trip_id, date, day_number, notes`, dayID, notes).
-		Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Notes)
+		 RETURNING id, trip_id, date, day_number, title, notes`, dayID, notes).
+		Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Title, &d.Notes)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrDayNotFound
@@ -361,9 +361,24 @@ func (r *postgresRepository) UpdateDayNotes(dayID, notes string) (*Day, error) {
 	return d, nil
 }
 
+func (r *postgresRepository) UpdateDayTitle(dayID, title string) (*Day, error) {
+	d := &Day{}
+	err := r.db.QueryRow(context.Background(),
+		`UPDATE days SET title = $2 WHERE id = $1
+		 RETURNING id, trip_id, date, day_number, title, notes`, dayID, title).
+		Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Title, &d.Notes)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrDayNotFound
+		}
+		return nil, fmt.Errorf("trip.UpdateDayTitle: %w", err)
+	}
+	return d, nil
+}
+
 func (r *postgresRepository) ListDays(tripID string) ([]Day, error) {
 	rows, err := r.db.Query(context.Background(),
-		`SELECT id, trip_id, date, day_number, notes
+		`SELECT id, trip_id, date, day_number, title, notes
 		 FROM days WHERE trip_id = $1 ORDER BY day_number ASC`, tripID)
 	if err != nil {
 		return nil, fmt.Errorf("trip.ListDays: %w", err)
@@ -373,7 +388,7 @@ func (r *postgresRepository) ListDays(tripID string) ([]Day, error) {
 	days := []Day{}
 	for rows.Next() {
 		var d Day
-		if err := rows.Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Notes); err != nil {
+		if err := rows.Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Title, &d.Notes); err != nil {
 			return nil, fmt.Errorf("trip.ListDays scan: %w", err)
 		}
 		days = append(days, d)

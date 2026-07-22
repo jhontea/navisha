@@ -22,6 +22,7 @@ const (
 	maxCoverImageURLLen  = 2048
 	maxTripDurationDays  = 90 // prevent trips spanning years
 	minTitleLength       = 1  // title must not be empty
+	maxDayTitleLength    = 80
 )
 
 type UsecaseInterface interface {
@@ -32,6 +33,7 @@ type UsecaseInterface interface {
 	Get(userID, tripID string) (*Trip, []Day, error)
 	Update(ctx context.Context, userID, tripID string, in UpdateInput) (*Trip, error)
 	Delete(userID, tripID string) error
+	UpdateDayTitle(userID, dayID, title string) (*Day, error)
 	UpdateDayNotes(userID, dayID, notes string) (*Day, error)
 }
 
@@ -268,6 +270,24 @@ func (u *Usecase) UpdateDayNotes(userID, dayID, notes string) (*Day, error) {
 		return nil, apperr.ErrForbidden
 	}
 	return u.repo.UpdateDayNotes(dayID, notes)
+}
+
+// UpdateDayTitle mutates the optional display title on a single day.
+// Ownership chain day → trip → user is verified before the update.
+func (u *Usecase) UpdateDayTitle(userID, dayID, title string) (*Day, error) {
+	title = strings.TrimSpace(sanitize.Text(title))
+	if len(title) > maxDayTitleLength {
+		return nil, ErrDayTitleTooLong
+	}
+
+	owner, err := u.repo.FindDayOwner(dayID)
+	if err != nil {
+		return nil, err
+	}
+	if owner != userID {
+		return nil, apperr.ErrForbidden
+	}
+	return u.repo.UpdateDayTitle(dayID, title)
 }
 
 func validateDates(start, end time.Time) error {

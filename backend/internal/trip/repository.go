@@ -51,7 +51,9 @@ type Repository interface {
 
 	ListDays(tripID string) ([]Day, error)
 	FindDayOwner(dayID string) (userID string, err error)
+	UpdateDayTitle(dayID, title string) (*Day, error)
 	UpdateDayNotes(dayID, notes string) (*Day, error)
 }
 
 var ErrDayNotFound = errors.New("day not found")
+var ErrDayTitleTooLong = errors.New("day title exceeds maximum length")

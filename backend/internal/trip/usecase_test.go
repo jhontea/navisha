@@ -3,6 +3,7 @@ package trip
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -321,6 +322,42 @@ func TestUsecase_UpdateDayNotes_DayNotFound(t *testing.T) {
 	_, err := u.UpdateDayNotes("user-1", "missing", "x")
 	if !errors.Is(err, ErrDayNotFound) {
 		t.Errorf("err = %v, want ErrDayNotFound", err)
+	}
+}
+
+// ---------- UpdateDayTitle ----------
+
+func TestUsecase_UpdateDayTitle_Success(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["d1"] = "user-1"
+	u := NewUsecase(repo)
+
+	d, err := u.UpdateDayTitle("user-1", "d1", "  Shibuya & Harajuku  ")
+	if err != nil {
+		t.Fatalf("UpdateDayTitle: %v", err)
+	}
+	if d.Title != "Shibuya & Harajuku" {
+		t.Errorf("title = %q, want Shibuya & Harajuku", d.Title)
+	}
+}
+
+func TestUsecase_UpdateDayTitle_Forbidden(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["d1"] = "user-other"
+	u := NewUsecase(repo)
+
+	_, err := u.UpdateDayTitle("user-1", "d1", "Arrival Day")
+	if !errors.Is(err, apperr.ErrForbidden) {
+		t.Errorf("err = %v, want ErrForbidden", err)
+	}
+}
+
+func TestUsecase_UpdateDayTitle_TooLong(t *testing.T) {
+	u := NewUsecase(newMockRepo())
+
+	_, err := u.UpdateDayTitle("user-1", "d1", strings.Repeat("a", maxDayTitleLength+1))
+	if !errors.Is(err, ErrDayTitleTooLong) {
+		t.Errorf("err = %v, want ErrDayTitleTooLong", err)
 	}
 }
 

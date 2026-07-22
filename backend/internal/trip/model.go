@@ -24,6 +24,7 @@ type Day struct {
 	TripID    string    // Parent trip ID
 	Date      time.Time // Date of this day
 	DayNumber int       // Sequential day number (1-indexed)
+	Title     string    // Optional user-defined day title
 	Notes     string    // Optional day notes
 }
 
