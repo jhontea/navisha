@@ -4,7 +4,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 
 ## Form UX — prioritas awal
 
-- [ ] **FORM-01 — Unified travel date field (P1)**: gabungkan start date dan end date sebagai satu blok `Travel dates`, tampilkan durasi realtime, validasi rentang sebelum submit, dan pertahankan auto-open end date.
+- [x] **FORM-01 — Unified travel date field (P1)**: gabungkan start date dan end date sebagai satu blok `Travel dates`, tampilkan durasi realtime, validasi rentang sebelum submit, dan pertahankan auto-open end date.
 - [x] **FORM-02 — Destination autocomplete polish (P1)**: tampilkan format `City, Country`, highlight query, loading/empty state, tombol clear, Escape-to-close, keyboard navigation, dan simpan lokasi setelah suggestion dipilih.
 - [ ] **FORM-03 — AI toggle pada trip form (P1)**: tambahkan pilihan `Generate a draft with AI` di bawah destination/date sehingga manual dan AI menjadi satu flow.
 - [ ] **FORM-04 — Consistent field states (P1)**: samakan label, helper text, focus state, error message, disabled state, dan required marker di Trip, Expense, Stay, Activity, dan Transportation forms.
