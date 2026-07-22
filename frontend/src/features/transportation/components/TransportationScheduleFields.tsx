@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Clock3, Plus, X } from "lucide-react"
+import {
+  FormFieldDescription,
+  FormFieldError,
+  FormFieldLabel,
+} from "@/components/forms/FormFieldState"
 
 interface Props {
   departure: string
@@ -51,9 +56,9 @@ export function TransportationScheduleFields({
             <Clock3 className="h-4 w-4 text-primary" aria-hidden="true" />
             Schedule
           </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <FormFieldDescription className="mt-1">
             Enter the local time shown at each station, port, or airport.
-          </p>
+          </FormFieldDescription>
         </div>
         {duration !== null && (
           <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
@@ -64,17 +69,19 @@ export function TransportationScheduleFields({
 
       <div className={`grid gap-4 ${showArrival ? "md:grid-cols-2" : ""}`}>
         <div className="space-y-2">
-          <label
-            className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          <FormFieldLabel
+            required
+            className="text-xs uppercase tracking-wide"
             htmlFor="departure-datetime"
           >
-            Departure <span className="text-destructive">*</span>
-          </label>
+            Departure
+          </FormFieldLabel>
           <input
             id="departure-datetime"
             type="datetime-local"
             value={departure}
             disabled={disabled}
+            aria-invalid={Boolean(departureError)}
             aria-describedby={departureError ? "departure-error" : undefined}
             className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
               departureError ? "border-destructive" : "border-border"
@@ -88,22 +95,19 @@ export function TransportationScheduleFields({
               }
             }}
           />
-          {departureError && (
-            <p id="departure-error" className="text-xs text-destructive">
-              {departureError}
-            </p>
-          )}
+          <FormFieldError id="departure-error">{departureError}</FormFieldError>
         </div>
 
         {showArrival ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+              <FormFieldLabel
+                optional
+                className="text-xs uppercase tracking-wide"
                 htmlFor="arrival-datetime"
               >
-                Arrival <span className="font-normal normal-case">(optional)</span>
-              </label>
+                Arrival
+              </FormFieldLabel>
               <button
                 type="button"
                 disabled={disabled}
@@ -123,6 +127,7 @@ export function TransportationScheduleFields({
               type="datetime-local"
               value={arrival}
               disabled={disabled}
+              aria-invalid={Boolean(arrivalError)}
               aria-describedby={arrivalError ? "arrival-error" : undefined}
               className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
                 arrivalError ? "border-destructive" : "border-border"
@@ -156,11 +161,7 @@ export function TransportationScheduleFields({
                 </button>
               </div>
             )}
-            {arrivalError && (
-              <p id="arrival-error" className="text-xs text-destructive">
-                {arrivalError}
-              </p>
-            )}
+            <FormFieldError id="arrival-error">{arrivalError}</FormFieldError>
           </div>
         ) : (
           <button

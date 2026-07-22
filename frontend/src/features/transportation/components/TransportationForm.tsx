@@ -14,7 +14,6 @@ import {
   Boxes,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -24,6 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import {
+  FormFieldDescription,
+  FormFieldError,
+  FormFieldLabel,
+} from "@/components/forms/FormFieldState"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
 import { TransportationScheduleFields } from "./TransportationScheduleFields"
 import {
@@ -160,12 +164,13 @@ export function TransportationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-8">
+    <form onSubmit={handleSubmit(submit)} className="space-y-8" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="contents">
       {/* Transportation Type */}
       <div>
-        <label className="font-label-md text-muted-foreground mb-4 uppercase tracking-wider">
+        <FormFieldLabel required className="mb-4 uppercase tracking-wider">
           Transportation Type
-        </label>
+        </FormFieldLabel>
         <Controller
           control={control}
           name="type"
@@ -181,6 +186,7 @@ export function TransportationForm({
                     <button
                       key={t}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => !lockType && field.onChange(t)}
                       disabled={lockType}
                       className={cn(
@@ -206,9 +212,7 @@ export function TransportationForm({
             </div>
           )}
         />
-        {errors.type && (
-          <p className="mt-1 text-xs text-destructive">{errors.type.message}</p>
-        )}
+        <FormFieldError className="mt-1">{errors.type?.message}</FormFieldError>
       </div>
 
       {/* Input Grid */}
@@ -217,9 +221,7 @@ export function TransportationForm({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {/* From Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              From Location
-            </label>
+            <FormFieldLabel required>From Location</FormFieldLabel>
             <Controller
               control={control}
               name="from_location"
@@ -234,16 +236,12 @@ export function TransportationForm({
                 />
               )}
             />
-            {errors.from_location && (
-              <p className="text-xs text-destructive">{errors.from_location.message}</p>
-            )}
+            <FormFieldError>{errors.from_location?.message}</FormFieldError>
           </div>
 
           {/* To Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <label className="font-label-md text-muted-foreground">
-              To Location
-            </label>
+            <FormFieldLabel required>To Location</FormFieldLabel>
             <Controller
               control={control}
               name="to_location"
@@ -258,27 +256,29 @@ export function TransportationForm({
                 />
               )}
             />
-            {errors.to_location && (
-              <p className="text-xs text-destructive">{errors.to_location.message}</p>
-            )}
+            <FormFieldError>{errors.to_location?.message}</FormFieldError>
           </div>
 
           {/* Label / Flight Number */}
           <div className="space-y-2 col-span-2 md:col-span-1">
-            <label className="font-label-md text-muted-foreground">
+            <FormFieldLabel htmlFor="transport-label" optional>
               Label / Flight Number
-            </label>
+            </FormFieldLabel>
             <div className="relative">
               <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                id="transport-label"
+                aria-invalid={Boolean(errors.label)}
+                aria-describedby={errors.label ? "transport-label-error" : undefined}
+                className={cn(
+                  "w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
+                  errors.label ? "border-destructive ring-1 ring-destructive/20" : "border-border",
+                )}
                 placeholder="e.g. GA 420"
                 {...register("label")}
               />
             </div>
-            {errors.label && (
-              <p className="text-xs text-destructive">{errors.label.message}</p>
-            )}
+            <FormFieldError id="transport-label-error">{errors.label?.message}</FormFieldError>
           </div>
         </div>
 
@@ -307,18 +307,17 @@ export function TransportationForm({
 
       {/* Operator */}
       <div className="space-y-2">
-        <label className="font-label-md text-muted-foreground">
-          Operator (optional)
-        </label>
-        <Input placeholder="e.g. Garuda Indonesia" {...register("operator")} />
+        <FormFieldLabel htmlFor="transport-operator" optional>Operator</FormFieldLabel>
+        <Input id="transport-operator" placeholder="e.g. Garuda Indonesia" {...register("operator")} />
       </div>
 
       {/* Cost field */}
       {withCost && (
         <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-          <Label className="font-label-md text-xs text-muted-foreground uppercase tracking-wider">
-            Cost (optional — adds an expense to the trip budget)
-          </Label>
+          <FormFieldLabel optional className="text-xs uppercase tracking-wider">Cost</FormFieldLabel>
+          <FormFieldDescription className="mt-1">
+            Adds an expense to the trip budget when an amount is entered.
+          </FormFieldDescription>
           <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
             <Input
               type="number"
@@ -353,10 +352,8 @@ export function TransportationForm({
 
       {/* Notes */}
       <div className="space-y-2">
-        <label className="font-label-md text-muted-foreground">
-          Notes (optional)
-        </label>
-        <Textarea rows={2} placeholder="Any additional details…" {...register("notes")} />
+        <FormFieldLabel htmlFor="transport-notes" optional>Notes</FormFieldLabel>
+        <Textarea id="transport-notes" rows={2} placeholder="Any additional details…" {...register("notes")} />
       </div>
 
       {/* Form actions */}
@@ -390,6 +387,7 @@ export function TransportationForm({
           Cancel
         </button>
       </div>
+      </fieldset>
     </form>
   )
 }

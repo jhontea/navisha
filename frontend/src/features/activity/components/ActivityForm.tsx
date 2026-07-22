@@ -5,7 +5,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  FormFieldError,
+  FormFieldLabel,
+} from "@/components/forms/FormFieldState"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -157,7 +160,12 @@ export function ActivityForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
+    <form
+      onSubmit={handleSubmit(submit)}
+      className="flex flex-col gap-4"
+      aria-busy={isSubmitting}
+    >
+      <fieldset disabled={isSubmitting} className="contents">
       {/* Type switcher */}
       {!lockType && (
         <div className="flex rounded-xl border border-border/30 bg-muted/30 p-1 gap-1">
@@ -185,7 +193,7 @@ export function ActivityForm({
       )}
 
       {/* Title — always visible */}
-      <Field label="Title" error={errors.title?.message}>
+      <Field label="Title" required error={errors.title?.message}>
         <Input
           placeholder={
             type === "location"
@@ -202,14 +210,14 @@ export function ActivityForm({
       {type === "location" && (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Start time" error={errors.start_time?.message}>
+            <Field label="Start time" optional error={errors.start_time?.message}>
               <Input
                 type="time"
                 onClick={openPicker}
                 {...register("start_time")}
               />
             </Field>
-            <Field label="End time" error={errors.end_time?.message}>
+            <Field label="End time" optional error={errors.end_time?.message}>
               <Input
                 type="time"
                 onClick={openPicker}
@@ -220,6 +228,7 @@ export function ActivityForm({
 
           <Field
             label="Location name"
+            required
             error={errors.location_name?.message}
           >
             <Controller
@@ -247,14 +256,14 @@ export function ActivityForm({
           <input type="hidden" {...register("lng")} />
           <input type="hidden" {...register("google_place_id")} />
 
-          <Field label="Address">
+          <Field label="Address" optional>
             <Input
               placeholder="Auto-filled from location search"
               {...register("address")}
             />
           </Field>
 
-          <Field label="Notes">
+          <Field label="Notes" optional>
             <Textarea
               rows={2}
               placeholder="Any notes about this place…"
@@ -266,7 +275,7 @@ export function ActivityForm({
 
       {/* Note fields */}
       {type === "note" && (
-        <Field label="Note" error={errors.note_content?.message}>
+        <Field label="Note" required error={errors.note_content?.message}>
           <Textarea
             rows={4}
             placeholder="Write your notes here…"
@@ -278,7 +287,7 @@ export function ActivityForm({
       {/* Todo fields */}
       {type === "todo" && (
         <div className="flex flex-col gap-2">
-          <Label className="text-sm font-medium">Todo items</Label>
+          <FormFieldLabel required>Todo items</FormFieldLabel>
           <div className="space-y-2">
             {todoArr.fields.map((field, i) => (
               <div key={field.id} className="flex items-center gap-2 group/item">
@@ -301,11 +310,7 @@ export function ActivityForm({
               </div>
             ))}
           </div>
-          {errors.todo_items?.message && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <span>⚠</span> {errors.todo_items.message}
-            </p>
-          )}
+          <FormFieldError>{errors.todo_items?.message}</FormFieldError>
           <button
             type="button"
             onClick={() =>
@@ -341,6 +346,7 @@ export function ActivityForm({
           ) : initial ? "Save changes" : "Add activity"}
         </Button>
       </div>
+      </fieldset>
     </form>
   )
 }
@@ -428,17 +434,21 @@ function buildPayload(v: FormValues) {
 function Field({
   label,
   error,
+  required,
+  optional,
   children,
 }: {
   label: string
   error?: string
+  required?: boolean
+  optional?: boolean
   children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label>{label}</Label>
+      <FormFieldLabel required={required} optional={optional}>{label}</FormFieldLabel>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      <FormFieldError>{error}</FormFieldError>
     </div>
   )
 }

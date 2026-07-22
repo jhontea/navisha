@@ -32,6 +32,8 @@ html {
     @apply w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface transition-all;
     @apply focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary;
     @apply placeholder:text-on-surface-variant/50;
+    @apply disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60;
+    @apply aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-destructive/20;
   }
 
   /* Form input focus ring matching design system */
@@ -39,6 +41,12 @@ html {
     outline: none;
     border-color: hsl(var(--primary));
     box-shadow: 0 0 0 1px hsl(var(--primary));
+  }
+
+  /* Native controls inside forms share the same non-interactive treatment. */
+  form :where(input, textarea, select):disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   /* Iter 2 — custom scrollbar (thinner, softer thumb) */
