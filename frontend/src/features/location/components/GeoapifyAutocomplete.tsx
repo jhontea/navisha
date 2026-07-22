@@ -18,6 +18,7 @@ interface Props {
   ariaDescribedBy?: string
   ariaLabel?: string
   ariaRequired?: boolean
+  searchContext?: string
 }
 
 export function GeoapifyAutocomplete({
@@ -33,6 +34,7 @@ export function GeoapifyAutocomplete({
   ariaDescribedBy,
   ariaLabel,
   ariaRequired,
+  searchContext,
 }: Props) {
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -59,14 +61,16 @@ export function GeoapifyAutocomplete({
       setIsLoading(true)
       setError("")
       try {
-        const response = await searchLocationSuggestions(
-          query,
-          kind,
-          controller.signal,
-        )
-        setSuggestions(response.suggestions)
+        const context = searchContext?.trim()
+        const suggestions =
+          kind === "place" && context
+            ? await searchContextualAndGlobal(query, context, kind, controller.signal)
+            : (
+                await searchLocationSuggestions(query, kind, controller.signal)
+              ).suggestions
+        setSuggestions(suggestions)
         setIsOpen(true)
-        setActiveIndex(response.suggestions.length > 0 ? 0 : -1)
+        setActiveIndex(suggestions.length > 0 ? 0 : -1)
       } catch (requestError) {
         if (controller.signal.aborted) return
         setSuggestions([])
@@ -86,7 +90,7 @@ export function GeoapifyAutocomplete({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [kind, value])
+  }, [kind, searchContext, value])
 
   const choose = (suggestion: LocationSuggestion) => {
     selectedValueRef.current = suggestion.description
@@ -257,6 +261,56 @@ export function GeoapifyAutocomplete({
       )}
     </div>
   )
+}
+
+async function searchContextualAndGlobal(
+  query: string,
+  context: string,
+  kind: LocationSearchKind,
+  signal: AbortSignal,
+) {
+  const [contextualResult, globalResult] = await Promise.allSettled([
+    searchLocationSuggestions(`${query}, ${context}`, kind, signal),
+    searchLocationSuggestions(query, kind, signal),
+  ])
+
+  if (contextualResult.status === "rejected" && globalResult.status === "rejected") {
+    throw contextualResult.reason
+  }
+
+  const contextual =
+    contextualResult.status === "fulfilled"
+      ? contextualResult.value.suggestions
+      : []
+  const global =
+    globalResult.status === "fulfilled" ? globalResult.value.suggestions : []
+
+  const unique = new Map<string, LocationSuggestion>()
+  for (const suggestion of [...contextual, ...global]) {
+    unique.set(`${suggestion.provider}:${suggestion.external_id}`, suggestion)
+  }
+
+  return Array.from(unique.values())
+    .map((suggestion, index) => ({
+      suggestion,
+      index,
+      relevance: getQueryRelevance(suggestion, query),
+    }))
+    .sort((a, b) => b.relevance - a.relevance || a.index - b.index)
+    .slice(0, 8)
+    .map(({ suggestion }) => suggestion)
+}
+
+function getQueryRelevance(suggestion: LocationSuggestion, query: string) {
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const name = suggestion.name.trim().toLocaleLowerCase()
+  const description = suggestion.description.trim().toLocaleLowerCase()
+
+  if (name === normalizedQuery) return 4
+  if (name.startsWith(normalizedQuery)) return 3
+  if (description.startsWith(normalizedQuery)) return 2
+  if (name.includes(normalizedQuery) || description.includes(normalizedQuery)) return 1
+  return 0
 }
 
 function formatSuggestionTitle(

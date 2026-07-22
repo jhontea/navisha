@@ -3,7 +3,7 @@
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
+import { CalendarDays, MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   FormFieldError,
@@ -111,6 +111,11 @@ interface Props {
   onSubmit: (input: CreateActivityInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
+  context?: {
+    dayNumber: number
+    date: string
+    destination?: string
+  }
 }
 
 /**
@@ -124,6 +129,7 @@ export function ActivityForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  context,
 }: Props) {
   const defaults = buildDefaults(initial)
   const {
@@ -131,6 +137,7 @@ export function ActivityForm({
     handleSubmit,
     control,
     watch,
+    getValues,
     setValue,
     formState: { errors },
   } = useForm<FormValues>({
@@ -166,6 +173,29 @@ export function ActivityForm({
       aria-busy={isSubmitting}
     >
       <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
+      {!initial && context && (
+        <aside
+          aria-label="Activity context"
+          className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.04] p-3 sm:grid-cols-2"
+        >
+          <div className="flex items-center gap-2 text-sm">
+            <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="text-muted-foreground">Adding to</span>
+            <span className="font-semibold text-foreground">
+              Day {context.dayNumber} · {formatContextDate(context.date)}
+            </span>
+          </div>
+          {context.destination && (
+            <div className="flex items-center gap-2 text-sm sm:justify-end">
+              <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="text-muted-foreground">Near</span>
+              <span className="truncate font-semibold text-foreground">
+                {context.destination}
+              </span>
+            </div>
+          )}
+        </aside>
+      )}
       {/* Type switcher */}
       {!lockType && (
         <div
@@ -260,9 +290,16 @@ export function ActivityForm({
                   ariaInvalid={Boolean(errors.location_name)}
                   ariaRequired
                   ariaDescribedBy={errors.location_name ? "activity-location-error" : undefined}
+                  searchContext={context?.destination}
                   placeholder="Search a place…"
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name)
+                    if (!getValues("title").trim()) {
+                      setValue("title", p.location_name, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
                     setValue("lat", String(p.lat), { shouldValidate: true })
                     setValue("lng", String(p.lng), { shouldValidate: true })
                     setValue("address", p.address)
@@ -491,3 +528,12 @@ function Field({
 }
 
 export type { ActivityType }
+
+function formatContextDate(date: string) {
+  const parsed = new Date(`${date}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return date
+  return parsed.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })
+}
