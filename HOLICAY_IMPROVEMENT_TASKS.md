@@ -16,7 +16,7 @@ Backlog baru hasil eksplorasi Holicay. Dokumen ini sengaja dipisahkan dari `WORK
 - [x] **FORM-07 - Context-first add activity flow (P1)**: gunakan destinasi dan hari aktif sebagai default saat menambah aktivitas sehingga user tidak perlu memilih ulang konteks trip.
 - [ ] **FORM-08 - Activity type selector (P1)**: pisahkan alur tambah item berdasarkan tipe `Place`, `Food`, `Stay`, `Transportation`, dan `Experience`, lalu tampilkan field yang relevan saja.
 - [ ] **FORM-09 - Search-first with manual fallback (P1)**: sediakan pencarian lokasi sebagai jalur utama dan tombol `Add manually` jika lokasi tidak ditemukan.
-- [ ] **FORM-10 - Custom activity form essentials (P1)**: dukung nama, alamat, hari, jam mulai, durasi, catatan, dan biaya opsional untuk aktivitas manual.
+- [ ] **FORM-10 - Custom activity form essentials (P1)**: dukung nama, alamat, hari, jam mulai, durasi, catatan, dan biaya opsional untuk aktivitas manual. **Progress:** duration UX selesai (quick duration, end-time otomatis, ringkasan, validasi, dan durasi pada kartu itinerary); input manual dan biaya masih ditunda.
 - [ ] **FORM-11 - Advanced activity details (P2)**: pindahkan external link, attachment, booking reference, dan detail tambahan ke bagian `Advanced options` agar form utama tetap ringkas.
 - [ ] **FORM-12 - Smart activity filters (P2)**: tambahkan filter ringan seperti `Popular`, `Nearby`, `Recommended`, dan `Budget-friendly` pada hasil pencarian tempat.
 - [x] **FORM-13 - Actionable disabled states (P1)**: tampilkan alasan ketika aksi belum tersedia; diterapkan pada penyimpanan detail trip dan budget untuk menjelaskan field yang masih perlu dilengkapi.
