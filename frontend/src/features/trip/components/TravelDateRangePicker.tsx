@@ -14,6 +14,7 @@ interface Props extends DateRangeValue {
   hasError?: boolean
   errorId?: string
   disabled?: boolean
+  required?: boolean
   label?: string
   emptyText?: string
   endText?: string
@@ -32,6 +33,7 @@ export function TravelDateRangePicker({
   hasError = false,
   errorId,
   disabled = false,
+  required = false,
   label = "Travel dates",
   emptyText = "Select start and end dates",
   endText = "Select end date",
@@ -119,6 +121,7 @@ export function TravelDateRangePicker({
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             {label}
+            {required && <span className="sr-only"> required</span>}
           </span>
           <span
             className={`block truncate text-sm ${

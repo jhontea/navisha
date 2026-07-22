@@ -23,6 +23,9 @@ interface Props {
   placeholder?: string
   id?: string
   className?: string
+  disabled?: boolean
+  ariaInvalid?: boolean
+  ariaDescribedBy?: string
 }
 
 export function DestinationAutocomplete(props: Props) {
@@ -59,6 +62,9 @@ function AutocompleteInput({
   placeholder,
   id,
   className,
+  disabled,
+  ariaInvalid,
+  ariaDescribedBy,
 }: Props) {
   const places = useMapsLibrary("places")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -97,6 +103,9 @@ function AutocompleteInput({
     <input
       ref={inputRef}
       id={id}
+      disabled={disabled}
+      aria-invalid={ariaInvalid}
+      aria-describedby={ariaDescribedBy}
       className={className}
       value={value}
       onChange={(e) => onChange(e.target.value)}

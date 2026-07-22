@@ -113,12 +113,17 @@ export function ExpenseForm({
       <fieldset disabled={isSubmitting} className="flex flex-col gap-5">
       {/* Category icon picker */}
       <div className="flex flex-col gap-2">
-        <FormFieldLabel required>Category</FormFieldLabel>
+        <FormFieldLabel id="expense-category-label" required>Category</FormFieldLabel>
         <Controller
           control={control}
           name="category"
           render={({ field }) => (
-            <div className="flex flex-wrap gap-2">
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-labelledby="expense-category-label"
+              aria-describedby={errors.category ? "expense-category-error" : undefined}
+            >
               {EXPENSE_CATEGORIES.map((cat) => {
                 const opt = CATEGORY_OPTIONS.find((o) => o.value === cat)!
                 const isSelected = field.value === cat
@@ -147,7 +152,7 @@ export function ExpenseForm({
             </div>
           )}
         />
-        <FormFieldError>{errors.category?.message}</FormFieldError>
+        <FormFieldError id="expense-category-error">{errors.category?.message}</FormFieldError>
       </div>
 
       {/* Title */}
@@ -166,6 +171,7 @@ export function ExpenseForm({
           })()}
           <input
             id="expense-title"
+            aria-required="true"
             {...register("title")}
             aria-invalid={Boolean(errors.title)}
             aria-describedby={errors.title ? "expense-title-error" : undefined}
@@ -192,6 +198,7 @@ export function ExpenseForm({
               <input {...register("amount")} type="hidden" />
               <input
                 id="expense-amount"
+                aria-required="true"
                 type="text"
                 inputMode="numeric"
                 aria-invalid={Boolean(errors.amount)}
@@ -227,7 +234,10 @@ export function ExpenseForm({
                 render={({ field }) => (
                   <select
                     id="expense-currency"
+                    aria-required="true"
                     {...field}
+                    aria-invalid={Boolean(errors.currency)}
+                    aria-describedby={errors.currency ? "expense-currency-error" : undefined}
                     className={cn(
                       "w-full px-3 py-2.5 rounded-lg border bg-background text-foreground",
                       "focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none",
@@ -240,6 +250,7 @@ export function ExpenseForm({
                   </select>
                 )}
               />
+              <FormFieldError id="expense-currency-error">{errors.currency?.message}</FormFieldError>
             </div>
           </div>
           {previewEnabled && preview && (
@@ -277,6 +288,8 @@ export function ExpenseForm({
         <FormFieldLabel htmlFor="expense-note" optional>Note</FormFieldLabel>
         <textarea
           id="expense-note"
+          aria-invalid={Boolean(errors.note)}
+          aria-describedby={errors.note ? "expense-note-error" : undefined}
           {...register("note")}
           rows={2}
           placeholder="e.g., Split with 3 friends, or referral code used"
@@ -287,6 +300,7 @@ export function ExpenseForm({
             "border-border",
           )}
         />
+        <FormFieldError id="expense-note-error">{errors.note?.message}</FormFieldError>
       </div>
 
       {/* Actions */}

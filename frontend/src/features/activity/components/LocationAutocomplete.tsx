@@ -24,6 +24,12 @@ interface Props {
   onChange: (v: string) => void
   onPlaceSelect: (place: PlaceData) => void
   placeholder?: string
+  id?: string
+  disabled?: boolean
+  ariaInvalid?: boolean
+  ariaDescribedBy?: string
+  ariaLabel?: string
+  ariaRequired?: boolean
 }
 
 export function LocationAutocomplete(props: Props) {
@@ -33,6 +39,12 @@ export function LocationAutocomplete(props: Props) {
         value={props.value}
         onChange={props.onChange}
         placeholder={props.placeholder}
+        id={props.id}
+        disabled={props.disabled}
+        ariaInvalid={props.ariaInvalid}
+        ariaDescribedBy={props.ariaDescribedBy}
+        ariaLabel={props.ariaLabel}
+        ariaRequired={props.ariaRequired}
         kind="place"
         className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
         onSelect={(suggestion) =>
@@ -62,6 +74,12 @@ function AutocompleteInput({
   onChange,
   onPlaceSelect,
   placeholder,
+  id,
+  disabled,
+  ariaInvalid,
+  ariaDescribedBy,
+  ariaLabel,
+  ariaRequired,
 }: Props) {
   const places = useMapsLibrary("places")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -92,6 +110,12 @@ function AutocompleteInput({
   return (
     <Input
       ref={inputRef}
+      id={id}
+      disabled={disabled}
+      aria-invalid={ariaInvalid}
+      aria-describedby={ariaDescribedBy}
+      aria-label={ariaLabel}
+      aria-required={ariaRequired}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? "Search places…"}
