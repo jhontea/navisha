@@ -148,10 +148,10 @@ export function AccommodationForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-8" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="contents">
+      <fieldset disabled={isSubmitting} className="space-y-8">
       {/* Stay Type Selector */}
       <div>
-        <FormFieldLabel className="mb-4 uppercase tracking-wider">Stay Type</FormFieldLabel>
+        <FormFieldLabel className="mb-3 block uppercase tracking-wider">Stay Type</FormFieldLabel>
         <Controller
           control={control}
           name="accommodation_type"

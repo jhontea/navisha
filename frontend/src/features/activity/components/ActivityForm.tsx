@@ -165,7 +165,7 @@ export function ActivityForm({
       className="flex flex-col gap-4"
       aria-busy={isSubmitting}
     >
-      <fieldset disabled={isSubmitting} className="contents">
+      <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
       {/* Type switcher */}
       {!lockType && (
         <div className="flex rounded-xl border border-border/30 bg-muted/30 p-1 gap-1">
