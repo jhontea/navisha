@@ -3,7 +3,7 @@
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CalendarDays, MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
+import { CalendarDays, Clock3, MapPin, StickyNote, ListChecks, X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   FormFieldError,
@@ -13,6 +13,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { LocationAutocomplete } from "./LocationAutocomplete"
+import {
+  addMinutesToTime,
+  formatDuration,
+  getDurationMinutes,
+} from "../lib/time"
 import type {
   Activity,
   ActivityType,
@@ -39,6 +44,12 @@ function parseCoord(s: string): number {
   const match = cleaned.match(/^-?\d+(\.\d+)?/)
   return match ? Number(match[0]) : NaN
 }
+
+const QUICK_DURATIONS = [
+  { label: "30 min", minutes: 30 },
+  { label: "1 hour", minutes: 60 },
+  { label: "2 hours", minutes: 120 },
+] as const
 
 const schema = z
   .object({
@@ -79,6 +90,16 @@ const schema = z
       .optional(),
   })
   .superRefine((d, ctx) => {
+    if (d.type === "location" && d.start_time && d.end_time) {
+      const duration = getDurationMinutes(d.start_time, d.end_time)
+      if (duration === null) {
+        ctx.addIssue({
+          code: "custom",
+          message: "End time must be later than start time",
+          path: ["end_time"],
+        })
+      }
+    }
     if (d.type === "location" && !d.location_name?.trim()) {
       ctx.addIssue({
         code: "custom",
@@ -139,6 +160,7 @@ export function ActivityForm({
     watch,
     getValues,
     setValue,
+    setFocus,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -147,6 +169,41 @@ export function ActivityForm({
 
   const todoArr = useFieldArray({ control, name: "todo_items" })
   const type = watch("type")
+  const startTime = watch("start_time") ?? ""
+  const endTime = watch("end_time") ?? ""
+  const durationMinutes = getDurationMinutes(startTime, endTime)
+
+  const updateStartTime = (value: string) => {
+    setValue("start_time", value, { shouldDirty: true, shouldValidate: true })
+    const currentEnd = getValues("end_time") ?? ""
+
+    if (!value) {
+      setValue("end_time", "", { shouldDirty: true, shouldValidate: true })
+      return
+    }
+
+    if (!currentEnd) {
+      const defaultEnd = addMinutesToTime(value, 60)
+      if (defaultEnd) {
+        setValue("end_time", defaultEnd, {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+      return
+    }
+
+    setValue("end_time", currentEnd, { shouldValidate: true })
+  }
+
+  const applyDuration = (minutes: number) => {
+    const end = addMinutesToTime(startTime, minutes)
+    if (!end) return
+    setValue("end_time", end, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }
 
   const submit = async (v: FormValues) => {
     await onSubmit({
@@ -250,26 +307,105 @@ export function ActivityForm({
         <>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start time" htmlFor="activity-start-time" optional error={errors.start_time?.message} errorId="activity-start-time-error">
-              <Input
-                id="activity-start-time"
-                type="time"
-                aria-invalid={Boolean(errors.start_time)}
-                aria-describedby={errors.start_time ? "activity-start-time-error" : undefined}
-                onClick={openPicker}
-                {...register("start_time")}
+              <Controller
+                control={control}
+                name="start_time"
+                render={({ field }) => (
+                  <Input
+                    ref={field.ref}
+                    id="activity-start-time"
+                    name={field.name}
+                    type="time"
+                    value={field.value ?? ""}
+                    aria-invalid={Boolean(errors.start_time)}
+                    aria-describedby={errors.start_time ? "activity-start-time-error" : undefined}
+                    onBlur={field.onBlur}
+                    onChange={(event) => updateStartTime(event.target.value)}
+                    onClick={openPicker}
+                  />
+                )}
               />
             </Field>
             <Field label="End time" htmlFor="activity-end-time" optional error={errors.end_time?.message} errorId="activity-end-time-error">
-              <Input
-                id="activity-end-time"
-                type="time"
-                aria-invalid={Boolean(errors.end_time)}
-                aria-describedby={errors.end_time ? "activity-end-time-error" : undefined}
-                onClick={openPicker}
-                {...register("end_time")}
+              <Controller
+                control={control}
+                name="end_time"
+                render={({ field }) => (
+                  <Input
+                    ref={field.ref}
+                    id="activity-end-time"
+                    name={field.name}
+                    type="time"
+                    value={field.value ?? ""}
+                    aria-invalid={Boolean(errors.end_time)}
+                    aria-describedby={errors.end_time ? "activity-end-time-error" : undefined}
+                    onBlur={field.onBlur}
+                    onChange={(event) =>
+                      setValue("end_time", event.target.value, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    onClick={openPicker}
+                  />
+                )}
               />
             </Field>
           </div>
+
+          {startTime && (
+            <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
+              <div
+                className="flex flex-wrap items-center gap-2"
+                role="group"
+                aria-label="Activity duration"
+              >
+                <span className="mr-1 text-xs font-medium text-muted-foreground">
+                  Duration
+                </span>
+                {QUICK_DURATIONS.map((duration) => {
+                  const end = addMinutesToTime(startTime, duration.minutes)
+                  const selected = durationMinutes === duration.minutes
+                  return (
+                    <button
+                      key={duration.minutes}
+                      type="button"
+                      disabled={!end}
+                      aria-pressed={selected}
+                      onClick={() => applyDuration(duration.minutes)}
+                      className={cn(
+                        "rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/50 bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                      )}
+                    >
+                      {duration.label}
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  aria-pressed={
+                    durationMinutes !== null &&
+                    !QUICK_DURATIONS.some((duration) => duration.minutes === durationMinutes)
+                  }
+                  onClick={() => setFocus("end_time")}
+                  className="rounded-lg border border-border/50 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                >
+                  Custom
+                </button>
+              </div>
+              {durationMinutes !== null && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock3 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  <span>
+                    {startTime}–{endTime} · {formatDuration(durationMinutes)}
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
 
           <Field
             label="Location name"

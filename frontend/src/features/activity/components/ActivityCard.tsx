@@ -10,6 +10,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatActivityTimeRange } from "../lib/time"
 import type {
   Activity,
   LocationPayload,
@@ -61,6 +62,10 @@ const TYPE_CONFIG = {
  */
 export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) {
   const config = TYPE_CONFIG[activity.type]
+  const timeLabel = formatActivityTimeRange(
+    activity.start_time,
+    activity.end_time,
+  )
 
   return (
     <div
@@ -90,11 +95,10 @@ export function ActivityCard({ activity, onEdit, onDelete, isDeleting }: Props) 
               {config.label}
             </span>
             {/* Iter 51 — time with icon */}
-            {activity.type === "location" && activity.start_time && (
+            {activity.type === "location" && timeLabel && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
                 <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                {activity.start_time}
-                {activity.end_time ? ` – ${activity.end_time}` : ""}
+                {timeLabel}
               </span>
             )}
             {/* Iter 53 — todo: completed count */}
