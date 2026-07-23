@@ -28,15 +28,20 @@ import { MapLibreCanvas } from "./MapLibreCanvas"
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 const MAP_ID = "cc475d9a8bf16e26f8975c02"
 
+// Day colors aligned with Navisha's cool/blue-spectrum chromatic theme.
+// 4 cool hues (blue, cyan, violet, teal) × 2 lightness shades = 8 distinct
+// colors. Adjacent days always differ in hue; lighter shades repeat only from
+// Day 5 onward (rare for trips ≤4 days). Replaces the old rainbow palette
+// (red/orange/yellow/green) which clashed with the app's cool theme.
 const DAY_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#06b6d4",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
+  "#2563eb", // blue-600   — Day 1
+  "#0891b2", // cyan-600   — Day 2
+  "#7c3aed", // violet-600 — Day 3
+  "#0d9488", // teal-600    — Day 4
+  "#3b82f6", // blue-500   — Day 5
+  "#06b6d4", // cyan-500   — Day 6
+  "#8b5cf6", // violet-500 — Day 7
+  "#14b8a6", // teal-500    — Day 8
 ]
 const colorForDay = (n: number) => DAY_COLORS[(n - 1) % DAY_COLORS.length]
 
@@ -136,23 +141,39 @@ export function TripMap({ days }: Props) {
             </button>
             {byDay
               .filter((d) => d.points.length > 0)
-              .map((d) => (
-                <button
-                  key={d.dayId}
-                  type="button"
-                  onClick={() =>
-                    setActiveDay(d.dayId === activeDay ? null : d.dayId)
-                  }
-                  className={cn(
-                    "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-                    activeDay === d.dayId
-                      ? "bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/25"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80",
-                  )}
-                >
-                  Day {d.dayNumber}
-                </button>
-              ))}
+              .map((d) => {
+                const dayColor = colorForDay(d.dayNumber)
+                const isActive = activeDay === d.dayId
+                return (
+                  <button
+                    key={d.dayId}
+                    type="button"
+                    onClick={() =>
+                      setActiveDay(d.dayId === activeDay ? null : d.dayId)
+                    }
+                    className={cn(
+                      "inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                      isActive
+                        ? "text-white shadow-sm"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                    style={
+                      isActive
+                        ? { backgroundColor: dayColor, boxShadow: `0 2px 8px ${dayColor}40` }
+                        : undefined
+                    }
+                  >
+                    {!isActive && (
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: dayColor }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    Day {d.dayNumber}
+                  </button>
+                )
+              })}
           </div>
         </div>
 

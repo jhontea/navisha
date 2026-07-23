@@ -12,15 +12,18 @@ const TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ||
   "© OpenStreetMap contributors © CARTO"
 
+// Day colors aligned with Navisha's cool/blue-spectrum chromatic theme.
+// MUST stay in sync with DAY_COLORS in TripMap.tsx so markers match the
+// sidebar list and day-selector buttons. 4 cool hues × 2 lightness = 8.
 const DAY_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#06b6d4",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
+  "#2563eb", // blue-600   — Day 1
+  "#0891b2", // cyan-600   — Day 2
+  "#7c3aed", // violet-600 — Day 3
+  "#0d9488", // teal-600    — Day 4
+  "#3b82f6", // blue-500   — Day 5
+  "#06b6d4", // cyan-500   — Day 6
+  "#8b5cf6", // violet-500 — Day 7
+  "#14b8a6", // teal-500    — Day 8
 ]
 
 const colorForDay = (dayNumber: number) =>
