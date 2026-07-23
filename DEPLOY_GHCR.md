@@ -63,7 +63,7 @@ Setelah perubahan ini masuk ke branch `main`, GitHub Actions akan menjalankan ur
 2. Lint dan build frontend.
 3. Build image backend di GitHub Actions.
 4. Build image frontend di GitHub Actions.
-5. Push kedua image ke GHCR dengan tag commit SHA.
+5. Push kedua image ke GHCR dengan tag commit SHA dan `latest`.
 6. SSH ke VPS.
 7. Pull image dengan tag commit tersebut.
 8. Restart container tanpa build.
@@ -76,7 +76,7 @@ Setelah workflow pertama berhasil, verifikasi dari VPS dengan:
 cd /opt/navisha
 source .env.deploy
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-export IMAGE_TAG=COMMIT_SHA_DARI_WORKFLOW
+export IMAGE_TAG=latest
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d --no-build
 docker compose -f docker-compose.prod.yml ps
