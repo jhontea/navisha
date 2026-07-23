@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Sparkles, Send, ChevronDown, RefreshCw, AlertCircle } from "lucide-react"
+import { Sparkles, Send, ChevronDown, RefreshCw, AlertCircle, X } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { cn } from "@/lib/utils"
 import { primaryTripActionButtonClassName } from "../lib/styles"
@@ -11,6 +11,20 @@ import type { GenerateTripInput } from "../types"
 const MAX_DAYS = 10
 const MAX_DESTINATION = 60
 const MAX_DESCRIPTION = 100
+
+// Quick-start prompt chips for the description step. Reduces cold-start
+// friction: users tap a style instead of typing from scratch. Values are kept
+// short so 2-3 chips can combine within MAX_DESCRIPTION.
+const PROMPT_CHIPS: { label: string; value: string }[] = [
+  { label: "🍜 Foodie", value: "foodie, local cuisine" },
+  { label: "🏔️ Adventure", value: "adventure, outdoor activities" },
+  { label: "💰 Budget", value: "budget-friendly" },
+  { label: "🎭 Cultural", value: "cultural, historical sites" },
+  { label: "👨‍👩‍👧 Family", value: "family-friendly" },
+  { label: "💎 Hidden gems", value: "hidden gems, off the beaten path" },
+  { label: "🏖️ Relaxing", value: "relaxing, beaches" },
+  { label: "🌃 Nightlife", value: "nightlife and entertainment" },
+]
 
 // Steps in the conversation. Each maps to one field of GenerateTripInput.
 type StepId = "destination" | "description" | "dates" | "currency" | "review"
@@ -92,6 +106,17 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     setDraftText("")
     setStep("dates")
     pushBot("Got it! When is your trip? (up to 10 days)")
+  }
+
+  // Append a prompt chip value to the description input. If the input is
+  // empty, use the value directly; otherwise join with ", " so multiple
+  // styles can combine (e.g. "foodie, budget-friendly"). Respects MAX_DESCRIPTION.
+  const handleChipClick = (value: string) => {
+    setError(null)
+    const current = draftText.trim()
+    const next = current ? `${current}, ${value}` : value
+    if (next.length > MAX_DESCRIPTION) return
+    setDraftText(next)
   }
 
   const handleDates = () => {
@@ -216,15 +241,42 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
 
           {step === "description" && (
             <div className="space-y-2">
-              <input
-                autoFocus
-                className={inputBase}
-                placeholder="e.g. foodie, adventure, budget-friendly"
-                maxLength={MAX_DESCRIPTION}
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleDescription(false)}
-              />
+              <div className="relative">
+                <input
+                  autoFocus
+                  className={cn(inputBase, draftText.length > 0 && "pr-9")}
+                  placeholder="e.g. foodie, adventure, budget-friendly"
+                  maxLength={MAX_DESCRIPTION}
+                  value={draftText}
+                  onChange={(e) => setDraftText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleDescription(false)}
+                />
+                {draftText.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftText("")
+                      setError(null)
+                    }}
+                    className="absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="Clear input"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {PROMPT_CHIPS.map((chip) => (
+                  <button
+                    key={chip.value}
+                    type="button"
+                    onClick={() => handleChipClick(chip.value)}
+                    className="rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{draftText.length}/{MAX_DESCRIPTION}</span>
                 <div className="flex items-center gap-2">
