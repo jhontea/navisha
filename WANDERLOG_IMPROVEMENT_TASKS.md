@@ -41,8 +41,9 @@ Backlog hasil eksplorasi langsung Wanderlog (https://wanderlog.com) pada 2026-07
 
 - [ ] **W-PLAN-08 — Undo/Redo global**: Wanderlog punya tombol Undo/Redo di topbar dengan state "Saved". **Rekomendasi:** implement command pattern / history stack untuk operasi itinerary (add/move/delete activity).
 
-- [ ] **W-PLAN-09 — Copy/Move places antar list**: Multi-select places → Copy to / Move to list lain. Berguna saat reorganisasi itinerary.
-
+- [~] **W-PLAN-09 — Copy/Move places antar list**: Multi-select places → Copy to / Move to list lain. Berguna saat reorganisasi itinerary.
+  - ✅ **Copy** (done): Select mode + checkbox per activity, "Copy to…" dropdown (target day picker), loop `activityApi.create` per selected. Validated: 4 activities Day 1 → Day 2, payload (location/coords/desc) preserved, times preserved.
+  - ⏳ **Move** (deferred): Butuh backend endpoint `POST /activities/:id/move {target_day_id}` atau extend `UpdateInput` dengan `day_id`. UI: dropdown "Move to…" konsisten dengan Copy. Drag-and-drop cross-day di-skip (butuh lift DndContext ke parent, high risk).
 - [ ] **W-PLAN-10 — Map layers toggle per category**: Toggle layer Flights, Transit, Places to visit, dst. di map. Filter tanpa menghilangkan konteks. `[overlap: PLAN-03]`
 
 ---
@@ -51,7 +52,7 @@ Backlog hasil eksplorasi langsung Wanderlog (https://wanderlog.com) pada 2026-07
 
 - [ ] **W-AI-01 — Chat panel terpisah**: AI Assistant sebagai panel chat dedicated (bukan modal), bisa tetap terbuka saat user edit itinerary. Saat ini Navisha punya `GenerateChatWizard` — pertimbangkan versi persistent sidebar.
 
-- [ ] **W-AI-02 — Interactive place chips in AI output**: Output AI menampilkan nama tempat sebagai **tombol yang bisa diklik** untuk langsung add ke itinerary. Ini killer feature — mengurangi friction dari "AI suggest" → "user add". `[overlap: AI-03, perlu diperdalam]`
+- [x] **W-AI-02 — Interactive place chips in AI output**: Output AI menampilkan nama tempat sebagai **tombol yang bisa diklik** untuk langsung add ke itinerary. Ini killer feature — mengurangi friction dari "AI suggest" → "user add". `[overlap: AI-03, perlu diperdalam]` ✅ Done: `DraftPreview` sekarang curation surface — setiap aktivitas jadi toggleable chip (check + MapPin), counter "X / Y tempat dipilih", toggle per-hari + global, "Create Trip" disable saat 0 selected, draft di-filter client-side sebelum resolve+create. `suggestionKey` diekstrak ke `lib/suggestionKey.ts` (dipakai bareng `DayAIPlanner`).
 
 - [ ] **W-AI-03 — "Places from AI" map layer**: Tempat yang disebut AI muncul sebagai layer terpisah di map, bisa di-toggle. Visual bridge antara chat dan map.
 

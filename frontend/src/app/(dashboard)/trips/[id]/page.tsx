@@ -210,6 +210,7 @@ export default function TripDetailPage() {
                   notes={d.notes ?? ""}
                   destination={trip.description}
                   defaultExpanded={idx === 0}
+                  days={trip.days}
                 />
               ))}
             </div>

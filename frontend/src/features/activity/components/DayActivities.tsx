@@ -21,6 +21,8 @@ import {
   ArrowRight,
   Bus,
   Car,
+  CheckSquare,
+  Copy,
   GripVertical,
   Hotel,
   Plane,
@@ -33,9 +35,20 @@ import {
   LogIn,
   LogOut,
   AlertTriangle,
+  X,
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { toast } from "@/lib/toast"
 import {
   useActivities,
   useCreateActivity,
@@ -43,9 +56,11 @@ import {
   useReorderActivities,
   useUpdateActivity,
 } from "../hooks/useActivities"
+import { activityApi } from "../api"
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
 import type { Activity, ActivityListResponse, CreateActivityInput } from "../types"
+import type { Day } from "@/features/trip/types"
 import type { Transportation } from "@/features/transportation/types"
 import type { Accommodation } from "@/features/accommodation/types"
 import { ActivityCard } from "./ActivityCard"
@@ -278,6 +293,9 @@ interface SortableRowProps {
   onDelete: () => void
   isDeleting: boolean
   overlapTitles: string[]
+  selectMode: boolean
+  isSelected: boolean
+  onToggleSelect: () => void
 }
 
 function SortableActivityRow({
@@ -290,6 +308,9 @@ function SortableActivityRow({
   onDelete,
   isDeleting,
   overlapTitles,
+  selectMode,
+  isSelected,
+  onToggleSelect,
 }: SortableRowProps) {
   const {
     attributes,
@@ -298,7 +319,7 @@ function SortableActivityRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: activity.id })
+  } = useSortable({ id: activity.id, disabled: selectMode })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -309,7 +330,11 @@ function SortableActivityRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn("relative flex gap-3 pl-12", isDragging && "opacity-50 z-50")}
+      className={cn(
+        "relative flex gap-3 pl-12",
+        isDragging && "opacity-50 z-50",
+        selectMode && isSelected && "ring-2 ring-primary/40 rounded-2xl",
+      )}
     >
       {/* Timeline dot */}
       <div className="absolute left-0 top-5 -translate-y-1/2">
@@ -317,16 +342,37 @@ function SortableActivityRow({
       </div>
 
       <div className="flex flex-1 items-start gap-2">
-        {/* Drag handle */}
-        <button
-          type="button"
-          aria-label="Drag to reorder"
-          className="mt-3 flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        {/* Drag handle — hidden in select mode (reorder disabled) */}
+        {!selectMode && (
+          <button
+            type="button"
+            aria-label="Drag to reorder"
+            className="mt-3 flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Select checkbox — shown only in select mode */}
+        {selectMode && (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={isSelected}
+            aria-label={isSelected ? `Deselect ${activity.title}` : `Select ${activity.title}`}
+            onClick={onToggleSelect}
+            className={cn(
+              "mt-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors",
+              isSelected
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background hover:border-primary/50",
+            )}
+          >
+            {isSelected && <CheckSquare className="h-4 w-4" />}
+          </button>
+        )}
 
         <div className="flex-1">
           {isEditing ? (
@@ -364,9 +410,10 @@ interface Props {
   date: string
   dayNumber: number
   destination?: string
+  days: Day[]
 }
 
-export function DayActivities({ tripId, dayId, date, dayNumber, destination }: Props) {
+export function DayActivities({ tripId, dayId, date, dayNumber, destination, days }: Props) {
   const qc = useQueryClient()
   const { data: activitiesData, isLoading: loadingAct } = useActivities(dayId)
   const { data: transData } = useTransportations(tripId)
@@ -376,6 +423,13 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
   const [confirmingDelete, setConfirmingDelete] = useState<Activity | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [reorderKey, setReorderKey] = useState(0)
+
+  // Multi-select mode (W-PLAN-09): toggle checkboxes on activities, then
+  // copy the selected ones to another day. Reorder is disabled while in
+  // select mode to avoid conflicting drag vs. checkbox interactions.
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [copying, setCopying] = useState(false)
 
   const createMut = useCreateActivity(dayId)
   const updateMut = useUpdateActivity(editingId ?? "", dayId)
@@ -467,10 +521,141 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
     })
   }
 
+  // --- Multi-select handlers (W-PLAN-09: Copy places to another day) ---
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAll = () => setSelectedIds(new Set(activities.map((a) => a.id)))
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const exitSelectMode = () => {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }
+
+  // Copy selected activities to a target day. Each activity is duplicated via
+  // the existing create endpoint (no backend change). Payload is preserved
+  // verbatim; start/end times carry over so the copied slot keeps its time.
+  const copyToDay = async (targetDayId: string) => {
+    const target = days.find((d) => d.id === targetDayId)
+    if (!target) return
+    if (targetDayId === dayId) {
+      toast("Cannot copy to the same day.", "error")
+      return
+    }
+    const selected = activities.filter((a) => selectedIds.has(a.id))
+    if (selected.length === 0) return
+
+    setCopying(true)
+    let ok = 0
+    let fail = 0
+    for (const a of selected) {
+      try {
+        await activityApi.create(targetDayId, {
+          type: a.type,
+          title: a.title,
+          start_time: a.start_time || undefined,
+          end_time: a.end_time || undefined,
+          payload: a.payload ?? undefined,
+        })
+        ok++
+      } catch {
+        fail++
+      }
+    }
+    setCopying(false)
+
+    // Invalidate target day so the new copies show up.
+    qc.invalidateQueries({ queryKey: ["activities", "list", targetDayId], refetchType: 'all' })
+
+    if (fail === 0) {
+      toast(`Copied ${ok} ${ok === 1 ? "activity" : "activities"} to Day ${target.day_number}.`)
+    } else if (ok === 0) {
+      toast("Failed to copy activities. Please try again.", "error")
+    } else {
+      toast(`Copied ${ok}, ${fail} failed.`, "error")
+    }
+
+    exitSelectMode()
+  }
+
   const hasContent = activities.length > 0 || staticItems.length > 0
 
   return (
     <div className="space-y-3">
+      {/* Select-mode toolbar (W-PLAN-09: Copy places to another day) */}
+      {activities.length > 0 && (
+        <div className="flex items-center justify-between gap-2">
+          {!selectMode ? (
+            <button
+              type="button"
+              onClick={() => setSelectMode(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              Select
+            </button>
+          ) : (
+            <div className="flex w-full flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-foreground">
+                {selectedIds.size} selected
+              </span>
+              <button
+                type="button"
+                onClick={selectedIds.size === activities.length ? clearSelection : selectAll}
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {selectedIds.size === activities.length ? "Clear" : "All"}
+              </button>
+              <div className="ml-auto flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    disabled={selectedIds.size === 0 || copying}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {copying ? "Copying…" : "Copy to…"}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Copy to day</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {days
+                        .filter((d) => d.id !== dayId)
+                        .map((d) => (
+                          <DropdownMenuItem
+                            key={d.id}
+                            onClick={() => copyToDay(d.id)}
+                          >
+                            Day {d.day_number}
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              {new Date(d.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <button
+                  type="button"
+                  onClick={exitSelectMode}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  aria-label="Exit select mode"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {overlapByActivity.size > 0 && (
         <div
           className="flex items-start gap-2 rounded-xl border border-chromatic-amber/25 bg-chromatic-amber/10 px-3 py-2.5 text-sm text-foreground"
@@ -562,6 +747,9 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination }: P
                         confirmingDelete?.id === a.id
                       }
                       overlapTitles={overlapByActivity.get(a.id) ?? []}
+                      selectMode={selectMode}
+                      isSelected={selectedIds.has(a.id)}
+                      onToggleSelect={() => toggleSelect(a.id)}
                     />
                   ))}
                 </div>
