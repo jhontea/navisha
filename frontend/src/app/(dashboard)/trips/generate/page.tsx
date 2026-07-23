@@ -32,6 +32,7 @@ import {
 } from "@/features/trip/hooks/useTrips"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
+import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
 import { ApiError } from "@/lib/api"
@@ -61,6 +62,10 @@ function GenerateTripPageContent() {
   const [pendingDays, setPendingDays] = useState(4)
   const [destination, setDestination] = useState("")
   const [resolving, setResolving] = useState(false)
+  // Curation: which AI-suggested places the user wants to keep. Lifted here so
+  // handleCreate can filter the draft before resolving/creating. Default empty
+  // until DraftPreview reports its initial all-selected state.
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
   const generate = useGenerateTripDraft()
   const create = useCreateTripFromDraft()
@@ -88,6 +93,7 @@ function GenerateTripPageContent() {
     submittedRef.current = false
     setResult(null)
     setFormError(null)
+    setSelectedKeys(new Set())
     setGenerationKey((k) => k + 1)
   }, [])
 
@@ -145,10 +151,20 @@ function GenerateTripPageContent() {
     setFormError(null)
     try {
       setResolving(true)
-      let draft = result.draft
+      // Filter the AI draft to only the user's selected places before
+      // resolving/creating. Days are preserved (contiguity required) but
+      // may end up empty if the user deselected everything in a day.
+      const curatedDraft: typeof result.draft = {
+        ...result.draft,
+        days: result.draft.days.map((d) => ({
+          ...d,
+          activities: d.activities.filter((a) => selectedKeys.has(suggestionKey(a))),
+        })),
+      }
+      let draft = curatedDraft
       let description = ""
       try {
-        draft = await resolveDraftLocations(result.draft, destination)
+        draft = await resolveDraftLocations(curatedDraft, destination)
         const meta = await resolveDestinationMeta(destination)
         if (meta) {
           description = meta.description
@@ -173,9 +189,10 @@ function GenerateTripPageContent() {
         err instanceof ApiError ? err.message : "Failed to save trip. Please try again.",
       )
     }
-  }, [result, destination, create, router])
+  }, [result, destination, create, router, selectedKeys])
 
   const saving = create.isPending || resolving
+  const noSelection = result !== null && selectedKeys.size === 0
 
   // Warn before leaving during generation
   const busy = generate.isPending || saving
@@ -252,7 +269,7 @@ function GenerateTripPageContent() {
         </div>
       ) : (
         <div className="space-y-6 animate-fade-in-up">
-          <DraftPreview draft={result.draft} />
+          <DraftPreview draft={result.draft} onSelectionChange={setSelectedKeys} />
 
           {formError && (
             <div className="flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
@@ -265,13 +282,18 @@ function GenerateTripPageContent() {
             <button
               type="button"
               onClick={handleCreate}
-              disabled={saving}
+              disabled={saving || noSelection}
               className={primaryTripActionButtonClassName}
             >
               {saving ? (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                   {resolving ? "Resolving locations…" : "Saving…"}
+                </>
+              ) : noSelection ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  Pilih minimal satu tempat
                 </>
               ) : (
                 <>

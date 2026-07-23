@@ -21,9 +21,21 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Long-term immutable cache for hashed static chunks.
+        // iOS Safari honors cache directives strictly — without this it
+        // re-downloads every JS chunk on each navigation (the iPhone-slow bug).
+        // Must be defined BEFORE the catch-all `/(.*)` so it takes precedence.
+        source: '/_next/static/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: [
-          // Prevent browser caching in dev — avoids "hard reload needed" bugs
+          // Prevent browser caching of dynamic HTML/docs — avoids stale
+          // pages and "hard reload needed" bugs. Scoped to non-static routes;
+          // static chunks are handled by the /_next/static rule above.
           { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
           // Prevent MIME type sniffing
           { key: 'X-Content-Type-Options', value: 'nosniff' },
