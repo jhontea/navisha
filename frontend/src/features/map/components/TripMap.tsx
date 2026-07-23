@@ -1,9 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   APIProvider,
-  Map,
+  Map as GoogleMap,
   AdvancedMarker,
   InfoWindow,
   Pin,
@@ -53,6 +53,26 @@ export function TripMap({ days }: Props) {
   const { isLoading, isError, byDay, flat } = useTripLocations(days)
   // null = "All days"
   const [activeDay, setActiveDay] = useState<string | null>(null)
+
+  // Focus-on-click (W-PLAN-01 subset): clicking a list card flies the map to
+  // the matching marker and highlights it; clicking a marker highlights +
+  // scrolls the matching card into view. Two-way sync between list ↔ map.
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
+    null,
+  )
+  const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map())
+
+  // Scroll the selected card into view whenever selection changes (e.g. when
+  // triggered by clicking a marker on the map).
+  useEffect(() => {
+    if (!selectedActivityId) return
+    const el = cardRefs.current.get(selectedActivityId)
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+  }, [selectedActivityId])
+
+  const handleSelectActivity = useCallback((p: LocationPoint) => {
+    setSelectedActivityId(p.activityId)
+  }, [])
 
   // Build Open in Maps URL for the currently visible points.
   const handleOpenInMaps = () => {
@@ -192,7 +212,15 @@ export function TripMap({ days }: Props) {
             visiblePoints.map((p, i) => (
               <div
                 key={p.activityId}
-                className="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-3.5 transition-all hover:border-primary/40 hover:shadow-md"
+                ref={(el) => {
+                  cardRefs.current.set(p.activityId, el)
+                }}
+                onClick={() => handleSelectActivity(p)}
+                className={cn(
+                  "group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-3.5 transition-all hover:border-primary/40 hover:shadow-md",
+                  selectedActivityId === p.activityId &&
+                    "border-primary ring-2 ring-primary/40 shadow-md",
+                )}
               >
                 {/* Left color bar */}
                 <div
@@ -324,7 +352,7 @@ export function TripMap({ days }: Props) {
           </div>
         ) : MAP_PROVIDER === "google" ? (
           <APIProvider apiKey={API_KEY}>
-            <Map
+            <GoogleMap
               mapId={MAP_ID}
               style={{ width: "100%", height: "100%" }}
               defaultCenter={{
@@ -339,13 +367,17 @@ export function TripMap({ days }: Props) {
                 visiblePoints={visiblePoints}
                 visibleByDay={visibleByDay}
                 onOpenInMaps={openSingleInMaps}
+                selectedActivityId={selectedActivityId}
+                onSelectActivity={handleSelectActivity}
               />
-            </Map>
+            </GoogleMap>
           </APIProvider>
         ) : (
           <MapLibreCanvas
             visibleByDay={visibleByDay}
             onOpenInMaps={openSingleInMaps}
+            selectedActivityId={selectedActivityId}
+            onSelectActivity={handleSelectActivity}
           />
         )}
       </div>
@@ -361,10 +393,14 @@ function GeocodingLayer({
   visiblePoints,
   visibleByDay,
   onOpenInMaps,
+  selectedActivityId,
+  onSelectActivity,
 }: {
   visiblePoints: LocationPoint[]
   visibleByDay: { dayId: string; dayNumber: number; points: LocationPoint[] }[]
   onOpenInMaps: (p: LocationPoint) => void
+  selectedActivityId: string | null
+  onSelectActivity: (p: LocationPoint) => void
 }) {
   const map = useMap()
   // activityId -> resolved {lat,lng}
@@ -471,7 +507,12 @@ function GeocodingLayer({
       )}
       {displayable.length > 0 && (
         <>
-          <Markers points={displayable} onOpenInMaps={onOpenInMaps} />
+          <Markers
+            points={displayable}
+            onOpenInMaps={onOpenInMaps}
+            selectedActivityId={selectedActivityId}
+            onSelectActivity={onSelectActivity}
+          />
           {visibleByDay.map((d) => (
             <Polyline
               key={d.dayId}
@@ -489,28 +530,52 @@ function GeocodingLayer({
 function Markers({
   points,
   onOpenInMaps,
+  selectedActivityId,
+  onSelectActivity,
 }: {
   points: LocationPoint[]
   onOpenInMaps: (p: LocationPoint) => void
+  selectedActivityId: string | null
+  onSelectActivity: (p: LocationPoint) => void
 }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null)
+  const map = useMap()
+
+  // Fly to the selected marker when selection changes (e.g. card click).
+  useEffect(() => {
+    if (!map || !selectedActivityId) return
+    const idx = points.findIndex((p) => p.activityId === selectedActivityId)
+    if (idx === -1) return
+    const p = points[idx]
+    map.panTo({ lat: p.lat, lng: p.lng })
+    if (map.getZoom() < 13) map.setZoom(13)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, selectedActivityId])
+
   return (
     <>
-      {points.map((p, i) => (
-        <AdvancedMarker
-          key={p.activityId}
-          position={{ lat: p.lat, lng: p.lng }}
-          onClick={() => setOpenIdx(openIdx === i ? null : i)}
-          title={p.title}
-        >
-          <Pin
-            background={colorForDay(p.dayNumber)}
-            borderColor="#ffffff"
-            glyphColor="#ffffff"
-            glyph={String(i + 1)}
-          />
-        </AdvancedMarker>
-      ))}
+      {points.map((p, i) => {
+        const isSelected = p.activityId === selectedActivityId
+        return (
+          <AdvancedMarker
+            key={p.activityId}
+            position={{ lat: p.lat, lng: p.lng }}
+            onClick={() => {
+              setOpenIdx(openIdx === i ? null : i)
+              onSelectActivity(p)
+            }}
+            title={p.title}
+          >
+            <Pin
+              background={colorForDay(p.dayNumber)}
+              borderColor={isSelected ? "#fbbf24" : "#ffffff"}
+              glyphColor="#ffffff"
+              glyph={String(i + 1)}
+              scale={isSelected ? 1.35 : 1}
+            />
+          </AdvancedMarker>
+        )
+      })}
       {openIdx !== null && points[openIdx] && (
         <InfoWindow
           position={{

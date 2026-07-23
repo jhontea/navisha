@@ -32,6 +32,8 @@ const colorForDay = (dayNumber: number) =>
 interface Props {
   visibleByDay: DayLocations[]
   onOpenInMaps: (point: LocationPoint) => void
+  selectedActivityId?: string | null
+  onSelectActivity?: (point: LocationPoint) => void
 }
 
 interface ProjectedRoute {
@@ -40,8 +42,17 @@ interface ProjectedRoute {
   points: { x: number; y: number }[]
 }
 
-export function MapLibreCanvas({ visibleByDay, onOpenInMaps }: Props) {
+export function MapLibreCanvas({
+  visibleByDay,
+  onOpenInMaps,
+  selectedActivityId,
+  onSelectActivity,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  // activityId -> marker element, for highlight + fly-to without recreating
+  // the whole map.
+  const markerElsRef = useRef<Map<string, HTMLButtonElement>>(new Map())
   const [mapError, setMapError] = useState(false)
   const [routeOverlay, setRouteOverlay] = useState<{
     width: number
@@ -60,6 +71,18 @@ export function MapLibreCanvas({ visibleByDay, onOpenInMaps }: Props) {
         }))
         .filter((day) => day.points.length > 0),
     [visibleByDay],
+  )
+
+  // Stable identity key: only re-init the map when the SET of displayed
+  // points actually changes (not on every parent re-render, which allocates a
+  // fresh `visibleByDay` array and would otherwise recreate the map + all
+  // markers on every click). Mirrors the FitBounds pattern in the Google path.
+  const pointsKey = useMemo(
+    () =>
+      displayableByDay
+        .flatMap((d) => d.points.map((p) => p.activityId))
+        .join("|"),
+    [displayableByDay],
   )
 
   useEffect(() => {
@@ -95,6 +118,10 @@ export function MapLibreCanvas({ visibleByDay, onOpenInMaps }: Props) {
       setMapError(true)
       return
     }
+    mapRef.current = map
+    // Reset marker registry on (re)create so stale refs from a previous map
+    // instance don't leak into the fly-to/highlight effect.
+    markerElsRef.current = new Map()
 
     map.addControl(new maplibregl.NavigationControl(), "top-right")
     map.on("error", (event) => {
@@ -140,6 +167,13 @@ export function MapLibreCanvas({ visibleByDay, onOpenInMaps }: Props) {
           cursor: "pointer",
           boxShadow: "0 2px 8px rgb(0 0 0 / 0.28)",
           zIndex: "2",
+        })
+
+        // Register marker for fly-to + highlight (focus-on-click). Clicking a
+        // marker selects the matching list card (two-way sync).
+        markerElsRef.current.set(point.activityId, markerElement)
+        markerElement.addEventListener("click", () => {
+          onSelectActivity?.(point)
         })
 
         const popupContent = document.createElement("div")
@@ -201,8 +235,41 @@ export function MapLibreCanvas({ visibleByDay, onOpenInMaps }: Props) {
       map.off("move", updateRouteOverlay)
       map.off("resize", updateRouteOverlay)
       map.remove()
+      mapRef.current = null
+      markerElsRef.current = new Map()
     }
-  }, [displayableByDay, onOpenInMaps])
+    // Re-init only when the displayed point SET changes (pointsKey), not on
+    // every render. onOpenInMaps/onSelectActivity are stable (useCallback).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pointsKey, onOpenInMaps, onSelectActivity])
+
+  // Focus-on-click: fly to the selected marker + highlight it (amber border +
+  // larger shadow + raised z-index) without recreating the map. Runs only
+  // when selection changes. NOTE: we intentionally do NOT touch `transform`
+  // because MapLibre overwrites it on every move to position the marker.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !selectedActivityId) return
+    const allPoints = displayableByDay.flatMap((d) => d.points)
+    const point = allPoints.find((p) => p.activityId === selectedActivityId)
+    if (!point) return
+
+    map.flyTo({
+      center: [point.lng, point.lat],
+      zoom: Math.max(map.getZoom(), 13),
+      duration: 800,
+    })
+
+    markerElsRef.current.forEach((el, id) => {
+      const isSelected = id === selectedActivityId
+      el.style.borderColor = isSelected ? "#fbbf24" : "white"
+      el.style.borderWidth = isSelected ? "3px" : "2px"
+      el.style.boxShadow = isSelected
+        ? "0 0 0 4px rgb(251 191 36 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4)"
+        : "0 2px 8px rgb(0 0 0 / 0.28)"
+      el.style.zIndex = isSelected ? "10" : "2"
+    })
+  }, [selectedActivityId, displayableByDay])
 
   if (displayableByDay.length === 0) {
     return (
