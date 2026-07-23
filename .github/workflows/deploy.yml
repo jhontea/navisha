@@ -78,7 +78,9 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ghcr.io/jhontea/navisha-backend:${{ github.sha }}
+          tags: |
+            ghcr.io/jhontea/navisha-backend:${{ github.sha }}
+            ghcr.io/jhontea/navisha-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
@@ -88,7 +90,9 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ghcr.io/jhontea/navisha-frontend:${{ github.sha }}
+          tags: |
+            ghcr.io/jhontea/navisha-frontend:${{ github.sha }}
+            ghcr.io/jhontea/navisha-frontend:latest
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.navisha.cloud/api/v1' }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '' }}
@@ -107,14 +111,11 @@ jobs:
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          IMAGE_TAG: ${{ github.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
-          envs: IMAGE_TAG
           command_timeout: 30m
           # Stop on first error, fail on unset vars, fail piped commands.
           script_stop: true
@@ -137,6 +138,7 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
             echo "==> Pulling pre-built images"
+            export IMAGE_TAG=latest
             docker compose -f docker-compose.prod.yml pull
 
             echo "==> Restarting containers without building"
