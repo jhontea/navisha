@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Check, ChevronDown, LoaderCircle, Pencil, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUpdateDayTitle } from "@/features/trip/hooks/useTrips"
+import type { Day } from "@/features/trip/types"
 import { DayActivities } from "./DayActivities"
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
   notes: string
   destination?: string
   defaultExpanded?: boolean
+  days: Day[]
 }
 
 export function DayPanel({
@@ -25,6 +27,7 @@ export function DayPanel({
   title,
   defaultExpanded = false,
   destination,
+  days,
 }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [editingTitle, setEditingTitle] = useState(false)
@@ -215,6 +218,7 @@ export function DayPanel({
               date={date}
               dayNumber={dayNumber}
               destination={destination}
+              days={days}
             />
           </div>
         </div>
