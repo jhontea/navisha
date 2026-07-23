@@ -9,6 +9,7 @@ import { GeneratingIndicator } from "@/components/GeneratingIndicator"
 import { tripApi } from "@/features/trip/api"
 import type { ActivityDraft, DayPreview, TripDraft } from "@/features/trip/types"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
+import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { activityApi } from "../api"
@@ -47,10 +48,6 @@ function intentInstruction(selected: Set<string>) {
     .filter((intent) => selected.has(intent.id))
     .map((intent) => intent.prompt)
     .join(" ")
-}
-
-function suggestionKey(activity: ActivityDraft) {
-  return [activity.title, activity.start_time, activity.end_time, activity.location_name].join("|")
 }
 
 export function DayAIPlanner({
