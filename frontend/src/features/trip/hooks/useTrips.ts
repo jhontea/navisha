@@ -139,3 +139,15 @@ export function useUpdateDayTitle(tripId: string) {
       qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "all" }),
   })
 }
+
+// ── AI Daily Quota ──
+// Shared across all AI features (generate trip, build-around, summary).
+// Refetches every 30s so the badge stays fresh without excessive requests.
+export function useAutogenQuota() {
+  return useQuery({
+    queryKey: ["autogen", "quota"],
+    queryFn: () => tripApi.quota(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
+}

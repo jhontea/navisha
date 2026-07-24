@@ -99,16 +99,15 @@ type LLMConfig struct {
 	OpenRouterAPIKey  string `mapstructure:"openrouter_api_key"`
 	OpenRouterModel   string `mapstructure:"openrouter_model"`
 	OpenRouterBaseURL string `mapstructure:"openrouter_base_url"`
-	// SummaryRateLimitSeconds is the soft window between summary (re)generations
-	// for a trip. When 0 (or unset) the rate-limit check is disabled.
-	SummaryRateLimitSeconds int `mapstructure:"summary_rate_limit_seconds"`
-	// GenerateRateLimitSeconds is the soft window between AI trip generations
-	// per user. When 0 (or unset) the rate-limit check is disabled.
-	GenerateRateLimitSeconds int `mapstructure:"generate_rate_limit_seconds"`
 	// TimeoutSeconds is the HTTP timeout for LLM calls. When 0 (or unset)
 	// the client default is used.
 	TimeoutSeconds int `mapstructure:"timeout_seconds"`
 }
+
+// EffectiveGenerateDailyQuota always returns 0 — the daily AI quota is now
+// stored in DB (app_settings.autogen_daily_quota), not config. Kept for
+// backward compat with any callers.
+func (c *Config) EffectiveGenerateDailyQuota() int { return 0 }
 
 // ActiveAPIKey returns the API key for the currently selected provider.
 func (c *Config) ActiveAPIKey() string {
@@ -171,9 +170,6 @@ type OpenRouterConfig struct {
 	APIKey  string `mapstructure:"api_key"`
 	Model   string `mapstructure:"model"`
 	BaseURL string `mapstructure:"base_url"`
-	// SummaryRateLimitSeconds is the soft window between summary (re)generations
-	// for a trip. When 0 (or unset) the rate-limit check is disabled.
-	SummaryRateLimitSeconds int `mapstructure:"summary_rate_limit_seconds"`
 	// TimeoutSeconds is the HTTP timeout for OpenRouter calls. When 0 (or unset)
 	// the client default is used.
 	TimeoutSeconds int `mapstructure:"timeout_seconds"`

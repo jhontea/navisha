@@ -12,6 +12,7 @@ import type {
   DayPreview,
   ShareDurationDays,
   TripShareLink,
+  AutogenQuota,
 } from "./types"
 
 
@@ -68,4 +69,7 @@ export const tripApi = {
 
   revokeShareLink: (tripId: string) =>
     api.delete<void>(`/trips/${tripId}/share-links/active`),
+
+  // ── AI Daily Quota ──
+  quota: () => api.get<AutogenQuota>("/autogen/quota"),
 }

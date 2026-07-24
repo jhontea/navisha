@@ -168,3 +168,12 @@ export interface PublicItinerary {
   expires_at: string
   days: PublicTripDay[]
 }
+
+// ── AI Daily Quota ──
+export interface AutogenQuota {
+  used: number
+  limit: number
+  remaining: number
+  resets_at: string
+  disabled?: boolean
+}

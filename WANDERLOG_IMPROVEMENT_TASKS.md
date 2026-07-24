@@ -58,7 +58,9 @@ Backlog hasil eksplorasi langsung Wanderlog (https://wanderlog.com) pada 2026-07
 
 - [ ] **W-AI-04 — Example prompt chips**: Quick-start prompt buttons ("Best places to eat in X", "3 day itinerary to X", "Top attractions in X"). Reduksi cold-start problem.
 
-- [ ] **W-AI-05 — Usage quota display**: "10 free messages left" + "Get more". **Rekomendasi:** jika Navisha monetisasi AI, tampilkan quota jelas. Free tier dengan upgrade path.
+- [~] **W-AI-05 — Usage quota display**: "10 free messages left" + "Get more". **Rekomendasi:** jika Navisha monetisasi AI, tampilkan quota jelas. Free tier dengan upgrade path.
+  - ✅ **Done**: Shared daily quota — all AI features (trip generate, build-around, summary) share one Redis counter (`ratelimit:autogen:daily:{userID}:{date}`). Limit from DB `app_settings.autogen_daily_quota` (default 10). `GET /api/v1/autogen/quota` endpoint. `QuotaBadge` component on generate page + summary card. Refund on LLM failure (`ErrLLMUnavailable`). Redis docs for manual reset.
+  - 📝 **Redis reset**: `redis-cli DEL "ratelimit:autogen:daily:{USER_ID}:{YYYY-MM-DD}"`
 
 - [ ] **W-AI-06 — Attach files to AI chat**: Upload receipt/booking PDF untuk di-parse AI. Bisa auto-extract expense atau reservation.
 
