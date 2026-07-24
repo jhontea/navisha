@@ -80,7 +80,7 @@ Backlog hasil eksplorasi langsung Wanderlog (https://wanderlog.com) pada 2026-07
 
 - [ ] **W-BUD-05 — Set budget target**: Tombol "Set budget" yang set total budget trip → progress bar pengeluaran vs budget. Navisha sudah punya `Trip.budget` — pastikan ada progress indicator visual.
 
-- [ ] **W-BUD-06 — Sort expenses**: "Sort: Date (newest first)" dengan opsi ganti sort (date, amount, category).
+- [x] **W-BUD-06 — Sort expenses**: "Sort: Date (newest first)" dengan opsi ganti sort (date, amount, category). ✅ Done: `ExpenseSection.tsx` — native `<select>` dengan 5 mode (Date newest/oldest, Amount high→low/low→high, Category A→Z). Mode tanggal tetap grouped per-tanggal (dengan collapse); mode amount/category flatten jadi single list dengan tanggal ditampilkan di sub-line kartu. Default `date-desc` (perilaku sebelumnya). Tidak persist (reset setiap buka halaman).
 
 ---
 
