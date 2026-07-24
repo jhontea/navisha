@@ -76,11 +76,12 @@ func (r *postgresRepository) Revoke(ctx context.Context, tripID, userID string) 
 
 func (r *postgresRepository) Resolve(ctx context.Context, linkID string) (*PublicItinerary, error) {
 	var out PublicItinerary
+	var tripID string
 	var expired, revoked bool
-	err := r.db.QueryRow(ctx, `SELECT t.title,t.description,t.start_date::text,t.end_date::text,t.cover_image_url,
+	err := r.db.QueryRow(ctx, `SELECT t.id,t.title,t.description,t.start_date::text,t.end_date::text,t.cover_image_url,
 		s.expires_at,s.expires_at<=NOW(),s.revoked_at IS NOT NULL FROM trip_share_links s
 		JOIN trips t ON t.id=s.trip_id WHERE s.id=$1`, linkID).
-		Scan(&out.Title, &out.Description, &out.StartDate, &out.EndDate, &out.CoverImageURL, &out.ExpiresAt, &expired, &revoked)
+		Scan(&tripID, &out.Title, &out.Description, &out.StartDate, &out.EndDate, &out.CoverImageURL, &out.ExpiresAt, &expired, &revoked)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -120,8 +121,56 @@ func (r *postgresRepository) Resolve(ctx context.Context, linkID string) (*Publi
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("tripshare.Resolve rows: %w", err)
 	}
+	if err := r.loadPublicTransportations(ctx, tripID, &out); err != nil {
+		return nil, err
+	}
+	if err := r.loadPublicAccommodations(ctx, tripID, &out); err != nil {
+		return nil, err
+	}
 	_, _ = r.db.Exec(ctx, `UPDATE trip_share_links SET last_accessed_at=NOW() WHERE id=$1`, linkID)
 	return &out, nil
+}
+
+func (r *postgresRepository) loadPublicTransportations(ctx context.Context, tripID string, out *PublicItinerary) error {
+	rows, err := r.db.Query(ctx, `SELECT id,type,label,operator,from_location,to_location,departure_datetime,arrival_datetime
+		FROM transportations WHERE trip_id=$1 ORDER BY COALESCE(departure_datetime,created_at),created_at`, tripID)
+	if err != nil {
+		return fmt.Errorf("tripshare.loadPublicTransportations: %w", err)
+	}
+	defer rows.Close()
+	out.Transportations = []PublicTransportation{}
+	for rows.Next() {
+		var item PublicTransportation
+		if err := rows.Scan(&item.ID, &item.Type, &item.Label, &item.Operator, &item.FromLocation, &item.ToLocation, &item.DepartureDatetime, &item.ArrivalDatetime); err != nil {
+			return fmt.Errorf("tripshare.loadPublicTransportations scan: %w", err)
+		}
+		out.Transportations = append(out.Transportations, item)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("tripshare.loadPublicTransportations rows: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresRepository) loadPublicAccommodations(ctx context.Context, tripID string, out *PublicItinerary) error {
+	rows, err := r.db.Query(ctx, `SELECT id,accommodation_type,name,location_name,check_in::text,check_out::text
+		FROM accommodations WHERE trip_id=$1 ORDER BY check_in,created_at`, tripID)
+	if err != nil {
+		return fmt.Errorf("tripshare.loadPublicAccommodations: %w", err)
+	}
+	defer rows.Close()
+	out.Accommodations = []PublicAccommodation{}
+	for rows.Next() {
+		var item PublicAccommodation
+		if err := rows.Scan(&item.ID, &item.AccommodationType, &item.Name, &item.LocationName, &item.CheckIn, &item.CheckOut); err != nil {
+			return fmt.Errorf("tripshare.loadPublicAccommodations scan: %w", err)
+		}
+		out.Accommodations = append(out.Accommodations, item)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("tripshare.loadPublicAccommodations rows: %w", err)
+	}
+	return nil
 }
 
 func sanitizeLocationPayload(raw []byte) json.RawMessage {

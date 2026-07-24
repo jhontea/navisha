@@ -159,6 +159,26 @@ export interface PublicTripDay {
   activities: PublicTripActivity[]
 }
 
+export interface PublicTransportation {
+  id: string
+  type: string
+  label: string
+  operator: string
+  from_location: string
+  to_location: string
+  departure_datetime: string | null
+  arrival_datetime: string | null
+}
+
+export interface PublicAccommodation {
+  id: string
+  accommodation_type: string
+  name: string
+  location_name: string
+  check_in: string
+  check_out: string
+}
+
 export interface PublicItinerary {
   title: string
   description: string
@@ -167,6 +187,8 @@ export interface PublicItinerary {
   cover_image_url: string
   expires_at: string
   days: PublicTripDay[]
+  transportations: PublicTransportation[]
+  accommodations: PublicAccommodation[]
 }
 
 // ── AI Daily Quota ──

@@ -2,6 +2,8 @@ package tripshare
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
@@ -10,6 +12,22 @@ type fakeRepository struct {
 	created   *Link
 	resolved  *PublicItinerary
 	resolveID string
+}
+
+func TestPublicItineraryJSONDoesNotExposePrivateBookingFields(t *testing.T) {
+	b, err := json.Marshal(PublicItinerary{
+		Transportations: []PublicTransportation{{ID: "transport"}},
+		Accommodations:  []PublicAccommodation{{ID: "stay"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(b)
+	for _, forbidden := range []string{"reference_number", "confirmation_number", "notes", "budget", "user_id"} {
+		if strings.Contains(got, forbidden) {
+			t.Fatalf("public response contains %q: %s", forbidden, got)
+		}
+	}
 }
 
 func (f *fakeRepository) Create(_ context.Context, tripID, userID string, expiresAt time.Time) (*Link, error) {
