@@ -4,7 +4,7 @@ import { CurrencyConverter } from "@/features/currency/components/CurrencyConver
 export default function CurrencyPage() {
   return (
     <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop py-6 pb-28 animate-fade-in">
-      <BackLink href="/dashboard" className="mb-6" />
+      <BackLink href="/dashboard" label="Back to Dashboard" className="mb-6" />
 
       {/* Page header */}
       <header className="mb-8">

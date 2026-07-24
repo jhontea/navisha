@@ -136,7 +136,8 @@ Backlog hasil eksplorasi langsung Wanderlog (https://wanderlog.com) pada 2026-07
 
 ## Home/Dashboard
 
-- [ ] **W-HOME-01 — Upcoming trips carousel**: Carousel horizontal trip upcoming dengan cover image, dates, place count, share button. Lebih visual dari list biasa.
+- [x] **W-HOME-01 — Upcoming trips carousel**: Carousel horizontal trip upcoming dengan cover image, dates, place count, share button. Lebih visual dari list biasa.
+  - ✅ Done: Converted `TripList.tsx` grid → horizontal scroll-snap carousel (`flex overflow-x-auto snap-x snap-mandatory no-scrollbar`). Fixed-width cards (280px mobile / 320px desktop) with `snap-start`. Added desktop nav arrows (‹ ›) that auto-show/hide based on scroll position (`canScrollLeft`/`canScrollRight`). Header "Recent Trips" + "View all" link already exists in parent `dashboard/page.tsx`. Verified in browser: 3 cards render, arrows scroll + toggle correctly.
 
 - [ ] **W-HOME-02 — World map visited places**: Map global dengan semua tempat yang pernah dikunjungi user. Visual identity + gamification. `[overlap: W-DISC-04]`
 

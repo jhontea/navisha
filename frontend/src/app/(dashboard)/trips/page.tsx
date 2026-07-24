@@ -8,12 +8,14 @@ import { TripCTAs } from "@/features/trip/components/TripCTAs"
 import { useTrips } from "@/features/trip/hooks/useTrips"
 import { tripStatus } from "@/features/trip/lib/status"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, ChevronDown, Loader2, Map } from "lucide-react"
+import { AlertCircle, ChevronDown, Loader2, Map, ArrowDownUp } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { EmptyTripsIllustration } from "@/components/illustrations/EmptyStateIllustrations"
 
 type FilterTab = "all" | "active" | "upcoming" | "past"
+
+type SortMode = "recent" | "oldest" | "trip-date" | "title"
 
 const TABS: { id: FilterTab; label: string }[] = [
   { id: "all",      label: "All" },
@@ -22,8 +24,16 @@ const TABS: { id: FilterTab; label: string }[] = [
   { id: "past",     label: "Past" },
 ]
 
+const SORT_OPTIONS: { id: SortMode; label: string }[] = [
+  { id: "recent",    label: "Recently added" },
+  { id: "oldest",    label: "Oldest first" },
+  { id: "trip-date", label: "Trip date" },
+  { id: "title",     label: "Title (A–Z)" },
+]
+
 export default function TripsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
+  const [sortMode, setSortMode] = useState<SortMode>("recent")
 
   const {
     data,
@@ -40,10 +50,26 @@ export default function TripsPage() {
   )
 
   // Client-side filter by status
-  const trips = useMemo(() => {
+  const filtered = useMemo(() => {
     if (activeTab === "all") return allTrips
     return allTrips.filter((t) => tripStatus(t.start_date, t.end_date) === activeTab)
   }, [allTrips, activeTab])
+
+  // Client-side sort by selected mode
+  const trips = useMemo(() => {
+    const arr = [...filtered]
+    switch (sortMode) {
+      case "oldest":
+        return arr.sort((a, b) => a.created_at.localeCompare(b.created_at))
+      case "trip-date":
+        return arr.sort((a, b) => a.start_date.localeCompare(b.start_date))
+      case "title":
+        return arr.sort((a, b) => a.title.localeCompare(b.title))
+      case "recent":
+      default:
+        return arr.sort((a, b) => b.created_at.localeCompare(a.created_at))
+    }
+  }, [filtered, sortMode])
 
   // Count per tab
   const counts = useMemo(() => ({
@@ -56,7 +82,7 @@ export default function TripsPage() {
   return (
     <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-6 pb-28 animate-fade-in">
       {/* Back to dashboard */}
-      <BackLink href="/dashboard" />
+      <BackLink href="/dashboard" label="Back to Dashboard" />
 
       {/* ── Header ── */}
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -77,13 +103,14 @@ export default function TripsPage() {
         </div>
       </header>
 
-      {/* ── Filter tabs ── */}
+      {/* ── Filter tabs + Sort ── */}
       {!isLoading && allTrips.length > 0 && (
-        <div
-          className="mb-6 flex items-center gap-1 overflow-x-auto rounded-full border border-border/30 bg-background/90 p-1 backdrop-blur-xl scrollbar-none"
-          role="tablist"
-          aria-label="Filter trips by status"
-        >
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            className="flex items-center gap-1 overflow-x-auto rounded-full border border-border/30 bg-background/90 p-1 backdrop-blur-xl no-scrollbar"
+            role="tablist"
+            aria-label="Filter trips by status"
+          >
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -113,6 +140,23 @@ export default function TripsPage() {
               )}
             </button>
           ))}
+          </div>
+
+          {/* Sort dropdown */}
+          <div className="relative shrink-0">
+            <ArrowDownUp className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              aria-label="Sort trips"
+              className="appearance-none rounded-full border border-border/30 bg-background/90 py-2 pl-8 pr-8 text-sm font-medium text-foreground backdrop-blur-xl transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          </div>
         </div>
       )}
 

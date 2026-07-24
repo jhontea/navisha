@@ -42,15 +42,30 @@ export default function DashboardPage() {
         </h1>
       </header>
 
-      {/* ── Stats ── */}
-      <section className="mb-8" aria-labelledby="stats-heading">
-        <h2 id="stats-heading" className="sr-only">Travel Stats</h2>
-        <StatsSection />
+      {/* ── Upcoming Trips (PRIMARY focus) ── */}
+      {/* Repositioned to top: trips are why users return. Label fixed (was "Recent"
+          but hook fetches upcoming). Subtitle directs attention. */}
+      <section className="mb-10" aria-labelledby="trips-heading">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 id="trips-heading" className="text-lg font-bold font-heading text-foreground">
+              Upcoming Trips
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">Pick up where you left off</p>
+          </div>
+          <Link
+            href="/trips"
+            className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg px-1 py-0.5"
+          >
+            View all
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+        <TripList />
       </section>
 
-      {/* ── Quick Actions ── */}
-      {/* Iter 30 — 2-col on mobile, 3-col on wider */}
-      <section className="mb-8" aria-labelledby="actions-heading">
+      {/* ── Quick Actions (SECONDARY) ── */}
+      <section className="mb-10" aria-labelledby="actions-heading">
         <h2
           id="actions-heading"
           className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
@@ -102,29 +117,12 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="mb-6 flex items-center gap-3" aria-hidden="true">
-        <div className="h-px flex-1 bg-border/30" />
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Recent</span>
-        <div className="h-px flex-1 bg-border/30" />
-      </div>
-
-      {/* ── Trip List ── */}
-      {/* Iter 31 — heading: slightly larger + view all right aligned */}
-      <section aria-labelledby="trips-heading">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="trips-heading" className="text-lg font-bold font-heading text-foreground">
-            Recent Trips
-          </h2>
-          <Link
-            href="/trips"
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg px-1 py-0.5"
-          >
-            View all
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
-        </div>
-        <TripList />
+      {/* ── Travel Stats (TERTIARY — gamification, moved to bottom) ── */}
+      <section aria-labelledby="stats-heading">
+        <h2 id="stats-heading" className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Travel Stats
+        </h2>
+        <StatsSection />
       </section>
 
     </div>
