@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import { Providers } from "@/components/providers"
 import "./globals.css"
-import "maplibre-gl/dist/maplibre-gl.css"
 
 const inter = localFont({
   src: [

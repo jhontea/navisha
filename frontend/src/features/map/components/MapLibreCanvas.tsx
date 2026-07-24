@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import maplibregl, { type StyleSpecification } from "maplibre-gl"
+// Import CSS only where maplibre-gl is actually used, not in root layout.
+import "maplibre-gl/dist/maplibre-gl.css"
 import { ExternalLink } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
 import type { DayLocations, LocationPoint } from "../hooks/useTripLocations"

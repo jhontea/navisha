@@ -104,11 +104,6 @@ type LLMConfig struct {
 	TimeoutSeconds int `mapstructure:"timeout_seconds"`
 }
 
-// EffectiveGenerateDailyQuota always returns 0 — the daily AI quota is now
-// stored in DB (app_settings.autogen_daily_quota), not config. Kept for
-// backward compat with any callers.
-func (c *Config) EffectiveGenerateDailyQuota() int { return 0 }
-
 // ActiveAPIKey returns the API key for the currently selected provider.
 func (c *Config) ActiveAPIKey() string {
 	switch c.LLM.Provider {
