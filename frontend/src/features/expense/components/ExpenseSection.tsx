@@ -18,6 +18,20 @@ import { CATEGORY_COLORS } from "../categoryColors"
 
 const CATEGORY_CONFIG = CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS[string]>
 
+// W-BUD-06 — Sort modes for the expenses list.
+// date-* keep the per-date grouping; amount-* / category-* flatten into a single list.
+type SortMode = "date-desc" | "date-asc" | "amount-desc" | "amount-asc" | "category-asc"
+
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "date-desc", label: "Date (newest)" },
+  { value: "date-asc", label: "Date (oldest)" },
+  { value: "amount-desc", label: "Amount (high → low)" },
+  { value: "amount-asc", label: "Amount (low → high)" },
+  { value: "category-asc", label: "Category (A → Z)" },
+]
+
+const DEFAULT_SORT: SortMode = "date-desc"
+
 function formatExpenseDate(dateStr: string): string {
   if (!dateStr) return ""
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
@@ -55,6 +69,8 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
   const [confirmingDelete, setConfirmingDelete] = useState<Expense | null>(null)
   // Track which date groups are collapsed; all expanded by default
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  // W-BUD-06 — sort mode for the expenses list. Defaults to current behaviour (newest first).
+  const [sortMode, setSortMode] = useState<SortMode>(DEFAULT_SORT)
 
   // ponytail: scroll the Add Expense card into view when it opens, so the form is reachable on mobile
   const addCardRef = useRef<HTMLDivElement>(null)
@@ -79,6 +95,9 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
 
   const items = data?.items ?? []
 
+  // W-BUD-06 — date modes keep the per-date grouping; amount/category modes flatten.
+  const isDateSort = sortMode === "date-desc" || sortMode === "date-asc"
+
   // Group expenses by expense_date (always set, defaults to today at create time)
   const grouped: { date: string; expenses: Expense[] }[] = []
   for (const e of items) {
@@ -90,8 +109,119 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
       grouped.push({ date: dateKey, expenses: [e] })
     }
   }
-  // Sort groups newest first
-  grouped.sort((a, b) => b.date.localeCompare(a.date))
+  // Sort date groups newest or oldest first depending on mode
+  grouped.sort((a, b) =>
+    sortMode === "date-asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date),
+  )
+
+  // Flat list for amount / category sorts (converted_amount is normalised to base currency)
+  const flatSorted: Expense[] = isDateSort
+    ? []
+    : [...items].sort((a, b) => {
+        if (sortMode === "amount-desc") return b.converted_amount - a.converted_amount
+        if (sortMode === "amount-asc") return a.converted_amount - b.converted_amount
+        // category-asc — compare by category label, fallback to title
+        const labelA = CATEGORY_CONFIG[a.category]?.label ?? a.category
+        const labelB = CATEGORY_CONFIG[b.category]?.label ?? b.category
+        return labelA.localeCompare(labelB) || a.title.localeCompare(b.title)
+      })
+
+  // W-BUD-06 — shared expense row renderer so grouped and flat lists stay in sync.
+  function renderExpenseRow(e: Expense) {
+    const isEditing = editingId === e.id
+    const cfg = CATEGORY_CONFIG[e.category] ?? CATEGORY_CONFIG.other
+    const sameCurrency = e.currency === e.base_currency
+
+    if (isEditing) {
+      return (
+        <div key={e.id} className="p-6 bg-accent/20">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-label-md text-foreground">Edit expense</h4>
+            <button
+              type="button"
+              onClick={() => setEditingId(null)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <ExpenseForm
+            initial={e}
+            tripBaseCurrency={tripBaseCurrency}
+            isSubmitting={updateMut.isPending}
+            onCancel={() => setEditingId(null)}
+            onSubmit={async (input) => {
+              await updateMut.mutateAsync(input)
+              setEditingId(null)
+            }}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div
+        key={e.id}
+        className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors group"
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+              cfg.bg, cfg.text,
+            )}
+          >
+            <cfg.Icon className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h5 className="font-label-md text-foreground">{e.title}</h5>
+            <p className="text-label-sm text-muted-foreground mt-0.5">
+              {cfg.label}
+              {!isDateSort && (
+                <span className="ml-1 text-muted-foreground/70">· {formatExpenseDate(e.expense_date)}</span>
+              )}
+              {e.note && (
+                <span className="ml-1 text-muted-foreground/70">· {e.note}</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="text-right mr-2">
+            <p className="font-display text-headline-sm text-foreground">
+              {formatCurrency(e.amount, e.currency)}
+            </p>
+            {!sameCurrency && (
+              <p className="text-[10px] text-muted-foreground font-medium">
+                ≈ {formatCurrency(e.converted_amount, e.base_currency)}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            aria-label="Edit expense"
+            onClick={() => setEditingId(e.id)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Delete expense"
+            disabled={deleteMut.isPending && deleteMut.variables === e.id}
+            onClick={() => setConfirmingDelete(e)}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+              "text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50",
+            )}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-10">
@@ -168,14 +298,31 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
         </div>
       </section>
 
-      {/* Expenses List — grouped by date */}
+      {/* Expenses List — grouped by date (date modes) or flat (amount/category modes) */}
       {(isLoading || items.length > 0 || isError) && (
         <section>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
             <h3 className="font-display text-headline-sm text-foreground">Recent Expenses</h3>
-            <span className="text-sm text-muted-foreground">
-              {items.length} {items.length === 1 ? "expense" : "expenses"}
-            </span>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="sr-only">Sort expenses</span>
+                <select
+                  value={sortMode}
+                  onChange={(e) => setSortMode(e.target.value as SortMode)}
+                  className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-foreground font-label-md hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
+                  aria-label="Sort expenses"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <span className="text-sm text-muted-foreground">
+                {items.length} {items.length === 1 ? "expense" : "expenses"}
+              </span>
+            </div>
           </div>
 
           {isLoading && (
@@ -198,7 +345,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
             </p>
           )}
 
-          {!isLoading && !isError && grouped.length > 0 && (
+          {!isLoading && !isError && isDateSort && grouped.length > 0 && (
             <div className="space-y-6">
               {grouped.map((group) => {
                 const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
@@ -233,103 +380,21 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
 
                     <div className={cn("glass overflow-hidden rounded-xl transition-all duration-200", isCollapsed && "hidden")}>
                       <div className="divide-y divide-border/30">
-                        {group.expenses.map((e) => {
-                          const isEditing = editingId === e.id
-                          const cfg = CATEGORY_CONFIG[e.category] ?? CATEGORY_CONFIG.other
-                          const sameCurrency = e.currency === e.base_currency
-
-                          if (isEditing) {
-                            return (
-                              <div key={e.id} className="p-6 bg-accent/20">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h4 className="font-label-md text-foreground">Edit expense</h4>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingId(null)}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </button>
-                                </div>
-                                <ExpenseForm
-                                  initial={e}
-                                  tripBaseCurrency={tripBaseCurrency}
-                                  isSubmitting={updateMut.isPending}
-                                  onCancel={() => setEditingId(null)}
-                                  onSubmit={async (input) => {
-                                    await updateMut.mutateAsync(input)
-                                    setEditingId(null)
-                                  }}
-                                />
-                              </div>
-                            )
-                          }
-
-                          return (
-                            <div
-                              key={e.id}
-                              className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors group"
-                            >
-                              <div className="flex items-center gap-4">
-                                <div
-                                  className={cn(
-                                    "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
-                                    cfg.bg, cfg.text,
-                                  )}
-                                >
-                                  <cfg.Icon className="h-5 w-5" aria-hidden="true" />
-                                </div>
-                                <div>
-                                  <h5 className="font-label-md text-foreground">{e.title}</h5>
-                                  <p className="text-label-sm text-muted-foreground mt-0.5">
-                                    {cfg.label}
-                                    {e.note && (
-                                      <span className="ml-1 text-muted-foreground/70">· {e.note}</span>
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <div className="text-right mr-2">
-                                  <p className="font-display text-headline-sm text-foreground">
-                                    {formatCurrency(e.amount, e.currency)}
-                                  </p>
-                                  {!sameCurrency && (
-                                    <p className="text-[10px] text-muted-foreground font-medium">
-                                      ≈ {formatCurrency(e.converted_amount, e.base_currency)}
-                                    </p>
-                                  )}
-                                </div>
-                                <button
-                                  type="button"
-                                  aria-label="Edit expense"
-                                  onClick={() => setEditingId(e.id)}
-                                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  aria-label="Delete expense"
-                                  disabled={deleteMut.isPending && deleteMut.variables === e.id}
-                                  onClick={() => setConfirmingDelete(e)}
-                                  className={cn(
-                                    "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
-                                    "text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50",
-                                  )}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
+                        {group.expenses.map((e) => renderExpenseRow(e))}
                       </div>
                     </div>
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* W-BUD-06 — flat list for amount / category sorts (no date grouping) */}
+          {!isLoading && !isError && !isDateSort && flatSorted.length > 0 && (
+            <div className="glass overflow-hidden rounded-xl">
+              <div className="divide-y divide-border/30">
+                {flatSorted.map((e) => renderExpenseRow(e))}
+              </div>
             </div>
           )}
         </section>
