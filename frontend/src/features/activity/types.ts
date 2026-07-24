@@ -49,7 +49,7 @@ export interface CreateActivityInput {
   title: string
   start_time?: string
   end_time?: string
-  payload: ActivityPayload
+  payload?: ActivityPayload
 }
 
 export interface UpdateActivityInput {
