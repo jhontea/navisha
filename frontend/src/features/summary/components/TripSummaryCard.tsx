@@ -6,6 +6,7 @@ import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { QuotaBadge } from "@/components/QuotaBadge"
 import { sanitizeText } from "@/lib/sanitize"
 import { cn } from "@/lib/utils"
 import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
@@ -201,7 +202,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 </div>
               </div>
             )}
-            <div className="flex w-full justify-center">
+            <div className="flex w-full flex-col items-center gap-3">
               <Button
                 onClick={() => generate.mutate()}
                 disabled={generate.isPending}
@@ -210,6 +211,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 <Sparkles className="h-4 w-4" />
                 {isGenerateError ? "Try Again" : "Generate Summary"}
               </Button>
+              <QuotaBadge />
             </div>
           </>
         )}
@@ -235,32 +237,37 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
             <GeneratingIndicator compact />
           </div>
         )}
-        <Button
-          size="sm"
-          onClick={() => generate.mutate()}
-          disabled={generate.isPending}
-          className={cn(
-            summaryActionButtonClassName,
-            "w-full px-4 py-2 text-xs sm:w-auto sm:text-sm md:gap-2",
-          )}
-        >
-          {generate.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
-          )}
-          <span className="sm:hidden">Regenerate</span>
-          <span className="hidden sm:inline">Regenerate</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => generate.mutate()}
+            disabled={generate.isPending}
+            className={cn(
+              summaryActionButtonClassName,
+              "w-full px-4 py-2 text-xs sm:w-auto sm:text-sm md:gap-2",
+            )}
+          >
+            {generate.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
+            )}
+            <span className="sm:hidden">Regen</span>
+            <span className="hidden sm:inline">Regenerate</span>
+          </Button>
+        </div>
+      </div>
+      <div className="mb-3 sm:mb-4">
+        <QuotaBadge />
       </div>
 
       {isRateLimited && (
         <div className="mb-3 flex items-start gap-2 rounded-lg bg-chromatic-amber/10 p-2 text-xs text-chromatic-amber sm:mb-4 sm:p-3 sm:text-sm">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
           <div>
-            <p className="font-medium text-[11px] sm:text-sm">Please wait a moment</p>
+            <p className="font-medium text-[11px] sm:text-sm">Daily limit reached</p>
             <p className="text-[10px] opacity-90 sm:text-xs">
-              You can regenerate a summary once every 5 minutes. Come back shortly!
+              You&apos;ve used all AI generations for today. Resets at 00:00 UTC.
             </p>
           </div>
         </div>

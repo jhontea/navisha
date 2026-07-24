@@ -2,33 +2,28 @@ package summary
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
-	"math"
 	"net/http"
-	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/internal/quota"
 	"github.com/labstack/echo/v4"
-	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
-	usecase      UsecaseInterface
-	rdb          *redis.Client
-	rateLimitSec int
+	usecase UsecaseInterface
+	quota   *quota.Checker
 }
 
 func NewHandler(usecase UsecaseInterface) *Handler {
 	return &Handler{usecase: usecase}
 }
 
-// WithSummaryRateLimit enables per-user cooldown for summary generation.
-// Uses Redis SETNX for atomic check-and-reserve. Pass rdb=nil or seconds=0 to disable.
-func (h *Handler) WithSummaryRateLimit(rdb *redis.Client, seconds int) *Handler {
-	h.rdb = rdb
-	h.rateLimitSec = seconds
+// WithQuota wires the shared daily AI quota checker. Summary shares the same
+// daily counter as autogen (trip generate, build-around).
+func (h *Handler) WithQuota(q *quota.Checker) *Handler {
+	h.quota = q
 	return h
 }
 
@@ -45,32 +40,16 @@ func (h *Handler) Generate(c echo.Context) error {
 	}
 	tripID := c.Param("id")
 
-	// ── Per-user cooldown (Redis SETNX — same pattern as autogen) ──
-	// Key uses only userID so a single user cannot abuse the LLM by switching
-	// between different trips — all summary generations are throttled together
-	// per user regardless of which trip they target.
-	if h.rdb != nil && h.rateLimitSec > 0 {
-		key := fmt.Sprintf("ratelimit:summary:cooldown:%s", userID)
-		dur := time.Duration(h.rateLimitSec) * time.Second
-		ok, err := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
-		if err != nil {
-			slog.Warn("summary: cooldown check failed", "user_id", userID, "trip_id", tripID, "err", err)
-		} else if !ok {
-			ttl, _ := h.rdb.TTL(c.Request().Context(), key).Result()
-			retryAfter := int(ttl.Seconds())
-			if retryAfter <= 0 {
-				retryAfter = h.rateLimitSec
-			}
-			return echo.NewHTTPError(http.StatusTooManyRequests, map[string]any{
-				"code":                "RATE_LIMITED",
-				"message":             fmt.Sprintf("Summary generation cooldown. Try again in %d seconds.", retryAfter),
-				"retry_after_seconds": retryAfter,
-			})
-		}
+	// ── Daily quota check (shared with autogen — same counter) ──
+	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
+		return quotaErr
 	}
 
 	s, err := h.usecase.Generate(c.Request().Context(), userID, tripID)
 	if err != nil {
+		if errors.Is(err, ErrLLMUnavailable) {
+			h.quota.Refund(c, userID)
+		}
 		return mapErr(err)
 	}
 	return c.JSON(http.StatusOK, toResponse(s))
@@ -115,15 +94,6 @@ func toResponse(s *Summary) map[string]any {
 }
 
 func mapErr(err error) error {
-	var rl *RateLimitError
-	if errors.As(err, &rl) {
-		retryAfter := int(math.Ceil(rl.RetryAfter.Seconds()))
-		return echo.NewHTTPError(http.StatusTooManyRequests, map[string]any{
-			"code":                "RATE_LIMITED",
-			"message":             "summary was generated recently, try again later",
-			"retry_after_seconds": retryAfter,
-		})
-	}
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, "summary not found")

@@ -22,6 +22,7 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/location"
 	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/ahmadhafizh/navisha/backend/internal/migrate"
+	"github.com/ahmadhafizh/navisha/backend/internal/quota"
 	"github.com/ahmadhafizh/navisha/backend/internal/summary"
 	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
@@ -204,11 +205,15 @@ func main() {
 	tripContextProvider := integration.NewTripContextProvider(
 		tripUsecase, activityUsecase, accommodationUsecase, transportationUsecase, expenseUsecase,
 	)
-	summaryUsecase := summary.NewUsecase(summaryRepo, llmClient, tripContextProvider, cfg.ActiveModel()).
-		WithRateLimitWindow(time.Duration(cfg.LLM.SummaryRateLimitSeconds) * time.Second)
+	summaryUsecase := summary.NewUsecase(summaryRepo, llmClient, tripContextProvider, cfg.ActiveModel())
+
+	// Shared daily AI quota — all AI features (generate, build-around, summary)
+	// share one Redis counter per user per UTC day. Limit is read from
+	// app_settings.autogen_daily_quota in the database.
+	aiQuota := quota.NewChecker(rdb, db)
 
 	summaryHandler := summary.NewHandler(summaryUsecase).
-		WithSummaryRateLimit(rdb, cfg.LLM.SummaryRateLimitSeconds)
+		WithQuota(aiQuota)
 
 	// Auto-generate trip domain (F5). Reuses the LLM client and an
 	// integration adapter that persists the approved draft via trip + activity.
@@ -217,7 +222,7 @@ func main() {
 	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel()).
 		WithDayContextProvider(autogenDayContext)
 	autogenHandler := autogen.NewHandler(autogenUsecase).
-		WithGenerateRateLimit(rdb, cfg.LLM.GenerateRateLimitSeconds)
+		WithQuota(aiQuota)
 
 	// Echo
 	e := echo.New()

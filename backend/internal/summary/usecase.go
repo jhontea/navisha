@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 )
@@ -19,15 +18,6 @@ var ErrForbidden = errors.New("forbidden")
 // The handler maps this to 503 so the frontend can show a "try again" message
 // instead of a generic 500.
 var ErrLLMUnavailable = errors.New("summary generation is temporarily unavailable")
-
-// RateLimitError carries how long the caller must wait before retrying.
-type RateLimitError struct {
-	RetryAfter time.Duration
-}
-
-func (e *RateLimitError) Error() string {
-	return fmt.Sprintf("rate limited, retry after %s", e.RetryAfter)
-}
 
 // TripDataProvider assembles the cross-domain trip snapshot. Implemented by
 // an adapter in internal/integration so this package stays decoupled from the
@@ -53,20 +43,10 @@ type Usecase struct {
 	llm      LLMClient
 	provider TripDataProvider
 	model    string
-	// rateLimitWindow is the soft cooldown between (re)generations for a trip.
-	// When zero, the rate-limit check is disabled.
-	rateLimitWindow time.Duration
 }
 
 func NewUsecase(repo Repository, llm LLMClient, provider TripDataProvider, model string) *Usecase {
 	return &Usecase{repo: repo, llm: llm, provider: provider, model: model}
-}
-
-// WithRateLimitWindow sets the soft cooldown between summary (re)generations.
-// Pass a zero duration to disable the rate-limit check entirely.
-func (u *Usecase) WithRateLimitWindow(d time.Duration) *Usecase {
-	u.rateLimitWindow = d
-	return u
 }
 
 var _ UsecaseInterface = (*Usecase)(nil)
@@ -74,18 +54,6 @@ var _ UsecaseInterface = (*Usecase)(nil)
 // Generate builds the trip context, calls the LLM, and persists the result.
 // Enforces ownership (via provider) and a soft rate limit when configured.
 func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary, error) {
-	// Rate-limit check: skip entirely when window is zero (disabled).
-	if u.rateLimitWindow > 0 {
-		if existing, err := u.repo.GetByTripID(tripID); err == nil {
-			elapsed := time.Since(existing.UpdatedAt)
-			if elapsed < u.rateLimitWindow {
-				return nil, &RateLimitError{RetryAfter: u.rateLimitWindow - elapsed}
-			}
-		} else if !errors.Is(err, ErrNotFound) {
-			return nil, err
-		}
-	}
-
 	// Assemble context (also enforces ownership).
 	tripCtx, err := u.provider.GetTripContext(ctx, userID, tripID)
 	if err != nil {

@@ -29,6 +29,7 @@ import { ShimmerOverlay } from "@/features/summary/components/ShimmerOverlay"
 import {
   useCreateTripFromDraft,
   useGenerateTripDraft,
+  useAutogenQuota,
 } from "@/features/trip/hooks/useTrips"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
@@ -36,7 +37,7 @@ import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
 import { ApiError } from "@/lib/api"
-import { useCooldown } from "@/lib/useCooldown"
+import { QuotaBadge } from "@/components/QuotaBadge"
 
 const MAX_DAYS = 10
 export default function GenerateTripPage() {
@@ -69,7 +70,7 @@ function GenerateTripPageContent() {
 
   const generate = useGenerateTripDraft()
   const create = useCreateTripFromDraft()
-  const cooldown = useCooldown("generate-trip")
+  const quota = useAutogenQuota()
 
   // Prevent concurrent generate calls AND re-generation after success.
   const generatingRef = useRef(false)
@@ -79,9 +80,10 @@ function GenerateTripPageContent() {
   // Stable refs so useCallback doesn't depend on mutation objects (avoids
   // stale-closure double-call when TanStack Query re-renders with isPending).
   const generateMutateRef = useRef(generate.mutate)
-  const cooldownRef = useRef(cooldown)
+  // Keep a ref to the quota query client for invalidation in callbacks.
+  const quotaRef = useRef(quota)
   useEffect(() => { generateMutateRef.current = generate.mutate }, [generate.mutate])
-  useEffect(() => { cooldownRef.current = cooldown }, [cooldown])
+  useEffect(() => { quotaRef.current = quota }, [quota])
 
   // Key to force fresh wizard mount when user retries after error.
   const [generationKey, setGenerationKey] = useState(0)
@@ -125,15 +127,12 @@ function GenerateTripPageContent() {
       onSuccess: (data) => {
         draftReceivedRef.current = true
         setResult(data)
-        // Start frontend cooldown (backend also enforces, this is UX guard)
-        cooldownRef.current.startCooldown(300)
+        // Invalidate quota so the badge updates after a successful generation.
+        quotaRef.current.refetch()
       },
       onError: (err) => {
-        // Handle rate-limit cooldown from backend 429
-        const retryAfter = (err as { retry_after_seconds?: number })?.retry_after_seconds
-        if (retryAfter && retryAfter > 0) {
-          cooldownRef.current.startCooldown(retryAfter)
-        }
+        // On daily quota exceeded (429), the backend already consumed a slot
+        // (handled by refund on server error). Just show the message.
         if (!draftReceivedRef.current) {
           setFormError(
             err instanceof ApiError ? err.message : "Failed to generate itinerary. Please try again.",
@@ -222,13 +221,7 @@ function GenerateTripPageContent() {
             </p>
           </div>
         </div>
-        {/* Cooldown indicator */}
-        {cooldown.remaining > 0 && (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span>Cooldown: {Math.ceil(cooldown.remaining / 60)}m {cooldown.remaining % 60}s</span>
-          </div>
-        )}
+        <QuotaBadge className="mt-3" />
       </header>
 
       {/* Wizard stays mounted during generation — no unmount/remount cycle */}

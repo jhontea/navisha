@@ -10,26 +10,24 @@ import (
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/ahmadhafizh/navisha/backend/internal/quota"
 	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
-	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
-	usecase              UsecaseInterface
-	rdb                  *redis.Client
-	generateRateLimitSec int
+	usecase UsecaseInterface
+	quota   *quota.Checker
 }
 
 func NewHandler(usecase UsecaseInterface) *Handler {
 	return &Handler{usecase: usecase}
 }
 
-// WithGenerateRateLimit enables per-user cooldown for AI trip generation.
-// Pass rdb=nil or seconds=0 to disable.
-func (h *Handler) WithGenerateRateLimit(rdb *redis.Client, seconds int) *Handler {
-	h.rdb = rdb
-	h.generateRateLimitSec = seconds
+// WithQuota wires the shared daily AI quota checker (autogen + summary share
+// one counter). Pass a nil Checker to disable.
+func (h *Handler) WithQuota(q *quota.Checker) *Handler {
+	h.quota = q
 	return h
 }
 
@@ -37,6 +35,17 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	g.POST("/trips/generate", h.Generate, authMiddleware)
 	g.POST("/trips/from-draft", h.CreateFromDraft, authMiddleware)
 	g.POST("/trips/:trip_id/days/:day_id/generate-preview", h.GenerateDayPreview, authMiddleware)
+	g.GET("/autogen/quota", h.GetQuota, authMiddleware)
+}
+
+// GetQuota returns the current daily AI quota status.
+// GET /api/v1/autogen/quota → { used, limit, remaining, resets_at }
+func (h *Handler) GetQuota(c echo.Context) error {
+	userID, ok := c.Get(middleware.UserIDKey).(string)
+	if !ok || userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+	}
+	return c.JSON(http.StatusOK, h.quota.GetStatus(c, userID))
 }
 
 type generateDayRequest struct {
@@ -56,10 +65,19 @@ func (h *Handler) GenerateDayPreview(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("instruction must be %d characters or less", MaxDayInstructionLen))
 	}
 	req.Instruction = sanitize.Text(req.Instruction)
+
+	// ── Daily quota check (shared across all AI endpoints) ──
+	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
+		return quotaErr
+	}
+
 	preview, err := h.usecase.GenerateDayPreview(c.Request().Context(), userID, GenerateDayInput{
 		TripID: c.Param("trip_id"), DayID: c.Param("day_id"), Instruction: req.Instruction,
 	})
 	if err != nil {
+		if errors.Is(err, ErrLLMUnavailable) {
+			h.quota.Refund(c, userID)
+		}
 		return mapErr(err)
 	}
 	return c.JSON(http.StatusOK, preview)
@@ -108,28 +126,10 @@ func (h *Handler) Generate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
 	}
 
-	// ── Per-user cooldown (Redis SETNX — atomic check-and-reserve) ──
-	// Placed AFTER input validation so that invalid requests don't consume
-	// the cooldown slot. SETNX is atomic: check and reserve happen together,
-	// preventing the race where two concurrent requests both pass the TTL check.
-	if h.rdb != nil && h.generateRateLimitSec > 0 {
-		key := fmt.Sprintf("ratelimit:autogen:cooldown:%s", userID)
-		dur := time.Duration(h.generateRateLimitSec) * time.Second
-		reserved, redisErr := h.rdb.SetNX(c.Request().Context(), key, "1", dur).Result()
-		if redisErr != nil {
-			slog.Warn("autogen: cooldown check failed", "user_id", userID, "err", redisErr)
-		} else if !reserved {
-			ttl, _ := h.rdb.TTL(c.Request().Context(), key).Result()
-			retryAfter := int(ttl.Seconds())
-			if retryAfter <= 0 {
-				retryAfter = h.generateRateLimitSec
-			}
-			return echo.NewHTTPError(http.StatusTooManyRequests, map[string]any{
-				"code":                "RATE_LIMITED",
-				"message":             fmt.Sprintf("Trip generation cooldown. Try again in %d seconds.", retryAfter),
-				"retry_after_seconds": retryAfter,
-			})
-		}
+	// ── Daily quota check (shared across all AI endpoints) ──
+	// Placed AFTER input validation so invalid requests don't consume quota.
+	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
+		return quotaErr
 	}
 
 	draft, err := h.usecase.GenerateDraft(c.Request().Context(), userID, GenerateInput{
@@ -140,6 +140,9 @@ func (h *Handler) Generate(c echo.Context) error {
 		BaseCurrency: req.BaseCurrency,
 	})
 	if err != nil {
+		if errors.Is(err, ErrLLMUnavailable) {
+			h.quota.Refund(c, userID)
+		}
 		return mapErr(err)
 	}
 

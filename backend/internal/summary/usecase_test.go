@@ -82,15 +82,13 @@ func newTripContext() *TripContext {
 }
 
 // testWindow is the soft rate-limit window used by tests.
-const testWindow = 5 * time.Minute
-
 // --- tests ---
 
 func TestGenerate_NewSummary(t *testing.T) {
 	repo := &fakeRepo{getErr: ErrNotFound}
 	llm := &fakeLLM{resp: "Your Bali adventure awaits!"}
 	provider := &fakeProvider{ctx: newTripContext()}
-	uc := NewUsecase(repo, llm, provider, "test-model").WithRateLimitWindow(testWindow)
+	uc := NewUsecase(repo, llm, provider, "test-model")
 
 	s, err := uc.Generate(context.Background(), "user1", "trip1")
 	if err != nil {
@@ -107,32 +105,9 @@ func TestGenerate_NewSummary(t *testing.T) {
 	}
 }
 
-func TestGenerate_RateLimited(t *testing.T) {
-	repo := &fakeRepo{stored: &Summary{
-		ID:        "s1",
-		TripID:    "trip1",
-		Content:   "old",
-		UpdatedAt: time.Now().Add(-1 * time.Minute), // within 5-min window
-	}}
-	llm := &fakeLLM{resp: "new"}
-	provider := &fakeProvider{ctx: newTripContext()}
-	uc := NewUsecase(repo, llm, provider, "test-model").WithRateLimitWindow(testWindow)
-
-	_, err := uc.Generate(context.Background(), "user1", "trip1")
-	var rl *RateLimitError
-	if !errors.As(err, &rl) {
-		t.Fatalf("expected RateLimitError, got %v", err)
-	}
-	if rl.RetryAfter <= 0 || rl.RetryAfter > testWindow {
-		t.Errorf("unexpected RetryAfter: %v", rl.RetryAfter)
-	}
-	if llm.called {
-		t.Error("LLM should not be called when rate limited")
-	}
-}
-
-func TestGenerate_RateLimitDisabled(t *testing.T) {
-	// A recent summary exists, but window is zero (disabled) -> should regenerate.
+func TestGenerate_AlwaysRegenerates(t *testing.T) {
+	// A recent summary exists — without the old rate-limit, it should always
+	// regenerate when requested (daily quota enforced at handler level).
 	repo := &fakeRepo{stored: &Summary{
 		ID:        "s1",
 		TripID:    "trip1",
@@ -141,14 +116,14 @@ func TestGenerate_RateLimitDisabled(t *testing.T) {
 	}}
 	llm := &fakeLLM{resp: "fresh"}
 	provider := &fakeProvider{ctx: newTripContext()}
-	uc := NewUsecase(repo, llm, provider, "test-model") // no WithRateLimitWindow -> 0
+	uc := NewUsecase(repo, llm, provider, "test-model")
 
 	s, err := uc.Generate(context.Background(), "user1", "trip1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !llm.called {
-		t.Error("expected LLM to be called when rate limit is disabled")
+		t.Error("expected LLM to be called")
 	}
 	if s.Content != "fresh" {
 		t.Errorf("expected regenerated content, got %q", s.Content)

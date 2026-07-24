@@ -35,21 +35,20 @@ llm:
   # OpenRouter (when provider is explicitly "openrouter")
   openrouter_model: openrouter/owl-alpha
   openrouter_base_url: https://openrouter.ai/api/v1
-  # Soft rate-limit in seconds between summary (re)generations.
-  # Set to 0 to disable the rate-limit check entirely.
-  summary_rate_limit_seconds: 300
-  # Soft rate-limit in seconds between AI trip generations per user.
-  # Set to 0 to disable the rate-limit check entirely.
-  generate_rate_limit_seconds: 300
   # HTTP timeout (seconds) for LLM calls. Some models are slow, so keep
   # this generous. Set to 0 to use the client default (120s).
   timeout_seconds: 300
+  # ── AI Daily Quota (stored in DB: app_settings.autogen_daily_quota) ──
+  # All AI features (trip generate, build-around, summary) share one daily
+  # counter per user. Edit via SQL, no restart needed:
+  #   UPDATE app_settings SET value='20' WHERE key='autogen_daily_quota';
+  # (deprecated) summary_rate_limit_seconds and generate_rate_limit_seconds
+  # are replaced by the shared daily quota system.
 
 # Legacy OpenRouter config — used as fallback when llm.provider is empty.
 openrouter:
   model: openrouter/owl-alpha
   base_url: https://openrouter.ai/api/v1
-  summary_rate_limit_seconds: 0
   timeout_seconds: 300
 
 # ── Rate Limiting (Phase 3D) ──
