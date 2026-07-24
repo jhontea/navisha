@@ -96,11 +96,15 @@ export function useDeleteTrip() {
 // useGenerateTripDraft calls the LLM (blocking, ~10-55s) and returns a draft.
 // It does NOT persist; the user reviews the draft before committing.
 export function useGenerateTripDraft() {
+  const qc = useQueryClient()
   return useMutation({
     mutationKey: ["trips", "generate"],
     mutationFn: (input: GenerateTripInput) => tripApi.generate(input),
     retry: 0,
     gcTime: 0,
+    // Quota decrements on every generate call — refresh the badge so the
+    // user sees their remaining count update without a manual reload.
+    onSettled: () => qc.invalidateQueries({ queryKey: ["autogen", "quota"] }),
   })
 }
 
@@ -141,13 +145,15 @@ export function useUpdateDayTitle(tripId: string) {
 }
 
 // ── AI Daily Quota ──
-// Shared across all AI features (generate trip, build-around, summary).
-// Refetches every 30s so the badge stays fresh without excessive requests.
+// Shared across all AI features (generate trip, summary).
+// No refetchInterval — polling every 60s wastes requests for users who aren't
+// using AI. Instead, quota is invalidated on success of any AI mutation
+// (useGenerateTripDraft, useGenerateSummary) so the badge refreshes only when
+// it actually changes. staleTime 5min matches global default.
 export function useAutogenQuota() {
   return useQuery({
     queryKey: ["autogen", "quota"],
     queryFn: () => tripApi.quota(),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 5 * 60 * 1000,
   })
 }

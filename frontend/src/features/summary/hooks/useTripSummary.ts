@@ -34,6 +34,9 @@ export function useGenerateSummary(tripId: string) {
     mutationFn: () => summaryApi.generate(tripId),
     onSuccess: (data) => {
       qc.setQueryData(summaryKey(tripId), data)
+      // Summary generation consumes the shared AI daily quota — refresh the
+      // badge so the remaining count stays accurate.
+      qc.invalidateQueries({ queryKey: ["autogen", "quota"] })
     },
     // Prevent double-generation: mutation must fully settle before retry.
     // TanStack Query already enforces one-at-a-time, but this is belt-and-suspenders.

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { CalendarDays, Clock3, Compass, ExternalLink, Link2, List, Loader2, Map as MapIcon, MapPin } from "lucide-react"
 import type { PublicItinerary } from "@/features/trip/types"
 import { canRenderTripCover } from "@/features/trip/lib/cover"
@@ -41,7 +42,7 @@ export default function SharedTripPage({ params }: { params: { token: string } }
     <main className="min-h-screen bg-muted/20 pb-12">
       <header className="border-b bg-background/90 backdrop-blur"><div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3"><a href="/" aria-label="Navisha home" className="flex items-center gap-2.5"><span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm"><Compass className="h-4 w-4 text-white" aria-hidden="true" /></span><span className="text-gradient-sunset text-[15px] font-bold tracking-tight">Navisha</span></a><span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">Read-only itinerary</span></div></header>
       <section className="relative mx-auto min-h-64 max-w-4xl overflow-hidden md:mt-6 md:rounded-3xl">
-        {canRenderTripCover(trip.cover_image_url) ? <><img src={trip.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" /></> : <div className="absolute inset-0 bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean" />}
+        {canRenderTripCover(trip.cover_image_url) ? <><Image src={trip.cover_image_url} alt="" fill unoptimized priority className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" /></> : <div className="absolute inset-0 bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean" />}
         <div className="relative flex min-h-64 flex-col justify-end p-6 text-white md:p-8"><p className="mb-2 flex items-center gap-1.5 text-sm text-white/80"><MapPin className="h-4 w-4" />{trip.description}</p><h1 className="font-heading text-3xl font-bold md:text-4xl">{trip.title}</h1><p className="mt-3 flex items-center gap-2 text-sm text-white/90"><CalendarDays className="h-4 w-4" />{formatDateRange(trip.start_date, trip.end_date)}</p></div>
       </section>
       <section className="mx-auto max-w-4xl space-y-4 px-4 py-6">

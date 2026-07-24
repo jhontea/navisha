@@ -31,7 +31,15 @@ const nextConfig = {
         ],
       },
       {
-        source: '/(.*)',
+        // Catch-all EXCLUDING /_next/static/* — those are handled by the
+        // immutable-cache rule above. Without this exclusion, the no-store
+        // header below would also apply to static chunks (Next.js merges
+        // headers from all matching rules), defeating the immutable cache
+        // and forcing the browser to re-download every JS chunk on each
+        // navigation (high CPU/RAM on both browser and server).
+        // The negative lookahead `(?!_next/static/)` keeps dynamic HTML/RSC
+        // routes no-store while leaving static assets cacheable.
+        source: '/((?!_next/static/).*)',
         headers: [
           // Prevent browser caching of dynamic HTML/docs — avoids stale
           // pages and "hard reload needed" bugs. Scoped to non-static routes;

@@ -5,26 +5,34 @@ import { Plane, CalendarCheck, Globe, Award, Trophy, Gem, Medal } from "lucide-r
 import { useTrips } from "../hooks/useTrips"
 import { tripStatus } from "../lib/status"
 
-/** Animated number counter that counts up on mount */
+/** Animated number counter that counts up on mount.
+ *  Uses requestAnimationFrame (aligned to display refresh) instead of
+ *  setInterval — smoother animation and lower CPU overhead, especially
+ *  when multiple counters mount together on the dashboard. */
 function AnimatedCount({ to, duration = 800 }: { to: number; duration?: number }) {
   const [count, setCount] = useState(0)
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const startRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (to === 0) { setCount(0); return }
-    const steps = 20
-    const increment = to / steps
-    let current = 0
-    ref.current = setInterval(() => {
-      current += increment
-      if (current >= to) {
-        setCount(to)
-        if (ref.current) clearInterval(ref.current)
+
+    const step = (now: number) => {
+      if (startRef.current === null) startRef.current = now
+      const elapsed = now - startRef.current
+      const progress = Math.min(elapsed / duration, 1)
+      setCount(Math.floor(progress * to))
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step)
       } else {
-        setCount(Math.floor(current))
+        setCount(to)
       }
-    }, duration / steps)
-    return () => { if (ref.current) clearInterval(ref.current) }
+    }
+    rafRef.current = requestAnimationFrame(step)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      startRef.current = null
+    }
   }, [to, duration])
 
   return <span className="tabular-nums">{count}</span>
@@ -118,13 +126,20 @@ export function StatsSection() {
           </span>
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground leading-snug">Traveler Level</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground leading-snug">Traveler Level</p>
+            {nextLevel && (
+              <span className="text-[10px] font-bold tabular-nums text-chromatic-aurora">
+                {progressPct}%
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {nextLevel ? `${milesToNext} mi to ${nextLevel.name}` : "Max level!"}
           </p>
-          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-chromatic-aurora via-chromatic-sunset to-chromatic-ocean bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000"
+              className="h-full rounded-full bg-gradient-to-r from-chromatic-aurora via-chromatic-sunset to-chromatic-ocean bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000 shadow-[0_0_8px_rgba(168,85,247,0.4)]"
               style={{ width: `${progressPct}%` }}
             />
           </div>
