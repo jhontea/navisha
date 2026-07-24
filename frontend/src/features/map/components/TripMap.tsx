@@ -548,7 +548,7 @@ function Markers({
     if (idx === -1) return
     const p = points[idx]
     map.panTo({ lat: p.lat, lng: p.lng })
-    if (map.getZoom() < 13) map.setZoom(13)
+    if ((map.getZoom() ?? 0) < 13) map.setZoom(13)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, selectedActivityId])
 
