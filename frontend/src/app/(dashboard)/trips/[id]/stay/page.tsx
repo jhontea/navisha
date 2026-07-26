@@ -1,21 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Check } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
-import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
-import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
-import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
-import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { BottomSheet } from "@/components/BottomSheet"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TripEditForm } from "@/features/trip/components/TripEditForm"
 
 export default function TripStayPage() {
   const params = useParams<{ id: string }>()
@@ -73,7 +67,26 @@ export default function TripStayPage() {
 
   return (
     <main className="flex flex-col pb-4">
-      {trip && (
+      {trip && (isEditing ? (
+        <TripEditForm
+          title={editTitle}
+          description={editDescription}
+          coverImageUrl={editCover}
+          startDate={editStartDate}
+          endDate={editEndDate}
+          isUpdating={isUpdating}
+          saveDisabledReason={tripSaveDisabledReason}
+          onTitleChange={setEditTitle}
+          onDescriptionChange={setEditDescription}
+          onCoverChange={setEditCover}
+          onDateChange={(range) => {
+            setEditStartDate(range.startDate)
+            setEditEndDate(range.endDate)
+          }}
+          onSave={saveEdits}
+          onCancel={() => setIsEditing(false)}
+        />
+      ) : (
         <TripHero
           title={trip.title}
           description={trip.description}
@@ -86,7 +99,7 @@ export default function TripStayPage() {
           onDelete={() => setConfirmDelete(true)}
           isDeleting={isDeleting}
         />
-      )}
+      ))}
       {!trip && isLoading && (
         <Skeleton variant="glass" className="h-40 w-full rounded-none" />
       )}
@@ -131,60 +144,6 @@ export default function TripStayPage() {
         onConfirm={onDelete}
       />
 
-      <BottomSheet open={isEditing} onClose={() => setIsEditing(false)} title="Edit Trip">
-        <div className="space-y-3">
-          <input
-            autoFocus
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="Trip title"
-            className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-lg font-bold focus:outline-none"
-            disabled={isUpdating}
-          />
-          <DestinationAutocomplete
-            value={editDescription}
-            onChange={setEditDescription}
-            onSelect={(place) => {
-              setEditDescription(place.description)
-            }}
-            placeholder="Search city, province, or country"
-            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
-          />
-          {canRenderTripCover(editCover) && (
-            <div className="relative h-28 w-full overflow-hidden rounded-lg border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={editCover} alt="Cover preview" className="h-full w-full object-cover" onError={() => setEditCover("")} />
-              <button type="button" onClick={() => setEditCover("")} className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">Remove</button>
-            </div>
-          )}
-          <TravelDateRangePicker
-            startDate={editStartDate}
-            endDate={editEndDate}
-            disabled={isUpdating}
-            onChange={(range) => {
-              setEditStartDate(range.startDate)
-              setEditEndDate(range.endDate)
-            }}
-          />
-          <ActionDisabledHint
-            id="trip-save-disabled-reason"
-            reason={tripSaveDisabledReason}
-          />
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={saveEdits}
-              disabled={isUpdating || Boolean(tripSaveDisabledReason)}
-              aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
-              className="flex-1"
-            >
-              <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isUpdating}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
     </main>
   )
 }

@@ -58,8 +58,8 @@ export const TripHero = memo(function TripHero({
     <div
       className={cn(
         "relative w-full overflow-hidden",
-        "min-h-[180px] max-[380px]:min-h-[220px] sm:min-h-[220px] md:h-[240px]",
-        "-mt-4 md:mt-0 md:max-w-max-width md:mx-auto md:rounded-2xl",
+        "min-h-[220px] md:h-[240px]",
+        "mt-0 md:mt-0 md:max-w-max-width md:mx-auto md:rounded-2xl",
         className,
       )}
     >

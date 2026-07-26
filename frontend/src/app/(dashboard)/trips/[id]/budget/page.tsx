@@ -1,19 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Check } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 
-import { BottomSheet } from "@/components/BottomSheet"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { Button } from "@/components/ui/button"
 import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
-import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
-import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
-import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { TripHero } from "@/features/trip/components/TripHero"
+import { TripEditForm } from "@/features/trip/components/TripEditForm"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import {
   getBudgetSaveDisabledReason,
@@ -138,7 +133,26 @@ export default function TripBudgetPage() {
 
   return (
     <main className="flex flex-col pb-4">
-      {trip && (
+      {trip && (isEditing ? (
+        <TripEditForm
+          title={editTitle}
+          description={editDescription}
+          coverImageUrl={editCover}
+          startDate={editStartDate}
+          endDate={editEndDate}
+          isUpdating={isUpdating}
+          saveDisabledReason={tripSaveDisabledReason}
+          onTitleChange={setEditTitle}
+          onDescriptionChange={setEditDescription}
+          onCoverChange={setEditCover}
+          onDateChange={(range) => {
+            setEditStartDate(range.startDate)
+            setEditEndDate(range.endDate)
+          }}
+          onSave={saveEdits}
+          onCancel={() => setIsEditing(false)}
+        />
+      ) : (
         <TripHero
           title={trip.title}
           description={trip.description}
@@ -151,7 +165,7 @@ export default function TripBudgetPage() {
           onDelete={() => setConfirmDelete(true)}
           isDeleting={isDeleting}
         />
-      )}
+      ))}
       {!trip && isLoading && (
         <Skeleton variant="glass" className="h-40 w-full rounded-none" />
       )}
@@ -193,10 +207,23 @@ export default function TripBudgetPage() {
                 </p>
               </div>
 
+              <button
+                type="button"
+                onClick={() => setEditingBudget(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="Cancel editing budget"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
               <div>
-                <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <label className="block font-medium text-muted-foreground text-sm">Planned by category</label>
-                  <span className="text-xs text-muted-foreground">Optional</span>
+                  <span className={categoryBudgetError ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
+                    {categoryBudgetTotal.toLocaleString()} / {draftTotalBudget > 0 ? draftTotalBudget.toLocaleString() : "—"}
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {BUDGET_CATEGORIES.map(([category, label]) => (
@@ -218,17 +245,7 @@ export default function TripBudgetPage() {
                   ))}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditingBudget(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                aria-label="Cancel editing budget"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
 
-            <div className="flex flex-col gap-4">
               <div>
                 <label htmlFor="budget-input" className="mb-1.5 block font-medium text-muted-foreground text-sm">
                   Total Budget
@@ -314,60 +331,6 @@ export default function TripBudgetPage() {
         onConfirm={onDelete}
       />
 
-      <BottomSheet open={isEditing} onClose={() => setIsEditing(false)} title="Edit Trip">
-        <div className="space-y-3">
-          <input
-            autoFocus
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="Trip title"
-            className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-lg font-bold focus:outline-none"
-            disabled={isUpdating}
-          />
-          <DestinationAutocomplete
-            value={editDescription}
-            onChange={setEditDescription}
-            onSelect={(place) => {
-              setEditDescription(place.description)
-            }}
-            placeholder="Search city, province, or country"
-            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
-          />
-          {canRenderTripCover(editCover) && (
-            <div className="relative h-28 w-full overflow-hidden rounded-lg border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={editCover} alt="Cover preview" className="h-full w-full object-cover" onError={() => setEditCover("")} />
-              <button type="button" onClick={() => setEditCover("")} className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">Remove</button>
-            </div>
-          )}
-          <TravelDateRangePicker
-            startDate={editStartDate}
-            endDate={editEndDate}
-            disabled={isUpdating}
-            onChange={(range) => {
-              setEditStartDate(range.startDate)
-              setEditEndDate(range.endDate)
-            }}
-          />
-          <ActionDisabledHint
-            id="trip-save-disabled-reason"
-            reason={tripSaveDisabledReason}
-          />
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={saveEdits}
-              disabled={isUpdating || Boolean(tripSaveDisabledReason)}
-              aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
-              className="flex-1"
-            >
-              <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isUpdating}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
     </main>
   )
 }
