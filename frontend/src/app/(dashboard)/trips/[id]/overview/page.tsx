@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useMemo } from "react"
+import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useQueries } from "@tanstack/react-query"
 import {
@@ -14,19 +14,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   TrendingUp,
-  RefreshCw,
 } from "lucide-react"
-import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { BackLink } from "@/components/BackLink"
-import { TripTabBar } from "@/features/trip/components/TripTabBar"
-import { TripHero } from "@/features/trip/components/TripHero"
-import { TripEditForm } from "@/features/trip/components/TripEditForm"
-import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
-import {
-  useTrip,
-  useDeleteTrip,
-  useUpdateTrip,
-} from "@/features/trip/hooks/useTrips"
+import { useTrip } from "@/features/trip/hooks/useTrips"
 import { getTripDateMetrics, toLocalISODate } from "@/features/trip/lib/status"
 import { activityApi } from "@/features/activity/api"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
@@ -35,9 +24,6 @@ import { useExpenseSummary } from "@/features/expense/hooks/useExpenses"
 import { TripSummaryCard } from "@/features/summary/components/TripSummaryCard"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
-import { ApiError } from "@/lib/api"
-import { toast } from "@/lib/toast"
 
 import type { Day } from "@/features/trip/types"
 
@@ -327,39 +313,12 @@ function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; act
 
 export default function TripOverviewPage() {
   const params = useParams<{ id: string }>()
-  const router = useRouter()
   const tripId = params.id
 
-  const {
-    data: trip,
-    isLoading,
-    isError: isTripError,
-    error: tripError,
-    refetch: refetchTrip,
-    isFetching: isFetchingTrip,
-  } = useTrip(tripId)
-  const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
-  const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(tripId)
+  const { data: trip } = useTrip(tripId)
   const { data: expenseSummary } = useExpenseSummary(tripId)
   const { data: accommodations } = useAccommodations(tripId)
   const { data: transportations } = useTransportations(tripId)
-
-  // Delete confirmation + inline edit state (mirrors the Itinerary header)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState("")
-  const [editStartDate, setEditStartDate] = useState("")
-  const [editEndDate, setEditEndDate] = useState("")
-  const [editDescription, setEditDescription] = useState("")
-  // Cover photo auto-fetched from the destination's Google Places photo.
-  const [editCover, setEditCover] = useState("")
-  const tripSaveDisabledReason = getTripSaveDisabledReason({
-    title: editTitle,
-    startDate: editStartDate,
-    endDate: editEndDate,
-  })
-
-
 
   // ── Aggregate activity queries per day ──
   // CRITICAL: useMemo on both dayIds AND queries array — prevents
@@ -385,57 +344,7 @@ export default function TripOverviewPage() {
   )
   const activitiesLoaded = activityQueries.every((q) => q.isSuccess)
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-4 px-4 py-6 md:px-10 md:py-8 animate-fade-in">
-        <div className="h-40 w-full animate-pulse rounded-2xl bg-muted" />
-        <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
-          ))}
-        </div>
-        <div className="h-32 animate-pulse rounded-2xl bg-muted" />
-      </div>
-    )
-  }
-
-  if (!trip) {
-    const isNotFound = tripError instanceof ApiError && tripError.status === 404
-
-    return (
-      <div className="mx-auto flex min-h-[50vh] w-full max-w-xl items-center px-4 py-10 md:px-10">
-        <div className="glass-lg w-full rounded-2xl border border-border/50 p-6 text-center">
-          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <AlertTriangle className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <h1 className="text-lg font-bold text-foreground">
-            {isNotFound ? "Trip not found" : "Couldn’t load this trip"}
-          </h1>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            {isNotFound
-              ? "This trip may have been deleted or you may no longer have access to it."
-              : "There may be a temporary connection or server problem. Try loading it again."}
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            {!isNotFound && isTripError && (
-              <Button
-                type="button"
-                variant="gradient"
-                className="rounded-full px-5"
-                disabled={isFetchingTrip}
-                aria-busy={isFetchingTrip}
-                onClick={() => void refetchTrip()}
-              >
-                <RefreshCw className={cn("h-4 w-4", isFetchingTrip && "animate-spin")} aria-hidden="true" />
-                {isFetchingTrip ? "Trying again…" : "Try again"}
-              </Button>
-            )}
-            <BackLink href="/trips" label="Back to My Trips" variant="glass" />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  if (!trip) return null
 
   const { currentDay, totalDays, percent: progressPercent, started } =
     getTripDateMetrics(trip.start_date, trip.end_date)
@@ -455,124 +364,10 @@ export default function TripOverviewPage() {
     return planned > 0 && actual > planned
   }).length
 
-  const onDelete = () => {
-    deleteTrip(tripId, {
-      onSuccess: () => router.push("/dashboard"),
-    })
-  }
-
-  const startEditing = () => {
-    setEditTitle(trip.title)
-    setEditDescription(trip.description ?? "")
-    setEditCover(trip.cover_image_url ?? "")
-    setEditStartDate(trip.start_date)
-
-    setEditEndDate(trip.end_date)
-    setIsEditing(true)
-  }
-
-  const saveEdits = () => {
-    if (!editTitle.trim() || isUpdating) return
-    updateTrip(
-      {
-        title: editTitle.trim(),
-        description: editDescription,
-        start_date: editStartDate,
-        end_date: editEndDate,
-        base_currency: trip.base_currency,
-        budget: trip.budget,
-        cover_image_url: editCover,
-        notes: trip.notes,
-
-      },
-      {
-        onSuccess: () => {
-          setIsEditing(false)
-          toast("Trip details updated.")
-        },
-        onError: (error) => {
-          const message =
-            error instanceof ApiError && error.status >= 400 && error.status < 500
-              ? error.message
-              : "Couldn’t save your changes. Please check your connection and try again."
-          toast(message, "error")
-        },
-      },
-    )
-  }
-
-  const cancelEditing = () => setIsEditing(false)
-
   return (
     <main className="flex flex-col">
-      {/* TripHero with cover image — replaced sticky admin header (Phase 3B-2) */}
-      {isEditing ? (
-        <TripEditForm
-          title={editTitle}
-          description={editDescription}
-          coverImageUrl={editCover}
-          startDate={editStartDate}
-          endDate={editEndDate}
-          isUpdating={isUpdating}
-          saveDisabledReason={tripSaveDisabledReason}
-          onTitleChange={setEditTitle}
-          onDescriptionChange={setEditDescription}
-          onCoverChange={setEditCover}
-          onDateChange={(range) => {
-            setEditStartDate(range.startDate)
-            setEditEndDate(range.endDate)
-          }}
-          onSave={saveEdits}
-          onCancel={cancelEditing}
-        />
-      ) : (
-        /* Display mode: full-bleed TripHero */
-        <TripHero
-          title={trip.title}
-          description={trip.description}
-          startDate={trip.start_date}
-          endDate={trip.end_date}
-          baseCurrency={trip.base_currency}
-          coverImageUrl={trip.cover_image_url}
-          shareTripId={tripId}
-          onEdit={startEditing}
-          onDelete={() => setConfirmDelete(true)}
-          isDeleting={isDeleting}
-        />
-      )}
-
-      {/* Phase 3B: Trip section tab navigation */}
-      <TripTabBar tripId={tripId} />
-
       {/* Content */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
-
-        {isTripError && (
-          <div
-            className="mb-6 flex flex-col gap-3 rounded-2xl border border-chromatic-amber/30 bg-chromatic-amber/10 p-4 text-sm sm:flex-row sm:items-center sm:justify-between"
-            role="status"
-          >
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-chromatic-amber" aria-hidden="true" />
-              <p className="text-foreground">
-                Showing the last loaded trip data. Some recent changes may not be visible yet.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="self-start rounded-full px-3 sm:self-auto"
-              disabled={isFetchingTrip}
-              aria-busy={isFetchingTrip}
-              onClick={() => void refetchTrip()}
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5", isFetchingTrip && "animate-spin")} aria-hidden="true" />
-              {isFetchingTrip ? "Refreshing…" : "Refresh"}
-            </Button>
-          </div>
-        )}
-
         {/* Iter 93 — Hero summary section: bento grid on md+ */}
         <section className="mb-8 animate-fade-in">
           {/* Iter 94 — stat chips: 2x2 grid on sm, row on md */}
@@ -685,16 +480,6 @@ export default function TripOverviewPage() {
 
       </div>
 
-      <ConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title={`Delete "${trip.title}"?`}
-        description="This will permanently remove the trip and all its days, activities, and expenses. This cannot be undone."
-        confirmLabel="Delete"
-        destructive
-        isPending={isDeleting}
-        onConfirm={onDelete}
-      />
     </main>
   )
 }
