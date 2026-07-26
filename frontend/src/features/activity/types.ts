@@ -2,11 +2,13 @@ export type ActivityType = "location" | "note" | "todo"
 
 export interface LocationPayload {
   location_name: string
-  lat: number
-  lng: number
+  lat: number | null
+  lng: number | null
   google_place_id: string
   address: string
   notes: string
+  location_verification?: "verified" | "needs_review"
+  location_confidence?: number | null
   external_url?: string
   image_urls: string[]
 }

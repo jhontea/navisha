@@ -76,6 +76,8 @@ export function ActivityCard({
     activity.start_time,
     activity.end_time,
   )
+  const locationNeedsReview = activity.type === "location" &&
+    (activity.payload as LocationPayload | null)?.location_verification === "needs_review"
 
   return (
     <div
@@ -112,6 +114,12 @@ export function ActivityCard({
                 {timeLabel}
               </span>
             )}
+            {locationNeedsReview && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-chromatic-amber/10 px-2 py-0.5 text-[10px] font-semibold text-chromatic-amber">
+                <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                Location needs review
+              </span>
+            )}
             {/* Iter 53 — todo: completed count */}
             {activity.type === "todo" && activity.payload && (
               <span className="text-xs text-muted-foreground">
@@ -137,7 +145,7 @@ export function ActivityCard({
           )}
 
           {/* Type-specific body */}
-          <ActivityBody activity={activity} />
+          <ActivityBody activity={activity} onEdit={onEdit} />
         </div>
 
         {/* Iter 54 — Actions: always visible on mobile, hover/focus on desktop */}
@@ -173,13 +181,14 @@ function formatOverlapMessage(titles: string[]): string {
   return `Overlaps with ${titles[0]} and ${titles.length - 1} more`
 }
 
-function ActivityBody({ activity }: { activity: Activity }) {
+function ActivityBody({ activity, onEdit }: { activity: Activity; onEdit: () => void }) {
   if (!activity.payload) return null
 
   switch (activity.type) {
     case "location": {
       const p = activity.payload as LocationPayload
       const externalUrl = normalizeExternalUrl(p.external_url ?? "")
+      const needsReview = p.location_verification === "needs_review"
       return (
         <div className="space-y-0.5 text-sm text-muted-foreground">
           {p.location_name && (
@@ -189,7 +198,7 @@ function ActivityBody({ activity }: { activity: Activity }) {
           {p.address && (
             <div className="flex items-start gap-1">
               <p className="text-xs flex-1">{p.address}</p>
-              {p.lat && p.lng && (
+              {!needsReview && p.lat != null && p.lng != null && (
                 <a
                   href={`https://maps.google.com/?q=${p.lat},${p.lng}`}
                   target="_blank"
@@ -205,6 +214,19 @@ function ActivityBody({ activity }: { activity: Activity }) {
           )}
           {p.notes && (
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground/80">{p.notes}</p>
+          )}
+          {needsReview && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit()
+              }}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-chromatic-amber/30 bg-chromatic-amber/10 px-3 py-1 text-xs font-semibold text-chromatic-amber transition-colors hover:bg-chromatic-amber/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chromatic-amber"
+            >
+              <MapPin className="h-3 w-3" aria-hidden="true" />
+              Review location
+            </button>
           )}
           {externalUrl && (
             <a

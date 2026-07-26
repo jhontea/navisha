@@ -92,6 +92,8 @@ export interface ActivityDraft {
   lat: number | null
   lng: number | null
   google_place_id: string
+  location_verification?: "verified" | "needs_review"
+  location_confidence?: number | null
   category: string // kuliner | wisata alam | budaya | belanja | transportasi | akomodasi
   notes: string
 }
