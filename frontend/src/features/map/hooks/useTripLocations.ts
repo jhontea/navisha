@@ -57,6 +57,9 @@ export function useTripLocations(days: Day[]): TripLocationsResult {
     const items = queries[i]?.data?.items ?? []
     const points = items
       .filter((a: Activity) => a.type === "location" && a.payload)
+      .filter((a: Activity) =>
+        (a.payload as LocationPayload).location_verification !== "needs_review",
+      )
       .map((a: Activity): LocationPoint => {
         const p = a.payload as LocationPayload
         return {

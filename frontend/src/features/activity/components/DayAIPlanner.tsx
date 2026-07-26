@@ -123,12 +123,9 @@ export function DayAIPlanner({
       const resolved = await resolveDraftLocations(wrapper, destination)
       const failed: ActivityDraft[] = []
       let added = 0
+      let needsReview = 0
 
       for (const suggestion of resolved.days[0].activities) {
-        if (suggestion.lat == null || suggestion.lng == null) {
-          failed.push(suggestion)
-          continue
-        }
         const input: CreateActivityInput = {
           type: "location",
           title: suggestion.title,
@@ -141,12 +138,15 @@ export function DayAIPlanner({
             lng: suggestion.lng,
             google_place_id: suggestion.google_place_id,
             notes: suggestion.notes,
+            location_verification: suggestion.location_verification ?? "needs_review",
+            location_confidence: suggestion.location_confidence ?? null,
             image_urls: [],
           },
         }
         try {
           await activityApi.create(dayId, input)
           added++
+          if (suggestion.location_verification === "needs_review") needsReview++
         } catch {
           failed.push(suggestion)
         }
@@ -154,7 +154,11 @@ export function DayAIPlanner({
 
       await qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "all" })
       if (failed.length === 0) {
-        toast(`${added} AI suggestion${added === 1 ? "" : "s"} added to Day ${dayNumber}.`)
+        toast(
+          needsReview > 0
+            ? `${added} suggestions added. ${needsReview} location${needsReview === 1 ? "" : "s"} need review.`
+            : `${added} AI suggestion${added === 1 ? "" : "s"} added to Day ${dayNumber}.`,
+        )
         setPreview(null)
         setSelectedKeys(new Set())
         setSelectedIntents(new Set())

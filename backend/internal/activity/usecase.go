@@ -196,6 +196,9 @@ func validatePayload(t Type, payload json.RawMessage) error {
 		if p.LocationName == "" {
 			return fmt.Errorf("location_name required: %w", ErrInvalidPayload)
 		}
+		if p.LocationVerification != "" && p.LocationVerification != "verified" && p.LocationVerification != "needs_review" {
+			return fmt.Errorf("location_verification invalid: %w", ErrInvalidPayload)
+		}
 		if p.ExternalURL != "" && !validExternalURL(p.ExternalURL) {
 			return fmt.Errorf("external_url must use http or https: %w", ErrInvalidPayload)
 		}

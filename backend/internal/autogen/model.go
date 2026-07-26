@@ -88,17 +88,19 @@ type DayDraft struct {
 // Address and GooglePlaceID are populated by the frontend resolver (not the LLM)
 // using Google Places, matching the manual form flow.
 type ActivityDraft struct {
-	Type          string   `json:"type"`
-	Title         string   `json:"title"`
-	StartTime     string   `json:"start_time"` // HH:MM 24-hour format
-	EndTime       string   `json:"end_time"`   // HH:MM 24-hour format
-	LocationName  string   `json:"location_name"`
-	Address       string   `json:"address"`
-	Lat           *float64 `json:"lat"`
-	Lng           *float64 `json:"lng"`
-	GooglePlaceID string   `json:"google_place_id"`
-	Category      string   `json:"category"` // kuliner | wisata alam | budaya | belanja | transportasi | akomodasi
-	Notes         string   `json:"notes"`
+	Type                 string   `json:"type"`
+	Title                string   `json:"title"`
+	StartTime            string   `json:"start_time"` // HH:MM 24-hour format
+	EndTime              string   `json:"end_time"`   // HH:MM 24-hour format
+	LocationName         string   `json:"location_name"`
+	Address              string   `json:"address"`
+	Lat                  *float64 `json:"lat"`
+	Lng                  *float64 `json:"lng"`
+	GooglePlaceID        string   `json:"google_place_id"`
+	LocationVerification string   `json:"location_verification,omitempty"`
+	LocationConfidence   *float64 `json:"location_confidence,omitempty"`
+	Category             string   `json:"category"` // kuliner | wisata alam | budaya | belanja | transportasi | akomodasi
+	Notes                string   `json:"notes"`
 }
 
 // llmResponse is the raw envelope the model is instructed to return. The guard

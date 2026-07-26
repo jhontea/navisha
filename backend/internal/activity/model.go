@@ -41,14 +41,16 @@ type Activity struct {
 
 // LocationPayload holds data for location-type activities.
 type LocationPayload struct {
-	LocationName  string   `json:"location_name"`   // Human-readable location name
-	Lat           float64  `json:"lat"`             // Latitude coordinate
-	Lng           float64  `json:"lng"`             // Longitude coordinate
-	GooglePlaceID string   `json:"google_place_id"` // Google Places ID for linking
-	Address       string   `json:"address"`         // Full address
-	Notes         string   `json:"notes"`           // Location-specific notes
-	ExternalURL   string   `json:"external_url"`    // Optional official or booking URL
-	ImageURLs     []string `json:"image_urls"`      // Associated image URLs
+	LocationName         string   `json:"location_name"`                   // Human-readable location name
+	Lat                  *float64 `json:"lat"`                             // Latitude coordinate; nil until verified
+	Lng                  *float64 `json:"lng"`                             // Longitude coordinate; nil until verified
+	GooglePlaceID        string   `json:"google_place_id"`                 // Google Places ID for linking
+	Address              string   `json:"address"`                         // Full address
+	Notes                string   `json:"notes"`                           // Location-specific notes
+	LocationVerification string   `json:"location_verification,omitempty"` // verified or needs_review
+	LocationConfidence   *float64 `json:"location_confidence,omitempty"`   // resolver confidence, 0-100
+	ExternalURL          string   `json:"external_url"`                    // Optional official or booking URL
+	ImageURLs            []string `json:"image_urls"`                      // Associated image URLs
 }
 
 // NotePayload holds data for note-type activities.

@@ -438,7 +438,13 @@ export function ActivityForm({
                 <LocationAutocomplete
                   id="activity-location"
                   value={field.value ?? ""}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value)
+                    setValue("lat", "")
+                    setValue("lng", "")
+                    setValue("address", "")
+                    setValue("google_place_id", "")
+                  }}
                   disabled={isSubmitting}
                   ariaInvalid={Boolean(errors.location_name)}
                   ariaRequired
@@ -682,15 +688,20 @@ function buildDefaults(initial?: Activity): FormValues {
 function buildPayload(v: FormValues) {
   switch (v.type) {
     case "location": {
-      const lat = v.lat ? parseCoord(v.lat) : 0
-      const lng = v.lng ? parseCoord(v.lng) : 0
+      const parsedLat = v.lat ? parseCoord(v.lat) : NaN
+      const parsedLng = v.lng ? parseCoord(v.lng) : NaN
+      const lat = Number.isFinite(parsedLat) ? parsedLat : null
+      const lng = Number.isFinite(parsedLng) ? parsedLng : null
+      const isVerified = lat !== null && lng !== null
       return {
         location_name: v.location_name ?? "",
-        lat: Number.isFinite(lat) ? lat : 0,
-        lng: Number.isFinite(lng) ? lng : 0,
+        lat,
+        lng,
         google_place_id: v.google_place_id ?? "",
         address: v.address ?? "",
         notes: v.location_notes ?? "",
+        location_verification: isVerified ? "verified" as const : "needs_review" as const,
+        location_confidence: isVerified ? 100 : null,
         external_url: normalizeExternalUrl(v.external_url ?? "") ?? "",
         image_urls: [],
       }

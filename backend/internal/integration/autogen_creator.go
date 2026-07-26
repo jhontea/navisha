@@ -99,17 +99,21 @@ func buildActivityPayload(a autogen.ActivityDraft) (json.RawMessage, error) {
 	switch activity.Type(a.Type) {
 	case activity.TypeLocation:
 		lp := activity.LocationPayload{
-			LocationName:  a.LocationName,
-			Address:       a.Address,
-			GooglePlaceID: a.GooglePlaceID,
-			Notes:         a.Notes,
+			LocationName:         a.LocationName,
+			Address:              a.Address,
+			GooglePlaceID:        a.GooglePlaceID,
+			Notes:                a.Notes,
+			LocationVerification: a.LocationVerification,
+			LocationConfidence:   a.LocationConfidence,
 		}
 		// Check for AI-provided coordinates — if null, skip (frontend resolves).
 		if a.Lat != nil {
-			lp.Lat = *a.Lat
+			lat := *a.Lat
+			lp.Lat = &lat
 		}
 		if a.Lng != nil {
-			lp.Lng = *a.Lng
+			lng := *a.Lng
+			lp.Lng = &lng
 		}
 		return json.Marshal(lp)
 	case activity.TypeNote:
