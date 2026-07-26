@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
 )
@@ -111,11 +112,9 @@ func (u *Usecase) GenerateDayPreview(ctx context.Context, userID string, in Gene
 	if u.dayContextProvider == nil {
 		return nil, fmt.Errorf("autogen.GenerateDayPreview: day context provider required")
 	}
-	if in.TripID == "" || in.DayID == "" {
-		return nil, fmt.Errorf("%w: trip and day required", ErrInvalidInput)
-	}
-	if len(in.Instruction) > MaxDayInstructionLen {
-		return nil, fmt.Errorf("%w: instruction too long (max %d)", ErrInvalidInput, MaxDayInstructionLen)
+	in.Instruction = strings.TrimSpace(in.Instruction)
+	if err := ValidateDayInput(in); err != nil {
+		return nil, err
 	}
 
 	dayContext, err := u.dayContextProvider.GetDayContext(ctx, userID, in.TripID, in.DayID)

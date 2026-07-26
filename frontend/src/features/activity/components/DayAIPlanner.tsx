@@ -78,6 +78,7 @@ export function DayAIPlanner({
     0,
     MAX_DAY_INSTRUCTION_LENGTH - selectedIntentInstruction.length - (selectedIntentInstruction ? 1 : 0),
   )
+  const hasPlanningInput = selectedIntents.size > 0 || instruction.trim().length > 0
 
   const closePlanner = () => {
     setPreview(null)
@@ -88,6 +89,7 @@ export function DayAIPlanner({
   }
 
   const generate = async () => {
+    if (!hasPlanningInput) return
     setIsGenerating(true)
     try {
       const customInstruction = instruction.trim().slice(0, customInstructionLimit)
@@ -278,14 +280,18 @@ export function DayAIPlanner({
               value={instruction}
               onChange={(event) => setInstruction(event.target.value.slice(0, customInstructionLimit))}
               maxLength={customInstructionLimit}
-              placeholder="Optional details, e.g. prioritize the Shibuya area..."
+              placeholder="Add details, e.g. prioritize the Shibuya area..."
               aria-label="Additional AI planning details"
               className="bg-background"
               rows={2}
             />
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-muted-foreground">{instruction.length}/{customInstructionLimit}</span>
-              <Button type="button" size="sm" variant="gradient" onClick={generate} className="rounded-full px-5">
+              <span className="text-xs text-muted-foreground">
+                {hasPlanningInput
+                  ? `${instruction.length}/${customInstructionLimit}`
+                  : "Choose a focus or add your own instruction"}
+              </span>
+              <Button type="button" size="sm" variant="gradient" onClick={generate} disabled={!hasPlanningInput} className="rounded-full px-5">
                 <Sparkles className="h-4 w-4" />
                 Generate plan
               </Button>

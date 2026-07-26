@@ -2,7 +2,6 @@ package autogen
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -61,19 +60,20 @@ func (h *Handler) GenerateDayPreview(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	if len(req.Instruction) > MaxDayInstructionLen {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("instruction must be %d characters or less", MaxDayInstructionLen))
+	req.Instruction = strings.TrimSpace(sanitize.Text(req.Instruction))
+	input := GenerateDayInput{
+		TripID: c.Param("trip_id"), DayID: c.Param("day_id"), Instruction: req.Instruction,
 	}
-	req.Instruction = sanitize.Text(req.Instruction)
+	if err := ValidateDayInput(input); err != nil {
+		return mapErr(err)
+	}
 
 	// ── Daily quota check (shared across all AI endpoints) ──
 	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
 		return quotaErr
 	}
 
-	preview, err := h.usecase.GenerateDayPreview(c.Request().Context(), userID, GenerateDayInput{
-		TripID: c.Param("trip_id"), DayID: c.Param("day_id"), Instruction: req.Instruction,
-	})
+	preview, err := h.usecase.GenerateDayPreview(c.Request().Context(), userID, input)
 	if err != nil {
 		if errors.Is(err, ErrLLMUnavailable) {
 			h.quota.Refund(c, userID)

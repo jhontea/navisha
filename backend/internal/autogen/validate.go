@@ -54,6 +54,25 @@ func ValidateInput(in GenerateInput) error {
 	return nil
 }
 
+// ValidateDayInput rejects empty or meaningless planning instructions before
+// quota is consumed or an LLM request is made.
+func ValidateDayInput(in GenerateDayInput) error {
+	if strings.TrimSpace(in.TripID) == "" || strings.TrimSpace(in.DayID) == "" {
+		return fmt.Errorf("%w: trip and day required", ErrInvalidInput)
+	}
+	instruction := strings.TrimSpace(in.Instruction)
+	if instruction == "" {
+		return fmt.Errorf("%w: instruction required", ErrInvalidInput)
+	}
+	if len(instruction) > MaxDayInstructionLen {
+		return fmt.Errorf("%w: instruction too long (max %d)", ErrInvalidInput, MaxDayInstructionLen)
+	}
+	if !hasLetter.MatchString(instruction) {
+		return fmt.Errorf("%w: instruction must contain letters", ErrInvalidInput)
+	}
+	return nil
+}
+
 // stripFence removes a leading/trailing markdown code fence (```json ... ```)
 // if the model wrapped its JSON despite instructions.
 func stripFence(s string) string {
