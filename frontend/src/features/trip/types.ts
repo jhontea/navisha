@@ -7,6 +7,7 @@ export interface Trip {
   end_date: string
   base_currency: string
   budget: number
+  budget_categories?: Record<string, number>
   cover_image_url: string
   notes: string
   created_at: string
@@ -29,6 +30,7 @@ export interface CreateTripInput {
   end_date: string
   base_currency: string
   budget?: number
+  budget_categories?: Record<string, number>
   cover_image_url?: string
   notes?: string
 }

@@ -4,18 +4,19 @@ import "time"
 
 // Trip represents a travel itinerary owned by a user.
 type Trip struct {
-	ID            string    // Unique trip identifier
-	UserID        string    // Owner user ID
-	Title         string    // Trip title
-	Description   string    // Trip description/destination
-	StartDate     time.Time // Trip start date
-	EndDate       time.Time // Trip end date
-	BaseCurrency  string    // Base currency for expenses (e.g. "IDR")
-	Budget        float64   // Budget in base currency (0 = no budget)
-	CoverImageURL string    // Optional cover image URL
-	Notes         string    // Optional trip notes
-	CreatedAt     time.Time // Record creation timestamp
-	UpdatedAt     time.Time // Last update timestamp
+	ID               string             // Unique trip identifier
+	UserID           string             // Owner user ID
+	Title            string             // Trip title
+	Description      string             // Trip description/destination
+	StartDate        time.Time          // Trip start date
+	EndDate          time.Time          // Trip end date
+	BaseCurrency     string             // Base currency for expenses (e.g. "IDR")
+	Budget           float64            // Budget in base currency (0 = no budget)
+	BudgetCategories map[string]float64 // Optional planned budget by expense category
+	CoverImageURL    string             // Optional cover image URL
+	Notes            string             // Optional trip notes
+	CreatedAt        time.Time          // Record creation timestamp
+	UpdatedAt        time.Time          // Last update timestamp
 }
 
 // Day represents a single day within a trip itinerary.

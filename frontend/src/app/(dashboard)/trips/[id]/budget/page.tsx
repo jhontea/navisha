@@ -21,6 +21,16 @@ import {
 } from "@/features/trip/lib/actionability"
 import { Skeleton } from "@/components/ui/skeleton"
 
+const BUDGET_CATEGORIES = [
+  ["transport", "Transport"],
+  ["accommodation", "Accommodation"],
+  ["activity", "Activity"],
+  ["food", "Food"],
+  ["souvenir", "Souvenir"],
+  ["shopping", "Shopping"],
+  ["other", "Other"],
+] as const
+
 export default function TripBudgetPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
@@ -40,6 +50,7 @@ export default function TripBudgetPage() {
   const [editingBudget, setEditingBudget] = useState(false)
   const [displayBudget, setDisplayBudget] = useState("")
   const [rawBudget, setRawBudget] = useState("")
+  const [categoryBudgetDraft, setCategoryBudgetDraft] = useState<Record<string, string>>({})
   const tripSaveDisabledReason = getTripSaveDisabledReason({
     title: editTitle,
     startDate: editStartDate,
@@ -84,6 +95,11 @@ export default function TripBudgetPage() {
     if (!trip) return
     const budget = Number(rawBudget)
     if (isNaN(budget) || budget < 0) return
+    const budgetCategories: Record<string, number> = {}
+    Object.entries(categoryBudgetDraft).forEach(([category, value]) => {
+      const amount = Number(value.replace(/,/g, ""))
+      if (Number.isFinite(amount) && amount > 0) budgetCategories[category] = amount
+    })
     updateTrip({
       title: trip.title,
       description: trip.description,
@@ -91,6 +107,7 @@ export default function TripBudgetPage() {
       end_date: trip.end_date,
       base_currency: trip.base_currency,
       budget,
+      budget_categories: budgetCategories,
       cover_image_url: trip.cover_image_url,
       notes: trip.notes,
     })
@@ -103,6 +120,11 @@ export default function TripBudgetPage() {
     const initial = trip?.budget ? String(trip.budget) : ""
     setRawBudget(initial)
     setDisplayBudget(initial ? Number(initial).toLocaleString() : "")
+    setCategoryBudgetDraft(
+      Object.fromEntries(
+        BUDGET_CATEGORIES.map(([category]) => [category, trip?.budget_categories?.[category] ? String(trip.budget_categories[category]) : ""]),
+      ),
+    )
     setEditingBudget(true)
   }
 
@@ -161,6 +183,32 @@ export default function TripBudgetPage() {
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Budget in {trip?.base_currency ?? "IDR"}
                 </p>
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label className="block font-medium text-muted-foreground text-sm">Planned by category</label>
+                  <span className="text-xs text-muted-foreground">Optional</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {BUDGET_CATEGORIES.map(([category, label]) => (
+                    <label key={category} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
+                      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{label}</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={categoryBudgetDraft[category] ?? ""}
+                        onChange={(e) => setCategoryBudgetDraft((current) => ({
+                          ...current,
+                          [category]: e.target.value.replace(/[^0-9.]/g, ""),
+                        }))}
+                        placeholder="0"
+                        className="w-28 bg-transparent text-right text-sm tabular-nums text-foreground focus:outline-none"
+                        aria-label={`${label} planned budget`}
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
               <button
                 type="button"

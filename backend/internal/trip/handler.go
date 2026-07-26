@@ -41,14 +41,15 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 }
 
 type tripRequest struct {
-	Title         string   `json:"title"`
-	Description   string   `json:"description"`
-	StartDate     string   `json:"start_date"` // YYYY-MM-DD
-	EndDate       string   `json:"end_date"`
-	BaseCurrency  string   `json:"base_currency"`
-	Budget        *float64 `json:"budget"` // optional, 0 = no budget set
-	CoverImageURL string   `json:"cover_image_url"`
-	Notes         string   `json:"notes"`
+	Title            string             `json:"title"`
+	Description      string             `json:"description"`
+	StartDate        string             `json:"start_date"` // YYYY-MM-DD
+	EndDate          string             `json:"end_date"`
+	BaseCurrency     string             `json:"base_currency"`
+	Budget           *float64           `json:"budget"` // optional, 0 = no budget set
+	BudgetCategories map[string]float64 `json:"budget_categories"`
+	CoverImageURL    string             `json:"cover_image_url"`
+	Notes            string             `json:"notes"`
 }
 
 func (h *Handler) Create(c echo.Context) error {
@@ -70,14 +71,15 @@ func (h *Handler) Create(c echo.Context) error {
 		budget = *req.Budget
 	}
 	t, err := h.usecase.Create(c.Request().Context(), userID, CreateInput{
-		Title:         req.Title,
-		Description:   req.Description,
-		StartDate:     start,
-		EndDate:       end,
-		BaseCurrency:  req.BaseCurrency,
-		Budget:        budget,
-		CoverImageURL: req.CoverImageURL,
-		Notes:         req.Notes,
+		Title:            req.Title,
+		Description:      req.Description,
+		StartDate:        start,
+		EndDate:          end,
+		BaseCurrency:     req.BaseCurrency,
+		Budget:           budget,
+		BudgetCategories: req.BudgetCategories,
+		CoverImageURL:    req.CoverImageURL,
+		Notes:            req.Notes,
 	})
 	if err != nil {
 		return mapErr(err)
@@ -197,14 +199,15 @@ func (h *Handler) Update(c echo.Context) error {
 	}
 
 	t, err := h.usecase.Update(c.Request().Context(), userID, tripID, UpdateInput{
-		Title:         req.Title,
-		Description:   req.Description,
-		StartDate:     start,
-		EndDate:       end,
-		BaseCurrency:  req.BaseCurrency,
-		Budget:        req.Budget,
-		CoverImageURL: req.CoverImageURL,
-		Notes:         req.Notes,
+		Title:            req.Title,
+		Description:      req.Description,
+		StartDate:        start,
+		EndDate:          end,
+		BaseCurrency:     req.BaseCurrency,
+		Budget:           req.Budget,
+		BudgetCategories: req.BudgetCategories,
+		CoverImageURL:    req.CoverImageURL,
+		Notes:            req.Notes,
 	})
 	if err != nil {
 		return mapErr(err)
@@ -288,18 +291,19 @@ func parseDates(start, end string) (time.Time, time.Time, error) {
 
 func toTripResponse(t *Trip) map[string]any {
 	return map[string]any{
-		"id":              t.ID,
-		"user_id":         t.UserID,
-		"title":           t.Title,
-		"description":     t.Description,
-		"start_date":      t.StartDate.Format("2006-01-02"),
-		"end_date":        t.EndDate.Format("2006-01-02"),
-		"base_currency":   t.BaseCurrency,
-		"budget":          t.Budget,
-		"cover_image_url": t.CoverImageURL,
-		"notes":           t.Notes,
-		"created_at":      t.CreatedAt,
-		"updated_at":      t.UpdatedAt,
+		"id":                t.ID,
+		"user_id":           t.UserID,
+		"title":             t.Title,
+		"description":       t.Description,
+		"start_date":        t.StartDate.Format("2006-01-02"),
+		"end_date":          t.EndDate.Format("2006-01-02"),
+		"base_currency":     t.BaseCurrency,
+		"budget":            t.Budget,
+		"budget_categories": t.BudgetCategories,
+		"cover_image_url":   t.CoverImageURL,
+		"notes":             t.Notes,
+		"created_at":        t.CreatedAt,
+		"updated_at":        t.UpdatedAt,
 	}
 }
 

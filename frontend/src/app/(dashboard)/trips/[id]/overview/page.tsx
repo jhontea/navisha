@@ -164,6 +164,8 @@ type PlanningHealthProps = {
   hasStay: boolean
   hasTransport: boolean
   hasDays: boolean
+  budgetCategories: Record<string, number>
+  actualByCategory: Array<{ category: string; total: number }>
 }
 
 function PlanningHealth({
@@ -175,6 +177,8 @@ function PlanningHealth({
   hasStay,
   hasTransport,
   hasDays,
+  budgetCategories,
+  actualByCategory,
 }: PlanningHealthProps) {
   const checklistItems = [
     { label: "Itinerary days added", done: hasDays, href: `/trips/${tripId}` },
@@ -191,6 +195,23 @@ function PlanningHealth({
     ? Math.round((actualSpent! / tripBudget) * 100)
     : null
   const overBudget = remaining < 0
+  const categoryRows = Object.entries(budgetCategories)
+    .filter(([, planned]) => planned > 0)
+    .map(([category, planned]) => ({
+      category,
+      planned,
+      actual: actualByCategory.find((item) => item.category === category)?.total ?? 0,
+    }))
+  const overCategoryCount = categoryRows.filter((row) => row.actual > row.planned).length
+  const categoryLabels: Record<string, string> = {
+    accommodation: "Accommodation",
+    transport: "Transport",
+    food: "Food",
+    activity: "Activity",
+    souvenir: "Souvenir",
+    shopping: "Shopping",
+    other: "Other",
+  }
 
   return (
     <section className="mb-8" aria-labelledby="trip-health-heading">
@@ -212,7 +233,7 @@ function PlanningHealth({
                 <ListChecks className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-foreground">Planning checklist</h4>
+                <h4 className="text-sm font-semibold text-foreground">Trip readiness</h4>
                 <p className="text-xs text-muted-foreground">Core trip setup</p>
               </div>
             </div>
@@ -288,6 +309,27 @@ function PlanningHealth({
                   </p>
                 </div>
               </div>
+              {categoryRows.length > 0 && (
+                <div className="mt-5 border-t border-border/40 pt-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-xs font-medium text-muted-foreground">Category variance</p>
+                    {overCategoryCount > 0 && <p className="text-xs font-medium text-destructive">{overCategoryCount} over plan</p>}
+                  </div>
+                  <div className="space-y-2">
+                    {categoryRows.slice(0, 4).map((row) => {
+                      const over = row.actual > row.planned
+                      return (
+                        <div key={row.category} className="flex items-center justify-between gap-3 text-xs">
+                          <span className="text-muted-foreground">{categoryLabels[row.category] ?? row.category}</span>
+                          <span className={cn("tabular-nums", over ? "text-destructive" : "text-foreground")}>
+                            {formatCurrency(row.actual, baseCurrency)} / {formatCurrency(row.planned, baseCurrency)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <Link href={`/trips/${tripId}/budget`} className="flex items-center justify-between rounded-xl border border-dashed border-border/60 p-4 text-sm hover:bg-muted/50">
@@ -302,6 +344,82 @@ function PlanningHealth({
           </Link>
         </div>
       </div>
+    </section>
+  )
+}
+
+function NeedsAttention({
+  tripId,
+  hasActivities,
+  hasStay,
+  hasTransport,
+  hasBudget,
+  overBudget,
+}: {
+  tripId: string
+  hasActivities: boolean
+  hasStay: boolean
+  hasTransport: boolean
+  hasBudget: boolean
+  overBudget: boolean
+}) {
+  const items = [
+    !hasActivities && { label: "Add activities to your itinerary", href: `/trips/${tripId}` },
+    !hasStay && { label: "Arrange accommodation", href: `/trips/${tripId}/stay` },
+    !hasTransport && { label: "Add transport details", href: `/trips/${tripId}/transport` },
+    !hasBudget && { label: "Set a trip budget", href: `/trips/${tripId}/budget` },
+    overBudget && { label: "Review the budget overrun", href: `/trips/${tripId}/budget` },
+  ].filter(Boolean) as Array<{ label: string; href: string }>
+
+  return (
+    <section className="mb-8" aria-labelledby="needs-attention-heading">
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-chromatic-amber">Next actions</p>
+          <h3 id="needs-attention-heading" className="mt-1 text-lg font-bold text-foreground">Needs attention</h3>
+        </div>
+      </div>
+      {items.length === 0 ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-chromatic-mint/25 bg-chromatic-mint/10 p-4 text-sm text-foreground">
+          <CheckCircle2 className="h-5 w-5 text-chromatic-mint" aria-hidden="true" />
+          Everything looks good for now.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {items.map((item) => (
+            <Link key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl border border-chromatic-amber/20 bg-chromatic-amber/5 px-4 py-3 text-sm transition-colors hover:bg-chromatic-amber/10">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-chromatic-amber" aria-hidden="true" />
+              <span className="flex-1">{item.label}</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; activityCount: number }) {
+  return (
+    <section className="mb-8" aria-labelledby="next-up-heading">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 id="next-up-heading" className="text-lg font-bold text-foreground">Next up</h3>
+        <Link href={`/trips/${tripId}`} className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+          View itinerary <ChevronRight className="h-3 w-3" aria-hidden="true" />
+        </Link>
+      </div>
+      {day ? (
+        <Link href={`/trips/${tripId}#day-${day.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Day {day.day_number} · {formatDate(day.date)}</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{day.title || "Continue planning this day"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{activityCount} {activityCount === 1 ? "activity" : "activities"} planned</p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+        </Link>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border/60 p-5 text-sm text-muted-foreground">No upcoming itinerary yet.</div>
+      )}
     </section>
   )
 }
@@ -480,6 +598,9 @@ export default function TripOverviewPage() {
   const startIdx = upcomingIdx === -1 ? Math.max(0, trip.days.length - 3) : upcomingIdx
   const visibleDays = trip.days.slice(startIdx, startIdx + 3)
   const hasMoreDays = trip.days.length > visibleDays.length
+  const nextUpDay = visibleDays[0]
+  const nextUpDayIndex = nextUpDay ? trip.days.findIndex((day) => day.id === nextUpDay.id) : -1
+  const nextUpActivityCount = nextUpDayIndex >= 0 ? activityQueries[nextUpDayIndex]?.data?.items.length ?? 0 : 0
 
   const onDelete = () => {
     deleteTrip(tripId, {
@@ -683,6 +804,8 @@ export default function TripOverviewPage() {
             tripBudget={trip.budget}
             baseCurrency={trip.base_currency}
             actualSpent={expenseSummary?.total_base}
+            budgetCategories={trip.budget_categories ?? {}}
+            actualByCategory={expenseSummary?.by_category ?? []}
             hasActivities={totalActivities > 0}
             hasStay={(accommodations?.items.length ?? 0) > 0}
             hasTransport={(transportations?.items.length ?? 0) > 0}
@@ -715,14 +838,25 @@ export default function TripOverviewPage() {
         </section>
 
         {/* Iter 96 — AI Trip Summary */}
-        <section className="mb-8">
+        <section className="mb-10">
           <TripSummaryCard tripId={tripId} />
         </section>
+
+        <NeedsAttention
+          tripId={tripId}
+          hasActivities={totalActivities > 0}
+          hasStay={(accommodations?.items.length ?? 0) > 0}
+          hasTransport={(transportations?.items.length ?? 0) > 0}
+          hasBudget={trip.budget > 0}
+          overBudget={trip.budget > 0 && (expenseSummary?.total_base ?? 0) > trip.budget}
+        />
+
+        <NextUp tripId={tripId} day={nextUpDay} activityCount={nextUpActivityCount} />
 
         {/* Daily Itinerary */}
 
         {/* Iter 97 — Daily Itinerary section header */}
-        <section className="mb-8">
+        <section className="mb-8 hidden">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-lg font-bold text-foreground">
               Daily Itinerary
@@ -766,7 +900,7 @@ export default function TripOverviewPage() {
 
 
         {/* Iter 98 — Recent Expenses */}
-        <section className="mb-10">
+        <section className="mb-10 hidden">
           <RecentExpenses tripId={tripId} />
         </section>
       </div>
