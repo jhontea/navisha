@@ -31,6 +31,7 @@ import {
 import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
 import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
 import { canRenderTripCover } from "@/features/trip/lib/cover"
+import { getTripDateMetrics, toLocalISODate } from "@/features/trip/lib/status"
 import { useActivities } from "@/features/activity/hooks/useActivities"
 
 import { activityApi } from "@/features/activity/api"
@@ -50,38 +51,8 @@ import type { Expense } from "@/features/expense/types"
 
 // Helper to get today's date in YYYY-MM-DD format
 function getToday(): string {
-  return new Date().toISOString().split("T")[0]
+  return toLocalISODate()
 }
-
-// Calculate days between two dates
-function daysBetween(start: string, end: string): number {
-  const s = new Date(start)
-  const e = new Date(end)
-  return Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1
-}
-
-// Determine trip progress relative to today.
-// - Before the trip starts: day 0, 0% progress (not started)
-// - During the trip: the day currently in progress
-// - After the trip ends: clamped to the last day / 100%
-function getTripProgress(startDate: string, endDate: string) {
-  const today = new Date(getToday())
-  const start = new Date(startDate)
-  const totalDays = daysBetween(startDate, endDate)
-  const diffDays = Math.floor(
-    (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-  )
-
-  if (diffDays < 0) {
-    // Trip hasn't started yet
-    return { currentDay: 0, totalDays, percent: 0, started: false }
-  }
-
-  const currentDay = Math.min(diffDays + 1, totalDays)
-  const percent = Math.min(100, (currentDay / totalDays) * 100)
-  return { currentDay, totalDays, percent, started: true }
-}
-
 
 // Activity type icon mapping
 function getActivityIcon(type: string) {
@@ -344,7 +315,7 @@ export default function TripOverviewPage() {
   }
 
   const { currentDay, totalDays, percent: progressPercent, started } =
-    getTripProgress(trip.start_date, trip.end_date)
+    getTripDateMetrics(trip.start_date, trip.end_date)
 
 
   // Don't render every single day — surface the current day and the ones

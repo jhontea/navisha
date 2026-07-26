@@ -22,14 +22,6 @@ const nextConfig = {
     const isProduction = process.env.NODE_ENV === 'production';
 
     return [
-      ...(!isProduction
-        ? [{
-            source: '/share/:path*',
-            headers: [
-              { key: 'Clear-Site-Data', value: '"cache"' },
-            ],
-          }]
-        : []),
       {
         // Long-term immutable cache for hashed static chunks.
         // iOS Safari honors cache directives strictly — without this it
