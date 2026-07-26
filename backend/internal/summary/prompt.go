@@ -103,6 +103,16 @@ Tulis ringkasan perjalanan yang:
 - Kasih komentar soal budget (masih aman / pas / exceed) dengan nada ringan
 - Kasih 1-2 tips praktis yang beneran berguna
 
+ATURAN FAKTA (WAJIB):
+- Bagian "DATA AVAILABILITY" dari user adalah sumber kebenaran. Jangan menebak data yang tidak tercatat.
+- Jangan menganggap judul aktivitas seperti "check-in", "naik kereta", atau "perjalanan ke ..." sebagai data akomodasi atau transportasi yang sudah dipesan.
+- Jika Accommodations = 0, sebutkan singkat bahwa akomodasi belum ditambahkan, lalu WAJIB beri 1-2 **Saran akomodasi:** yang actionable berdasarkan area dan alur itinerary. Fokus pada area/tipe penginapan; jangan mengarang hotel yang sudah dipesan atau ketersediaannya.
+- Jika Transportation = 0, sebutkan singkat bahwa transportasi belum ditambahkan, lalu WAJIB beri 1-2 **Saran transportasi:** berupa moda atau rute yang relevan dengan perpindahan di itinerary. Jangan menulisnya seolah sudah dipesan.
+- Jika Budget configured = no, jangan menilai budget aman/pas/exceed. Katakan budget belum ditentukan.
+- Jika Expenses recorded = no, jangan menyimpulkan pengeluaran aktual adalah nol; katakan belum ada pengeluaran yang dicatat.
+- Jangan berhenti hanya dengan kalimat "belum ada data" jika akomodasi atau transportasi kosong; tujuan ringkasan adalah membantu user mengambil langkah berikutnya.
+- Semua rekomendasi harus diberi label jelas sebagai saran dan tidak boleh ditulis seolah sudah dipesan atau tercatat.
+
 FORMAT OUTPUT:
 Gunakan markdown yang rapi dan enak dibaca:
 - Pakai ## untuk section utama + EMOJI di depannya
@@ -148,6 +158,15 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 
 	system = sb.String()
 
+	emptyDays := make([]int, 0)
+	totalActivities := 0
+	for _, day := range ctx.Days {
+		totalActivities += len(day.Activities)
+		if len(day.Activities) == 0 {
+			emptyDays = append(emptyDays, day.DayNumber)
+		}
+	}
+
 	// User prompt — same structure as before
 	var ub strings.Builder
 	ub.WriteString(fmt.Sprintf("Trip: %s\n", ctx.Title))
@@ -159,6 +178,32 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 		ctx.EndDate.Format("2006-01-02"),
 		ctx.TotalDays))
 	ub.WriteString(fmt.Sprintf("Currency: %s\n", ctx.BaseCurrency))
+	ub.WriteString("\nDATA AVAILABILITY (AUTHORITATIVE - do not infer missing records):\n")
+	ub.WriteString(fmt.Sprintf("- Activities recorded: %d\n", totalActivities))
+	ub.WriteString(fmt.Sprintf("- Accommodations recorded: %d", len(ctx.Accommodations)))
+	if len(ctx.Accommodations) == 0 {
+		ub.WriteString(" (none added)\n")
+		ub.WriteString("  Required: provide 1-2 clearly labeled accommodation suggestions based on itinerary areas.\n")
+	} else {
+		ub.WriteString("\n")
+	}
+	ub.WriteString(fmt.Sprintf("- Transportation records: %d", len(ctx.Transportations)))
+	if len(ctx.Transportations) == 0 {
+		ub.WriteString(" (none added)\n")
+		ub.WriteString("  Required: provide 1-2 clearly labeled transportation suggestions based on itinerary movements.\n")
+	} else {
+		ub.WriteString("\n")
+	}
+	if ctx.Budget > 0 {
+		ub.WriteString(fmt.Sprintf("- Budget configured: yes (%.2f %s)\n", ctx.Budget, ctx.BaseCurrency))
+	} else {
+		ub.WriteString("- Budget configured: no\n")
+	}
+	if ctx.TotalSpent > 0 || len(ctx.ExpenseByCategory) > 0 {
+		ub.WriteString(fmt.Sprintf("- Expenses recorded: yes (total %.2f %s)\n", ctx.TotalSpent, ctx.BaseCurrency))
+	} else {
+		ub.WriteString("- Expenses recorded: no (do not describe this as actual spending of zero)\n")
+	}
 
 	if ctx.Budget > 0 {
 		ub.WriteString(fmt.Sprintf("Budget: %.2f %s\n", ctx.Budget, ctx.BaseCurrency))
@@ -228,16 +273,6 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 	days := ctx.Days
 	if len(days) > maxDays {
 		days = days[:maxDays]
-	}
-
-	// Count empty days for itinerary density signal
-	emptyDays := make([]int, 0)
-	totalActivities := 0
-	for _, day := range ctx.Days {
-		totalActivities += len(day.Activities)
-		if len(day.Activities) == 0 {
-			emptyDays = append(emptyDays, day.DayNumber)
-		}
 	}
 
 	if len(days) > 0 {

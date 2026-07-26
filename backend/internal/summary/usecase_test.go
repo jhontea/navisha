@@ -188,9 +188,45 @@ func TestBuildPrompt_IncludesKeyFields(t *testing.T) {
 	if system == "" {
 		t.Error("system prompt should not be empty")
 	}
-	for _, want := range []string{"Bali Trip", "Bali, Indonesia", "IDR", "Hotel A", "Over budget"} {
+	for _, want := range []string{"Bali Trip", "Bali, Indonesia", "IDR", "Hotel A", "Over budget", "Accommodations recorded: 1"} {
 		if !contains(user, want) {
 			t.Errorf("user prompt missing %q\n---\n%s", want, user)
+		}
+	}
+}
+
+func TestBuildPrompt_ExplicitlyMarksMissingOptionalData(t *testing.T) {
+	ctx := newTripContext()
+	system, user := BuildPrompt(*ctx)
+
+	for _, want := range []string{
+		"Accommodations recorded: 0 (none added)",
+		"Transportation records: 0 (none added)",
+		"Budget configured: no",
+		"Expenses recorded: no",
+	} {
+		if !contains(user, want) {
+			t.Errorf("user prompt missing authoritative marker %q\n---\n%s", want, user)
+		}
+	}
+	for _, want := range []string{
+		"Jangan menganggap judul aktivitas",
+		"Jika Accommodations = 0",
+		"WAJIB beri 1-2 **Saran akomodasi:**",
+		"Jika Transportation = 0",
+		"WAJIB beri 1-2 **Saran transportasi:**",
+		"Jangan berhenti hanya dengan kalimat",
+	} {
+		if !contains(system, want) {
+			t.Errorf("system prompt missing anti-hallucination rule %q", want)
+		}
+	}
+	for _, want := range []string{
+		"Required: provide 1-2 clearly labeled accommodation suggestions",
+		"Required: provide 1-2 clearly labeled transportation suggestions",
+	} {
+		if !contains(user, want) {
+			t.Errorf("user prompt missing required recommendation %q", want)
 		}
 	}
 }
