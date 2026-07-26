@@ -2,19 +2,13 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import {
   List,
   Map,
 } from "lucide-react"
-import { BackLink } from "@/components/BackLink"
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
-import { useTrip, useDeleteTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
-import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
-import { TripHero } from "@/features/trip/components/TripHero"
-import { TripEditForm } from "@/features/trip/components/TripEditForm"
-import { TripTabBar } from "@/features/trip/components/TripTabBar"
+import { useTrip } from "@/features/trip/hooks/useTrips"
 import { DayPanel } from "@/features/activity/components/DayPanel"
 import { cn } from "@/lib/utils"
 
@@ -35,29 +29,10 @@ type ViewMode = "list" | "map"
 
 export default function TripDetailPage() {
   const params = useParams<{ id: string }>()
-  const router = useRouter()
   const id = params.id
 
-  const { data: trip, isLoading, isError, error: _error } = useTrip(id)
-  const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
-  const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(id)
-
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const { data: trip, isLoading, isError } = useTrip(id)
   const [viewMode, setViewMode] = useState<ViewMode>("list")
-
-  // Inline edit state
-  const [isEditing, setIsEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState("")
-  const [editStartDate, setEditStartDate] = useState("")
-  const [editEndDate, setEditEndDate] = useState("")
-  const [editDescription, setEditDescription] = useState("")
-  // Cover photo auto-fetched from the destination's Google Places photo.
-  const [editCover, setEditCover] = useState("")
-  const tripSaveDisabledReason = getTripSaveDisabledReason({
-    title: editTitle,
-    startDate: editStartDate,
-    endDate: editEndDate,
-  })
 
 
   if (isLoading) {
@@ -80,85 +55,12 @@ export default function TripDetailPage() {
         <p className="text-sm text-destructive">
           Trip not found or you don&apos;t have access to it.
         </p>
-        <BackLink href="/dashboard" variant="primary" />
       </div>
     )
   }
 
-  const onDelete = () => {
-    deleteTrip(id, {
-      onSuccess: () => router.push("/dashboard"),
-    })
-  }
-
-  const startEditing = () => {
-    setEditTitle(trip.title)
-    setEditDescription(trip.description ?? "")
-    setEditStartDate(trip.start_date)
-    setEditEndDate(trip.end_date)
-    setEditCover(trip.cover_image_url ?? "")
-    setIsEditing(true)
-  }
-
-  const saveEdits = () => {
-    if (!editTitle.trim()) return
-    updateTrip(
-      {
-        title: editTitle.trim(),
-        description: editDescription,
-        start_date: editStartDate,
-        end_date: editEndDate,
-        base_currency: trip.base_currency,
-        budget: trip.budget,
-        cover_image_url: editCover,
-        notes: trip.notes,
-      },
-      { onSettled: () => setIsEditing(false) },
-    )
-  }
-
-
-  const cancelEditing = () => setIsEditing(false)
-
   return (
     <main className="flex flex-col pb-4">
-      {isEditing ? (
-        <TripEditForm
-          title={editTitle}
-          description={editDescription}
-          coverImageUrl={editCover}
-          startDate={editStartDate}
-          endDate={editEndDate}
-          isUpdating={isUpdating}
-          saveDisabledReason={tripSaveDisabledReason}
-          onTitleChange={setEditTitle}
-          onDescriptionChange={setEditDescription}
-          onCoverChange={setEditCover}
-          onDateChange={(range) => {
-            setEditStartDate(range.startDate)
-            setEditEndDate(range.endDate)
-          }}
-          onSave={saveEdits}
-          onCancel={cancelEditing}
-        />
-      ) : (
-        <TripHero
-          title={trip.title}
-          description={trip.description}
-          startDate={trip.start_date}
-          endDate={trip.end_date}
-          baseCurrency={trip.base_currency}
-          coverImageUrl={trip.cover_image_url}
-          onEdit={startEditing}
-          onDelete={() => setConfirmDelete(true)}
-          shareTripId={id}
-          isDeleting={isDeleting}
-        />
-      )}
-
-      {/* Phase 3B-2: Tab navigation for trip sub-sections */}
-      <TripTabBar tripId={id} />
-
       {/* View mode toggle — always in same position */}
       <div className="mx-auto w-full max-w-max-width px-margin-mobile pt-6 md:px-margin-desktop">
         <div role="group" aria-label="View mode" className="mb-5 flex w-full gap-1 rounded-2xl border border-border/40 bg-muted/30 p-1">
@@ -230,17 +132,6 @@ export default function TripDetailPage() {
           )}
         </div>
       )}
-
-      <ConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title={`Delete "${trip.title}"?`}
-        description="This will permanently remove the trip and all its days, activities, and expenses. This cannot be undone."
-        confirmLabel="Delete"
-        destructive
-        isPending={isDeleting}
-        onConfirm={onDelete}
-      />
 
     </main>
   )

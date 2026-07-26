@@ -1,20 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
-import { useTrip, useUpdateTrip, useDeleteTrip } from "@/features/trip/hooks/useTrips"
+import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
-import { TripHero } from "@/features/trip/components/TripHero"
-import { TripEditForm } from "@/features/trip/components/TripEditForm"
-import { TripTabBar } from "@/features/trip/components/TripTabBar"
-import {
-  getBudgetSaveDisabledReason,
-  getTripSaveDisabledReason,
-} from "@/features/trip/lib/actionability"
-import { Skeleton } from "@/components/ui/skeleton"
+import { getBudgetSaveDisabledReason } from "@/features/trip/lib/actionability"
 
 const BUDGET_CATEGORIES = [
   ["transport", "Transport"],
@@ -29,28 +21,13 @@ const BUDGET_CATEGORIES = [
 export default function TripBudgetPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
-  const router = useRouter()
   const { data: trip, isLoading } = useTrip(id)
   const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(id)
-  const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
-
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState("")
-  const [editStartDate, setEditStartDate] = useState("")
-  const [editEndDate, setEditEndDate] = useState("")
-  const [editDescription, setEditDescription] = useState("")
-  const [editCover, setEditCover] = useState("")
 
   const [editingBudget, setEditingBudget] = useState(false)
   const [displayBudget, setDisplayBudget] = useState("")
   const [rawBudget, setRawBudget] = useState("")
   const [categoryBudgetDraft, setCategoryBudgetDraft] = useState<Record<string, string>>({})
-  const tripSaveDisabledReason = getTripSaveDisabledReason({
-    title: editTitle,
-    startDate: editStartDate,
-    endDate: editEndDate,
-  })
   const budgetSaveDisabledReason = getBudgetSaveDisabledReason(rawBudget)
   const categoryBudgetTotal = Object.values(categoryBudgetDraft).reduce((sum, value) => {
     const amount = Number(value.replace(/,/g, ""))
@@ -60,39 +37,6 @@ export default function TripBudgetPage() {
   const categoryBudgetError = draftTotalBudget > 0 && categoryBudgetTotal > draftTotalBudget
     ? "Category allocations cannot exceed the total budget."
     : null
-
-  const startEditing = () => {
-    if (!trip) return
-    setEditTitle(trip.title)
-    setEditDescription(trip.description ?? "")
-    setEditStartDate(trip.start_date)
-    setEditEndDate(trip.end_date)
-    setEditCover(trip.cover_image_url ?? "")
-    setIsEditing(true)
-  }
-
-  const saveEdits = () => {
-    if (!editTitle.trim() || !trip) return
-    updateTrip(
-      {
-        title: editTitle.trim(),
-        description: editDescription,
-        start_date: editStartDate,
-        end_date: editEndDate,
-        base_currency: trip.base_currency,
-        budget: trip.budget,
-        cover_image_url: editCover,
-        notes: trip.notes,
-      },
-      { onSettled: () => setIsEditing(false) },
-    )
-  }
-
-  const onDelete = () => {
-    deleteTrip(id, {
-      onSuccess: () => router.push("/dashboard"),
-    })
-  }
 
   const handleSaveBudget = async () => {
     if (!trip) return
@@ -133,44 +77,6 @@ export default function TripBudgetPage() {
 
   return (
     <main className="flex flex-col pb-4">
-      {trip && (isEditing ? (
-        <TripEditForm
-          title={editTitle}
-          description={editDescription}
-          coverImageUrl={editCover}
-          startDate={editStartDate}
-          endDate={editEndDate}
-          isUpdating={isUpdating}
-          saveDisabledReason={tripSaveDisabledReason}
-          onTitleChange={setEditTitle}
-          onDescriptionChange={setEditDescription}
-          onCoverChange={setEditCover}
-          onDateChange={(range) => {
-            setEditStartDate(range.startDate)
-            setEditEndDate(range.endDate)
-          }}
-          onSave={saveEdits}
-          onCancel={() => setIsEditing(false)}
-        />
-      ) : (
-        <TripHero
-          title={trip.title}
-          description={trip.description}
-          startDate={trip.start_date}
-          endDate={trip.end_date}
-          baseCurrency={trip.base_currency}
-          coverImageUrl={trip.cover_image_url}
-          shareTripId={id}
-          onEdit={startEditing}
-          onDelete={() => setConfirmDelete(true)}
-          isDeleting={isDeleting}
-        />
-      ))}
-      {!trip && isLoading && (
-        <Skeleton variant="glass" className="h-40 w-full rounded-none" />
-      )}
-      <TripTabBar tripId={id} />
-
       {isLoading && !trip ? (
         <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8 space-y-10 animate-fade-in">
           <div>
@@ -319,17 +225,6 @@ export default function TripBudgetPage() {
         />
       </div>
       )}
-
-      <ConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title={`Delete "${trip?.title}"?`}
-        description="This will permanently remove the trip and all its days, activities, and expenses. This cannot be undone."
-        confirmLabel="Delete"
-        destructive
-        isPending={isDeleting}
-        onConfirm={onDelete}
-      />
 
     </main>
   )

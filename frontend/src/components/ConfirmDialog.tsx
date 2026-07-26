@@ -21,6 +21,7 @@ interface Props {
   cancelLabel?: string
   destructive?: boolean
   isPending?: boolean
+  closeOnConfirm?: boolean
   onConfirm: () => void
 }
 
@@ -35,6 +36,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancel",
   destructive,
   isPending,
+  closeOnConfirm = true,
   onConfirm,
 }: Props) {
   return (
@@ -52,7 +54,10 @@ export function ConfirmDialog({
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={isPending}
-            onClick={onConfirm}
+            onClick={(event) => {
+              if (!closeOnConfirm) event.preventDefault()
+              onConfirm()
+            }}
             className={cn(
               destructive &&
                 "bg-destructive text-destructive-foreground hover:bg-destructive/90",
