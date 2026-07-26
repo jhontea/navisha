@@ -83,6 +83,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   const pushUser = (text: string) => setMessages((m) => [...m, { from: "user", text }])
 
   const span = daySpan(startDate, endDate)
+  const hasDraftText = draftText.trim().length > 0
 
   const handleDestination = () => {
     const v = draftText.trim()
@@ -227,11 +228,13 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                 maxLength={MAX_DESTINATION}
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleDestination()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && hasDraftText) handleDestination()
+                }}
               />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{draftText.length}/{MAX_DESTINATION}</span>
-                <button type="button" onClick={handleDestination} className={sendBtn}>
+                <button type="button" onClick={handleDestination} disabled={!hasDraftText} className={sendBtn}>
                   <Send className="h-3.5 w-3.5" aria-hidden="true" />
                   Send
                 </button>
@@ -249,7 +252,9 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                   maxLength={MAX_DESCRIPTION}
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleDescription(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && hasDraftText) handleDescription(false)
+                  }}
                 />
                 {draftText.length > 0 && (
                   <button
@@ -278,12 +283,16 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                 ))}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{draftText.length}/{MAX_DESCRIPTION}</span>
+                <span className="text-xs text-muted-foreground">
+                  {hasDraftText
+                    ? `${draftText.length}/${MAX_DESCRIPTION}`
+                    : "Choose a suggestion, type your own, or Skip"}
+                </span>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleDescription(true)} className={ghostBtn}>
                     Skip
                   </button>
-                  <button type="button" onClick={() => handleDescription(false)} className={sendBtn}>
+                  <button type="button" onClick={() => handleDescription(false)} disabled={!hasDraftText} className={sendBtn}>
                     <Send className="h-3.5 w-3.5" aria-hidden="true" />
                     Send
                   </button>
@@ -391,7 +400,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
 }
 
 const sendBtn =
-  "inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:shadow-md hover:shadow-primary/35 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+  "inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:shadow-md hover:shadow-primary/35 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-45 disabled:shadow-none"
 const ghostBtn =
   "rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 

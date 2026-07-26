@@ -55,6 +55,21 @@ func TestValidateInput_ExactMaxRange(t *testing.T) {
 	}
 }
 
+func TestValidateDayInput_RequiresMeaningfulInstruction(t *testing.T) {
+	base := GenerateDayInput{TripID: "trip-1", DayID: "day-1", Instruction: "More local food"}
+	if err := ValidateDayInput(base); err != nil {
+		t.Fatalf("expected valid day input, got %v", err)
+	}
+
+	for _, instruction := range []string{"", "   ", "123 !!!"} {
+		in := base
+		in.Instruction = instruction
+		if err := ValidateDayInput(in); !errors.Is(err, ErrInvalidInput) {
+			t.Errorf("instruction %q: expected ErrInvalidInput, got %v", instruction, err)
+		}
+	}
+}
+
 func TestValidateInput_EndBeforeStart(t *testing.T) {
 	in := mkInput("2026-07-05", "2026-07-01")
 	if err := ValidateInput(in); !errors.Is(err, ErrInvalidInput) {
