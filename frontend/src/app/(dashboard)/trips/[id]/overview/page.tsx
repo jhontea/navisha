@@ -6,14 +6,10 @@ import Link from "next/link"
 import { useQueries } from "@tanstack/react-query"
 import {
   Calendar,
-  MapPin,
   Hotel,
   Plane,
   Wallet,
-  Clock,
   ChevronRight,
-  Check,
-  X,
   ListChecks,
   AlertTriangle,
   CheckCircle2,
@@ -21,33 +17,25 @@ import {
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { BackLink } from "@/components/BackLink"
-import { Button } from "@/components/ui/button"
-import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { TripHero } from "@/features/trip/components/TripHero"
-import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
+import { TripEditForm } from "@/features/trip/components/TripEditForm"
 import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
 import {
   useTrip,
   useDeleteTrip,
   useUpdateTrip,
 } from "@/features/trip/hooks/useTrips"
-import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
-import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
-import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { getTripDateMetrics, toLocalISODate } from "@/features/trip/lib/status"
-import { useActivities } from "@/features/activity/hooks/useActivities"
-
 import { activityApi } from "@/features/activity/api"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
-import { useExpenseSummary, useExpenses } from "@/features/expense/hooks/useExpenses"
+import { useExpenseSummary } from "@/features/expense/hooks/useExpenses"
 import { TripSummaryCard } from "@/features/summary/components/TripSummaryCard"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
 
 import type { Day } from "@/features/trip/types"
-import type { Expense } from "@/features/expense/types"
 
 
 
@@ -56,103 +44,6 @@ import type { Expense } from "@/features/expense/types"
 // Helper to get today's date in YYYY-MM-DD format
 function getToday(): string {
   return toLocalISODate()
-}
-
-// Activity type icon mapping
-function getActivityIcon(type: string) {
-  switch (type) {
-    case "location":
-      return <MapPin className="h-3.5 w-3.5" />
-    case "note":
-      return <Clock className="h-3.5 w-3.5" />
-    case "todo":
-      return <Calendar className="h-3.5 w-3.5" />
-    default:
-      return <MapPin className="h-3.5 w-3.5" />
-  }
-}
-
-// Activity type color mapping
-function getActivityColor(type: string): string {
-  switch (type) {
-    case "location":
-      return "bg-primary/10 text-primary"
-    case "note":
-      return "bg-chromatic-amber/10 text-chromatic-amber"
-    case "todo":
-      return "bg-muted text-muted-foreground"
-    default:
-      return "bg-muted text-muted-foreground"
-  }
-}
-
-// Expense category icon mapping
-function getExpenseIcon(category: string) {
-  switch (category) {
-    case "accommodation":
-      return <Hotel className="h-4 w-4" />
-    case "transport":
-      return <Plane className="h-4 w-4" />
-    case "food":
-      return <Wallet className="h-4 w-4" />
-    default:
-      return <Wallet className="h-4 w-4" />
-  }
-}
-
-// Recent expenses list
-function RecentExpenses({ tripId }: { tripId: string }) {
-  const { data } = useExpenses(tripId)
-  const expenses: Expense[] = (data?.items ?? [])
-    .slice()
-    .sort((a, b) => (b.expense_date > a.expense_date ? 1 : -1))
-    .slice(0, 5)
-
-  return (
-    <div className="glass rounded-2xl p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-foreground">Recent Expenses</h4>
-        <Link
-          href={`/trips/${tripId}/budget`}
-          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
-          View All
-          <ChevronRight className="h-3 w-3" aria-hidden="true" />
-        </Link>
-      </div>
-      {expenses.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border/50 p-5 text-center text-xs text-muted-foreground">
-          No expenses recorded yet.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {expenses.map((expense) => (
-            <div
-              key={expense.id}
-              className="flex items-center justify-between rounded-xl bg-white/40 border border-white/30 px-3 py-2.5 hover:bg-white/60 transition-colors"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  {getExpenseIcon(expense.category)}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {expense.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(expense.expense_date)}
-                  </p>
-                </div>
-              </div>
-              <p className="shrink-0 text-sm font-semibold text-foreground tabular-nums">
-                {formatCurrency(expense.converted_amount, expense.base_currency)}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 type PlanningHealthProps = {
@@ -219,7 +110,7 @@ function PlanningHealth({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planning health</p>
           <h3 id="trip-health-heading" className="mt-1 text-lg font-bold text-foreground">
-            What needs your attention?
+            Trip planning health
           </h3>
         </div>
         <span className="text-xs text-muted-foreground">{completedItems} of {checklistItems.length} ready</span>
@@ -291,7 +182,7 @@ function PlanningHealth({
                   style={{ width: `${Math.min(spentPercent ?? 0, 100)}%` }}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3 text-xs">
+              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
                 <div>
                   <p className="text-muted-foreground">Planned</p>
                   <p className="mt-1 font-semibold tabular-nums text-foreground">{formatCurrency(tripBudget, baseCurrency)}</p>
@@ -355,6 +246,8 @@ function NeedsAttention({
   hasTransport,
   hasBudget,
   overBudget,
+  emptyDayCount,
+  overCategoryCount,
 }: {
   tripId: string
   hasActivities: boolean
@@ -362,6 +255,8 @@ function NeedsAttention({
   hasTransport: boolean
   hasBudget: boolean
   overBudget: boolean
+  emptyDayCount: number
+  overCategoryCount: number
 }) {
   const items = [
     !hasActivities && { label: "Add activities to your itinerary", href: `/trips/${tripId}` },
@@ -369,6 +264,8 @@ function NeedsAttention({
     !hasTransport && { label: "Add transport details", href: `/trips/${tripId}/transport` },
     !hasBudget && { label: "Set a trip budget", href: `/trips/${tripId}/budget` },
     overBudget && { label: "Review the budget overrun", href: `/trips/${tripId}/budget` },
+    emptyDayCount > 0 && { label: `${emptyDayCount} itinerary day${emptyDayCount === 1 ? "" : "s"} need activities`, href: `/trips/${tripId}` },
+    overCategoryCount > 0 && { label: `${overCategoryCount} budget categor${overCategoryCount === 1 ? "y is" : "ies are"} over plan`, href: `/trips/${tripId}/budget` },
   ].filter(Boolean) as Array<{ label: string; href: string }>
 
   return (
@@ -421,93 +318,6 @@ function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; act
         <div className="rounded-2xl border border-dashed border-border/60 p-5 text-sm text-muted-foreground">No upcoming itinerary yet.</div>
       )}
     </section>
-  )
-}
-
-// Day card component with activity preview
-function DayCard({ day, tripId }: { day: Day; tripId: string }) {
-  const { data: activities } = useActivities(day.id)
-  const isToday = day.date === getToday()
-  const activityList = activities?.items ?? []
-  const previewActivities = activityList.slice(0, 3)
-  const remainingCount = Math.max(0, activityList.length - 3)
-
-  return (
-    <Link href={`/trips/${tripId}#day-${day.id}`} aria-label={`View Day ${day.day_number} — ${formatDate(day.date)}`}>
-      <div
-        className={cn(
-          "group relative rounded-2xl border bg-card p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg active:scale-[0.99] cursor-pointer",
-          isToday
-            ? "border-primary/60 border-2 shadow-md ring-2 ring-primary/10"
-            : "border-border/40 hover:border-primary/30"
-        )}
-      >
-        {/* Today badge */}
-        {isToday && (
-          <div className="absolute -top-2.5 right-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm">
-            Today
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="mb-3 flex items-start justify-between">
-          <div>
-            <h4 className="text-base font-bold text-foreground">
-              Day {day.day_number}
-            </h4>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {formatDate(day.date)}
-            </p>
-          </div>
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary border border-primary/15">
-            {activityList.length} {activityList.length === 1 ? "activity" : "activities"}
-          </span>
-        </div>
-
-        {/* Activity preview */}
-        {previewActivities.length > 0 ? (
-          <div className="mb-4 space-y-1.5">
-            {previewActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-md",
-                    getActivityColor(activity.type)
-                  )}
-                  aria-hidden="true"
-                >
-                  {getActivityIcon(activity.type)}
-                </div>
-                <span className="flex-1 truncate text-xs text-foreground">
-                  {activity.title}
-                </span>
-              </div>
-            ))}
-            {remainingCount > 0 && (
-              <p className="text-[11px] text-muted-foreground pl-7">
-                +{remainingCount} more
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="mb-4 rounded-xl border border-dashed border-border/50 py-3 text-center">
-            <p className="text-xs text-muted-foreground">No activities yet</p>
-          </div>
-        )}
-
-        {/* View day CTA */}
-        <div
-          className={cn(
-            primaryTripActionButtonClassName,
-            "w-full flex-none rounded-xl px-4 py-2 text-xs shadow-sm shadow-primary/20 group-hover:shadow-md group-hover:shadow-primary/30 sm:flex-none"
-          )}
-          aria-hidden="true"
-        >
-          View Day
-          <ChevronRight className="h-3 w-3" />
-        </div>
-      </div>
-    </Link>
   )
 }
 
@@ -596,11 +406,14 @@ export default function TripOverviewPage() {
   const today = getToday()
   const upcomingIdx = trip.days.findIndex((d) => d.date >= today)
   const startIdx = upcomingIdx === -1 ? Math.max(0, trip.days.length - 3) : upcomingIdx
-  const visibleDays = trip.days.slice(startIdx, startIdx + 3)
-  const hasMoreDays = trip.days.length > visibleDays.length
-  const nextUpDay = visibleDays[0]
+  const nextUpDay = trip.days[startIdx]
   const nextUpDayIndex = nextUpDay ? trip.days.findIndex((day) => day.id === nextUpDay.id) : -1
   const nextUpActivityCount = nextUpDayIndex >= 0 ? activityQueries[nextUpDayIndex]?.data?.items.length ?? 0 : 0
+  const emptyDayCount = activityQueries.filter((query) => query.isSuccess && (query.data?.items.length ?? 0) === 0).length
+  const overCategoryCount = Object.entries(trip.budget_categories ?? {}).filter(([category, planned]) => {
+    const actual = expenseSummary?.by_category.find((item) => item.category === category)?.total ?? 0
+    return planned > 0 && actual > planned
+  }).length
 
   const onDelete = () => {
     deleteTrip(tripId, {
@@ -642,87 +455,24 @@ export default function TripOverviewPage() {
     <main className="flex flex-col">
       {/* TripHero with cover image — replaced sticky admin header (Phase 3B-2) */}
       {isEditing ? (
-        /* Inline edit form when editing */
-        <div className="border-b bg-background px-4 py-4 md:px-10 md:py-5">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-                Editing
-              </span>
-            </div>
-            <input
-              autoFocus
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") cancelEditing()
-              }}
-              placeholder="Trip title"
-              className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-xl font-bold tracking-tight text-foreground focus:outline-none md:text-2xl"
-              disabled={isUpdating}
-            />
-            <DestinationAutocomplete
-              value={editDescription}
-              onChange={setEditDescription}
-              onSelect={(place) => {
-                setEditDescription(place.description)
-              }}
-              placeholder="Search city, province, or country"
-              className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-            />
-            {canRenderTripCover(editCover) && (
-              <div className="relative h-28 w-full overflow-hidden rounded-lg border border-input">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={editCover}
-                  alt="Trip cover preview"
-                  className="h-full w-full object-cover"
-                  onError={() => setEditCover("")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setEditCover("")}
-                  className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-            <TravelDateRangePicker
-              startDate={editStartDate}
-              endDate={editEndDate}
-              disabled={isUpdating}
-              onChange={(range) => {
-                setEditStartDate(range.startDate)
-                setEditEndDate(range.endDate)
-              }}
-            />
-            <ActionDisabledHint
-              id="trip-save-disabled-reason"
-              reason={tripSaveDisabledReason}
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={saveEdits}
-                disabled={isUpdating || Boolean(tripSaveDisabledReason)}
-                aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
-              >
-                <Check className="h-3.5 w-3.5" />
-                {isUpdating ? "Saving…" : "Save"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={cancelEditing}
-                disabled={isUpdating}
-              >
-                <X className="h-3.5 w-3.5" />
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
+        <TripEditForm
+          title={editTitle}
+          description={editDescription}
+          coverImageUrl={editCover}
+          startDate={editStartDate}
+          endDate={editEndDate}
+          isUpdating={isUpdating}
+          saveDisabledReason={tripSaveDisabledReason}
+          onTitleChange={setEditTitle}
+          onDescriptionChange={setEditDescription}
+          onCoverChange={setEditCover}
+          onDateChange={(range) => {
+            setEditStartDate(range.startDate)
+            setEditEndDate(range.endDate)
+          }}
+          onSave={saveEdits}
+          onCancel={cancelEditing}
+        />
       ) : (
         /* Display mode: full-bleed TripHero */
         <TripHero
@@ -849,60 +599,12 @@ export default function TripOverviewPage() {
           hasTransport={(transportations?.items.length ?? 0) > 0}
           hasBudget={trip.budget > 0}
           overBudget={trip.budget > 0 && (expenseSummary?.total_base ?? 0) > trip.budget}
+          emptyDayCount={emptyDayCount}
+          overCategoryCount={overCategoryCount}
         />
 
         <NextUp tripId={tripId} day={nextUpDay} activityCount={nextUpActivityCount} />
 
-        {/* Daily Itinerary */}
-
-        {/* Iter 97 — Daily Itinerary section header */}
-        <section className="mb-8 hidden">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-foreground">
-              Daily Itinerary
-            </h3>
-            <Link
-              href={`/trips/${tripId}`}
-              className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-            >
-              View All
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </Link>
-          </div>
-
-          {trip.days.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                No days added yet. Start planning your trip!
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {visibleDays.map((day) => (
-                  <DayCard key={day.id} day={day} tripId={tripId} />
-                ))}
-              </div>
-              {hasMoreDays && (
-                <div className="mt-4 text-center">
-                  <Link
-                    href={`/trips/${tripId}`}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  >
-                    View all {trip.days.length} days
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-
-        {/* Iter 98 — Recent Expenses */}
-        <section className="mb-10 hidden">
-          <RecentExpenses tripId={tripId} />
-        </section>
       </div>
 
       <ConfirmDialog

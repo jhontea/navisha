@@ -4,21 +4,15 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import {
-  Check,
   List,
   Map,
 } from "lucide-react"
 import { BackLink } from "@/components/BackLink"
-import { BottomSheet } from "@/components/BottomSheet"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { Button } from "@/components/ui/button"
 import { useTrip, useDeleteTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
-import { DestinationAutocomplete } from "@/features/trip/components/DestinationAutocomplete"
-import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRangePicker"
-import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
-import { canRenderTripCover } from "@/features/trip/lib/cover"
 import { TripHero } from "@/features/trip/components/TripHero"
+import { TripEditForm } from "@/features/trip/components/TripEditForm"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { DayPanel } from "@/features/activity/components/DayPanel"
 import { cn } from "@/lib/utils"
@@ -127,19 +121,39 @@ export default function TripDetailPage() {
 
   return (
     <main className="flex flex-col pb-4">
-      {/* TripHero always visible — editing happens in BottomSheet */}
-      <TripHero
-        title={trip.title}
-        description={trip.description}
-        startDate={trip.start_date}
-        endDate={trip.end_date}
-        baseCurrency={trip.base_currency}
-        coverImageUrl={trip.cover_image_url}
-        onEdit={startEditing}
-        onDelete={() => setConfirmDelete(true)}
-        shareTripId={id}
-        isDeleting={isDeleting}
-      />
+      {isEditing ? (
+        <TripEditForm
+          title={editTitle}
+          description={editDescription}
+          coverImageUrl={editCover}
+          startDate={editStartDate}
+          endDate={editEndDate}
+          isUpdating={isUpdating}
+          saveDisabledReason={tripSaveDisabledReason}
+          onTitleChange={setEditTitle}
+          onDescriptionChange={setEditDescription}
+          onCoverChange={setEditCover}
+          onDateChange={(range) => {
+            setEditStartDate(range.startDate)
+            setEditEndDate(range.endDate)
+          }}
+          onSave={saveEdits}
+          onCancel={cancelEditing}
+        />
+      ) : (
+        <TripHero
+          title={trip.title}
+          description={trip.description}
+          startDate={trip.start_date}
+          endDate={trip.end_date}
+          baseCurrency={trip.base_currency}
+          coverImageUrl={trip.cover_image_url}
+          onEdit={startEditing}
+          onDelete={() => setConfirmDelete(true)}
+          shareTripId={id}
+          isDeleting={isDeleting}
+        />
+      )}
 
       {/* Phase 3B-2: Tab navigation for trip sub-sections */}
       <TripTabBar tripId={id} />
@@ -229,61 +243,6 @@ export default function TripDetailPage() {
         onConfirm={onDelete}
       />
 
-      {/* Edit trip — BottomSheet (Loop 1: replaces inline edit) */}
-      <BottomSheet open={isEditing} onClose={cancelEditing} title="Edit Trip">
-        <div className="space-y-3">
-          <input
-            autoFocus
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="Trip title"
-            className="w-full rounded-lg border border-primary bg-background px-3 py-1.5 text-lg font-bold focus:outline-none"
-            disabled={isUpdating}
-          />
-          <DestinationAutocomplete
-            value={editDescription}
-            onChange={setEditDescription}
-            onSelect={(place) => {
-              setEditDescription(place.description)
-            }}
-            placeholder="Search city, province, or country"
-            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
-          />
-          {canRenderTripCover(editCover) && (
-            <div className="relative h-28 w-full overflow-hidden rounded-lg border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={editCover} alt="Cover preview" className="h-full w-full object-cover" onError={() => setEditCover("")} />
-              <button type="button" onClick={() => setEditCover("")} className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs text-white hover:bg-black/70">Remove</button>
-            </div>
-          )}
-          <TravelDateRangePicker
-            startDate={editStartDate}
-            endDate={editEndDate}
-            disabled={isUpdating}
-            onChange={(range) => {
-              setEditStartDate(range.startDate)
-              setEditEndDate(range.endDate)
-            }}
-          />
-          <ActionDisabledHint
-            id="trip-save-disabled-reason"
-            reason={tripSaveDisabledReason}
-          />
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={saveEdits}
-              disabled={isUpdating || Boolean(tripSaveDisabledReason)}
-              aria-describedby={tripSaveDisabledReason ? "trip-save-disabled-reason" : undefined}
-              className="flex-1"
-            >
-              <Check className="h-4 w-4" /> {isUpdating ? "Saving…" : "Save Changes"}
-            </Button>
-            <Button type="button" variant="outline" onClick={cancelEditing} disabled={isUpdating}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
     </main>
   )
 }
