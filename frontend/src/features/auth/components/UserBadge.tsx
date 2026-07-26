@@ -15,9 +15,10 @@ export function UserBadge() {
       {user.avatar_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={user.id}
           src={user.avatar_url}
           alt={user.name}
-          className="h-6 w-6 rounded-full"
+          className="h-6 w-6 rounded-full object-cover"
         />
       ) : (
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">

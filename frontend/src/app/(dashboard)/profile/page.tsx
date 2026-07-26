@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useAuth, useLogout } from "@/features/auth/hooks"
 import { StatsSection } from "@/features/trip/components/StatsSection"
 import { ArrowLeftRight, LogOut, ChevronRight, Shield, FileText, Mail } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 /**
  * Profile page — Iter 86-92
@@ -16,7 +17,7 @@ import { ArrowLeftRight, LogOut, ChevronRight, Shield, FileText, Mail } from "lu
  * 92: Max-width constraint for readability
  */
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const { mutate: logout, isPending: loggingOut } = useLogout()
 
   return (
@@ -34,41 +35,51 @@ export default function ProfilePage() {
 
       {/* Iter 86 — Profile card: gradient ring, larger avatar */}
       <div className="glass-lg mb-6 rounded-2xl p-6 flex flex-col items-center text-center">
-        <div className="mb-4 p-0.5 rounded-full bg-gradient-to-br from-[hsl(var(--chromatic-sunset))] via-[hsl(var(--chromatic-aurora))] to-[hsl(var(--chromatic-sky))] shadow-lg">
-          {user?.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.avatar_url}
-              alt={user.name ?? "User avatar"}
-              className="h-20 w-20 rounded-full border-2 border-background object-cover"
-            />
-          ) : (
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(var(--chromatic-sunset))] via-[hsl(var(--chromatic-aurora))] to-[hsl(var(--chromatic-sky))] border-2 border-background text-3xl font-bold text-white"
-              aria-label={`Avatar for ${user?.name ?? "user"}`}
-            >
-              {user?.name?.charAt(0).toUpperCase() ?? "?"}
+        {isLoading ? (
+          <div className="flex min-h-[132px] flex-col items-center" aria-label="Loading profile">
+            <Skeleton variant="avatar" className="mb-4 h-[84px] w-[84px]" />
+            <Skeleton variant="text" className="mb-2 h-6 w-36" />
+            <Skeleton variant="text" className="h-4 w-48" />
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 p-0.5 rounded-full bg-gradient-to-br from-[hsl(var(--chromatic-sunset))] via-[hsl(var(--chromatic-aurora))] to-[hsl(var(--chromatic-sky))] shadow-lg">
+              {user?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={user.id}
+                  src={user.avatar_url}
+                  alt={user.name ?? "User avatar"}
+                  className="h-20 w-20 rounded-full border-2 border-background object-cover"
+                />
+              ) : (
+                <div
+                  className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(var(--chromatic-sunset))] via-[hsl(var(--chromatic-aurora))] to-[hsl(var(--chromatic-sky))] border-2 border-background text-3xl font-bold text-white"
+                  aria-label={`Avatar for ${user?.name ?? "user"}`}
+                >
+                  {user?.name?.charAt(0).toUpperCase() ?? "?"}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <h2 className="text-xl font-bold text-foreground font-heading">
-          {user?.name ?? "Traveler"}
-        </h2>
-        {user?.email && (
-          <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+            <h2 className="text-xl font-bold text-foreground font-heading">
+              {user?.name ?? "Traveler"}
+            </h2>
+            {user?.email && (
+              <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+            )}
+
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
+              <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+              Signed in with Google
+            </div>
+          </>
         )}
-
-        {/* Joined via Google */}
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
-          <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-          </svg>
-          Signed in with Google
-        </div>
       </div>
 
       {/* Travel stats */}
