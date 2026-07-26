@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { EmptyState } from "@/components/EmptyState"
 import {
   useCreateTransportation,
   useDeleteTransportation,
@@ -120,16 +121,20 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
           )}
 
           {isError && (
-            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
+            <div role="alert" className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
               <p className="text-sm text-destructive font-medium">Failed to load transportation entries.</p>
               <p className="text-xs text-muted-foreground mt-1">Check your connection and try again.</p>
             </div>
           )}
 
           {!isLoading && !isError && items.length === 0 && (
-            <div className="rounded-2xl border border-dashed p-8 text-center">
-              <p className="text-sm text-muted-foreground">No transportation logged yet.</p>
-            </div>
+            <EmptyState
+              icon={Plane}
+              size="sm"
+              title="No transportation logged yet"
+              description="Add a flight, train, bus, or transfer to keep the trip organized."
+              className="rounded-2xl border border-dashed border-border/50"
+            />
           )}
 
           <div className="space-y-3">

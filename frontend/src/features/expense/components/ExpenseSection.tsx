@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { ChevronDown, Pencil, Trash2, X } from "lucide-react"
+import { ChevronDown, Pencil, Receipt, Trash2, X } from "lucide-react"
+import { EmptyState } from "@/components/EmptyState"
 import { cn, formatCurrency } from "@/lib/utils"
 import {
   useCreateExpense,
@@ -334,15 +335,19 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
           )}
 
           {isError && (
-            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+            <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
               Failed to load expenses.
             </p>
           )}
 
           {!isLoading && !isError && items.length === 0 && (
-            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No expenses logged yet.
-            </p>
+            <EmptyState
+              icon={Receipt}
+              size="sm"
+              title="No expenses logged yet"
+              description="Add an expense to start tracking the trip budget."
+              className="rounded-2xl border border-dashed border-border/50"
+            />
           )}
 
           {!isLoading && !isError && isDateSort && grouped.length > 0 && (
