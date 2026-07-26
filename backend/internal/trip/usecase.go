@@ -357,7 +357,10 @@ func validateBudgetCategories(categories map[string]float64, totalBudget float64
 	}
 	var total float64
 	for category, amount := range categories {
-		if strings.TrimSpace(category) == "" || amount < 0 {
+		if !validBudgetCategory(category) {
+			return ErrInvalidBudgetCategory
+		}
+		if amount < 0 {
 			return ErrInvalidBudget
 		}
 		total += amount
@@ -366,6 +369,15 @@ func validateBudgetCategories(categories map[string]float64, totalBudget float64
 		return ErrInvalidBudget
 	}
 	return nil
+}
+
+func validBudgetCategory(category string) bool {
+	switch category {
+	case "accommodation", "transport", "food", "activity", "souvenir", "shopping", "other":
+		return true
+	default:
+		return false
+	}
 }
 
 func generateDays(tripID string, start, end time.Time) []Day {
