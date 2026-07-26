@@ -7,14 +7,12 @@ export default function CurrencyPage() {
       <BackLink href="/dashboard" label="Back to Dashboard" className="mb-6" />
 
       {/* Page header */}
-      <header className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-bold tracking-tight text-gradient-sunset md:text-3xl">
-            Currency Converter
-          </h1>
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Convert between currencies using live exchange rates
+      <header className="mb-10 text-center">
+        <h1 className="text-headline-lg font-headline-lg text-gradient-sunset mb-2">
+          Currency Converter
+        </h1>
+        <p className="text-body-md font-body-md text-muted-foreground">
+          Real-time exchange rates for your next adventure.
         </p>
       </header>
 

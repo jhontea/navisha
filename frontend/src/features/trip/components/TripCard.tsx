@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/utils"
 import { Calendar, MapPin, ChevronRight, Clock } from "lucide-react"
 import {
   STATUS_LABEL,
-  tripStatus,
+  getTripDateMetrics,
   type TripStatus,
 } from "../lib/status"
 import type { Trip } from "../types"
@@ -25,22 +25,17 @@ const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
  * Iter 37 — total days shown always, not just when active
  */
 export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
-  const status = tripStatus(trip.start_date, trip.end_date)
+  const {
+    status,
+    totalDays,
+    currentDay,
+    percent: progressPct,
+    daysUntilStart,
+  } = getTripDateMetrics(trip.start_date, trip.end_date)
   const hasCover = canRenderTripCover(trip.cover_image_url)
   const style = STATUS_STYLE[status]
 
-  const today = new Date()
-  const start = new Date(trip.start_date)
-  const end = new Date(trip.end_date)
-  const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1)
-  const daysPassed = Math.max(0, Math.ceil((today.getTime() - start.getTime()) / 86400000))
-  const progressPct = status === "active"
-    ? Math.min(100, Math.round((daysPassed / totalDays) * 100))
-    : 0
-  const currentDay = Math.min(daysPassed + 1, totalDays)
-
   // Iter 37 — days-until / days-total label
-  const daysUntilStart = Math.ceil((start.getTime() - today.getTime()) / 86400000)
   const daysMeta =
     status === "upcoming"
       ? daysUntilStart > 0
