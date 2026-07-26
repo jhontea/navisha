@@ -14,6 +14,10 @@ import {
   ChevronRight,
   Check,
   X,
+  ListChecks,
+  AlertTriangle,
+  CheckCircle2,
+  TrendingUp,
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { BackLink } from "@/components/BackLink"
@@ -148,6 +152,157 @@ function RecentExpenses({ tripId }: { tripId: string }) {
         </div>
       )}
     </div>
+  )
+}
+
+type PlanningHealthProps = {
+  tripId: string
+  tripBudget: number
+  baseCurrency: string
+  actualSpent?: number
+  hasActivities: boolean
+  hasStay: boolean
+  hasTransport: boolean
+  hasDays: boolean
+}
+
+function PlanningHealth({
+  tripId,
+  tripBudget,
+  baseCurrency,
+  actualSpent,
+  hasActivities,
+  hasStay,
+  hasTransport,
+  hasDays,
+}: PlanningHealthProps) {
+  const checklistItems = [
+    { label: "Itinerary days added", done: hasDays, href: `/trips/${tripId}` },
+    { label: "Activities planned", done: hasActivities, href: `/trips/${tripId}` },
+    { label: "Accommodation arranged", done: hasStay, href: `/trips/${tripId}/stay` },
+    { label: "Transport arranged", done: hasTransport, href: `/trips/${tripId}/transport` },
+    { label: "Trip budget set", done: tripBudget > 0, href: `/trips/${tripId}/budget` },
+  ]
+  const completedItems = checklistItems.filter((item) => item.done).length
+  const checklistPercent = Math.round((completedItems / checklistItems.length) * 100)
+  const hasExpenseData = actualSpent !== undefined
+  const remaining = tripBudget - (actualSpent ?? 0)
+  const spentPercent = tripBudget > 0 && hasExpenseData
+    ? Math.round((actualSpent! / tripBudget) * 100)
+    : null
+  const overBudget = remaining < 0
+
+  return (
+    <section className="mb-8" aria-labelledby="trip-health-heading">
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planning health</p>
+          <h3 id="trip-health-heading" className="mt-1 text-lg font-bold text-foreground">
+            What needs your attention?
+          </h3>
+        </div>
+        <span className="text-xs text-muted-foreground">{completedItems} of {checklistItems.length} ready</span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="glass rounded-2xl p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ListChecks className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Planning checklist</h4>
+                <p className="text-xs text-muted-foreground">Core trip setup</p>
+              </div>
+            </div>
+            <span className="text-lg font-bold tabular-nums text-foreground">{checklistPercent}%</span>
+          </div>
+
+          <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted" aria-label={`${checklistPercent}% of planning checklist complete`}>
+            <div className="h-full rounded-full bg-gradient-to-r from-primary to-chromatic-ocean transition-all" style={{ width: `${checklistPercent}%` }} />
+          </div>
+
+          <div className="space-y-2">
+            {checklistItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-muted/60"
+              >
+                {item.done ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-chromatic-mint" aria-hidden="true" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-chromatic-amber" aria-hidden="true" />
+                )}
+                <span className={cn(item.done ? "text-muted-foreground" : "font-medium text-foreground")}>
+                  {item.label}
+                </span>
+                {!item.done && <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass rounded-2xl p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-sunset/10 text-chromatic-sunset">
+                <TrendingUp className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Planned vs actual budget</h4>
+                <p className="text-xs text-muted-foreground">{baseCurrency} trip health</p>
+              </div>
+            </div>
+            {spentPercent !== null && (
+              <span className={cn("text-lg font-bold tabular-nums", overBudget ? "text-destructive" : "text-foreground")}>
+                {spentPercent}%
+              </span>
+            )}
+          </div>
+
+          {tripBudget > 0 ? (
+            <>
+              <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted" aria-label={spentPercent === null ? "Budget usage unavailable" : `${spentPercent}% of budget used`}>
+                <div
+                  className={cn("h-full rounded-full transition-all", overBudget ? "bg-destructive" : "bg-chromatic-mint")}
+                  style={{ width: `${Math.min(spentPercent ?? 0, 100)}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Planned</p>
+                  <p className="mt-1 font-semibold tabular-nums text-foreground">{formatCurrency(tripBudget, baseCurrency)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Actual</p>
+                  <p className="mt-1 font-semibold tabular-nums text-foreground">
+                    {hasExpenseData ? formatCurrency(actualSpent!, baseCurrency) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">{overBudget ? "Over" : "Remaining"}</p>
+                  <p className={cn("mt-1 font-semibold tabular-nums", overBudget ? "text-destructive" : "text-chromatic-mint")}>
+                    {hasExpenseData ? formatCurrency(Math.abs(remaining), baseCurrency) : "—"}
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <Link href={`/trips/${tripId}/budget`} className="flex items-center justify-between rounded-xl border border-dashed border-border/60 p-4 text-sm hover:bg-muted/50">
+              <span className="text-muted-foreground">Set a trip budget to track variance.</span>
+              <ChevronRight className="h-4 w-4 text-primary" aria-hidden="true" />
+            </Link>
+          )}
+
+          <Link href={`/trips/${tripId}/budget`} className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+            View budget details
+            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -523,8 +678,16 @@ export default function TripOverviewPage() {
             </span>
           </div>
 
-          <div>
-          </div>
+          <PlanningHealth
+            tripId={tripId}
+            tripBudget={trip.budget}
+            baseCurrency={trip.base_currency}
+            actualSpent={expenseSummary?.total_base}
+            hasActivities={totalActivities > 0}
+            hasStay={(accommodations?.items.length ?? 0) > 0}
+            hasTransport={(transportations?.items.length ?? 0) > 0}
+            hasDays={trip.days.length > 0}
+          />
 
           {/* Iter 95 — Trip progress bar */}
           <div className="glass mb-6 rounded-2xl p-5">
