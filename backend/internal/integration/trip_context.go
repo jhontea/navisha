@@ -54,14 +54,15 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 	totalDays := len(days)
 
 	out := &summary.TripContext{
-		TripID:       tripID,
-		Title:        t.Title,
-		Destination:  t.Description,
-		StartDate:    t.StartDate,
-		EndDate:      t.EndDate,
-		TotalDays:    totalDays,
-		BaseCurrency: t.BaseCurrency,
-		Budget:       t.Budget,
+		TripID:        tripID,
+		Title:         t.Title,
+		Destination:   t.Description,
+		StartDate:     t.StartDate,
+		EndDate:       t.EndDate,
+		TotalDays:     totalDays,
+		BaseCurrency:  t.BaseCurrency,
+		Budget:        t.Budget,
+		TripUpdatedAt: t.UpdatedAt,
 	}
 
 	// Days + activities — Phase 3D: batch-fetch all activities in one query

@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Sparkles, Loader2, RefreshCw, AlertCircle, Trash2, ExternalLink } from "lucide-react"
+import { Sparkles, Loader2, RefreshCw, AlertCircle, AlertTriangle, Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { QuotaBadge } from "@/components/QuotaBadge"
 import { sanitizeText } from "@/lib/sanitize"
@@ -114,6 +114,12 @@ function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: str
           <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary sm:text-sm">
             AI Summary
           </span>
+          {summary.is_outdated && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-chromatic-amber/10 px-2.5 py-1 text-[11px] font-semibold text-chromatic-amber">
+              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              Outdated
+            </span>
+          )}
           <span className="text-[11px] text-muted-foreground sm:text-xs">
             {new Date(summary.updated_at).toLocaleString(undefined, {
               day: "numeric",
@@ -252,14 +258,26 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
             ) : (
               <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
             )}
-            <span className="sm:hidden">Regen</span>
-            <span className="hidden sm:inline">Regenerate</span>
+            <span className="sm:hidden">{summary.is_outdated ? "Update" : "Regen"}</span>
+            <span className="hidden sm:inline">{summary.is_outdated ? "Update Summary" : "Regenerate"}</span>
           </Button>
         </div>
       </div>
       <div className="mb-3 sm:mb-4">
         <QuotaBadge />
       </div>
+
+      {summary.is_outdated && !generate.isPending && (
+        <div className="mb-3 flex items-start gap-2 rounded-xl border border-chromatic-amber/20 bg-chromatic-amber/10 p-3 text-xs text-chromatic-amber sm:mb-4 sm:text-sm" role="status">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-semibold">Trip details changed</p>
+            <p className="mt-0.5 opacity-90">
+              This summary may not include your latest itinerary, stay, transport, or budget changes. Update it when you&apos;re ready.
+            </p>
+          </div>
+        </div>
+      )}
 
       {isRateLimited && (
         <div className="mb-3 flex items-start gap-2 rounded-lg bg-chromatic-amber/10 p-2 text-xs text-chromatic-amber sm:mb-4 sm:p-3 sm:text-sm">

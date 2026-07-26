@@ -4,27 +4,30 @@ import "time"
 
 // Summary is a persisted AI-generated trip summary. One per trip.
 type Summary struct {
-	ID        string
-	TripID    string
-	Content   string
-	Model     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID              string
+	TripID          string
+	Content         string
+	Model           string
+	SourceUpdatedAt time.Time
+	IsOutdated      bool
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // TripContext is the cross-domain snapshot fed to the LLM prompt. Assembled
 // by an adapter (internal/integration) so the summary package stays decoupled
 // from the individual domain packages.
 type TripContext struct {
-	TripID       string // Phase 3E: for deterministic style variation
-	Title        string
-	Destination  string
-	StartDate    time.Time
-	EndDate      time.Time
-	TotalDays    int
-	BaseCurrency string
-	Budget       float64
-	TotalSpent   float64
+	TripID        string // Phase 3E: for deterministic style variation
+	Title         string
+	Destination   string
+	StartDate     time.Time
+	EndDate       time.Time
+	TotalDays     int
+	BaseCurrency  string
+	Budget        float64
+	TotalSpent    float64
+	TripUpdatedAt time.Time
 
 	Days              []DayContext
 	Accommodations    []AccommodationContext

@@ -20,16 +20,17 @@ type fakeRepo struct {
 	verifyOwnerErr error
 }
 
-func (f *fakeRepo) Save(tripID, content, model string) (*Summary, error) {
+func (f *fakeRepo) Save(tripID, content, model string, sourceUpdatedAt time.Time) (*Summary, error) {
 	if f.saveErr != nil {
 		return nil, f.saveErr
 	}
 	f.saved = &Summary{
-		ID:        "s1",
-		TripID:    tripID,
-		Content:   content,
-		Model:     model,
-		UpdatedAt: time.Now(),
+		ID:              "s1",
+		TripID:          tripID,
+		Content:         content,
+		Model:           model,
+		SourceUpdatedAt: sourceUpdatedAt,
+		UpdatedAt:       time.Now(),
 	}
 	return f.saved, nil
 }
@@ -72,12 +73,13 @@ func (f *fakeProvider) GetTripContext(ctx context.Context, userID, tripID string
 
 func newTripContext() *TripContext {
 	return &TripContext{
-		Title:        "Bali Trip",
-		Destination:  "Bali, Indonesia",
-		StartDate:    time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
-		EndDate:      time.Date(2026, 7, 5, 0, 0, 0, 0, time.UTC),
-		TotalDays:    5,
-		BaseCurrency: "IDR",
+		Title:         "Bali Trip",
+		Destination:   "Bali, Indonesia",
+		StartDate:     time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:       time.Date(2026, 7, 5, 0, 0, 0, 0, time.UTC),
+		TotalDays:     5,
+		BaseCurrency:  "IDR",
+		TripUpdatedAt: time.Date(2026, 6, 30, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -102,6 +104,20 @@ func TestGenerate_NewSummary(t *testing.T) {
 	}
 	if s.Model != "test-model" {
 		t.Errorf("unexpected model: %q", s.Model)
+	}
+	if !s.SourceUpdatedAt.Equal(provider.ctx.TripUpdatedAt) {
+		t.Errorf("source timestamp = %s, want %s", s.SourceUpdatedAt, provider.ctx.TripUpdatedAt)
+	}
+}
+
+func TestToResponseIncludesFreshness(t *testing.T) {
+	sourceTime := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+	response := toResponse(&Summary{SourceUpdatedAt: sourceTime, IsOutdated: true})
+	if response["is_outdated"] != true {
+		t.Fatalf("is_outdated = %#v, want true", response["is_outdated"])
+	}
+	if response["source_updated_at"] != sourceTime {
+		t.Fatalf("source_updated_at = %#v, want %s", response["source_updated_at"], sourceTime)
 	}
 }
 
