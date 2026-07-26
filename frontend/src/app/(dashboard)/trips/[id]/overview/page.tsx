@@ -37,6 +37,7 @@ import { formatDate, formatCurrency, cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { ApiError } from "@/lib/api"
+import { toast } from "@/lib/toast"
 
 import type { Day } from "@/features/trip/types"
 
@@ -471,7 +472,7 @@ export default function TripOverviewPage() {
   }
 
   const saveEdits = () => {
-    if (!editTitle.trim()) return
+    if (!editTitle.trim() || isUpdating) return
     updateTrip(
       {
         title: editTitle.trim(),
@@ -484,7 +485,19 @@ export default function TripOverviewPage() {
         notes: trip.notes,
 
       },
-      { onSettled: () => setIsEditing(false) },
+      {
+        onSuccess: () => {
+          setIsEditing(false)
+          toast("Trip details updated.")
+        },
+        onError: (error) => {
+          const message =
+            error instanceof ApiError && error.status >= 400 && error.status < 500
+              ? error.message
+              : "Couldn’t save your changes. Please check your connection and try again."
+          toast(message, "error")
+        },
+      },
     )
   }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { EmptyState } from "@/components/EmptyState"
 import {
   useAccommodations,
   useCreateAccommodation,
@@ -36,7 +37,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
       {/* Add Stay Section */}
       <section>
         <div className="mb-6">
-          <h3 className="text-xl font-bold text-foreground mb-1">
+          <h3 className="font-display text-headline-sm text-foreground mb-1">
             Add Accommodation
           </h3>
           <p className="text-sm text-muted-foreground">
@@ -116,16 +117,20 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
           )}
 
           {isError && (
-            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
+            <div role="alert" className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
               <p className="text-sm text-destructive font-medium">Failed to load stays.</p>
               <p className="text-xs text-muted-foreground mt-1">Check your connection and try again.</p>
             </div>
           )}
 
           {!isLoading && !isError && items.length === 0 && (
-            <div className="rounded-2xl border border-dashed p-8 text-center">
-              <p className="text-sm text-muted-foreground">No stays logged yet.</p>
-            </div>
+            <EmptyState
+              icon={Hotel}
+              size="sm"
+              title="No stays logged yet"
+              description="Add a hotel, hostel, or apartment to keep accommodation details organized."
+              className="rounded-2xl border border-dashed border-border/50"
+            />
           )}
 
           <div className="space-y-3">

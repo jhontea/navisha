@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { BackLink } from "@/components/BackLink"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { EmptyState } from "@/components/EmptyState"
 import { useTrip, useDeleteTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
 import { TripHero } from "@/features/trip/components/TripHero"
@@ -202,15 +203,13 @@ export default function TripDetailPage() {
       ) : (
         <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 md:px-margin-desktop md:pb-8">
           {trip.days.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/50 py-14 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <List className="h-6 w-6 text-primary" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">No days yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">Generate your itinerary to see daily plans here.</p>
-              </div>
-            </div>
+            <EmptyState
+              icon={List}
+              size="sm"
+              title="No days yet"
+              description="Generate your itinerary to see daily plans here."
+              className="rounded-2xl border border-dashed border-border/50"
+            />
           ) : (
             <div className="flex flex-col gap-3 animate-fade-in-up">
               {trip.days.map((d, idx) => (
