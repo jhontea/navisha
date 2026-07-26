@@ -57,6 +57,14 @@ export default function TripBudgetPage() {
     endDate: editEndDate,
   })
   const budgetSaveDisabledReason = getBudgetSaveDisabledReason(rawBudget)
+  const categoryBudgetTotal = Object.values(categoryBudgetDraft).reduce((sum, value) => {
+    const amount = Number(value.replace(/,/g, ""))
+    return Number.isFinite(amount) ? sum + amount : sum
+  }, 0)
+  const draftTotalBudget = Number(rawBudget)
+  const categoryBudgetError = draftTotalBudget > 0 && categoryBudgetTotal > draftTotalBudget
+    ? "Category allocations cannot exceed the total budget."
+    : null
 
   const startEditing = () => {
     if (!trip) return
@@ -252,14 +260,14 @@ export default function TripBudgetPage() {
 
               <ActionDisabledHint
                 id="budget-save-disabled-reason"
-                reason={budgetSaveDisabledReason}
+                reason={budgetSaveDisabledReason ?? categoryBudgetError}
               />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleSaveBudget}
-                  disabled={isUpdating || Boolean(budgetSaveDisabledReason)}
-                  aria-describedby={budgetSaveDisabledReason ? "budget-save-disabled-reason" : undefined}
+                  disabled={isUpdating || Boolean(budgetSaveDisabledReason) || Boolean(categoryBudgetError)}
+                  aria-describedby={budgetSaveDisabledReason || categoryBudgetError ? "budget-save-disabled-reason" : undefined}
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-primary/25 transition-all hover:shadow-lg hover:shadow-primary/35 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   {isUpdating ? (

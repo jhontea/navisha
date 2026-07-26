@@ -71,6 +71,29 @@ func TestValidateDates(t *testing.T) {
 	}
 }
 
+func TestValidateBudgetCategories(t *testing.T) {
+	tests := []struct {
+		name       string
+		categories map[string]float64
+		total      float64
+		wantErr    error
+	}{
+		{name: "valid allocation", categories: map[string]float64{"food": 200, "activity": 300}, total: 1000},
+		{name: "zero total allows empty allocations", categories: map[string]float64{}, total: 0},
+		{name: "negative category", categories: map[string]float64{"food": -1}, total: 1000, wantErr: ErrInvalidBudget},
+		{name: "unknown category", categories: map[string]float64{"gifts": 100}, total: 1000, wantErr: ErrInvalidBudgetCategory},
+		{name: "allocation exceeds total", categories: map[string]float64{"food": 600, "activity": 500}, total: 1000, wantErr: ErrInvalidBudget},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateBudgetCategories(tc.categories, tc.total)
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("err = %v, want %v", err, tc.wantErr)
+			}
+		})
+	}
+}
+
 // ---------- Create ----------
 
 func TestUsecase_Create_Success(t *testing.T) {

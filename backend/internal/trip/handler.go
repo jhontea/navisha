@@ -341,6 +341,7 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrNotesTooLong, Code: http.StatusBadRequest, Message: "notes are too long"},
 		apperr.HTTPMapping{Err: ErrURLTooLong, Code: http.StatusBadRequest, Message: "cover image url is too long"},
 		apperr.HTTPMapping{Err: ErrInvalidBudget, Code: http.StatusBadRequest, Message: "budget must not be negative"},
+		apperr.HTTPMapping{Err: ErrInvalidBudgetCategory, Code: http.StatusBadRequest, Message: "invalid budget category"},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 	)
 }
