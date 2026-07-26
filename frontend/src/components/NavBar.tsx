@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { currencyApi } from "@/features/currency/api";
 import { useAuth } from "@/features/auth/hooks";
 import { tripApi } from "@/features/trip/api";
@@ -33,7 +34,7 @@ const NAV_ITEMS = [
 export function NavBar() {
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const prevPath = useRef(pathname);
   const [bouncing, setBouncing] = useState<string | null>(null);
@@ -186,7 +187,7 @@ export function NavBar() {
               onTouchStart={() => prefetchNav("/profile")}
               onFocus={() => prefetchNav("/profile")}
               aria-current={pathname === "/profile" ? "page" : undefined}
-              aria-label={`View profile: ${user?.name ?? "Account"}`}
+              aria-label={isLoading ? "Loading profile" : `View profile: ${user?.name ?? "Account"}`}
               className={cn(
                 "flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -195,9 +196,19 @@ export function NavBar() {
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
               )}
             >
-              {user?.avatar_url ? (
+              {isLoading ? (
+                <>
+                  <Skeleton variant="avatar" className="h-7 w-7" />
+                  <span className="hidden xl:flex flex-col gap-1">
+                    <Skeleton variant="text" className="h-2 w-5" />
+                    <Skeleton variant="text" className="h-3 w-14" />
+                  </span>
+                  <Skeleton variant="text" className="hidden h-4 w-12 lg:block xl:hidden" />
+                </>
+              ) : user?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
+                  key={user.id}
                   src={user.avatar_url}
                   alt={user.name ?? "User avatar"}
                   className={cn(
@@ -288,9 +299,12 @@ export function NavBar() {
                       : "group-hover:bg-muted/60",
                   )}
                 >
-                  {item.href === "/profile" && user?.avatar_url ? (
+                  {item.href === "/profile" && isLoading ? (
+                    <Skeleton variant="avatar" className="h-5 w-5" />
+                  ) : item.href === "/profile" && user?.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
+                      key={user.id}
                       src={user.avatar_url}
                       alt=""
                       aria-hidden="true"

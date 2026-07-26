@@ -5,6 +5,7 @@ import { TripList } from "@/features/trip/components/TripList"
 import { StatsSection } from "@/features/trip/components/StatsSection"
 import { Sparkles, Compass, ArrowLeftRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { Skeleton } from "@/components/ui/skeleton"
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -21,7 +22,7 @@ function getGreeting() {
  * Iter 32 — floating FAB on mobile: create new trip shortcut
  */
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const firstName = user?.name?.split(" ")[0] ?? "traveler"
 
   const hour = new Date().getHours()
@@ -32,9 +33,15 @@ export default function DashboardPage() {
 
       {/* ── Greeting Header ── */}
       <header className="mb-8">
-        <p className="text-sm text-muted-foreground tracking-wide">
-          {getGreeting()}, <span className="font-semibold text-foreground">{firstName}</span> {greetingEmoji}
-        </p>
+        <div className="text-sm text-muted-foreground tracking-wide">
+          {isLoading ? (
+            <Skeleton variant="text" className="h-4 w-40" aria-label="Loading account" />
+          ) : (
+            <>
+              {getGreeting()}, <span className="font-semibold text-foreground">{firstName}</span> {greetingEmoji}
+            </>
+          )}
+        </div>
         <h1 className="text-2xl font-bold tracking-tight font-heading md:text-3xl">
           <span className="text-gradient-sunset">
           Your Adventures

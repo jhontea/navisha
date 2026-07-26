@@ -32,10 +32,16 @@ export function useAuth() {
     }
   }, [query.isSuccess, query.isError, query.data, setUser, setLoading])
 
+  // TanStack Query already has the freshest value during render. Prefer it
+  // over waiting one extra render for the Zustand synchronization effect.
+  const resolvedUser = query.isSuccess ? query.data : query.isError ? null : user
+  const authIsLoading =
+    !resolvedUser && !query.isError && (query.isLoading || isLoading)
+
   return {
-    user,
-    isLoading: query.isLoading || isLoading,
-    isAuthenticated: !!user,
+    user: resolvedUser,
+    isLoading: authIsLoading,
+    isAuthenticated: !!resolvedUser,
   }
 }
 
