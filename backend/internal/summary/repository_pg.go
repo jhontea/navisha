@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,18 +20,19 @@ func NewPostgresRepository(db *pgxpool.Pool) Repository {
 
 var _ Repository = (*postgresRepository)(nil)
 
-func (r *postgresRepository) Save(tripID, content, model string) (*Summary, error) {
+func (r *postgresRepository) Save(tripID, content, model string, sourceUpdatedAt time.Time) (*Summary, error) {
 	s := &Summary{}
 	err := r.db.QueryRow(context.Background(),
-		`INSERT INTO trip_summaries (trip_id, content, model)
-		 VALUES ($1, $2, $3)
+		`INSERT INTO trip_summaries (trip_id, content, model, source_updated_at)
+		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (trip_id) DO UPDATE
 		   SET content = EXCLUDED.content,
 		       model = EXCLUDED.model,
+		       source_updated_at = EXCLUDED.source_updated_at,
 		       updated_at = NOW()
-		 RETURNING id, trip_id, content, model, created_at, updated_at`,
-		tripID, content, model).
-		Scan(&s.ID, &s.TripID, &s.Content, &s.Model, &s.CreatedAt, &s.UpdatedAt)
+		 RETURNING id, trip_id, content, model, source_updated_at, false, created_at, updated_at`,
+		tripID, content, model, sourceUpdatedAt).
+		Scan(&s.ID, &s.TripID, &s.Content, &s.Model, &s.SourceUpdatedAt, &s.IsOutdated, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("summary.Save: %w", err)
 	}
@@ -40,9 +42,13 @@ func (r *postgresRepository) Save(tripID, content, model string) (*Summary, erro
 func (r *postgresRepository) GetByTripID(tripID string) (*Summary, error) {
 	s := &Summary{}
 	err := r.db.QueryRow(context.Background(),
-		`SELECT id, trip_id, content, model, created_at, updated_at
-		 FROM trip_summaries WHERE trip_id = $1`, tripID).
-		Scan(&s.ID, &s.TripID, &s.Content, &s.Model, &s.CreatedAt, &s.UpdatedAt)
+		`SELECT s.id, s.trip_id, s.content, s.model, s.source_updated_at,
+		        (t.updated_at > s.source_updated_at) AS is_outdated,
+		        s.created_at, s.updated_at
+		 FROM trip_summaries s
+		 JOIN trips t ON t.id = s.trip_id
+		 WHERE s.trip_id = $1`, tripID).
+		Scan(&s.ID, &s.TripID, &s.Content, &s.Model, &s.SourceUpdatedAt, &s.IsOutdated, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound

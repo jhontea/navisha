@@ -24,7 +24,11 @@ export function useTripSummary(tripId: string) {
     },
     enabled: !!tripId,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 min — don't refetch immediately after generate
+    // Freshness is a cheap metadata comparison on the backend. Always check
+    // again when returning to Overview so edits made in other trip sections
+    // surface the outdated state immediately.
+    staleTime: 0,
+    refetchOnMount: "always",
   })
 }
 

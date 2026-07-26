@@ -70,6 +70,7 @@ export function useUpdateTrip(id: string) {
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["summary", id], refetchType: "all" })
     },
   })
 }

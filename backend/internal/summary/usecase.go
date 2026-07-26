@@ -84,7 +84,7 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 		return nil, fmt.Errorf("%w: empty response", ErrLLMUnavailable)
 	}
 
-	return u.repo.Save(tripID, content, u.model)
+	return u.repo.Save(tripID, content, u.model, tripCtx.TripUpdatedAt)
 }
 
 // Get returns the cached summary. Verifies ownership via the repository's

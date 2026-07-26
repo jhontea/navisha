@@ -84,12 +84,14 @@ func (h *Handler) Delete(c echo.Context) error {
 
 func toResponse(s *Summary) map[string]any {
 	return map[string]any{
-		"id":         s.ID,
-		"trip_id":    s.TripID,
-		"content":    s.Content,
-		"model":      s.Model,
-		"created_at": s.CreatedAt,
-		"updated_at": s.UpdatedAt,
+		"id":                s.ID,
+		"trip_id":           s.TripID,
+		"content":           s.Content,
+		"model":             s.Model,
+		"source_updated_at": s.SourceUpdatedAt,
+		"is_outdated":       s.IsOutdated,
+		"created_at":        s.CreatedAt,
+		"updated_at":        s.UpdatedAt,
 	}
 }
 
