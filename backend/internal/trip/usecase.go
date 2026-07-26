@@ -38,25 +38,27 @@ type UsecaseInterface interface {
 }
 
 type CreateInput struct {
-	Title         string
-	Description   string
-	StartDate     time.Time
-	EndDate       time.Time
-	BaseCurrency  string
-	Budget        float64
-	CoverImageURL string
-	Notes         string
+	Title            string
+	Description      string
+	StartDate        time.Time
+	EndDate          time.Time
+	BaseCurrency     string
+	Budget           float64
+	BudgetCategories map[string]float64
+	CoverImageURL    string
+	Notes            string
 }
 
 type UpdateInput struct {
-	Title         string
-	Description   string
-	StartDate     time.Time
-	EndDate       time.Time
-	BaseCurrency  string
-	Budget        *float64 // nil = leave unchanged; &0.0 = explicitly clear
-	CoverImageURL string
-	Notes         string
+	Title            string
+	Description      string
+	StartDate        time.Time
+	EndDate          time.Time
+	BaseCurrency     string
+	Budget           *float64           // nil = leave unchanged; &0.0 = explicitly clear
+	BudgetCategories map[string]float64 // nil = leave unchanged
+	CoverImageURL    string
+	Notes            string
 }
 
 type Usecase struct {
@@ -82,6 +84,9 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 	if err := validateBudget(in.Budget); err != nil {
 		return nil, err
 	}
+	if err := validateBudgetCategories(in.BudgetCategories, in.Budget); err != nil {
+		return nil, err
+	}
 
 	// Loop 14: strip HTML tags from user-provided text before storing.
 	in.Title = sanitize.Text(in.Title)
@@ -89,15 +94,16 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 	in.Notes = sanitize.Text(in.Notes)
 
 	t := &Trip{
-		UserID:        userID,
-		Title:         in.Title,
-		Description:   in.Description,
-		StartDate:     in.StartDate,
-		EndDate:       in.EndDate,
-		BaseCurrency:  in.BaseCurrency,
-		Budget:        in.Budget,
-		CoverImageURL: in.CoverImageURL,
-		Notes:         in.Notes,
+		UserID:           userID,
+		Title:            in.Title,
+		Description:      in.Description,
+		StartDate:        in.StartDate,
+		EndDate:          in.EndDate,
+		BaseCurrency:     in.BaseCurrency,
+		Budget:           in.Budget,
+		BudgetCategories: in.BudgetCategories,
+		CoverImageURL:    in.CoverImageURL,
+		Notes:            in.Notes,
 	}
 
 	tx, err := u.repo.BeginTx(ctx)
@@ -198,6 +204,15 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 			return nil, err
 		}
 	}
+	if in.BudgetCategories != nil {
+		budget := existing.Budget
+		if in.Budget != nil {
+			budget = *in.Budget
+		}
+		if err := validateBudgetCategories(in.BudgetCategories, budget); err != nil {
+			return nil, err
+		}
+	}
 
 	// Loop 14: strip HTML tags from user-provided text before storing.
 	in.Title = sanitize.Text(in.Title)
@@ -213,6 +228,9 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	existing.BaseCurrency = in.BaseCurrency
 	if in.Budget != nil {
 		existing.Budget = *in.Budget
+	}
+	if in.BudgetCategories != nil {
+		existing.BudgetCategories = in.BudgetCategories
 	}
 	existing.CoverImageURL = in.CoverImageURL
 	existing.Notes = in.Notes
@@ -328,6 +346,23 @@ func validateFields(title, description, notes, coverURL string) error {
 // validateBudget rejects negative budget values. Zero is allowed (no budget set).
 func validateBudget(budget float64) error {
 	if budget < 0 {
+		return ErrInvalidBudget
+	}
+	return nil
+}
+
+func validateBudgetCategories(categories map[string]float64, totalBudget float64) error {
+	if categories == nil {
+		return nil
+	}
+	var total float64
+	for category, amount := range categories {
+		if strings.TrimSpace(category) == "" || amount < 0 {
+			return ErrInvalidBudget
+		}
+		total += amount
+	}
+	if totalBudget > 0 && total > totalBudget {
 		return ErrInvalidBudget
 	}
 	return nil

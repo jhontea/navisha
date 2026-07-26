@@ -3,6 +3,7 @@ package trip
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,6 +19,28 @@ type postgresRepository struct {
 
 func NewPostgresRepository(db *pgxpool.Pool) Repository {
 	return &postgresRepository{db: db}
+}
+
+func encodeBudgetCategories(categories map[string]float64) []byte {
+	if categories == nil {
+		return []byte(`{}`)
+	}
+	b, err := json.Marshal(categories)
+	if err != nil {
+		return []byte(`{}`)
+	}
+	return b
+}
+
+func decodeBudgetCategories(raw []byte) map[string]float64 {
+	categories := map[string]float64{}
+	if len(raw) == 0 {
+		return categories
+	}
+	if err := json.Unmarshal(raw, &categories); err != nil || categories == nil {
+		return map[string]float64{}
+	}
+	return categories
 }
 
 var _ Repository = (*postgresRepository)(nil)
@@ -60,7 +83,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	if hasCursor {
 		rows, qErr = r.db.Query(context.Background(),
 			`SELECT id, user_id, title, description, start_date, end_date,
-			        base_currency, budget, cover_image_url, notes, created_at, updated_at
+			        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 			 FROM trips
 			 WHERE user_id = $1 AND (start_date, id) < ($2, $3)
 			 ORDER BY start_date DESC, id DESC
@@ -69,7 +92,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	} else {
 		rows, qErr = r.db.Query(context.Background(),
 			`SELECT id, user_id, title, description, start_date, end_date,
-			        base_currency, budget, cover_image_url, notes, created_at, updated_at
+			        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 			 FROM trips
 			 WHERE user_id = $1
 			 ORDER BY start_date DESC, id DESC
@@ -84,11 +107,13 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	trips := []Trip{}
 	for rows.Next() {
 		var t Trip
+		var budgetCategories []byte
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
-			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &t.CoverImageURL,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &budgetCategories, &t.CoverImageURL,
 			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return ListResult{}, fmt.Errorf("trip.List scan: %w", err)
 		}
+		t.BudgetCategories = decodeBudgetCategories(budgetCategories)
 		trips = append(trips, t)
 	}
 
@@ -127,7 +152,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 		rows, qErr = r.db.Query(context.Background(),
 			fmt.Sprintf(
 				`SELECT id, user_id, title, description, start_date, end_date,
-				 base_currency, budget, cover_image_url, notes, created_at, updated_at
+					 base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 				 FROM trips
 				 WHERE user_id = $1%s AND (start_date, id) < ($%d, $%d)
 				 ORDER BY start_date DESC, id DESC
@@ -140,7 +165,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 		rows, qErr = r.db.Query(context.Background(),
 			fmt.Sprintf(
 				`SELECT id, user_id, title, description, start_date, end_date,
-				 base_currency, budget, cover_image_url, notes, created_at, updated_at
+					 base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 				 FROM trips
 				 WHERE user_id = $1%s
 				 ORDER BY start_date DESC, id DESC
@@ -157,11 +182,13 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 	trips := []Trip{}
 	for rows.Next() {
 		var t Trip
+		var budgetCategories []byte
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
-			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &t.CoverImageURL,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &budgetCategories, &t.CoverImageURL,
 			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return ListResult{}, fmt.Errorf("trip.ListFiltered scan: %w", err)
 		}
+		t.BudgetCategories = decodeBudgetCategories(budgetCategories)
 		trips = append(trips, t)
 	}
 
@@ -177,7 +204,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, error) {
 	rows, err := r.db.Query(context.Background(),
 		`SELECT id, user_id, title, description, start_date, end_date,
-		        base_currency, budget, cover_image_url, notes, created_at, updated_at
+		        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 		 FROM trips
 		 WHERE user_id = $1 AND end_date >= CURRENT_DATE
 		 ORDER BY start_date ASC
@@ -191,11 +218,13 @@ func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, err
 	trips := []Trip{}
 	for rows.Next() {
 		var t Trip
+		var budgetCategories []byte
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Title, &t.Description,
-			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &t.CoverImageURL,
+			&t.StartDate, &t.EndDate, &t.BaseCurrency, &t.Budget, &budgetCategories, &t.CoverImageURL,
 			&t.Notes, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("trip.ListUpcoming scan: %w", err)
 		}
+		t.BudgetCategories = decodeBudgetCategories(budgetCategories)
 		trips = append(trips, t)
 	}
 	return trips, nil
@@ -203,36 +232,40 @@ func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, err
 
 func (r *postgresRepository) FindByID(id string) (*Trip, error) {
 	t := &Trip{}
+	var budgetCategories []byte
 	err := r.db.QueryRow(context.Background(),
 		`SELECT id, user_id, title, description, start_date, end_date,
-		        base_currency, budget, cover_image_url, notes, created_at, updated_at
+		        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 		 FROM trips WHERE id = $1`, id).
 		Scan(&t.ID, &t.UserID, &t.Title, &t.Description, &t.StartDate, &t.EndDate,
-			&t.BaseCurrency, &t.Budget, &t.CoverImageURL, &t.Notes, &t.CreatedAt, &t.UpdatedAt)
+			&t.BaseCurrency, &t.Budget, &budgetCategories, &t.CoverImageURL, &t.Notes, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("trip.FindByID: %w", err)
 	}
+	t.BudgetCategories = decodeBudgetCategories(budgetCategories)
 	return t, nil
 }
 
 func (r *postgresRepository) InsertTrip(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error) {
 	out := &Trip{}
+	var budgetCategories []byte
 	err := tx.QueryRow(ctx,
 		`INSERT INTO trips (user_id, title, description, start_date, end_date,
-		                    base_currency, budget, cover_image_url, notes)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		                    base_currency, budget, budget_categories, cover_image_url, notes)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		 RETURNING id, user_id, title, description, start_date, end_date,
-		           base_currency, budget, cover_image_url, notes, created_at, updated_at`,
+		           base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at`,
 		t.UserID, t.Title, t.Description, t.StartDate, t.EndDate,
-		t.BaseCurrency, t.Budget, t.CoverImageURL, t.Notes).
+		t.BaseCurrency, t.Budget, encodeBudgetCategories(t.BudgetCategories), t.CoverImageURL, t.Notes).
 		Scan(&out.ID, &out.UserID, &out.Title, &out.Description, &out.StartDate, &out.EndDate,
-			&out.BaseCurrency, &out.Budget, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
+			&out.BaseCurrency, &out.Budget, &budgetCategories, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("trip.InsertTrip: %w", err)
 	}
+	out.BudgetCategories = decodeBudgetCategories(budgetCategories)
 	return out, nil
 }
 
@@ -274,23 +307,25 @@ func (r *postgresRepository) DeleteDays(ctx context.Context, tx pgx.Tx, tripID s
 
 func (r *postgresRepository) Update(t *Trip) (*Trip, error) {
 	out := &Trip{}
+	var budgetCategories []byte
 	err := r.db.QueryRow(context.Background(),
 		`UPDATE trips
 		    SET title = $2, description = $3, start_date = $4, end_date = $5,
-		        base_currency = $6, budget = $7, cover_image_url = $8, notes = $9, updated_at = NOW()
+		        base_currency = $6, budget = $7, budget_categories = $8, cover_image_url = $9, notes = $10, updated_at = NOW()
 		  WHERE id = $1
 		  RETURNING id, user_id, title, description, start_date, end_date,
-		            base_currency, budget, cover_image_url, notes, created_at, updated_at`,
+		            base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at`,
 		t.ID, t.Title, t.Description, t.StartDate, t.EndDate,
-		t.BaseCurrency, t.Budget, t.CoverImageURL, t.Notes).
+		t.BaseCurrency, t.Budget, encodeBudgetCategories(t.BudgetCategories), t.CoverImageURL, t.Notes).
 		Scan(&out.ID, &out.UserID, &out.Title, &out.Description, &out.StartDate, &out.EndDate,
-			&out.BaseCurrency, &out.Budget, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
+			&out.BaseCurrency, &out.Budget, &budgetCategories, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("trip.Update: %w", err)
 	}
+	out.BudgetCategories = decodeBudgetCategories(budgetCategories)
 	return out, nil
 }
 
@@ -298,23 +333,25 @@ func (r *postgresRepository) Update(t *Trip) (*Trip, error) {
 // Phase 3D / Iter 8: enables atomic trip+days updates.
 func (r *postgresRepository) UpdateTx(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error) {
 	out := &Trip{}
+	var budgetCategories []byte
 	err := tx.QueryRow(ctx,
 		`UPDATE trips
 		    SET title = $2, description = $3, start_date = $4, end_date = $5,
-		        base_currency = $6, budget = $7, cover_image_url = $8, notes = $9, updated_at = NOW()
+		        base_currency = $6, budget = $7, budget_categories = $8, cover_image_url = $9, notes = $10, updated_at = NOW()
 		  WHERE id = $1
 		  RETURNING id, user_id, title, description, start_date, end_date,
-		            base_currency, budget, cover_image_url, notes, created_at, updated_at`,
+		            base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at`,
 		t.ID, t.Title, t.Description, t.StartDate, t.EndDate,
-		t.BaseCurrency, t.Budget, t.CoverImageURL, t.Notes).
+		t.BaseCurrency, t.Budget, encodeBudgetCategories(t.BudgetCategories), t.CoverImageURL, t.Notes).
 		Scan(&out.ID, &out.UserID, &out.Title, &out.Description, &out.StartDate, &out.EndDate,
-			&out.BaseCurrency, &out.Budget, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
+			&out.BaseCurrency, &out.Budget, &budgetCategories, &out.CoverImageURL, &out.Notes, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("trip.UpdateTx: %w", err)
 	}
+	out.BudgetCategories = decodeBudgetCategories(budgetCategories)
 	return out, nil
 }
 
