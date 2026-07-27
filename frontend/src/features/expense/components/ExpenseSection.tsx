@@ -14,6 +14,7 @@ import {
 import type { CreateExpenseInput, Expense } from "../types"
 import { BudgetSummary } from "./BudgetSummary"
 import { ExpenseForm } from "./ExpenseForm"
+import { toast } from "@/lib/toast"
 
 import { CATEGORY_COLORS } from "../categoryColors"
 
@@ -408,16 +409,25 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
       {/* Confirm Delete */}
       <ConfirmDialog
         open={!!confirmingDelete}
-        onOpenChange={(o) => !o && setConfirmingDelete(null)}
+        onOpenChange={(open) => {
+          if (!open && !deleteMut.isPending) setConfirmingDelete(null)
+        }}
         title={`Delete "${confirmingDelete?.title ?? ""}"?`}
         description="This expense will be permanently removed from the trip's budget."
         confirmLabel="Delete"
         destructive
         isPending={deleteMut.isPending}
+        closeOnConfirm={false}
         onConfirm={() => {
-          if (confirmingDelete) {
+          if (confirmingDelete && !deleteMut.isPending) {
             deleteMut.mutate(confirmingDelete.id, {
-              onSettled: () => setConfirmingDelete(null),
+              onSuccess: () => {
+                setConfirmingDelete(null)
+                toast("Expense deleted.")
+              },
+              onError: () => {
+                toast("Couldn’t delete this expense. Please try again.", "error")
+              },
             })
           }
         }}
