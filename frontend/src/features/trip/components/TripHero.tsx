@@ -4,7 +4,7 @@ import { memo, useState } from "react";
 import { Calendar, Clock, CreditCard, MapPin, Pencil, Share2, Trash2 } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { canRenderTripCover } from "../lib/cover";
+import { resolveTripCover } from "../lib/cover";
 import { TripShareDialog } from "./TripShareDialog";
 
 interface TripHeroProps {
@@ -52,14 +52,15 @@ export const TripHero = memo(function TripHero({
     ) + 1
   );
 
-  const hasCover = canRenderTripCover(coverImageUrl);
+  const resolvedCoverUrl = resolveTripCover(coverImageUrl, description);
+  const hasCover = Boolean(resolvedCoverUrl);
 
   return (
     <div
       className={cn(
         "relative flex w-full flex-col justify-end overflow-hidden",
         "min-h-[220px] md:h-[240px]",
-        "mt-0 md:mt-0 md:max-w-max-width md:mx-auto md:rounded-2xl",
+        "-mt-4 md:mt-0 md:max-w-max-width md:mx-auto md:rounded-2xl",
         className,
       )}
     >
@@ -68,7 +69,7 @@ export const TripHero = memo(function TripHero({
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={coverImageUrl}
+            src={resolvedCoverUrl}
             alt=""
             aria-hidden="true"
             className="absolute inset-0 h-full w-full object-cover"

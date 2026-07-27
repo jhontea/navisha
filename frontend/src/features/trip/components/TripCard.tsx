@@ -8,12 +8,12 @@ import {
   type TripStatus,
 } from "../lib/status"
 import type { Trip } from "../types"
-import { canRenderTripCover } from "../lib/cover"
+import { resolveTripCover } from "../lib/cover"
 
 const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
-  upcoming: { chip: "bg-primary/15 text-primary border-primary/30", dot: "bg-primary" },
-  active:   { chip: "bg-chromatic-ocean/15 text-chromatic-ocean border-chromatic-ocean/30", dot: "bg-chromatic-ocean animate-pulse" },
-  past:     { chip: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground" },
+  upcoming: { chip: "border-primary/70", dot: "bg-primary" },
+  active:   { chip: "border-chromatic-ocean/70", dot: "bg-chromatic-ocean animate-pulse" },
+  past:     { chip: "border-muted-foreground/60", dot: "bg-muted-foreground" },
 }
 
 /**
@@ -32,7 +32,8 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
     percent: progressPct,
     daysUntilStart,
   } = getTripDateMetrics(trip.start_date, trip.end_date)
-  const hasCover = canRenderTripCover(trip.cover_image_url)
+  const coverUrl = resolveTripCover(trip.cover_image_url, trip.description)
+  const hasCover = Boolean(coverUrl)
   const style = STATUS_STYLE[status]
 
   // Iter 37 — days-until / days-total label
@@ -57,7 +58,7 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={trip.cover_image_url}
+              src={coverUrl}
               alt=""
               aria-hidden="true"
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -70,7 +71,7 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
 
         {/* Status chip — top-right */}
         <div
-          className={`absolute right-3 top-3 z-10 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md ${style.chip}`}
+          className={`absolute right-3 top-3 z-10 rounded-full border bg-black/50 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md ${style.chip}`}
           role="status"
           aria-label={`Trip status: ${STATUS_LABEL[status]}`}
         >

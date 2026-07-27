@@ -33,6 +33,7 @@ import {
 } from "@/features/trip/hooks/useTrips"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
+import { getDefaultTripCover } from "@/features/trip/lib/cover"
 import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
@@ -178,7 +179,7 @@ function GenerateTripPageContent() {
         start_date: result.start_date,
         end_date: result.end_date,
         draft,
-        cover_image_url: "",
+        cover_image_url: getDefaultTripCover(destination),
         description,
       })
       router.push(`/trips/${trip_id}/overview`)
