@@ -57,7 +57,7 @@ export const TripHero = memo(function TripHero({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden",
+        "relative flex w-full flex-col justify-end overflow-hidden",
         "min-h-[220px] md:h-[240px]",
         "mt-0 md:mt-0 md:max-w-max-width md:mx-auto md:rounded-2xl",
         className,
@@ -82,8 +82,8 @@ export const TripHero = memo(function TripHero({
       )}
 
       {/* ── Content — bottom anchored ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-5 max-[380px]:pb-4 md:px-margin-desktop md:pb-7">
+      <div className="relative z-10">
+        <div className="mx-auto w-full max-w-max-width px-margin-mobile py-5 md:px-margin-desktop md:py-7">
 
           {/* Title row: title + action buttons inline */}
           <div className="flex items-start justify-between gap-2 min-[390px]:gap-3">
