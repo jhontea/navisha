@@ -13,6 +13,7 @@ import type { CreateTransportationInput, Transportation } from "../types"
 import { TransportationForm } from "./TransportationForm"
 import { TransportationCard } from "./TransportationCard"
 import { Plane, Plus } from "lucide-react"
+import { toast } from "@/lib/toast"
 
 interface Props {
   tripId: string
@@ -174,16 +175,25 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
 
       <ConfirmDialog
         open={!!confirmingDelete}
-        onOpenChange={(o) => !o && setConfirmingDelete(null)}
+        onOpenChange={(open) => {
+          if (!open && !deleteMut.isPending) setConfirmingDelete(null)
+        }}
         title={`Delete "${confirmingDelete?.label || confirmingDelete?.type || ""}"?`}
         description="This transportation entry will be permanently removed."
         confirmLabel="Delete"
         destructive
         isPending={deleteMut.isPending}
+        closeOnConfirm={false}
         onConfirm={() => {
-          if (confirmingDelete) {
+          if (confirmingDelete && !deleteMut.isPending) {
             deleteMut.mutate(confirmingDelete.id, {
-              onSettled: () => setConfirmingDelete(null),
+              onSuccess: () => {
+                setConfirmingDelete(null)
+                toast("Transportation removed.")
+              },
+              onError: () => {
+                toast("Couldn’t remove this transportation entry. Please try again.", "error")
+              },
             })
           }
         }}

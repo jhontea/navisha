@@ -13,6 +13,7 @@ import type { Accommodation, CreateAccommodationInput } from "../types"
 import { AccommodationForm } from "./AccommodationForm"
 import { AccommodationCard } from "./AccommodationCard"
 import { Hotel, Plus } from "lucide-react"
+import { toast } from "@/lib/toast"
 
 interface Props {
   tripId: string
@@ -169,16 +170,25 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
 
       <ConfirmDialog
         open={!!confirmingDelete}
-        onOpenChange={(o) => !o && setConfirmingDelete(null)}
+        onOpenChange={(open) => {
+          if (!open && !deleteMut.isPending) setConfirmingDelete(null)
+        }}
         title={`Delete "${confirmingDelete?.name ?? ""}"?`}
         description="This stay will be permanently removed from the trip."
         confirmLabel="Delete"
         destructive
         isPending={deleteMut.isPending}
+        closeOnConfirm={false}
         onConfirm={() => {
-          if (confirmingDelete) {
+          if (confirmingDelete && !deleteMut.isPending) {
             deleteMut.mutate(confirmingDelete.id, {
-              onSettled: () => setConfirmingDelete(null),
+              onSuccess: () => {
+                setConfirmingDelete(null)
+                toast("Stay removed.")
+              },
+              onError: () => {
+                toast("Couldn’t remove this stay. Please try again.", "error")
+              },
             })
           }
         }}
