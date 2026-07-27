@@ -7,6 +7,8 @@ import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
 import { getBudgetSaveDisabledReason } from "@/features/trip/lib/actionability"
+import { ApiError } from "@/lib/api"
+import { toast } from "@/lib/toast"
 
 const BUDGET_CATEGORIES = [
   ["transport", "Transport"],
@@ -38,8 +40,8 @@ export default function TripBudgetPage() {
     ? "Category allocations cannot exceed the total budget."
     : null
 
-  const handleSaveBudget = async () => {
-    if (!trip) return
+  const handleSaveBudget = () => {
+    if (!trip || isUpdating || budgetSaveDisabledReason || categoryBudgetError) return
     const budget = Number(rawBudget)
     if (isNaN(budget) || budget < 0) return
     const budgetCategories: Record<string, number> = {}
@@ -47,20 +49,35 @@ export default function TripBudgetPage() {
       const amount = Number(value.replace(/,/g, ""))
       if (Number.isFinite(amount) && amount > 0) budgetCategories[category] = amount
     })
-    updateTrip({
-      title: trip.title,
-      description: trip.description,
-      start_date: trip.start_date,
-      end_date: trip.end_date,
-      base_currency: trip.base_currency,
-      budget,
-      budget_categories: budgetCategories,
-      cover_image_url: trip.cover_image_url,
-      notes: trip.notes,
-    })
-    setEditingBudget(false)
-    setDisplayBudget("")
-    setRawBudget("")
+    updateTrip(
+      {
+        title: trip.title,
+        description: trip.description,
+        start_date: trip.start_date,
+        end_date: trip.end_date,
+        base_currency: trip.base_currency,
+        budget,
+        budget_categories: budgetCategories,
+        cover_image_url: trip.cover_image_url,
+        notes: trip.notes,
+      },
+      {
+        onSuccess: () => {
+          setEditingBudget(false)
+          setDisplayBudget("")
+          setRawBudget("")
+          setCategoryBudgetDraft({})
+          toast("Budget updated.")
+        },
+        onError: (error) => {
+          const message =
+            error instanceof ApiError && error.status >= 400 && error.status < 500
+              ? error.message
+              : "Couldn’t save your budget. Please check your connection and try again."
+          toast(message, "error")
+        },
+      },
+    )
   }
 
   const openEditBudget = () => {
@@ -116,7 +133,8 @@ export default function TripBudgetPage() {
               <button
                 type="button"
                 onClick={() => setEditingBudget(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                disabled={isUpdating}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50"
                 aria-label="Cancel editing budget"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -208,7 +226,8 @@ export default function TripBudgetPage() {
                 <button
                   type="button"
                   onClick={() => setEditingBudget(false)}
-                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  disabled={isUpdating}
+                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50"
                 >
                   Cancel
                 </button>
