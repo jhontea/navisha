@@ -21,7 +21,7 @@ import {
   TravelDateRangePicker,
 } from "./TravelDateRangePicker"
 import type { CreateTripInput, Trip } from "../types"
-import { canRenderTripCover } from "../lib/cover"
+import { canRenderTripCover, getDefaultTripCover } from "../lib/cover"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -111,7 +111,10 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       end_date: values.end_date,
       base_currency: values.base_currency,
       budget: values.budget ? Number(values.budget) : 0,
-      cover_image_url: coverPreview && !coverPreview.startsWith("blob:") ? coverPreview : "",
+      cover_image_url:
+        coverPreview && !coverPreview.startsWith("blob:")
+          ? coverPreview
+          : getDefaultTripCover(values.destination),
       notes: values.notes ?? "",
     })
   }

@@ -1,3 +1,14 @@
+const configuredR2Url =
+  process.env.NEXT_PUBLIC_R2_PUBLIC_URL ??
+  'https://pub-747dca221fc941d5bc8ab8099b318a8e.r2.dev'
+const r2PublicOrigin = (() => {
+  try {
+    return new URL(configuredR2Url).origin
+  } catch {
+    return 'https://pub-747dca221fc941d5bc8ab8099b318a8e.r2.dev'
+  }
+})()
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Disable React StrictMode in development — it double-mounts components
@@ -69,7 +80,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com",
+              `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
               "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
               "frame-src 'self' https://accounts.google.com",
               "object-src 'none'",
@@ -91,7 +102,7 @@ const nextConfig = {
                   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com",
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "font-src 'self' https://fonts.gstatic.com",
-                  "img-src 'self' data: blob: https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com",
+                  `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
                   "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
                   "frame-src 'self' https://accounts.google.com",
                   "object-src 'none'",

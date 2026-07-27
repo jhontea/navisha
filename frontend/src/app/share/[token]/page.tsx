@@ -23,7 +23,7 @@ import type {
   PublicTransportation,
   PublicTripDay,
 } from "@/features/trip/types"
-import { canRenderTripCover } from "@/features/trip/lib/cover"
+import { resolveTripCover } from "@/features/trip/lib/cover"
 import { formatDateRange } from "@/lib/utils"
 
 const SharedTripMap = dynamic(
@@ -149,10 +149,10 @@ export default function SharedTripPage({
       </header>
 
       <section className="relative mx-auto min-h-64 max-w-4xl overflow-hidden md:mt-6 md:rounded-3xl">
-        {canRenderTripCover(trip.cover_image_url) ? (
+        {resolveTripCover(trip.cover_image_url, trip.description) ? (
           <>
             <Image
-              src={trip.cover_image_url}
+              src={resolveTripCover(trip.cover_image_url, trip.description)}
               alt=""
               fill
               unoptimized

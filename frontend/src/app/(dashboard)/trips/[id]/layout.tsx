@@ -13,6 +13,7 @@ import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { useDeleteTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
+import { resolveTripCover } from "@/features/trip/lib/cover"
 import { ApiError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -107,7 +108,7 @@ export default function TripDetailLayout({ children }: { children: ReactNode }) 
     setEditDescription(trip.description ?? "")
     setEditStartDate(trip.start_date)
     setEditEndDate(trip.end_date)
-    setEditCover(trip.cover_image_url ?? "")
+    setEditCover(resolveTripCover(trip.cover_image_url, trip.description))
     setIsEditing(true)
   }
 
@@ -121,7 +122,7 @@ export default function TripDetailLayout({ children }: { children: ReactNode }) 
         end_date: editEndDate,
         base_currency: trip.base_currency,
         budget: trip.budget,
-        cover_image_url: editCover,
+        cover_image_url: editCover || resolveTripCover(trip.cover_image_url, editDescription),
         notes: trip.notes,
       },
       {
