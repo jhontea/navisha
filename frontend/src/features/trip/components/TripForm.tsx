@@ -5,15 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import {
-  CheckCircle2,
-  ChevronDown,
-  CreditCard,
-  Loader2,
-  MapPin,
-  Plus,
-  Sparkles,
-} from "lucide-react"
+import { ChevronDown, CreditCard, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel } from "@/lib/currency"
 import {
@@ -22,13 +14,13 @@ import {
   FormFieldLabel,
   fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
+import { FormActions } from "@/components/forms/FormActions"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import {
   getInclusiveDayCount,
   TravelDateRangePicker,
 } from "./TravelDateRangePicker"
 import type { CreateTripInput, Trip } from "../types"
-import { primaryTripActionButtonClassName } from "../lib/styles"
 import { canRenderTripCover } from "../lib/cover"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -375,33 +367,12 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       </div>
 
       {/* Form Actions */}
-      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`${primaryTripActionButtonClassName} disabled:cursor-not-allowed`}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              {initial ? "Saving…" : "Creating…"}
-            </>
-          ) : (
-            <>
-              {initial ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
-              {submitLabel ?? (initial ? "Save Changes" : "Create Trip")}
-            </>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          disabled={isSubmitting}
-          className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          Cancel
-        </button>
-      </div>
+      <FormActions
+        onCancel={() => router.back()}
+        isSubmitting={isSubmitting}
+        submittingLabel={initial ? "Saving…" : "Creating…"}
+        submitLabel={submitLabel ?? (initial ? "Save Changes" : "Create Trip")}
+      />
         </>
       )}
       </fieldset>

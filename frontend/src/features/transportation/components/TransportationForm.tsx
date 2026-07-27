@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { FormActions } from "@/components/forms/FormActions"
 import {
   FormFieldDescription,
   FormFieldError,
@@ -190,8 +191,8 @@ export function TransportationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-8" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="space-y-8">
+    <form onSubmit={handleSubmit(submit)} className="space-y-6" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="space-y-6">
       {/* Transportation Type */}
       <div>
         <FormFieldLabel id="transport-type-label" required className="mb-3 block uppercase tracking-wider">
@@ -465,6 +466,8 @@ export function TransportationForm({
       </section>
 
       {/* Form actions */}
+      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save Transport"} />
+      {/*
       <div className="flex items-center gap-3">
         <button
           type="submit"
@@ -494,7 +497,7 @@ export function TransportationForm({
         >
           Cancel
         </button>
-      </div>
+      </div> */}
       </fieldset>
     </form>
   )

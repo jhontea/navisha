@@ -1,8 +1,7 @@
 "use client"
 
-import { Check, X } from "lucide-react"
 import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
-import { Button } from "@/components/ui/button"
+import { FormActions } from "@/components/forms/FormActions"
 import { DestinationAutocomplete } from "./DestinationAutocomplete"
 import { TravelDateRangePicker } from "./TravelDateRangePicker"
 import { canRenderTripCover } from "../lib/cover"
@@ -95,21 +94,16 @@ export function TripEditForm({
 
         <ActionDisabledHint id="trip-save-disabled-reason" reason={saveDisabledReason ?? null} />
 
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={onSave}
-            disabled={isUpdating || Boolean(saveDisabledReason)}
-            aria-describedby={saveDisabledReason ? "trip-save-disabled-reason" : undefined}
-          >
-            <Check className="h-3.5 w-3.5" />
-            {isUpdating ? "Saving…" : "Save"}
-          </Button>
-          <Button size="sm" type="button" variant="outline" onClick={onCancel} disabled={isUpdating}>
-            <X className="h-3.5 w-3.5" />
-            Cancel
-          </Button>
-        </div>
+        <FormActions
+          className="border-t-0 pt-0"
+          onSubmit={onSave}
+          onCancel={onCancel}
+          submitType="button"
+          isSubmitting={isUpdating}
+          submitDisabled={Boolean(saveDisabledReason)}
+          submitAriaDescribedBy={saveDisabledReason ? "trip-save-disabled-reason" : undefined}
+          submitLabel="Save changes"
+        />
       </div>
     </div>
   )

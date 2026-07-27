@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { FormActions } from "@/components/forms/FormActions"
 import {
   FormFieldDescription,
   FormFieldError,
@@ -148,8 +149,8 @@ export function AccommodationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-8" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="space-y-8">
+    <form onSubmit={handleSubmit(submit)} className="space-y-6" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="space-y-6">
       {/* Stay Type Selector */}
       <div>
         <FormFieldLabel id="stay-type-label" className="mb-3 block uppercase tracking-wider">Stay Type</FormFieldLabel>
@@ -377,6 +378,8 @@ export function AccommodationForm({
       </div>
 
       {/* Form actions */}
+      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save Stay"} />
+      {/*
       <div className="flex items-center gap-3">
         <button
           type="submit"
@@ -406,7 +409,7 @@ export function AccommodationForm({
         >
           Cancel
         </button>
-      </div>
+      </div> */}
       </fieldset>
     </form>
   )
