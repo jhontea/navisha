@@ -9,6 +9,7 @@ import {
   FormFieldError,
   FormFieldLabel,
 } from "@/components/forms/FormFieldState"
+import { FormActions } from "@/components/forms/FormActions"
 import { useConvert } from "@/features/currency/hooks/useCurrency"
 import {
   EXPENSE_CATEGORIES,
@@ -109,8 +110,8 @@ export function ExpenseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-5" aria-busy={isSubmitting}>
-      <fieldset disabled={isSubmitting} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-6" aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting} className="flex flex-col gap-6">
       {/* Category icon picker */}
       <div className="flex flex-col gap-2">
         <FormFieldLabel id="expense-category-label" required>Category</FormFieldLabel>
@@ -304,27 +305,7 @@ export function ExpenseForm({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isSubmitting}
-          className="px-5 py-2.5 rounded-xl border border-border text-foreground font-label-md hover:bg-muted transition-colors disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={cn(
-            "px-5 py-2.5 rounded-xl bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white font-label-md",
-            "shadow-md shadow-chromatic-sunset/20 hover:shadow-lg hover:shadow-chromatic-sunset/30 transition-all active:scale-[0.98]",
-            "disabled:opacity-60",
-          )}
-        >
-          {isSubmitting ? "Saving…" : initial ? "Save changes" : "Add Expense"}
-        </button>
-      </div>
+      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Add Expense"} />
       </fieldset>
     </form>
   )
