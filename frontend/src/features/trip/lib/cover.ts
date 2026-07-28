@@ -1,3 +1,5 @@
+import { DEFAULT_TRIP_COVERS } from "./coverCatalog"
+
 /**
  * Google Places photo URLs already stored on trips must not be rendered while
  * the photo feature is disabled, otherwise every image load can be billed.
@@ -30,8 +32,6 @@ const R2_PUBLIC_ORIGIN = (() => {
     return "https://assets.navisha.cloud"
   }
 })()
-const LEGACY_R2_PUBLIC_ORIGIN =
-  "https://pub-747dca221fc941d5bc8ab8099b318a8e.r2.dev"
 const R2_IMAGE_TRANSFORM =
   "/cdn-cgi/image/width=1600,fit=cover,quality=75,format=auto"
 
@@ -45,39 +45,60 @@ function getOptimizedR2Url(pathname: string): string {
   return `${R2_PUBLIC_URL.replace(/\/$/, "")}${R2_IMAGE_TRANSFORM}${normalizedPath}`
 }
 
-const DEFAULT_TRIP_COVERS = [
-  { keywords: ["tokyo"], filename: "navisha-tokyo.png" },
-  { keywords: ["osaka"], filename: "navisha-osaka.png" },
-  { keywords: ["kyoto"], filename: "navisha-kyoto.png" },
-  { keywords: ["jakarta"], filename: "navisha-jakarta.png" },
-  { keywords: ["bali"], filename: "navisha-bali.png" },
-  { keywords: ["bogor"], filename: "navisha-bogor.png" },
-  { keywords: ["lampung"], filename: "navisha-lampung.png" },
-  { keywords: ["majalengka"], filename: "navisha-majalengka.png" },
-  { keywords: ["cirebon"], filename: "navisha-cirebon.png" },
-  { keywords: ["bandung"], filename: "navisha-bandung.png" },
-  { keywords: ["tangerang"], filename: "navisha-tangerang.png" },
-  { keywords: ["kuningan"], filename: "navisha-kuningan.png" },
-  { keywords: ["semarang"], filename: "navisha-semarang.png" },
-]
+function normalizeLocation(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    // Keep the matcher compatible with the project's current ES target.
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+}
+
+const COVER_BY_ALIAS = new Map<string, (typeof DEFAULT_TRIP_COVERS)[number]>()
+let MAX_ALIAS_WORDS = 1
+
+for (const cover of DEFAULT_TRIP_COVERS) {
+  for (const alias of cover.aliases) {
+    const normalizedAlias = normalizeLocation(alias)
+    if (!normalizedAlias) continue
+
+    COVER_BY_ALIAS.set(normalizedAlias, cover)
+    MAX_ALIAS_WORDS = Math.max(MAX_ALIAS_WORDS, normalizedAlias.split(" ").length)
+  }
+}
+
+function findCover(destination: string) {
+  const tokens = normalizeLocation(destination).split(" ").filter(Boolean)
+  let bestMatch:
+    | { cover: (typeof DEFAULT_TRIP_COVERS)[number]; phraseLength: number }
+    | undefined
+
+  // Evaluate every matching phrase so explicit catalog priorities can resolve
+  // cases such as a city cover versus its province cover.
+  for (let phraseLength = MAX_ALIAS_WORDS; phraseLength >= 1; phraseLength -= 1) {
+    for (let start = 0; start <= tokens.length - phraseLength; start += 1) {
+      const phrase = tokens.slice(start, start + phraseLength).join(" ")
+      const cover = COVER_BY_ALIAS.get(phrase)
+      if (!cover) continue
+
+      const isBetterMatch =
+        !bestMatch ||
+        (cover.priority ?? 0) > (bestMatch.cover.priority ?? 0) ||
+        ((cover.priority ?? 0) === (bestMatch.cover.priority ?? 0) &&
+          phraseLength > bestMatch.phraseLength)
+
+      if (isBetterMatch) bestMatch = { cover, phraseLength }
+    }
+  }
+
+  return bestMatch?.cover
+}
 
 /** Resolve a stable default cover for a destination when no custom cover exists. */
 export function getDefaultTripCover(destination?: string): string {
-  const normalized = destination
-    ?.toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-
-  if (normalized) {
-    const match = DEFAULT_TRIP_COVERS.find(({ keywords }) =>
-      keywords.some((keyword) =>
-        new RegExp(`(^|[\\s,/-])${keyword}($|[\\s,/-])`).test(normalized),
-      ),
-    )
-
-    if (match) return getOptimizedR2Url(`/trip-covers/${match.filename}`)
-  }
+  const match = destination ? findCover(destination) : undefined
+  if (match) return getOptimizedR2Url(`/trip-covers/${match.filename}`)
 
   return ""
 }
@@ -89,9 +110,6 @@ export function resolveTripCover(
 ): string {
   if (canRenderTripCover(coverImageUrl)) {
     const parsed = new URL(coverImageUrl)
-    if (parsed.origin === LEGACY_R2_PUBLIC_ORIGIN) {
-      return `${getOptimizedR2Url(parsed.pathname)}${parsed.search}${parsed.hash}`
-    }
     if (parsed.origin === R2_PUBLIC_ORIGIN) {
       return `${getOptimizedR2Url(parsed.pathname)}${parsed.search}${parsed.hash}`
     }
