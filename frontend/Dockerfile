@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 # ---- Dependencies stage ----
 FROM node:22-alpine AS deps
 WORKDIR /app
