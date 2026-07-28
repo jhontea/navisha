@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import type { HTMLAttributes, Ref } from "react"
 import {
   DndContext,
   PointerSensor,
@@ -23,7 +24,6 @@ import {
   Car,
   CheckSquare,
   Copy,
-  GripVertical,
   Hotel,
   Plane,
   Plus,
@@ -231,11 +231,15 @@ function TimelineDot({
   kind,
   activityType,
   transportType,
+  dragHandleProps,
+  dragHandleRef,
 }: {
   kind: "activity" | "transport" | "accommodation"
   activityType?: string
   transportType?: string
   accommodationEvent?: "check_in" | "check_out"
+  dragHandleProps?: HTMLAttributes<HTMLDivElement>
+  dragHandleRef?: Ref<HTMLDivElement>
 }) {
   if (kind === "transport") {
     const Icon = TRANSPORT_ICON[transportType ?? "other"] ?? Boxes
@@ -260,20 +264,20 @@ function TimelineDot({
   const bg = bgMap[activityType ?? "location"] ?? bgMap.location
   if (activityType === "note") {
     return (
-      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg)}>
+      <div ref={dragHandleRef} aria-label="Drag to reorder" role={dragHandleProps ? "button" : undefined} tabIndex={dragHandleProps ? 0 : undefined} className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg, dragHandleProps && "touch-none cursor-grab active:cursor-grabbing")} {...dragHandleProps}>
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><polyline points="15 3 15 9 21 9"/></svg>
       </div>
     )
   }
   if (activityType === "todo") {
     return (
-      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg)}>
+      <div ref={dragHandleRef} aria-label="Drag to reorder" role={dragHandleProps ? "button" : undefined} tabIndex={dragHandleProps ? 0 : undefined} className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg, dragHandleProps && "touch-none cursor-grab active:cursor-grabbing")} {...dragHandleProps}>
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
       </div>
     )
   }
   return (
-    <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg)}>
+    <div ref={dragHandleRef} aria-label="Drag to reorder" role={dragHandleProps ? "button" : undefined} tabIndex={dragHandleProps ? 0 : undefined} className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg, dragHandleProps && "touch-none cursor-grab active:cursor-grabbing")} {...dragHandleProps}>
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
     </div>
   )
@@ -319,6 +323,7 @@ function SortableActivityRow({
     transform,
     transition,
     isDragging,
+    setActivatorNodeRef,
   } = useSortable({ id: activity.id, disabled: selectMode })
 
   const style = {
@@ -331,30 +336,23 @@ function SortableActivityRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative flex gap-3 pl-12",
+        "relative flex gap-2 pl-10 sm:gap-3 sm:pl-12",
         isDragging && "opacity-50 z-50",
         selectMode && isSelected && "ring-2 ring-primary/40 rounded-2xl",
       )}
     >
       {/* Timeline dot */}
       <div className="absolute left-0 top-5 -translate-y-1/2">
-        <TimelineDot kind="activity" activityType={activity.type} />
+        <TimelineDot
+          kind="activity"
+          activityType={activity.type}
+          dragHandleProps={!selectMode ? { ...attributes, ...listeners } : undefined}
+          dragHandleRef={!selectMode ? setActivatorNodeRef : undefined}
+        />
       </div>
 
-      <div className="flex flex-1 items-start gap-2">
+      <div className="flex flex-1 items-start gap-2 min-w-0">
         {/* Drag handle — hidden in select mode (reorder disabled) */}
-        {!selectMode && (
-          <button
-            type="button"
-            aria-label="Drag to reorder"
-            className="mt-3 flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-        )}
-
         {/* Select checkbox — shown only in select mode */}
         {selectMode && (
           <button
@@ -682,7 +680,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
             if (item.kind === "transport") {
               const t = item.data as Transportation
               return (
-                <div key={`trans-${t.id}`} className="relative mb-3 flex gap-3 pl-12">
+                <div key={`trans-${t.id}`} className="relative mb-3 flex gap-2 pl-10 sm:gap-3 sm:pl-12">
                   <div className="absolute left-0 top-5 -translate-y-1/2">
                     <TimelineDot kind="transport" transportType={t.type} />
                   </div>
@@ -697,7 +695,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
               return (
                 <div
                   key={`accom-${a.id}-${item.event}`}
-                  className="relative mb-3 flex gap-3 pl-12"
+                  className="relative mb-3 flex gap-2 pl-10 sm:gap-3 sm:pl-12"
                 >
                   <div className="absolute left-0 top-5 -translate-y-1/2">
                     <TimelineDot kind="accommodation" />
@@ -760,7 +758,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
       )}
 
       {activities.length < 6 && (
-        <div className="relative pl-12">
+        <div className="relative pl-10 sm:pl-12">
           <div className="absolute left-0 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-primary/30 bg-gradient-to-br from-primary/15 to-chromatic-aurora/15 text-primary shadow-sm shadow-primary/10">
             <Sparkles className="h-4 w-4" />
           </div>
@@ -776,7 +774,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
       )}
 
       {/* Inline Add Activity form */}
-      <div className="relative pl-12">
+      <div className="relative pl-10 sm:pl-12">
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted-foreground">
           <Plus className="h-4 w-4" />
         </div>

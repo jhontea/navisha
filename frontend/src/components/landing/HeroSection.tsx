@@ -1,27 +1,26 @@
 "use client"
 
 import Link from "next/link"
-import { Lock, Monitor, Zap, CreditCard, PlayCircle, Plane, MapPin, DollarSign } from "lucide-react"
+import { Lock, Monitor, Zap, PlayCircle, Plane, MapPin, CalendarDays } from "lucide-react"
 import { GoogleIcon } from "@/components/GoogleIcon"
+import Image from "next/image"
+import travelHeroIllustration from "@/assets/illustrations/travel-hero.png"
 
 const TRUST_ITEMS = [
   { Icon: Lock, label: "Secure & Private" },
   { Icon: Monitor, label: "Works on all devices" },
   { Icon: Zap, label: "Offline ready" },
-  { Icon: CreditCard, label: "Free to start" },
 ]
 
-// Iter 11 — mock stats use Lucide icons instead of material-symbols
 const MOCK_STATS = [
   { label: "Trips Done", value: "12", Icon: Plane },
   { label: "Countries", value: "8", Icon: MapPin },
-  { label: "Days Planned", value: "94", Icon: DollarSign },
+  { label: "Days Planned", value: "94", Icon: CalendarDays },
 ]
 
 export function HeroSection() {
   return (
-    <section className="relative flex flex-col items-center text-center py-20 md:py-32 max-w-6xl mx-auto px-4 md:px-8 overflow-hidden">
-      {/* Iter 12 — animated gradient blobs: larger, softer, more layers */}
+    <section className="relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden px-4 pb-16 pt-16 text-center md:px-8 md:pb-12 md:pt-20">
       <div className="absolute inset-0 pointer-events-none -z-10" aria-hidden="true">
         <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-primary/8 blur-[160px] animate-float-orb" />
         <div className="absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-chromatic-ocean/8 blur-[160px] animate-float-orb" style={{ animationDelay: "-6s" }} />
@@ -29,7 +28,6 @@ export function HeroSection() {
         <div className="absolute top-1/4 right-1/4 h-[200px] w-[200px] rounded-full bg-chromatic-sky/5 blur-[80px] animate-float-orb" style={{ animationDelay: "-9s" }} />
       </div>
 
-      {/* Iter 13 — social proof badge: more polished pill with count */}
       <div
         className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-primary/20 bg-primary/6 px-5 py-2 text-sm text-primary animate-fade-in-up"
         role="note"
@@ -37,11 +35,8 @@ export function HeroSection() {
       >
         <span className="flex h-2 w-2 rounded-full bg-chromatic-ocean animate-pulse" aria-hidden="true" />
         <span className="font-semibold">10,000+ trips planned this month</span>
-        <span className="hidden sm:inline text-primary/60">•</span>
-        <span className="hidden sm:inline text-primary/80 font-medium">Join free</span>
       </div>
 
-      {/* Iter 14 — headline: tighter tracking, better line-height */}
       <h1
         className="font-display text-4xl sm:text-5xl md:text-[68px] md:leading-[76px] text-foreground mb-6 max-w-4xl leading-tight tracking-tight text-balance animate-fade-in-up"
         style={{ animationDelay: "80ms" }}
@@ -51,7 +46,6 @@ export function HeroSection() {
         <span className="text-gradient-sunset">Own Every Moment</span>
       </h1>
 
-      {/* Iter 15 — subtitle: slightly larger, better max-width */}
       <p
         className="text-lg md:text-xl text-muted-foreground mb-10 max-w-[520px] mx-auto leading-relaxed text-balance animate-fade-in-up"
         style={{ animationDelay: "160ms" }}
@@ -60,9 +54,8 @@ export function HeroSection() {
         AI craft the perfect trip — all in one beautiful place.
       </p>
 
-      {/* Iter 16 — CTAs: refined sizes, better gap, loading state hint */}
       <div
-        className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-16 animate-fade-in-up"
+        className="mb-12 flex flex-col items-center justify-center gap-3 animate-fade-in-up sm:flex-row"
         style={{ animationDelay: "240ms" }}
       >
         <Link
@@ -74,19 +67,26 @@ export function HeroSection() {
           Start Planning — Free
         </Link>
         <a
-          href="#features"
+          href="#how-it-works"
           className="flex items-center gap-2 rounded-2xl border border-border bg-card px-8 py-4 text-sm font-semibold text-foreground transition-all hover:bg-muted hover:border-primary/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[160px] justify-center"
-          onClick={(e) => {
-            e.preventDefault()
-            document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
-          }}
         >
           <PlayCircle className="h-[18px] w-[18px] text-primary shrink-0" aria-hidden="true" />
           See how it works
         </a>
       </div>
 
-      {/* Iter 17 — App preview: bigger, better mock content, no material icons */}
+      <div
+        className="mb-8 w-full max-w-[300px] animate-fade-in-up sm:max-w-[380px] md:max-w-[460px] xl:absolute xl:right-0 xl:top-36 xl:mb-0 xl:w-[320px]"
+        style={{ animationDelay: "280ms" }}
+      >
+        <Image
+          src={travelHeroIllustration}
+          alt="Traveler planning a route with a map, itinerary, and suitcase"
+          priority
+          className="h-auto w-full"
+        />
+      </div>
+
       <div
         className="relative w-full max-w-3xl mx-auto animate-fade-in-up"
         style={{ animationDelay: "320ms" }}
@@ -102,7 +102,6 @@ export function HeroSection() {
               <p className="text-xs text-muted-foreground mb-0.5">Good morning, Alex 👋</p>
               <h2 className="text-lg font-bold text-foreground">Your Adventures</h2>
             </div>
-            {/* Iter 11 — AI Generate badge: inline SVG sparkle instead of material */}
             <div className="h-8 rounded-xl bg-gradient-to-r from-primary to-chromatic-aurora flex items-center justify-center gap-1.5 px-3">
               <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2L9.5 9.5H2L7.5 14L5.5 21L12 17L18.5 21L16.5 14L22 9.5H14.5L12 2Z"/>
@@ -139,7 +138,6 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Iter 17 — Mock stats row: Lucide icons */}
           <div className="grid grid-cols-3 gap-2">
             {MOCK_STATS.map((s) => (
               <div key={s.label} className="glass rounded-xl p-3 text-center">
@@ -152,7 +150,6 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Iter 18 — Trust bar: larger gap, better vertical alignment */}
       <div
         className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground animate-fade-in-up"
         style={{ animationDelay: "400ms" }}

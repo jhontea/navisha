@@ -25,14 +25,14 @@ export function FeatureCard({
 }: FeatureCardProps) {
   return (
     <div
-      className={`glass group relative overflow-hidden rounded-3xl p-8 transition-all duration-500 hover:shadow-chromatic hover:-translate-y-1.5 focus-within:ring-2 focus-within:ring-primary/30 ${className}`}
+      className={`glass group relative overflow-hidden rounded-3xl p-6 transition-all duration-500 hover:shadow-chromatic hover:-translate-y-1.5 focus-within:ring-2 focus-within:ring-primary/30 md:p-8 ${className}`}
     >
       {/* Subtle hover glow */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-3xl bg-gradient-to-br from-white/8 to-transparent" aria-hidden="true" />
 
       <div className="relative z-10">
         {/* Icon */}
-        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl mb-6 transition-transform duration-300 group-hover:scale-110 ${accentMap[accent]}`}>
+        <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 md:mb-6 ${accentMap[accent]}`}>
           <Icon className="h-6 w-6" aria-hidden="true" />
         </div>
 
@@ -41,7 +41,7 @@ export function FeatureCard({
       </div>
 
       {visual && (
-        <div className="relative z-10 mt-6">{visual}</div>
+        <div className="relative z-10 mt-5 md:mt-6">{visual}</div>
       )}
     </div>
   )

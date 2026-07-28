@@ -5,11 +5,6 @@ import { useEffect, useState } from "react"
 import { Compass, ArrowRight, X, Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-/**
- * Landing page navigation.
- * Iter 19 — sticky nav: cleaner brand, better scroll opacity, improved mobile sheet
- * Iter 20 — "How it works" link added to mobile menu
- */
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -39,7 +34,6 @@ export function Navbar() {
     <nav
       className={cn(
         "sticky top-0 z-50 w-full h-16 transition-all duration-300",
-        // Iter 19 — scrolled: stronger blur, more visible shadow
         scrolled
           ? "bg-white/95 backdrop-blur-2xl shadow-sm border-b border-border/30"
           : "bg-transparent",
@@ -57,7 +51,6 @@ export function Navbar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
             <Compass className="h-4 w-4 text-white" aria-hidden="true" />
           </div>
-          {/* Iter 19 — brand text: gradient + tighter tracking */}
           <span className="text-gradient-sunset text-[15px] font-bold tracking-tight">
             Navisha
           </span>
@@ -68,10 +61,6 @@ export function Navbar() {
           <a
             href="#features"
             role="listitem"
-            onClick={(e) => {
-              e.preventDefault()
-              document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
-            }}
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             Features
@@ -79,29 +68,10 @@ export function Navbar() {
           <a
             href="#how-it-works"
             role="listitem"
-            onClick={(e) => {
-              e.preventDefault()
-              document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })
-            }}
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             How it works
           </a>
-          {/* Iter 19 — Sign In: subtle border on scroll */}
-          <Link
-            href="/login"
-            role="listitem"
-            className={cn(
-              "text-sm font-medium transition-colors px-4 py-2 rounded-xl",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-              scrolled
-                ? "text-foreground hover:text-primary hover:bg-primary/5"
-                : "text-muted-foreground hover:text-primary hover:bg-primary/5",
-            )}
-          >
-            Sign In
-          </Link>
-
           {/* CTA button */}
           <Link
             href="/login"
@@ -115,7 +85,7 @@ export function Navbar() {
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             )}
           >
-            Get Started
+            Start Planning
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
@@ -141,7 +111,6 @@ export function Navbar() {
         </button>
       </div>
 
-      {/* Iter 20 — Mobile dropdown: includes "How it works", smooth animation */}
       <div
         id="mobile-menu"
         role="menu"
@@ -161,7 +130,6 @@ export function Navbar() {
           >
             Features
           </a>
-          {/* Iter 20 — How it works in mobile too */}
           <a
             href="#how-it-works"
             role="menuitem"
@@ -170,14 +138,6 @@ export function Navbar() {
           >
             How it works
           </a>
-          <Link
-            href="/login"
-            role="menuitem"
-            onClick={() => setMenuOpen(false)}
-            className="rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            Sign In
-          </Link>
           {/* CTA on mobile */}
           <Link
             href="/login"
@@ -190,7 +150,7 @@ export function Navbar() {
               "transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             )}
           >
-            Get Started — Free
+            Start Planning
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
