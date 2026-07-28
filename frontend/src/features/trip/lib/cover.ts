@@ -22,7 +22,7 @@ export function canRenderTripCover(url?: string | null): url is string {
 
 const R2_PUBLIC_URL =
   process.env.NEXT_PUBLIC_R2_PUBLIC_URL ??
-  "https://pub-747dca221fc941d5bc8ab8099b318a8e.r2.dev"
+  "https://assets.navisha.cloud"
 
 const DEFAULT_TRIP_COVERS = [
   { keywords: ["tokyo"], filename: "navisha-tokyo.png" },
@@ -31,6 +31,11 @@ const DEFAULT_TRIP_COVERS = [
   { keywords: ["jakarta"], filename: "navisha-jakarta.png" },
   { keywords: ["bali"], filename: "navisha-bali.png" },
   { keywords: ["bogor"], filename: "navisha-bogor.png" },
+  { keywords: ["lampung"], filename: "navisha-lampung.png" },
+  { keywords: ["majalengka"], filename: "navisha-majalengka.png" },
+  { keywords: ["cirebon"], filename: "navisha-cirebon.png" },
+  { keywords: ["bandung"], filename: "navisha-bandung.png" },
+  { keywords: ["tangerang"], filename: "navisha-tangerang.png" },
 ]
 
 /** Resolve a stable default cover for a destination when no custom cover exists. */
