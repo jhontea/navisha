@@ -192,25 +192,10 @@ export function ActivityForm({
 
   const updateStartTime = (value: string) => {
     setValue("start_time", value, { shouldDirty: true, shouldValidate: true })
-    const currentEnd = getValues("end_time") ?? ""
 
     if (!value) {
       setValue("end_time", "", { shouldDirty: true, shouldValidate: true })
-      return
     }
-
-    if (!currentEnd) {
-      const defaultEnd = addMinutesToTime(value, 60)
-      if (defaultEnd) {
-        setValue("end_time", defaultEnd, {
-          shouldDirty: true,
-          shouldValidate: true,
-        })
-      }
-      return
-    }
-
-    setValue("end_time", currentEnd, { shouldValidate: true })
   }
 
   const applyDuration = (minutes: number) => {

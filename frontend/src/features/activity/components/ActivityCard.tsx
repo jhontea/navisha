@@ -82,23 +82,14 @@ export function ActivityCard({
   return (
     <div
       className={cn(
-        "group relative rounded-2xl border border-border/30 border-l-4 bg-card p-4 shadow-sm transition-all duration-200",
+        "group relative rounded-2xl border border-border/30 border-l-4 bg-card p-3 shadow-sm transition-all duration-200 sm:p-4",
         "hover:shadow-md hover:border-border/50 hover:-translate-y-0.5",
         config.borderColor,
         hasOverlap && "ring-1 ring-chromatic-amber/30",
       )}
     >
-      <div className="flex items-start gap-3">
-        {/* Type icon */}
-        <div className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl mt-0.5 transition-transform duration-200",
-          "group-hover:scale-110",
-          config.iconBg,
-        )}>
-          <config.Icon className={cn("h-4 w-4", config.iconColor)} aria-hidden="true" />
-        </div>
-
-        <div className="flex-1 min-w-0 space-y-1.5">
+      <div className="flex min-w-0 items-start md:pr-16">
+        <div className="min-w-0 flex-1 space-y-1.5">
           {/* Type badge + time — Iter 51 */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className={cn(
@@ -149,7 +140,9 @@ export function ActivityCard({
         </div>
 
         {/* Iter 54 — Actions: always visible on mobile, hover/focus on desktop */}
-        <div className="flex shrink-0 items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity duration-150">
+      </div>
+
+        <div className="mt-2 flex justify-end gap-0.5 opacity-100 transition-opacity duration-150 md:absolute md:right-3 md:top-3 md:mt-0 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
           <button
             type="button"
             aria-label="Edit activity"
@@ -171,7 +164,6 @@ export function ActivityCard({
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
-      </div>
     </div>
   )
 }

@@ -1,11 +1,11 @@
 import Link from "next/link"
-import { Sparkles, CheckCircle } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { GoogleIcon } from "@/components/GoogleIcon"
 
 export function CTASection() {
   return (
-    <section className="py-20 md:py-28 max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
-      <div className="relative overflow-hidden rounded-[40px] bg-on-primary-fixed p-12 md:p-20 text-center">
+    <section className="mx-auto max-w-max-width px-margin-mobile py-16 md:px-margin-desktop">
+      <div className="relative overflow-hidden rounded-[32px] bg-on-primary-fixed p-8 text-center sm:p-12 md:rounded-[40px] md:p-16">
         {/* Background dot pattern */}
         <div
           className="absolute inset-0 opacity-[0.06] pointer-events-none"
@@ -42,19 +42,6 @@ export function CTASection() {
             Start Planning with Google
           </Link>
 
-          {/* Trust signals */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-white/50">
-            {[
-              "No credit card",
-              "Cancel anytime",
-              "Free forever plan",
-            ].map((label) => (
-              <span key={label} className="flex items-center gap-1.5">
-                <CheckCircle className="h-3.5 w-3.5 text-white/60 shrink-0" aria-hidden="true" />
-                {label}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
     </section>

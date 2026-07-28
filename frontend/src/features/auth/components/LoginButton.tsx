@@ -11,10 +11,10 @@ export function LoginButton() {
       onClick={() => {
         window.location.href = `${API_BASE}/auth/google`
       }}
-      className="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-10 py-4 text-sm font-semibold text-primary shadow-lg shadow-black/10 transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      className="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary to-chromatic-aurora px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <GoogleIcon className="h-5 w-5 shrink-0" />
-      Start Planning with Google
+      Continue with Google
     </button>
   )
 }

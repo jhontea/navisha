@@ -3,8 +3,8 @@ import { Compass, Heart } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="mt-12 border-t border-border/30 bg-gradient-to-b from-background to-muted">
-      <div className="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
+    <footer className="border-t border-border/30 bg-gradient-to-b from-background to-muted">
+      <div className="mx-auto max-w-max-width px-margin-mobile py-10 md:px-margin-desktop md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* Brand column */}
           <div className="flex flex-col gap-4">
@@ -29,7 +29,6 @@ export function Footer() {
               {[
                 { label: "Features", href: "#features" },
                 { label: "How it works", href: "#how-it-works" },
-                { label: "Get Started", href: "/login" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link
