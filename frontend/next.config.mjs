@@ -1,11 +1,11 @@
 const configuredR2Url =
   process.env.NEXT_PUBLIC_R2_PUBLIC_URL ??
-  'https://pub-747dca221fc941d5bc8ab8099b318a8e.r2.dev'
+  'https://assets.navisha.cloud'
 const r2PublicOrigin = (() => {
   try {
     return new URL(configuredR2Url).origin
   } catch {
-    return 'https://pub-747dca221fc941d5bc8ab8099b318a8e.r2.dev'
+    return 'https://assets.navisha.cloud'
   }
 })()
 
@@ -77,11 +77,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
-              "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
+              "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com",
               "frame-src 'self' https://accounts.google.com",
               "object-src 'none'",
               "base-uri 'self'",
@@ -99,11 +99,11 @@ const nextConfig = {
                 key: 'Content-Security-Policy-Report-Only',
                 value: [
                   "default-src 'self'",
-                  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com",
+                  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://static.cloudflareinsights.com",
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "font-src 'self' https://fonts.gstatic.com",
                   `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
-                  "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com",
+                  "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com",
                   "frame-src 'self' https://accounts.google.com",
                   "object-src 'none'",
                   "base-uri 'self'",
@@ -124,7 +124,7 @@ const nextConfig = {
             ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]
             : []),
           // Restrict which browser features can be used
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           // Prevent cross-origin leaks via window.opener
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           // Prevent cross-origin resource embedding
