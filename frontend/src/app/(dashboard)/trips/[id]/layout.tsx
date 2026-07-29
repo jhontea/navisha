@@ -2,13 +2,13 @@
 
 import type { ReactNode } from "react"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { BackLink } from "@/components/BackLink"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { TripEditForm } from "@/features/trip/components/TripEditForm"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { useDeleteTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
@@ -17,6 +17,16 @@ import { resolveTripCover } from "@/features/trip/lib/cover"
 import { ApiError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+
+const TripEditForm = dynamic(
+  () => import("@/features/trip/components/TripEditForm").then((module) => module.TripEditForm),
+  {
+    ssr: false,
+    loading: () => (
+      <Skeleton variant="glass" className="h-[220px] w-full rounded-none md:mx-auto md:h-[240px] md:max-w-max-width md:rounded-2xl" />
+    ),
+  },
+)
 
 export default function TripDetailLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ id: string }>()

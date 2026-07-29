@@ -154,7 +154,7 @@ export function DayAIPlanner({
         }
       }
 
-      await qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "all" })
+      await qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "active" })
       if (failed.length === 0) {
         toast(
           needsReview > 0

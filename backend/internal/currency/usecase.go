@@ -1,14 +1,17 @@
 package currency
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // UsecaseInterface defines the business logic for currency operations.
 type UsecaseInterface interface {
 	// Rates returns exchange rates for all supported currencies with the given base.
-	Rates(base string) ([]Rate, error)
+	Rates(ctx context.Context, base string) ([]Rate, error)
 	// Convert converts an amount from one currency to another, returning the
 	// converted amount and the exchange rate used.
-	Convert(from, to string, amount float64) (converted float64, rate float64, err error)
+	Convert(ctx context.Context, from, to string, amount float64) (converted float64, rate float64, err error)
 }
 
 // Usecase implements currency business logic.
@@ -23,18 +26,18 @@ func NewUsecase(repo Repository) *Usecase {
 
 var _ UsecaseInterface = (*Usecase)(nil)
 
-func (u *Usecase) Rates(base string) ([]Rate, error) {
+func (u *Usecase) Rates(ctx context.Context, base string) ([]Rate, error) {
 	if !IsSupported(base) {
 		return nil, ErrUnsupported
 	}
-	return u.repo.GetRates(base)
+	return u.repo.GetRates(ctx, base)
 }
 
-func (u *Usecase) Convert(from, to string, amount float64) (float64, float64, error) {
+func (u *Usecase) Convert(ctx context.Context, from, to string, amount float64) (float64, float64, error) {
 	if amount < 0 {
 		return 0, 0, fmt.Errorf("currency.Convert: negative amount")
 	}
-	r, err := u.repo.GetRate(from, to)
+	r, err := u.repo.GetRate(ctx, from, to)
 	if err != nil {
 		return 0, 0, err
 	}

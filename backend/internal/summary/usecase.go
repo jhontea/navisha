@@ -84,7 +84,7 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary
 		return nil, fmt.Errorf("%w: empty response", ErrLLMUnavailable)
 	}
 
-	return u.repo.Save(tripID, content, u.model, tripCtx.TripUpdatedAt)
+	return u.repo.Save(ctx, tripID, content, u.model, tripCtx.TripUpdatedAt)
 }
 
 // Get returns the cached summary. Verifies ownership via the repository's
@@ -95,7 +95,7 @@ func (u *Usecase) Get(ctx context.Context, userID, tripID string) (*Summary, err
 	if err := u.repo.VerifyTripOwner(ctx, userID, tripID); err != nil {
 		return nil, err
 	}
-	return u.repo.GetByTripID(tripID)
+	return u.repo.GetByTripID(ctx, tripID)
 }
 
 // Delete removes the cached summary. Verifies ownership first via the
@@ -104,5 +104,5 @@ func (u *Usecase) Delete(ctx context.Context, userID, tripID string) error {
 	if err := u.repo.VerifyTripOwner(ctx, userID, tripID); err != nil {
 		return err
 	}
-	return u.repo.Delete(tripID)
+	return u.repo.Delete(ctx, tripID)
 }

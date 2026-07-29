@@ -10,10 +10,10 @@ import (
 )
 
 type UsecaseInterface interface {
-	List(userID, tripID string) ([]Transportation, error)
+	List(ctx context.Context, userID, tripID string) ([]Transportation, error)
 	Create(ctx context.Context, userID, tripID string, in CreateInput) (*Transportation, error)
-	Update(userID, id string, in UpdateInput) (*Transportation, error)
-	Delete(userID, id string) error
+	Update(ctx context.Context, userID, id string, in UpdateInput) (*Transportation, error)
+	Delete(ctx context.Context, userID, id string) error
 }
 
 // ExpenseCreator is the cross-domain hook this usecase calls inside its
@@ -59,19 +59,19 @@ func NewUsecase(repo Repository, expenseCreator ExpenseCreator) *Usecase {
 
 var _ UsecaseInterface = (*Usecase)(nil)
 
-func (u *Usecase) List(userID, tripID string) ([]Transportation, error) {
-	owner, err := u.repo.FindTripOwner(tripID)
+func (u *Usecase) List(ctx context.Context, userID, tripID string) ([]Transportation, error) {
+	owner, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
 	if owner != userID {
 		return nil, apperr.ErrForbidden
 	}
-	return u.repo.List(tripID)
+	return u.repo.List(ctx, tripID)
 }
 
 func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateInput) (*Transportation, error) {
-	owner, err := u.repo.FindTripOwner(tripID)
+	owner, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 
 	// No cost → single insert, no need for transaction.
 	if in.Cost == nil {
-		return u.repo.Insert(t)
+		return u.repo.Insert(ctx, t)
 	}
 
 	// Cost present → atomic: transport + expense both succeed or both rolled back.
@@ -131,8 +131,8 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	return created, nil
 }
 
-func (u *Usecase) Update(userID, id string, in UpdateInput) (*Transportation, error) {
-	owner, _, err := u.repo.FindTransportationOwner(id)
+func (u *Usecase) Update(ctx context.Context, userID, id string, in UpdateInput) (*Transportation, error) {
+	owner, _, err := u.repo.FindTransportationOwner(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (u *Usecase) Update(userID, id string, in UpdateInput) (*Transportation, er
 	if err := validate(in); err != nil {
 		return nil, err
 	}
-	existing, err := u.repo.FindByID(id)
+	existing, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -155,18 +155,18 @@ func (u *Usecase) Update(userID, id string, in UpdateInput) (*Transportation, er
 	existing.DepartureDatetime = in.DepartureDatetime
 	existing.ArrivalDatetime = in.ArrivalDatetime
 	existing.Notes = in.Notes
-	return u.repo.Update(existing)
+	return u.repo.Update(ctx, existing)
 }
 
-func (u *Usecase) Delete(userID, id string) error {
-	owner, _, err := u.repo.FindTransportationOwner(id)
+func (u *Usecase) Delete(ctx context.Context, userID, id string) error {
+	owner, _, err := u.repo.FindTransportationOwner(ctx, id)
 	if err != nil {
 		return err
 	}
 	if owner != userID {
 		return apperr.ErrForbidden
 	}
-	return u.repo.Delete(id)
+	return u.repo.Delete(ctx, id)
 }
 
 func validate(in CreateInput) error {

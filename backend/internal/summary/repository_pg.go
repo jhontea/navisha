@@ -20,9 +20,9 @@ func NewPostgresRepository(db *pgxpool.Pool) Repository {
 
 var _ Repository = (*postgresRepository)(nil)
 
-func (r *postgresRepository) Save(tripID, content, model string, sourceUpdatedAt time.Time) (*Summary, error) {
+func (r *postgresRepository) Save(ctx context.Context, tripID, content, model string, sourceUpdatedAt time.Time) (*Summary, error) {
 	s := &Summary{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`INSERT INTO trip_summaries (trip_id, content, model, source_updated_at)
 		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (trip_id) DO UPDATE
@@ -39,9 +39,9 @@ func (r *postgresRepository) Save(tripID, content, model string, sourceUpdatedAt
 	return s, nil
 }
 
-func (r *postgresRepository) GetByTripID(tripID string) (*Summary, error) {
+func (r *postgresRepository) GetByTripID(ctx context.Context, tripID string) (*Summary, error) {
 	s := &Summary{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT s.id, s.trip_id, s.content, s.model, s.source_updated_at,
 		        (t.updated_at > s.source_updated_at) AS is_outdated,
 		        s.created_at, s.updated_at
@@ -58,8 +58,8 @@ func (r *postgresRepository) GetByTripID(tripID string) (*Summary, error) {
 	return s, nil
 }
 
-func (r *postgresRepository) Delete(tripID string) error {
-	_, err := r.db.Exec(context.Background(),
+func (r *postgresRepository) Delete(ctx context.Context, tripID string) error {
+	_, err := r.db.Exec(ctx,
 		`DELETE FROM trip_summaries WHERE trip_id = $1`, tripID)
 	if err != nil {
 		return fmt.Errorf("summary.Delete: %w", err)

@@ -134,7 +134,7 @@ const aiVisual = (
 
 export function FeatureGrid() {
   return (
-    <section id="features" className="mx-auto max-w-max-width px-margin-mobile py-16 md:px-margin-desktop" aria-labelledby="features-heading">
+    <section id="features" className="render-deferred mx-auto max-w-max-width px-margin-mobile py-16 md:px-margin-desktop" aria-labelledby="features-heading">
       {/* Section header */}
       <div className="text-center mb-14">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Everything you need</p>

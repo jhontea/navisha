@@ -107,7 +107,7 @@ func (h *Handler) Me(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 
-	usr, err := h.usecase.Me(userID)
+	usr, err := h.usecase.Me(c.Request().Context(), userID)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")

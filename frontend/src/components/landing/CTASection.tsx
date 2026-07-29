@@ -4,7 +4,7 @@ import { GoogleIcon } from "@/components/GoogleIcon"
 
 export function CTASection() {
   return (
-    <section className="mx-auto max-w-max-width px-margin-mobile py-16 md:px-margin-desktop">
+    <section className="render-deferred mx-auto max-w-max-width px-margin-mobile py-16 md:px-margin-desktop">
       <div className="relative overflow-hidden rounded-[32px] bg-on-primary-fixed p-8 text-center sm:p-12 md:rounded-[40px] md:p-16">
         {/* Background dot pattern */}
         <div

@@ -38,7 +38,7 @@ func newMockRepo() *mockRepo {
 	}
 }
 
-func (m *mockRepo) FindTripOwner(tripID string) (string, string, error) {
+func (m *mockRepo) FindTripOwner(_ context.Context, tripID string) (string, string, error) {
 	if m.tripOwnerErr != nil {
 		return "", "", m.tripOwnerErr
 	}
@@ -49,7 +49,7 @@ func (m *mockRepo) FindTripOwner(tripID string) (string, string, error) {
 	return t.owner, t.base, nil
 }
 
-func (m *mockRepo) FindExpenseOwner(id string) (string, string, error) {
+func (m *mockRepo) FindExpenseOwner(_ context.Context, id string) (string, string, error) {
 	if m.expOwnerErr != nil {
 		return "", "", m.expOwnerErr
 	}
@@ -60,18 +60,18 @@ func (m *mockRepo) FindExpenseOwner(id string) (string, string, error) {
 	return m.trips[tripID].owner, tripID, nil
 }
 
-func (m *mockRepo) List(_ string) ([]Expense, error) {
+func (m *mockRepo) List(_ context.Context, _ string) ([]Expense, error) {
 	return m.listResult, m.listErr
 }
 
-func (m *mockRepo) FindByID(id string) (*Expense, error) {
+func (m *mockRepo) FindByID(_ context.Context, id string) (*Expense, error) {
 	if e, ok := m.expenses[id]; ok {
 		return e, nil
 	}
 	return nil, ErrNotFound
 }
 
-func (m *mockRepo) Create(e *Expense) (*Expense, error) {
+func (m *mockRepo) Create(_ context.Context, e *Expense) (*Expense, error) {
 	if m.createErr != nil {
 		return nil, m.createErr
 	}
@@ -85,7 +85,7 @@ func (m *mockRepo) Create(e *Expense) (*Expense, error) {
 	return &out, nil
 }
 
-func (m *mockRepo) Update(e *Expense) (*Expense, error) {
+func (m *mockRepo) Update(_ context.Context, e *Expense) (*Expense, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr
 	}
@@ -96,7 +96,7 @@ func (m *mockRepo) Update(e *Expense) (*Expense, error) {
 	return e, nil
 }
 
-func (m *mockRepo) Delete(id string) error {
+func (m *mockRepo) Delete(_ context.Context, id string) error {
 	if m.deleteErr != nil {
 		return m.deleteErr
 	}
@@ -104,14 +104,14 @@ func (m *mockRepo) Delete(id string) error {
 	return nil
 }
 
-func (m *mockRepo) Summary(_, _ string) (*Summary, error) {
+func (m *mockRepo) Summary(_ context.Context, _, _ string) (*Summary, error) {
 	return m.summaryResult, m.summaryErr
 }
 
 func (m *mockRepo) CreateTx(_ context.Context, _ pgx.Tx, e *Expense) (*Expense, error) {
 	// Reuse the same code path as Create for tests; the tx parameter is
 	// inert at this level.
-	return m.Create(e)
+	return m.Create(context.Background(), e)
 }
 
 // mockConverter returns a fixed multiplier.
@@ -120,7 +120,7 @@ type mockConverter struct {
 	err  error
 }
 
-func (m *mockConverter) Convert(_, _ string, amount float64) (float64, float64, error) {
+func (m *mockConverter) Convert(_ context.Context, _, _ string, amount float64) (float64, float64, error) {
 	if m.err != nil {
 		return 0, 0, m.err
 	}

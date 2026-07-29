@@ -10,10 +10,10 @@ import (
 )
 
 type UsecaseInterface interface {
-	List(userID, tripID string) ([]Accommodation, error)
+	List(ctx context.Context, userID, tripID string) ([]Accommodation, error)
 	Create(ctx context.Context, userID, tripID string, in CreateInput) (*Accommodation, error)
-	Update(userID, id string, in UpdateInput) (*Accommodation, error)
-	Delete(userID, id string) error
+	Update(ctx context.Context, userID, id string, in UpdateInput) (*Accommodation, error)
+	Delete(ctx context.Context, userID, id string) error
 }
 
 // ExpenseCreator is the cross-domain hook this usecase calls inside its
@@ -58,19 +58,19 @@ func NewUsecase(repo Repository, expenseCreator ExpenseCreator) *Usecase {
 
 var _ UsecaseInterface = (*Usecase)(nil)
 
-func (u *Usecase) List(userID, tripID string) ([]Accommodation, error) {
-	owner, err := u.repo.FindTripOwner(tripID)
+func (u *Usecase) List(ctx context.Context, userID, tripID string) ([]Accommodation, error) {
+	owner, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
 	if owner != userID {
 		return nil, apperr.ErrForbidden
 	}
-	return u.repo.List(tripID)
+	return u.repo.List(ctx, tripID)
 }
 
 func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateInput) (*Accommodation, error) {
-	owner, err := u.repo.FindTripOwner(tripID)
+	owner, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	}
 
 	if in.Cost == nil {
-		return u.repo.Insert(a)
+		return u.repo.Insert(ctx, a)
 	}
 
 	// Atomic: accommodation + linked expense both commit or both roll back.
@@ -131,8 +131,8 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	return created, nil
 }
 
-func (u *Usecase) Update(userID, id string, in UpdateInput) (*Accommodation, error) {
-	owner, _, err := u.repo.FindAccommodationOwner(id)
+func (u *Usecase) Update(ctx context.Context, userID, id string, in UpdateInput) (*Accommodation, error) {
+	owner, _, err := u.repo.FindAccommodationOwner(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (u *Usecase) Update(userID, id string, in UpdateInput) (*Accommodation, err
 	if err := validate(in); err != nil {
 		return nil, err
 	}
-	existing, err := u.repo.FindByID(id)
+	existing, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -163,18 +163,18 @@ func (u *Usecase) Update(userID, id string, in UpdateInput) (*Accommodation, err
 	existing.CheckOut = in.CheckOut
 	existing.ConfirmationNumber = in.ConfirmationNumber
 	existing.Notes = in.Notes
-	return u.repo.Update(existing)
+	return u.repo.Update(ctx, existing)
 }
 
-func (u *Usecase) Delete(userID, id string) error {
-	owner, _, err := u.repo.FindAccommodationOwner(id)
+func (u *Usecase) Delete(ctx context.Context, userID, id string) error {
+	owner, _, err := u.repo.FindAccommodationOwner(ctx, id)
 	if err != nil {
 		return err
 	}
 	if owner != userID {
 		return apperr.ErrForbidden
 	}
-	return u.repo.Delete(id)
+	return u.repo.Delete(ctx, id)
 }
 
 func validate(in CreateInput) error {

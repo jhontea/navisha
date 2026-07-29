@@ -14,3 +14,7 @@ export interface LocationSuggestion {
 export interface LocationSuggestionsResponse {
   suggestions: LocationSuggestion[]
 }
+
+export interface BatchLocationSuggestionsResponse {
+  results: Record<string, LocationSuggestion[]>
+}

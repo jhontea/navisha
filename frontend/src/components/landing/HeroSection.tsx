@@ -1,5 +1,3 @@
-"use client"
-
 import Link from "next/link"
 import { Lock, Monitor, Zap, PlayCircle, Plane, MapPin, CalendarDays } from "lucide-react"
 import { GoogleIcon } from "@/components/GoogleIcon"
@@ -22,10 +20,10 @@ export function HeroSection() {
   return (
     <section className="relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden px-4 pb-16 pt-16 text-center md:px-8 md:pb-12 md:pt-20">
       <div className="absolute inset-0 pointer-events-none -z-10" aria-hidden="true">
-        <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-primary/8 blur-[160px] animate-float-orb" />
-        <div className="absolute -bottom-40 -left-40 h-[600px] w-[600px] rounded-full bg-chromatic-ocean/8 blur-[160px] animate-float-orb" style={{ animationDelay: "-6s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full bg-chromatic-aurora/6 blur-[120px] animate-float-orb" style={{ animationDelay: "-3s" }} />
-        <div className="absolute top-1/4 right-1/4 h-[200px] w-[200px] rounded-full bg-chromatic-sky/5 blur-[80px] animate-float-orb" style={{ animationDelay: "-9s" }} />
+        <div className="landing-orb absolute -right-40 -top-40 h-[600px] w-[600px] animate-float-orb rounded-full bg-primary/8 blur-[160px]" />
+        <div className="landing-orb absolute -bottom-40 -left-40 h-[600px] w-[600px] animate-float-orb rounded-full bg-chromatic-ocean/8 blur-[160px]" style={{ animationDelay: "-6s" }} />
+        <div className="landing-orb absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 animate-float-orb rounded-full bg-chromatic-aurora/6 blur-[120px]" style={{ animationDelay: "-3s" }} />
+        <div className="landing-orb absolute right-1/4 top-1/4 h-[200px] w-[200px] animate-float-orb rounded-full bg-chromatic-sky/5 blur-[80px]" style={{ animationDelay: "-9s" }} />
       </div>
 
       <div
@@ -83,6 +81,7 @@ export function HeroSection() {
           src={travelHeroIllustration}
           alt="Traveler planning a route with a map, itinerary, and suitcase"
           priority
+          sizes="(min-width: 1280px) 320px, (min-width: 768px) 460px, (min-width: 640px) 380px, 300px"
           className="h-auto w-full"
         />
       </div>

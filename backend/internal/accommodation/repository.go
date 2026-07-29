@@ -16,14 +16,14 @@ var (
 )
 
 type Repository interface {
-	FindTripOwner(tripID string) (userID string, err error)
-	FindAccommodationOwner(id string) (userID, tripID string, err error)
+	FindTripOwner(ctx context.Context, tripID string) (userID string, err error)
+	FindAccommodationOwner(ctx context.Context, id string) (userID, tripID string, err error)
 
-	List(tripID string) ([]Accommodation, error)
-	FindByID(id string) (*Accommodation, error)
-	Insert(a *Accommodation) (*Accommodation, error)
-	Update(a *Accommodation) (*Accommodation, error)
-	Delete(id string) error
+	List(ctx context.Context, tripID string) ([]Accommodation, error)
+	FindByID(ctx context.Context, id string) (*Accommodation, error)
+	Insert(ctx context.Context, a *Accommodation) (*Accommodation, error)
+	Update(ctx context.Context, a *Accommodation) (*Accommodation, error)
+	Delete(ctx context.Context, id string) error
 
 	BeginTx(ctx context.Context) (pgx.Tx, error)
 	Commit(ctx context.Context, tx pgx.Tx) error

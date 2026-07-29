@@ -37,7 +37,7 @@ func (m *mockUsecase) GoogleLogin(_ context.Context, code string) (*User, *Token
 	return m.loginUser, m.loginTokens, m.loginErr
 }
 
-func (m *mockUsecase) Me(id string) (*User, error) {
+func (m *mockUsecase) Me(_ context.Context, id string) (*User, error) {
 	m.meCalls++
 	m.meID = id
 	return m.meUser, m.meErr

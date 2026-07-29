@@ -11,13 +11,14 @@ import (
 )
 
 type UsecaseInterface interface {
-	List(userID, dayID string) ([]Activity, error)
+	List(ctx context.Context, userID, dayID string) ([]Activity, error)
 	// ListByDayIDs batch-fetches activities for multiple days owned by the same user.
 	// Phase 3D: eliminates N+1 queries when loading trip context.
 	ListByDayIDs(ctx context.Context, userID string, dayIDs []string) (map[string][]Activity, error)
 	Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error)
-	Update(userID, activityID string, in UpdateInput) (*Activity, error)
-	Delete(userID, activityID string) error
+	CreateMany(ctx context.Context, userID string, inputs []CreateManyInput) error
+	Update(ctx context.Context, userID, activityID string, in UpdateInput) (*Activity, error)
+	Delete(ctx context.Context, userID, activityID string) error
 	Reorder(ctx context.Context, userID, dayID string, orderedIDs []string) error
 }
 
@@ -27,6 +28,11 @@ type CreateInput struct {
 	StartTime string
 	EndTime   string
 	Payload   json.RawMessage
+}
+
+type CreateManyInput struct {
+	DayID string
+	CreateInput
 }
 
 type UpdateInput struct {
@@ -46,11 +52,11 @@ func NewUsecase(repo Repository) *Usecase {
 
 var _ UsecaseInterface = (*Usecase)(nil)
 
-func (u *Usecase) List(userID, dayID string) ([]Activity, error) {
-	if err := u.verifyDayOwnership(userID, dayID); err != nil {
+func (u *Usecase) List(ctx context.Context, userID, dayID string) ([]Activity, error) {
+	if err := u.verifyDayOwnership(ctx, userID, dayID); err != nil {
 		return nil, err
 	}
-	return u.repo.ListByDay(dayID)
+	return u.repo.ListByDay(ctx, dayID)
 }
 
 // ListByDayIDs batch-fetches activities for multiple days. Verifies ownership
@@ -62,14 +68,14 @@ func (u *Usecase) ListByDayIDs(ctx context.Context, userID string, dayIDs []stri
 	}
 	// Verify ownership on the first day; the caller (trip context) guarantees
 	// all dayIDs belong to the same trip, hence same user.
-	if err := u.verifyDayOwnership(userID, dayIDs[0]); err != nil {
+	if err := u.verifyDayOwnership(ctx, userID, dayIDs[0]); err != nil {
 		return nil, err
 	}
 	return u.repo.ListByDayIDs(ctx, dayIDs)
 }
 
 func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error) {
-	if err := u.verifyDayOwnership(userID, dayID); err != nil {
+	if err := u.verifyDayOwnership(ctx, userID, dayID); err != nil {
 		return nil, err
 	}
 	if !in.Type.Valid() {
@@ -83,7 +89,7 @@ func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInp
 	}
 
 	// Place new activity at end of day's ordering.
-	existing, err := u.repo.ListIDsByDay(dayID)
+	existing, err := u.repo.ListIDsByDay(ctx, dayID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,11 +103,68 @@ func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInp
 		OrderIndex: len(existing),
 		Payload:    in.Payload,
 	}
-	return u.repo.Insert(a)
+	return u.repo.Insert(ctx, a)
 }
 
-func (u *Usecase) Update(userID, activityID string, in UpdateInput) (*Activity, error) {
-	owner, _, err := u.repo.FindActivityOwner(activityID)
+// CreateMany validates and inserts activities for multiple days in one
+// transaction. Ownership is checked once for the distinct day set and the
+// repository assigns order indexes after any existing activities per day.
+func (u *Usecase) CreateMany(ctx context.Context, userID string, inputs []CreateManyInput) error {
+	if len(inputs) == 0 {
+		return nil
+	}
+
+	daySet := make(map[string]struct{}, len(inputs))
+	relativeOrder := make(map[string]int, len(inputs))
+	activities := make([]Activity, 0, len(inputs))
+	for _, item := range inputs {
+		if item.DayID == "" {
+			return ErrDayNotFound
+		}
+		if !item.Type.Valid() {
+			return ErrInvalidType
+		}
+		if item.Title == "" {
+			return fmt.Errorf("activity.CreateMany: %w: title required", ErrInvalidPayload)
+		}
+		if err := validatePayload(item.Type, item.Payload); err != nil {
+			return err
+		}
+		activities = append(activities, Activity{
+			DayID: item.DayID, Type: item.Type, Title: item.Title,
+			StartTime: item.StartTime, EndTime: item.EndTime,
+			OrderIndex: relativeOrder[item.DayID], Payload: item.Payload,
+		})
+		relativeOrder[item.DayID]++
+		daySet[item.DayID] = struct{}{}
+	}
+
+	dayIDs := make([]string, 0, len(daySet))
+	for dayID := range daySet {
+		dayIDs = append(dayIDs, dayID)
+	}
+
+	tx, err := u.repo.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer u.repo.Rollback(ctx, tx)
+
+	owned, err := u.repo.CountOwnedDaysTx(ctx, tx, userID, dayIDs)
+	if err != nil {
+		return err
+	}
+	if owned != len(dayIDs) {
+		return apperr.ErrForbidden
+	}
+	if err := u.repo.BatchInsertTx(ctx, tx, activities); err != nil {
+		return err
+	}
+	return u.repo.Commit(ctx, tx)
+}
+
+func (u *Usecase) Update(ctx context.Context, userID, activityID string, in UpdateInput) (*Activity, error) {
+	owner, _, err := u.repo.FindActivityOwner(ctx, activityID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +172,7 @@ func (u *Usecase) Update(userID, activityID string, in UpdateInput) (*Activity, 
 		return nil, apperr.ErrForbidden
 	}
 
-	existing, err := u.repo.FindByID(activityID)
+	existing, err := u.repo.FindByID(ctx, activityID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,29 +187,29 @@ func (u *Usecase) Update(userID, activityID string, in UpdateInput) (*Activity, 
 		}
 		existing.Payload = in.Payload
 	}
-	return u.repo.Update(existing)
+	return u.repo.Update(ctx, existing)
 }
 
-func (u *Usecase) Delete(userID, activityID string) error {
-	owner, _, err := u.repo.FindActivityOwner(activityID)
+func (u *Usecase) Delete(ctx context.Context, userID, activityID string) error {
+	owner, _, err := u.repo.FindActivityOwner(ctx, activityID)
 	if err != nil {
 		return err
 	}
 	if owner != userID {
 		return apperr.ErrForbidden
 	}
-	return u.repo.Delete(activityID)
+	return u.repo.Delete(ctx, activityID)
 }
 
 // Reorder accepts the full set of activity IDs for the day in their new order.
 // Rejects if the set doesn't match exactly (catches drift between client + server).
 // Phase 3D: Uses BatchUpdateOrderTx for single-statement atomic update.
 func (u *Usecase) Reorder(ctx context.Context, userID, dayID string, orderedIDs []string) error {
-	if err := u.verifyDayOwnership(userID, dayID); err != nil {
+	if err := u.verifyDayOwnership(ctx, userID, dayID); err != nil {
 		return err
 	}
 
-	existing, err := u.repo.ListIDsByDay(dayID)
+	existing, err := u.repo.ListIDsByDay(ctx, dayID)
 	if err != nil {
 		return err
 	}
@@ -170,8 +233,8 @@ func (u *Usecase) Reorder(ctx context.Context, userID, dayID string, orderedIDs 
 	return u.repo.Commit(ctx, tx)
 }
 
-func (u *Usecase) verifyDayOwnership(userID, dayID string) error {
-	owner, err := u.repo.FindDayOwner(dayID)
+func (u *Usecase) verifyDayOwnership(ctx context.Context, userID, dayID string) error {
+	owner, err := u.repo.FindDayOwner(ctx, dayID)
 	if err != nil {
 		return err
 	}

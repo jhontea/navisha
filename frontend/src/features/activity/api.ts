@@ -2,16 +2,18 @@ import { api } from "@/lib/api"
 import type {
   Activity,
   ActivityListResponse,
+  TripActivityListResponse,
   CreateActivityInput,
   ReorderInput,
   UpdateActivityInput,
 } from "./types"
 
 export const activityApi = {
-  list: (dayId: string) =>
-    api.get<ActivityListResponse>(`/days/${dayId}/activities`, {
-      params: { _t: String(Date.now()) },
-    }),
+  list: (dayId: string, signal?: AbortSignal) =>
+    api.get<ActivityListResponse>(`/days/${dayId}/activities`, { signal }),
+
+  listByTrip: (tripId: string, signal?: AbortSignal) =>
+    api.get<TripActivityListResponse>(`/trips/${tripId}/activities`, { signal }),
 
   create: (dayId: string, input: CreateActivityInput) =>
     api.post<Activity>(`/days/${dayId}/activities`, input),

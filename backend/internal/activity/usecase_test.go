@@ -103,6 +103,50 @@ func TestUsecase_Create_EmptyTitle(t *testing.T) {
 	}
 }
 
+func TestUsecase_CreateMany_BatchesAndCommits(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["day-1"] = "user-1"
+	repo.dayOwners["day-2"] = "user-1"
+	u := NewUsecase(repo)
+
+	err := u.CreateMany(context.Background(), "user-1", []CreateManyInput{
+		{DayID: "day-1", CreateInput: CreateInput{Type: TypeNote, Title: "One"}},
+		{DayID: "day-1", CreateInput: CreateInput{Type: TypeNote, Title: "Two"}},
+		{DayID: "day-2", CreateInput: CreateInput{Type: TypeNote, Title: "Three"}},
+	})
+	if err != nil {
+		t.Fatalf("CreateMany: %v", err)
+	}
+	if repo.beginTxCalls != 1 || repo.commitCalls != 1 {
+		t.Fatalf("tx begin/commit = %d/%d, want 1/1", repo.beginTxCalls, repo.commitCalls)
+	}
+	if len(repo.batchInserted) != 3 {
+		t.Fatalf("inserted %d activities, want 3", len(repo.batchInserted))
+	}
+	if repo.batchInserted[0].OrderIndex != 0 || repo.batchInserted[1].OrderIndex != 1 || repo.batchInserted[2].OrderIndex != 0 {
+		t.Fatalf("relative order indexes = %d,%d,%d, want 0,1,0",
+			repo.batchInserted[0].OrderIndex, repo.batchInserted[1].OrderIndex, repo.batchInserted[2].OrderIndex)
+	}
+}
+
+func TestUsecase_CreateMany_RejectsMixedOwnership(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["day-1"] = "user-1"
+	repo.dayOwners["day-2"] = "user-2"
+	u := NewUsecase(repo)
+
+	err := u.CreateMany(context.Background(), "user-1", []CreateManyInput{
+		{DayID: "day-1", CreateInput: CreateInput{Type: TypeNote, Title: "One"}},
+		{DayID: "day-2", CreateInput: CreateInput{Type: TypeNote, Title: "Two"}},
+	})
+	if !errors.Is(err, apperr.ErrForbidden) {
+		t.Fatalf("err = %v, want forbidden", err)
+	}
+	if repo.commitCalls != 0 || len(repo.batchInserted) != 0 {
+		t.Fatal("unauthorized batch was committed or inserted")
+	}
+}
+
 // ---------- Update / Delete ownership ----------
 
 func TestUsecase_Update_Forbidden(t *testing.T) {
@@ -111,7 +155,7 @@ func TestUsecase_Update_Forbidden(t *testing.T) {
 	repo.dayOwners["day-1"] = "user-other"
 	u := NewUsecase(repo)
 
-	_, err := u.Update("user-1", "a1", UpdateInput{Title: "x"})
+	_, err := u.Update(context.Background(), "user-1", "a1", UpdateInput{Title: "x"})
 	if !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
@@ -123,7 +167,7 @@ func TestUsecase_Delete_Forbidden(t *testing.T) {
 	repo.dayOwners["day-1"] = "user-other"
 	u := NewUsecase(repo)
 
-	if err := u.Delete("user-1", "a1"); !errors.Is(err, apperr.ErrForbidden) {
+	if err := u.Delete(context.Background(), "user-1", "a1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
 }
@@ -134,7 +178,7 @@ func TestUsecase_Delete_Success(t *testing.T) {
 	repo.dayOwners["day-1"] = "user-1"
 	u := NewUsecase(repo)
 
-	if err := u.Delete("user-1", "a1"); err != nil {
+	if err := u.Delete(context.Background(), "user-1", "a1"); err != nil {
 		t.Errorf("Delete: %v", err)
 	}
 	if _, ok := repo.activities["a1"]; ok {

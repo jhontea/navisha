@@ -53,16 +53,16 @@ func (m *mockRepo) Rollback(_ context.Context, _ pgx.Tx) error {
 	m.rollbackCalls++
 	return nil
 }
-func (m *mockRepo) List(_, _ string, _ int) (ListResult, error) {
+func (m *mockRepo) List(_ context.Context, _, _ string, _ int) (ListResult, error) {
 	return m.listResult, m.listErr
 }
-func (m *mockRepo) ListFiltered(_, _ string, _ int, _, _ string) (ListResult, error) {
+func (m *mockRepo) ListFiltered(_ context.Context, _, _ string, _ int, _, _ string) (ListResult, error) {
 	return m.listResult, m.listErr
 }
-func (m *mockRepo) ListUpcoming(_ string, _ int) ([]Trip, error) {
+func (m *mockRepo) ListUpcoming(_ context.Context, _ string, _ int) ([]Trip, error) {
 	return m.listResult.Trips, m.listErr
 }
-func (m *mockRepo) FindByID(id string) (*Trip, error) {
+func (m *mockRepo) FindByID(_ context.Context, id string) (*Trip, error) {
 	if m.findErr != nil {
 		return nil, m.findErr
 	}
@@ -94,7 +94,7 @@ func (m *mockRepo) DeleteDays(_ context.Context, _ pgx.Tx, _ string) error {
 	m.insertedDays = nil
 	return nil
 }
-func (m *mockRepo) Update(t *Trip) (*Trip, error) {
+func (m *mockRepo) Update(_ context.Context, t *Trip) (*Trip, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr
 	}
@@ -104,16 +104,16 @@ func (m *mockRepo) Update(t *Trip) (*Trip, error) {
 	return &out, nil
 }
 func (m *mockRepo) UpdateTx(_ context.Context, _ pgx.Tx, t *Trip) (*Trip, error) {
-	return m.Update(t)
+	return m.Update(context.Background(), t)
 }
-func (m *mockRepo) Delete(_ string) error {
+func (m *mockRepo) Delete(_ context.Context, _ string) error {
 	return m.deleteErr
 }
-func (m *mockRepo) ListDays(_ string) ([]Day, error) {
+func (m *mockRepo) ListDays(_ context.Context, _ string) ([]Day, error) {
 	return m.listDaysResult, m.listDaysErr
 }
 
-func (m *mockRepo) FindDayOwner(dayID string) (string, error) {
+func (m *mockRepo) FindDayOwner(_ context.Context, dayID string) (string, error) {
 	if m.findDayOwnerErr != nil {
 		return "", m.findDayOwnerErr
 	}
@@ -123,7 +123,7 @@ func (m *mockRepo) FindDayOwner(dayID string) (string, error) {
 	return "", ErrDayNotFound
 }
 
-func (m *mockRepo) UpdateDayNotes(dayID, notes string) (*Day, error) {
+func (m *mockRepo) UpdateDayNotes(_ context.Context, dayID, notes string) (*Day, error) {
 	if m.updateDayNotesErr != nil {
 		return nil, m.updateDayNotesErr
 	}
@@ -133,7 +133,7 @@ func (m *mockRepo) UpdateDayNotes(dayID, notes string) (*Day, error) {
 	return &Day{ID: dayID, Notes: notes}, nil
 }
 
-func (m *mockRepo) UpdateDayTitle(dayID, title string) (*Day, error) {
+func (m *mockRepo) UpdateDayTitle(_ context.Context, dayID, title string) (*Day, error) {
 	return &Day{ID: dayID, Title: title}, nil
 }
 

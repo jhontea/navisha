@@ -79,7 +79,7 @@ func (h *Handler) List(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	tripID := c.Param("trip_id")
-	items, err := h.usecase.List(userID, tripID)
+	items, err := h.usecase.List(c.Request().Context(), userID, tripID)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -151,7 +151,7 @@ func (h *Handler) Update(c echo.Context) error {
 	if !in.CheckOut.After(in.CheckIn) {
 		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be after check-in")
 	}
-	a, err := h.usecase.Update(userID, id, in)
+	a, err := h.usecase.Update(c.Request().Context(), userID, id, in)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -164,7 +164,7 @@ func (h *Handler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	id := c.Param("id")
-	if err := h.usecase.Delete(userID, id); err != nil {
+	if err := h.usecase.Delete(c.Request().Context(), userID, id); err != nil {
 		return mapErr(err)
 	}
 	return c.NoContent(http.StatusNoContent)

@@ -66,7 +66,7 @@ func (r *redisRepository) fetchUSD(ctx context.Context) (*cachedRates, error) {
 	return out, nil
 }
 
-func (r *redisRepository) GetRate(base, target string) (*Rate, error) {
+func (r *redisRepository) GetRate(parent context.Context, base, target string) (*Rate, error) {
 	if !IsSupported(base) || !IsSupported(target) {
 		return nil, ErrUnsupported
 	}
@@ -75,7 +75,7 @@ func (r *redisRepository) GetRate(base, target string) (*Rate, error) {
 	}
 
 	// Use a cancellable context so upstream fetches respect request deadlines.
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
 	defer cancel()
 	usd, err := r.fetchUSD(ctx)
 	if err != nil {
@@ -93,11 +93,11 @@ func (r *redisRepository) GetRate(base, target string) (*Rate, error) {
 	}, nil
 }
 
-func (r *redisRepository) GetRates(base string) ([]Rate, error) {
+func (r *redisRepository) GetRates(parent context.Context, base string) ([]Rate, error) {
 	if !IsSupported(base) {
 		return nil, ErrUnsupported
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
 	defer cancel()
 	usd, err := r.fetchUSD(ctx)
 	if err != nil {

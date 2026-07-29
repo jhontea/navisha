@@ -195,7 +195,7 @@ func TestUsecase_Get_Forbidden(t *testing.T) {
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}
 	u := NewUsecase(repo)
 
-	_, _, err := u.Get("user-1", "t1")
+	_, _, err := u.Get(context.Background(), "user-1", "t1")
 	if !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
@@ -207,7 +207,7 @@ func TestUsecase_Get_Success(t *testing.T) {
 	repo.listDaysResult = []Day{{ID: "d1", TripID: "t1", DayNumber: 1}}
 	u := NewUsecase(repo)
 
-	tr, days, err := u.Get("user-1", "t1")
+	tr, days, err := u.Get(context.Background(), "user-1", "t1")
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
@@ -295,7 +295,7 @@ func TestUsecase_Delete_Forbidden(t *testing.T) {
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}
 	u := NewUsecase(repo)
 
-	err := u.Delete("user-1", "t1")
+	err := u.Delete(context.Background(), "user-1", "t1")
 	if !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
@@ -306,7 +306,7 @@ func TestUsecase_Delete_Success(t *testing.T) {
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-1"}
 	u := NewUsecase(repo)
 
-	if err := u.Delete("user-1", "t1"); err != nil {
+	if err := u.Delete(context.Background(), "user-1", "t1"); err != nil {
 		t.Errorf("Delete: %v", err)
 	}
 }
@@ -318,7 +318,7 @@ func TestUsecase_UpdateDayNotes_Success(t *testing.T) {
 	repo.dayOwners["d1"] = "user-1"
 	u := NewUsecase(repo)
 
-	d, err := u.UpdateDayNotes("user-1", "d1", "remember sunscreen")
+	d, err := u.UpdateDayNotes(context.Background(), "user-1", "d1", "remember sunscreen")
 	if err != nil {
 		t.Fatalf("UpdateDayNotes: %v", err)
 	}
@@ -332,7 +332,7 @@ func TestUsecase_UpdateDayNotes_Forbidden(t *testing.T) {
 	repo.dayOwners["d1"] = "user-other"
 	u := NewUsecase(repo)
 
-	_, err := u.UpdateDayNotes("user-1", "d1", "x")
+	_, err := u.UpdateDayNotes(context.Background(), "user-1", "d1", "x")
 	if !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
@@ -342,7 +342,7 @@ func TestUsecase_UpdateDayNotes_DayNotFound(t *testing.T) {
 	repo := newMockRepo()
 	u := NewUsecase(repo)
 
-	_, err := u.UpdateDayNotes("user-1", "missing", "x")
+	_, err := u.UpdateDayNotes(context.Background(), "user-1", "missing", "x")
 	if !errors.Is(err, ErrDayNotFound) {
 		t.Errorf("err = %v, want ErrDayNotFound", err)
 	}
@@ -355,7 +355,7 @@ func TestUsecase_UpdateDayTitle_Success(t *testing.T) {
 	repo.dayOwners["d1"] = "user-1"
 	u := NewUsecase(repo)
 
-	d, err := u.UpdateDayTitle("user-1", "d1", "  Shibuya & Harajuku  ")
+	d, err := u.UpdateDayTitle(context.Background(), "user-1", "d1", "  Shibuya & Harajuku  ")
 	if err != nil {
 		t.Fatalf("UpdateDayTitle: %v", err)
 	}
@@ -369,7 +369,7 @@ func TestUsecase_UpdateDayTitle_Forbidden(t *testing.T) {
 	repo.dayOwners["d1"] = "user-other"
 	u := NewUsecase(repo)
 
-	_, err := u.UpdateDayTitle("user-1", "d1", "Arrival Day")
+	_, err := u.UpdateDayTitle(context.Background(), "user-1", "d1", "Arrival Day")
 	if !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
@@ -378,7 +378,7 @@ func TestUsecase_UpdateDayTitle_Forbidden(t *testing.T) {
 func TestUsecase_UpdateDayTitle_TooLong(t *testing.T) {
 	u := NewUsecase(newMockRepo())
 
-	_, err := u.UpdateDayTitle("user-1", "d1", strings.Repeat("a", maxDayTitleLength+1))
+	_, err := u.UpdateDayTitle(context.Background(), "user-1", "d1", strings.Repeat("a", maxDayTitleLength+1))
 	if !errors.Is(err, ErrDayTitleTooLong) {
 		t.Errorf("err = %v, want ErrDayTitleTooLong", err)
 	}
@@ -400,7 +400,7 @@ func TestUsecase_List_LimitClamping(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := newMockRepo()
 			u := NewUsecase(repo)
-			if _, err := u.List("user-1", "", tc.inLimit); err != nil {
+			if _, err := u.List(context.Background(), "user-1", "", tc.inLimit); err != nil {
 				t.Errorf("List: %v", err)
 			}
 		})

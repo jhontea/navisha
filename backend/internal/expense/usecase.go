@@ -13,15 +13,15 @@ import (
 // package does not import the currency package directly (cross-domain rule).
 // currency.Usecase satisfies this interface.
 type Converter interface {
-	Convert(from, to string, amount float64) (converted float64, rate float64, err error)
+	Convert(ctx context.Context, from, to string, amount float64) (converted float64, rate float64, err error)
 }
 
 type UsecaseInterface interface {
-	List(userID, tripID string) ([]Expense, error)
-	Create(userID, tripID string, in CreateInput) (*Expense, error)
-	Update(userID, expenseID string, in UpdateInput) (*Expense, error)
-	Delete(userID, expenseID string) error
-	Summary(userID, tripID string) (*Summary, error)
+	List(ctx context.Context, userID, tripID string) ([]Expense, error)
+	Create(ctx context.Context, userID, tripID string, in CreateInput) (*Expense, error)
+	Update(ctx context.Context, userID, expenseID string, in UpdateInput) (*Expense, error)
+	Delete(ctx context.Context, userID, expenseID string) error
+	Summary(ctx context.Context, userID, tripID string) (*Summary, error)
 }
 
 // LinkedExpenseCreator is the cross-domain contract that transportation /
@@ -77,7 +77,7 @@ func (u *Usecase) CreateLinkedExpenseTx(
 	userID, tripID, title, currency, category string, amount float64,
 	expenseDate string,
 ) error {
-	owner, base, err := u.repo.FindTripOwner(tripID)
+	owner, base, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (u *Usecase) CreateLinkedExpenseTx(
 		return err
 	}
 
-	converted, _, err := u.converter.Convert(currency, base, amount)
+	converted, _, err := u.converter.Convert(ctx, currency, base, amount)
 	if err != nil {
 		return fmt.Errorf("expense.CreateLinkedExpenseTx convert: %w", err)
 	}
@@ -120,19 +120,19 @@ func (u *Usecase) CreateLinkedExpenseTx(
 	return err
 }
 
-func (u *Usecase) List(userID, tripID string) ([]Expense, error) {
-	owner, _, err := u.repo.FindTripOwner(tripID)
+func (u *Usecase) List(ctx context.Context, userID, tripID string) ([]Expense, error) {
+	owner, _, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
 	if owner != userID {
 		return nil, apperr.ErrForbidden
 	}
-	return u.repo.List(tripID)
+	return u.repo.List(ctx, tripID)
 }
 
-func (u *Usecase) Create(userID, tripID string, in CreateInput) (*Expense, error) {
-	owner, base, err := u.repo.FindTripOwner(tripID)
+func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateInput) (*Expense, error) {
+	owner, base, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (u *Usecase) Create(userID, tripID string, in CreateInput) (*Expense, error
 		return nil, err
 	}
 
-	converted, _, err := u.converter.Convert(in.Currency, base, in.Amount)
+	converted, _, err := u.converter.Convert(ctx, in.Currency, base, in.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("expense.Create convert: %w", err)
 	}
@@ -173,11 +173,11 @@ func (u *Usecase) Create(userID, tripID string, in CreateInput) (*Expense, error
 		ExpenseDate:     expDate,
 		Note:            in.Note,
 	}
-	return u.repo.Create(e)
+	return u.repo.Create(ctx, e)
 }
 
-func (u *Usecase) Update(userID, expenseID string, in UpdateInput) (*Expense, error) {
-	owner, tripID, err := u.repo.FindExpenseOwner(expenseID)
+func (u *Usecase) Update(ctx context.Context, userID, expenseID string, in UpdateInput) (*Expense, error) {
+	owner, tripID, err := u.repo.FindExpenseOwner(ctx, expenseID)
 	if err != nil {
 		return nil, err
 	}
@@ -188,16 +188,16 @@ func (u *Usecase) Update(userID, expenseID string, in UpdateInput) (*Expense, er
 		return nil, err
 	}
 
-	_, base, err := u.repo.FindTripOwner(tripID)
+	_, base, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
-	converted, _, err := u.converter.Convert(in.Currency, base, in.Amount)
+	converted, _, err := u.converter.Convert(ctx, in.Currency, base, in.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("expense.Update convert: %w", err)
 	}
 
-	existing, err := u.repo.FindByID(expenseID)
+	existing, err := u.repo.FindByID(ctx, expenseID)
 	if err != nil {
 		return nil, err
 	}
@@ -219,29 +219,29 @@ func (u *Usecase) Update(userID, expenseID string, in UpdateInput) (*Expense, er
 	existing.BaseCurrency = base
 	existing.Note = in.Note
 
-	return u.repo.Update(existing)
+	return u.repo.Update(ctx, existing)
 }
 
-func (u *Usecase) Delete(userID, expenseID string) error {
-	owner, _, err := u.repo.FindExpenseOwner(expenseID)
+func (u *Usecase) Delete(ctx context.Context, userID, expenseID string) error {
+	owner, _, err := u.repo.FindExpenseOwner(ctx, expenseID)
 	if err != nil {
 		return err
 	}
 	if owner != userID {
 		return apperr.ErrForbidden
 	}
-	return u.repo.Delete(expenseID)
+	return u.repo.Delete(ctx, expenseID)
 }
 
-func (u *Usecase) Summary(userID, tripID string) (*Summary, error) {
-	owner, base, err := u.repo.FindTripOwner(tripID)
+func (u *Usecase) Summary(ctx context.Context, userID, tripID string) (*Summary, error) {
+	owner, base, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
 	if owner != userID {
 		return nil, apperr.ErrForbidden
 	}
-	return u.repo.Summary(tripID, base)
+	return u.repo.Summary(ctx, tripID, base)
 }
 
 func validateInput(title string, amount float64, currency string, cat Category) error {

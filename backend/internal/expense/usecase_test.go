@@ -1,6 +1,7 @@
 package expense
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -77,7 +78,7 @@ func TestCreate_Success(t *testing.T) {
 	repo.trips["trip-1"] = tripMeta{owner: "user-1", base: "IDR"}
 	u := NewUsecase(repo, &mockConverter{rate: 15500.0})
 
-	e, err := u.Create("user-1", "trip-1", CreateInput{
+	e, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Title: "Coffee", Amount: 5, Currency: "USD", Category: CategoryFood,
 	})
 	if err != nil {
@@ -99,7 +100,7 @@ func TestCreate_Forbidden(t *testing.T) {
 	repo.trips["trip-1"] = tripMeta{owner: "user-other", base: "IDR"}
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Title: "x", Amount: 5, Currency: "USD", Category: CategoryFood,
 	})
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -111,7 +112,7 @@ func TestCreate_TripNotFound(t *testing.T) {
 	repo := newMockRepo()
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	_, err := u.Create("user-1", "missing", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "missing", CreateInput{
 		Title: "x", Amount: 5, Currency: "USD", Category: CategoryFood,
 	})
 	if !errors.Is(err, ErrTripNotFound) {
@@ -124,7 +125,7 @@ func TestCreate_ConverterFails(t *testing.T) {
 	repo.trips["trip-1"] = tripMeta{owner: "user-1", base: "IDR"}
 	u := NewUsecase(repo, &mockConverter{err: errors.New("upstream down")})
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Title: "x", Amount: 5, Currency: "USD", Category: CategoryFood,
 	})
 	if err == nil {
@@ -138,7 +139,7 @@ func TestCreate_ValidationBeforeConvert(t *testing.T) {
 	conv := &mockConverter{rate: 1}
 	u := NewUsecase(repo, conv)
 
-	_, err := u.Create("user-1", "trip-1", CreateInput{
+	_, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
 		Title: "", Amount: 5, Currency: "USD", Category: CategoryFood,
 	})
 	if err == nil {
@@ -155,7 +156,7 @@ func TestUpdate_Forbidden(t *testing.T) {
 	repo.expenseOf["e1"] = "trip-1"
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	_, err := u.Update("user-1", "e1", UpdateInput{
+	_, err := u.Update(context.Background(), "user-1", "e1", UpdateInput{
 		Title: "x", Amount: 5, Currency: "USD", Category: CategoryFood,
 	})
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -170,7 +171,7 @@ func TestDelete_Forbidden(t *testing.T) {
 	repo.expenseOf["e1"] = "trip-1"
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	if err := u.Delete("user-1", "e1"); !errors.Is(err, apperr.ErrForbidden) {
+	if err := u.Delete(context.Background(), "user-1", "e1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
 }
@@ -182,7 +183,7 @@ func TestDelete_Success(t *testing.T) {
 	repo.expenseOf["e1"] = "trip-1"
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	if err := u.Delete("user-1", "e1"); err != nil {
+	if err := u.Delete(context.Background(), "user-1", "e1"); err != nil {
 		t.Errorf("Delete: %v", err)
 	}
 	if _, ok := repo.expenses["e1"]; ok {
@@ -197,7 +198,7 @@ func TestList_Forbidden(t *testing.T) {
 	repo.trips["trip-1"] = tripMeta{owner: "user-other", base: "IDR"}
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	if _, err := u.List("user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
+	if _, err := u.List(context.Background(), "user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
 }
@@ -207,7 +208,7 @@ func TestSummary_Forbidden(t *testing.T) {
 	repo.trips["trip-1"] = tripMeta{owner: "user-other", base: "IDR"}
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	if _, err := u.Summary("user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
+	if _, err := u.Summary(context.Background(), "user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
 }
@@ -221,7 +222,7 @@ func TestSummary_Success(t *testing.T) {
 	}
 	u := NewUsecase(repo, &mockConverter{rate: 1})
 
-	s, err := u.Summary("user-1", "trip-1")
+	s, err := u.Summary(context.Background(), "user-1", "trip-1")
 	if err != nil {
 		t.Fatalf("Summary: %v", err)
 	}

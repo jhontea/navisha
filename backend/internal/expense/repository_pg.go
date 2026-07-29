@@ -19,9 +19,9 @@ func NewPostgresRepository(db *pgxpool.Pool) Repository {
 
 var _ Repository = (*postgresRepository)(nil)
 
-func (r *postgresRepository) FindTripOwner(tripID string) (string, string, error) {
+func (r *postgresRepository) FindTripOwner(ctx context.Context, tripID string) (string, string, error) {
 	var userID, base string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT user_id, base_currency FROM trips WHERE id = $1`, tripID).
 		Scan(&userID, &base)
 	if err != nil {
@@ -33,9 +33,9 @@ func (r *postgresRepository) FindTripOwner(tripID string) (string, string, error
 	return userID, base, nil
 }
 
-func (r *postgresRepository) FindExpenseOwner(expenseID string) (string, string, error) {
+func (r *postgresRepository) FindExpenseOwner(ctx context.Context, expenseID string) (string, string, error) {
 	var userID, tripID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT t.user_id, e.trip_id
 		 FROM expenses e
 		 JOIN trips t ON t.id = e.trip_id
@@ -49,8 +49,8 @@ func (r *postgresRepository) FindExpenseOwner(expenseID string) (string, string,
 	return userID, tripID, nil
 }
 
-func (r *postgresRepository) List(tripID string) ([]Expense, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Expense, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id, trip_id, activity_id, title, amount, currency,
 		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at
 		 FROM expenses
@@ -72,8 +72,8 @@ func (r *postgresRepository) List(tripID string) ([]Expense, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) FindByID(id string) (*Expense, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Expense, error) {
+	row := r.db.QueryRow(ctx,
 		`SELECT id, trip_id, activity_id, title, amount, currency,
 		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at
 		 FROM expenses WHERE id = $1`, id)
@@ -87,8 +87,8 @@ func (r *postgresRepository) FindByID(id string) (*Expense, error) {
 	return e, nil
 }
 
-func (r *postgresRepository) Create(e *Expense) (*Expense, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) Create(ctx context.Context, e *Expense) (*Expense, error) {
+	row := r.db.QueryRow(ctx,
 		`INSERT INTO expenses (trip_id, activity_id, title, amount, currency,
 		                       converted_amount, base_currency, category, expense_date, note)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -119,8 +119,8 @@ func (r *postgresRepository) CreateTx(ctx context.Context, tx pgx.Tx, e *Expense
 	return out, nil
 }
 
-func (r *postgresRepository) Update(e *Expense) (*Expense, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) Update(ctx context.Context, e *Expense) (*Expense, error) {
+	row := r.db.QueryRow(ctx,
 		`UPDATE expenses
 		    SET activity_id = $2, title = $3, amount = $4, currency = $5,
 		        converted_amount = $6, base_currency = $7, category = $8,
@@ -140,8 +140,8 @@ func (r *postgresRepository) Update(e *Expense) (*Expense, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) Delete(id string) error {
-	cmd, err := r.db.Exec(context.Background(),
+func (r *postgresRepository) Delete(ctx context.Context, id string) error {
+	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM expenses WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("expense.Delete: %w", err)
@@ -154,8 +154,8 @@ func (r *postgresRepository) Delete(id string) error {
 
 // Summary returns total + per-category totals in the trip's base currency.
 // Aggregates use `converted_amount` which is stored at insert time.
-func (r *postgresRepository) Summary(tripID, baseCurrency string) (*Summary, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) Summary(ctx context.Context, tripID, baseCurrency string) (*Summary, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT category, SUM(converted_amount) AS total
 		 FROM expenses
 		 WHERE trip_id = $1

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
 import { Providers } from "@/components/providers"
+import { WebVitalsReporter } from "@/components/WebVitalsReporter"
 import "./globals.css"
 
 const inter = localFont({
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistSans.variable} font-sans antialiased`}
       >
+        <WebVitalsReporter />
         <Providers>{children}</Providers>
       </body>
     </html>

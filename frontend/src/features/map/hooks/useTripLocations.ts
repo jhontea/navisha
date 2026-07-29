@@ -1,7 +1,6 @@
 "use client"
 
-import { useQueries } from "@tanstack/react-query"
-import { activityApi } from "@/features/activity/api"
+import { useTripActivities } from "@/features/activity/hooks/useActivities"
 import type {
   Activity,
   LocationPayload,
@@ -41,20 +40,14 @@ export interface TripLocationsResult {
 // parallel queries. Points without stored coordinates are KEPT (carrying their
 // locationName) so the map layer can geocode them — AI-generated trips don't
 // store coords, but they do have accurate place names.
-export function useTripLocations(days: Day[]): TripLocationsResult {
-  const queries = useQueries({
-    queries: days.map((d) => ({
-      queryKey: ["activities", "list", d.id] as const,
-      queryFn: () => activityApi.list(d.id),
-      enabled: !!d.id,
-    })),
-  })
+export function useTripLocations(tripId: string, days: Day[]): TripLocationsResult {
+  const query = useTripActivities(tripId)
 
-  const isLoading = queries.some((q) => q.isLoading)
-  const isError = queries.some((q) => q.isError)
+  const isLoading = query.isLoading
+  const isError = query.isError
 
-  const byDay: DayLocations[] = days.map((d, i) => {
-    const items = queries[i]?.data?.items ?? []
+  const byDay: DayLocations[] = days.map((d) => {
+    const items = query.data?.items_by_day[d.id] ?? []
     const points = items
       .filter((a: Activity) => a.type === "location" && a.payload)
       .filter((a: Activity) =>

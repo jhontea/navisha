@@ -125,7 +125,7 @@ func TestUpdate_Forbidden(t *testing.T) {
 	repo.itemOf["a1"] = "trip-1"
 	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	_, err := u.Update("user-1", "a1", UpdateInput{
+	_, err := u.Update(context.Background(), "user-1", "a1", UpdateInput{
 		Name: "x", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
 	})
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -140,7 +140,7 @@ func TestUpdate_Success(t *testing.T) {
 	repo.itemOf["a1"] = "trip-1"
 	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	out, err := u.Update("user-1", "a1", UpdateInput{
+	out, err := u.Update(context.Background(), "user-1", "a1", UpdateInput{
 		Name: "New name", CheckIn: date(2026, 7, 1), CheckOut: date(2026, 7, 2),
 	})
 	if err != nil {
@@ -158,7 +158,7 @@ func TestDelete_Forbidden(t *testing.T) {
 	repo.itemOf["a1"] = "trip-1"
 	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	if err := u.Delete("user-1", "a1"); !errors.Is(err, apperr.ErrForbidden) {
+	if err := u.Delete(context.Background(), "user-1", "a1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
 }
@@ -170,7 +170,7 @@ func TestDelete_Success(t *testing.T) {
 	repo.itemOf["a1"] = "trip-1"
 	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	if err := u.Delete("user-1", "a1"); err != nil {
+	if err := u.Delete(context.Background(), "user-1", "a1"); err != nil {
 		t.Errorf("Delete: %v", err)
 	}
 	if _, ok := repo.items["a1"]; ok {
@@ -185,7 +185,7 @@ func TestList_Forbidden(t *testing.T) {
 	repo.tripOwners["trip-1"] = "user-other"
 	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	if _, err := u.List("user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
+	if _, err := u.List(context.Background(), "user-1", "trip-1"); !errors.Is(err, apperr.ErrForbidden) {
 		t.Errorf("err = %v, want ErrForbidden", err)
 	}
 }
@@ -199,7 +199,7 @@ func TestList_Success(t *testing.T) {
 	}
 	u := NewUsecase(repo, &mockExpenseCreator{})
 
-	out, err := u.List("user-1", "trip-1")
+	out, err := u.List(context.Background(), "user-1", "trip-1")
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}

@@ -42,7 +42,7 @@ func (h *Handler) List(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	tripID := c.Param("trip_id")
-	items, err := h.usecase.List(userID, tripID)
+	items, err := h.usecase.List(c.Request().Context(), userID, tripID)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -82,7 +82,7 @@ func (h *Handler) Create(c echo.Context) error {
 	}
 	req.Title = sanitize.Text(req.Title)
 	req.Note = sanitize.Text(req.Note)
-	e, err := h.usecase.Create(userID, tripID, CreateInput{
+	e, err := h.usecase.Create(c.Request().Context(), userID, tripID, CreateInput{
 		Title:       req.Title,
 		Amount:      req.Amount,
 		Currency:    strings.ToUpper(req.Currency),
@@ -121,7 +121,7 @@ func (h *Handler) Update(c echo.Context) error {
 	}
 	req.Title = sanitize.Text(req.Title)
 	req.Note = sanitize.Text(req.Note)
-	e, err := h.usecase.Update(userID, id, UpdateInput{
+	e, err := h.usecase.Update(c.Request().Context(), userID, id, UpdateInput{
 		Title:       req.Title,
 		Amount:      req.Amount,
 		Currency:    strings.ToUpper(req.Currency),
@@ -142,7 +142,7 @@ func (h *Handler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	id := c.Param("id")
-	if err := h.usecase.Delete(userID, id); err != nil {
+	if err := h.usecase.Delete(c.Request().Context(), userID, id); err != nil {
 		return mapErr(err)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -154,7 +154,7 @@ func (h *Handler) Summary(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	tripID := c.Param("trip_id")
-	s, err := h.usecase.Summary(userID, tripID)
+	s, err := h.usecase.Summary(c.Request().Context(), userID, tripID)
 	if err != nil {
 		return mapErr(err)
 	}

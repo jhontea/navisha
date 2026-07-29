@@ -1,9 +1,7 @@
 "use client"
 
-import { useMemo } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { useQueries } from "@tanstack/react-query"
 import {
   Calendar,
   Hotel,
@@ -17,7 +15,7 @@ import {
 } from "lucide-react"
 import { useTrip } from "@/features/trip/hooks/useTrips"
 import { getTripDateMetrics, toLocalISODate } from "@/features/trip/lib/status"
-import { activityApi } from "@/features/activity/api"
+import { useTripActivities } from "@/features/activity/hooks/useActivities"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
 import { useExpenseSummary } from "@/features/expense/hooks/useExpenses"
@@ -322,27 +320,13 @@ export default function TripOverviewPage() {
 
   // ── Aggregate activity queries per day ──
   // CRITICAL: useMemo on both dayIds AND queries array — prevents
-  // useQueries from re-creating queryFn on every render which causes
-  // internal TanStack Query churn and excessive backend calls.
-  // See: /memories/navisha-frontend-patterns.md
-  const dayIds = useMemo(() => trip?.days.map((d) => d.id) ?? [], [trip?.days])
-  const activityQueries = useQueries({
-    queries: useMemo(
-      () =>
-        dayIds.map((dayId) => ({
-          queryKey: ["activities", "list", dayId] as const,
-          queryFn: () => activityApi.list(dayId),
-          enabled: !!dayId,
-          staleTime: 5 * 60 * 1000,
-        })),
-      [dayIds],
-    ),
-  })
-  const totalActivities = activityQueries.reduce(
-    (sum, q) => sum + (q.data?.items.length ?? 0),
+  // One trip-level request replaces one activity request per itinerary day.
+  const { data: tripActivities, isSuccess: activitiesLoaded } = useTripActivities(tripId)
+  const activitiesByDay = tripActivities?.items_by_day ?? {}
+  const totalActivities = Object.values(activitiesByDay).reduce(
+    (sum, items) => sum + items.length,
     0,
   )
-  const activitiesLoaded = activityQueries.every((q) => q.isSuccess)
 
   if (!trip) return null
 
@@ -356,9 +340,10 @@ export default function TripOverviewPage() {
   const upcomingIdx = trip.days.findIndex((d) => d.date >= today)
   const startIdx = upcomingIdx === -1 ? Math.max(0, trip.days.length - 3) : upcomingIdx
   const nextUpDay = trip.days[startIdx]
-  const nextUpDayIndex = nextUpDay ? trip.days.findIndex((day) => day.id === nextUpDay.id) : -1
-  const nextUpActivityCount = nextUpDayIndex >= 0 ? activityQueries[nextUpDayIndex]?.data?.items.length ?? 0 : 0
-  const emptyDayCount = activityQueries.filter((query) => query.isSuccess && (query.data?.items.length ?? 0) === 0).length
+  const nextUpActivityCount = nextUpDay ? activitiesByDay[nextUpDay.id]?.length ?? 0 : 0
+  const emptyDayCount = activitiesLoaded
+    ? trip.days.filter((day) => (activitiesByDay[day.id]?.length ?? 0) === 0).length
+    : 0
   const overCategoryCount = Object.entries(trip.budget_categories ?? {}).filter(([category, planned]) => {
     const actual = expenseSummary?.by_category.find((item) => item.category === category)?.total ?? 0
     return planned > 0 && actual > planned

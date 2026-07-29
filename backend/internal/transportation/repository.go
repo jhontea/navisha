@@ -15,15 +15,15 @@ var (
 
 type Repository interface {
 	// Ownership: trip → user JOIN.
-	FindTripOwner(tripID string) (userID string, err error)
+	FindTripOwner(ctx context.Context, tripID string) (userID string, err error)
 	// Ownership: transportation → trip → user JOIN.
-	FindTransportationOwner(id string) (userID, tripID string, err error)
+	FindTransportationOwner(ctx context.Context, id string) (userID, tripID string, err error)
 
-	List(tripID string) ([]Transportation, error)
-	FindByID(id string) (*Transportation, error)
-	Insert(t *Transportation) (*Transportation, error)
-	Update(t *Transportation) (*Transportation, error)
-	Delete(id string) error
+	List(ctx context.Context, tripID string) ([]Transportation, error)
+	FindByID(ctx context.Context, id string) (*Transportation, error)
+	Insert(ctx context.Context, t *Transportation) (*Transportation, error)
+	Update(ctx context.Context, t *Transportation) (*Transportation, error)
+	Delete(ctx context.Context, id string) error
 
 	// Transaction primitives — used when the usecase needs atomicity with
 	// a linked expense insert (see ExpenseCreator).

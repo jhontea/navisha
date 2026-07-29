@@ -20,7 +20,7 @@ type fakeRepo struct {
 	verifyOwnerErr error
 }
 
-func (f *fakeRepo) Save(tripID, content, model string, sourceUpdatedAt time.Time) (*Summary, error) {
+func (f *fakeRepo) Save(_ context.Context, tripID, content, model string, sourceUpdatedAt time.Time) (*Summary, error) {
 	if f.saveErr != nil {
 		return nil, f.saveErr
 	}
@@ -35,14 +35,14 @@ func (f *fakeRepo) Save(tripID, content, model string, sourceUpdatedAt time.Time
 	return f.saved, nil
 }
 
-func (f *fakeRepo) GetByTripID(tripID string) (*Summary, error) {
+func (f *fakeRepo) GetByTripID(_ context.Context, tripID string) (*Summary, error) {
 	if f.getErr != nil {
 		return nil, f.getErr
 	}
 	return f.stored, nil
 }
 
-func (f *fakeRepo) Delete(tripID string) error { return f.delErr }
+func (f *fakeRepo) Delete(_ context.Context, tripID string) error { return f.delErr }
 
 func (f *fakeRepo) VerifyTripOwner(ctx context.Context, userID, tripID string) error {
 	return f.verifyOwnerErr

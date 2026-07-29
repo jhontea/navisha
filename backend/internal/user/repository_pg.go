@@ -17,9 +17,9 @@ func NewPostgresRepository(db *pgxpool.Pool) Repository {
 	return &postgresRepository{db: db}
 }
 
-func (r *postgresRepository) FindByID(id string) (*User, error) {
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*User, error) {
 	u := &User{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT id, google_id, email, name, avatar_url, created_at, updated_at
 		 FROM users WHERE id = $1`, id).
 		Scan(&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
@@ -32,9 +32,9 @@ func (r *postgresRepository) FindByID(id string) (*User, error) {
 	return u, nil
 }
 
-func (r *postgresRepository) FindByGoogleID(googleID string) (*User, error) {
+func (r *postgresRepository) FindByGoogleID(ctx context.Context, googleID string) (*User, error) {
 	u := &User{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT id, google_id, email, name, avatar_url, created_at, updated_at
 		 FROM users WHERE google_id = $1`, googleID).
 		Scan(&u.ID, &u.GoogleID, &u.Email, &u.Name, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
@@ -47,9 +47,9 @@ func (r *postgresRepository) FindByGoogleID(googleID string) (*User, error) {
 	return u, nil
 }
 
-func (r *postgresRepository) Upsert(u *User) (*User, error) {
+func (r *postgresRepository) Upsert(ctx context.Context, u *User) (*User, error) {
 	out := &User{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`INSERT INTO users (google_id, email, name, avatar_url)
 		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (google_id) DO UPDATE

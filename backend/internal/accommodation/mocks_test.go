@@ -35,7 +35,7 @@ func newMockRepo() *mockRepo {
 	}
 }
 
-func (m *mockRepo) FindTripOwner(tripID string) (string, error) {
+func (m *mockRepo) FindTripOwner(_ context.Context, tripID string) (string, error) {
 	if m.tripOwnerErr != nil {
 		return "", m.tripOwnerErr
 	}
@@ -45,7 +45,7 @@ func (m *mockRepo) FindTripOwner(tripID string) (string, error) {
 	return "", ErrTripNotFound
 }
 
-func (m *mockRepo) FindAccommodationOwner(id string) (string, string, error) {
+func (m *mockRepo) FindAccommodationOwner(_ context.Context, id string) (string, string, error) {
 	if m.itemOwnerErr != nil {
 		return "", "", m.itemOwnerErr
 	}
@@ -56,18 +56,18 @@ func (m *mockRepo) FindAccommodationOwner(id string) (string, string, error) {
 	return m.tripOwners[tripID], tripID, nil
 }
 
-func (m *mockRepo) List(_ string) ([]Accommodation, error) {
+func (m *mockRepo) List(_ context.Context, _ string) ([]Accommodation, error) {
 	return m.listResult, m.listErr
 }
 
-func (m *mockRepo) FindByID(id string) (*Accommodation, error) {
+func (m *mockRepo) FindByID(_ context.Context, id string) (*Accommodation, error) {
 	if a, ok := m.items[id]; ok {
 		return a, nil
 	}
 	return nil, ErrNotFound
 }
 
-func (m *mockRepo) Insert(a *Accommodation) (*Accommodation, error) {
+func (m *mockRepo) Insert(_ context.Context, a *Accommodation) (*Accommodation, error) {
 	if m.insertErr != nil {
 		return nil, m.insertErr
 	}
@@ -81,7 +81,7 @@ func (m *mockRepo) Insert(a *Accommodation) (*Accommodation, error) {
 	return &out, nil
 }
 
-func (m *mockRepo) Update(a *Accommodation) (*Accommodation, error) {
+func (m *mockRepo) Update(_ context.Context, a *Accommodation) (*Accommodation, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr
 	}
@@ -92,7 +92,7 @@ func (m *mockRepo) Update(a *Accommodation) (*Accommodation, error) {
 	return a, nil
 }
 
-func (m *mockRepo) Delete(id string) error {
+func (m *mockRepo) Delete(_ context.Context, id string) error {
 	if m.deleteErr != nil {
 		return m.deleteErr
 	}
@@ -113,7 +113,7 @@ func (m *mockRepo) Rollback(_ context.Context, _ pgx.Tx) error {
 	return nil
 }
 func (m *mockRepo) InsertTx(_ context.Context, _ pgx.Tx, a *Accommodation) (*Accommodation, error) {
-	return m.Insert(a)
+	return m.Insert(context.Background(), a)
 }
 
 // mockExpenseCreator satisfies ExpenseCreator.

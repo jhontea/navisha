@@ -23,6 +23,8 @@ export async function GET(
     const response = await fetch(upstreamUrl, {
       headers: { "User-Agent": "Navisha/1.0" },
       signal: AbortSignal.timeout(8_000),
+      cache: "force-cache",
+      next: { revalidate: 7 * 24 * 60 * 60 },
     })
     if (!response.ok) {
       return new NextResponse(null, { status: response.status })
@@ -32,7 +34,7 @@ export async function GET(
       headers: {
         "Content-Type": response.headers.get("content-type") || "image/png",
         "Cache-Control":
-          response.headers.get("cache-control") || "public, max-age=86400",
+          "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
       },
     })
   } catch {
