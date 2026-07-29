@@ -9,7 +9,7 @@ import {
   Pin,
   useMap,
 } from "@vis.gl/react-google-maps"
-import { MapPin } from "lucide-react"
+import { LoaderCircle, MapPin } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
 import type { DayLocations, LocationPoint } from "../hooks/useTripLocations"
 import { colorForDay } from "./mapColors"
@@ -131,9 +131,7 @@ function GeocodingLayer({
     <>
       {displayable.length === 0 && needGeocode.length > 0 && loading && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm">
-          <span className="material-symbols-outlined animate-spin text-primary text-[32px]">
-            progress_activity
-          </span>
+          <LoaderCircle className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
           <p className="mt-2 text-sm font-medium text-muted-foreground">
             Resolving locations…
           </p>

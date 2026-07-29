@@ -2,6 +2,19 @@
 
 VPS: `202.155.13.11`  
 Domain: `navisha.cloud` (frontend), `api.navisha.cloud` (backend API)  
+
+### Cloudflare public HTML cache
+
+The production zone has an active Cache Rule named `Cache public HTML`:
+
+```text
+(http.host eq "navisha.cloud" and http.request.method in {"GET" "HEAD"} and http.request.uri.path in {"/" "/privacy" "/terms" "/contact"})
+```
+
+Set **Cache eligibility** to `Eligible for cache` and **Edge TTL** to
+`Ignore cache-control header and use this TTL: 1 hour`. Keep `/login`,
+`/share/*`, dashboard routes, and API routes outside this rule because their
+responses can depend on cookies or private data.
 Database: Neon (external, serverless PostgreSQL)
 
 ## Architecture

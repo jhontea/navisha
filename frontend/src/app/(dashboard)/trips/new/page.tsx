@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { TripForm } from "@/features/trip/components/TripForm"
 import { useCreateTrip } from "@/features/trip/hooks/useTrips"
 import { BackLink } from "@/components/BackLink"
+import { Lightbulb, Luggage } from "lucide-react"
 
 export default function NewTripPage() {
   const router = useRouter()
@@ -17,13 +18,7 @@ export default function NewTripPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
-            <span
-              className="material-symbols-outlined text-primary text-[22px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-              aria-hidden="true"
-            >
-              luggage
-            </span>
+            <Luggage className="h-[22px] w-[22px] text-primary" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">New Trip</h1>
         </div>
@@ -46,13 +41,7 @@ export default function NewTripPage() {
       {/* Pro Tip */}
       <div className="mt-6 flex gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-5 animate-fade-in-up">
         <div className="shrink-0 mt-0.5">
-          <span
-            className="material-symbols-outlined text-primary text-[20px]"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-            aria-hidden="true"
-          >
-            lightbulb
-          </span>
+          <Lightbulb className="h-5 w-5 text-primary" aria-hidden="true" />
         </div>
         <div>
           <p className="text-xs font-semibold text-primary mb-1">Pro Tip</p>
