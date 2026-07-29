@@ -1,11 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { Check, ChevronDown, LoaderCircle, Pencil, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUpdateDayTitle } from "@/features/trip/hooks/useTrips"
 import type { Day } from "@/features/trip/types"
-import { DayActivities } from "./DayActivities"
+
+const DayActivities = dynamic(
+  () => import("./DayActivities").then((module) => module.DayActivities),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-3" aria-label="Loading day activities">
+        <div className="h-20 animate-pulse rounded-xl bg-muted" />
+        <div className="h-10 animate-pulse rounded-xl bg-muted/70" />
+      </div>
+    ),
+  },
+)
 
 interface Props {
   tripId: string
@@ -30,11 +43,19 @@ export function DayPanel({
   days,
 }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded)
+  const [hasBeenExpanded, setHasBeenExpanded] = useState(defaultExpanded)
   const [editingTitle, setEditingTitle] = useState(false)
   const [currentTitle, setCurrentTitle] = useState(title)
   const [titleDraft, setTitleDraft] = useState(title)
   const [titleError, setTitleError] = useState("")
   const updateTitle = useUpdateDayTitle(tripId)
+
+  const toggleExpanded = () => {
+    setExpanded((value) => {
+      if (!value) setHasBeenExpanded(true)
+      return !value
+    })
+  }
 
   useEffect(() => {
     if (editingTitle) return
@@ -94,7 +115,7 @@ export function DayPanel({
       <div className="flex flex-wrap items-center gap-2 px-3 py-3 transition-colors hover:bg-accent/10 sm:gap-3 sm:px-5 sm:py-4 sm:flex-nowrap">
         <button
           type="button"
-          onClick={() => setExpanded((value) => !value)}
+          onClick={toggleExpanded}
           aria-expanded={expanded}
           aria-controls={`day-panel-${dayId}`}
           className="flex min-w-0 items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -182,7 +203,7 @@ export function DayPanel({
 
         <button
           type="button"
-          onClick={() => setExpanded((value) => !value)}
+          onClick={toggleExpanded}
           aria-expanded={expanded}
           aria-controls={`day-panel-${dayId}`}
           aria-label={`${expanded ? "Collapse" : "Expand"} Day ${dayNumber}`}
@@ -212,14 +233,16 @@ export function DayPanel({
       >
         <div className="overflow-hidden">
           <div className="border-t border-border/20 px-3 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-            <DayActivities
-              tripId={tripId}
-              dayId={dayId}
-              date={date}
-              dayNumber={dayNumber}
-              destination={destination}
-              days={days}
-            />
+            {hasBeenExpanded ? (
+              <DayActivities
+                tripId={tripId}
+                dayId={dayId}
+                date={date}
+                dayNumber={dayNumber}
+                destination={destination}
+                days={days}
+              />
+            ) : null}
           </div>
         </div>
       </div>

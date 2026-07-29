@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { ChevronDown, Pencil, Receipt, Trash2, X } from "lucide-react"
 import { EmptyState } from "@/components/EmptyState"
@@ -13,10 +14,14 @@ import {
 } from "../hooks/useExpenses"
 import type { CreateExpenseInput, Expense } from "../types"
 import { BudgetSummary } from "./BudgetSummary"
-import { ExpenseForm } from "./ExpenseForm"
 import { toast } from "@/lib/toast"
 
 import { CATEGORY_COLORS } from "../categoryColors"
+
+const ExpenseForm = dynamic(
+  () => import("./ExpenseForm").then((module) => module.ExpenseForm),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> },
+)
 
 const CATEGORY_CONFIG = CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS[string]>
 

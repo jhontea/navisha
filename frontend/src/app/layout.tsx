@@ -20,12 +20,6 @@ const interItalic = localFont({
   preload: false,
 })
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-})
-
 export const metadata: Metadata = {
   title: {
     default: "Navisha — Travel Planner",
@@ -50,7 +44,7 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body
-        className={`${inter.variable} ${interItalic.variable} ${geistSans.variable} font-sans antialiased`}
+        className={`${inter.variable} ${interItalic.variable} font-sans antialiased`}
       >
         <WebVitalsReporter />
         <RouteProgress />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import {
@@ -10,10 +11,14 @@ import {
   useUpdateTransportation,
 } from "../hooks/useTransportations"
 import type { CreateTransportationInput, Transportation } from "../types"
-import { TransportationForm } from "./TransportationForm"
 import { TransportationCard } from "./TransportationCard"
 import { Plane, Plus } from "lucide-react"
 import { toast } from "@/lib/toast"
+
+const TransportationForm = dynamic(
+  () => import("./TransportationForm").then((module) => module.TransportationForm),
+  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
+)
 
 interface Props {
   tripId: string

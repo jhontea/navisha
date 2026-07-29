@@ -140,17 +140,17 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "sans-serif"],
-        heading: ["var(--font-geist-sans)", "Geist", "sans-serif"],
+        heading: ["var(--font-inter)", "Inter", "sans-serif"],
         "label-sm": ["var(--font-inter)", "Inter", "sans-serif"],
         "body-sm": ["var(--font-inter)", "Inter", "sans-serif"],
-        "headline-md": ["var(--font-geist-sans)", "Geist", "sans-serif"],
+        "headline-md": ["var(--font-inter)", "Inter", "sans-serif"],
         "body-md": ["var(--font-inter)", "Inter", "sans-serif"],
-        display: ["var(--font-geist-sans)", "Geist", "sans-serif"],
-        "headline-sm": ["var(--font-geist-sans)", "Geist", "sans-serif"],
+        display: ["var(--font-inter)", "Inter", "sans-serif"],
+        "headline-sm": ["var(--font-inter)", "Inter", "sans-serif"],
         "body-lg": ["var(--font-inter)", "Inter", "sans-serif"],
         "label-md": ["var(--font-inter)", "Inter", "sans-serif"],
-        "headline-lg": ["var(--font-geist-sans)", "Geist", "sans-serif"],
-        "headline-lg-mobile": ["var(--font-geist-sans)", "Geist", "sans-serif"],
+        "headline-lg": ["var(--font-inter)", "Inter", "sans-serif"],
+        "headline-lg-mobile": ["var(--font-inter)", "Inter", "sans-serif"],
       },
       keyframes: {
         shimmer: {
