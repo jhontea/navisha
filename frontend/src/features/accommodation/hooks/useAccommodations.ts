@@ -14,6 +14,9 @@ import type {
 const listKey = (tripId: string) =>
   ["accommodations", "list", tripId] as const
 
+const invalidateOverview = (qc: ReturnType<typeof useQueryClient>, tripId: string) =>
+  qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+
 export function useAccommodations(tripId: string) {
   return useQuery({
     queryKey: listKey(tripId),
@@ -33,6 +36,7 @@ export function useCreateAccommodation(tripId: string) {
       // Invalidate expense summary + list so budget page reflects new cost immediately
       qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
+      invalidateOverview(qc, tripId)
     },
   })
 }
@@ -46,6 +50,7 @@ export function useUpdateAccommodation(id: string, tripId: string) {
       qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
+      invalidateOverview(qc, tripId)
     },
   })
 }
@@ -58,6 +63,7 @@ export function useDeleteAccommodation(tripId: string) {
       qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
+      invalidateOverview(qc, tripId)
     },
   })
 }

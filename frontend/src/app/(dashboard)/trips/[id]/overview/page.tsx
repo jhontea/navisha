@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import {
   Calendar,
   Hotel,
@@ -13,21 +14,20 @@ import {
   CheckCircle2,
   TrendingUp,
 } from "lucide-react"
-import { useTrip } from "@/features/trip/hooks/useTrips"
 import { getTripDateMetrics, toLocalISODate } from "@/features/trip/lib/status"
-import { useTripActivities } from "@/features/activity/hooks/useActivities"
-import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
-import { useTransportations } from "@/features/transportation/hooks/useTransportations"
-import { useExpenseSummary } from "@/features/expense/hooks/useExpenses"
-import { TripSummaryCard } from "@/features/summary/components/TripSummaryCard"
+import { useTripOverview } from "@/features/trip/overview"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
 
 import type { Day } from "@/features/trip/types"
 
-
-
-
+const TripSummaryCard = dynamic(
+  () => import("@/features/summary/components/TripSummaryCard").then((module) => module.TripSummaryCard),
+  {
+    ssr: false,
+    loading: () => <div className="h-40 animate-pulse rounded-2xl bg-muted" />,
+  },
+)
 
 // Helper to get today's date in YYYY-MM-DD format
 function getToday(): string {
@@ -313,15 +313,12 @@ export default function TripOverviewPage() {
   const params = useParams<{ id: string }>()
   const tripId = params.id
 
-  const { data: trip } = useTrip(tripId)
-  const { data: expenseSummary } = useExpenseSummary(tripId)
-  const { data: accommodations } = useAccommodations(tripId)
-  const { data: transportations } = useTransportations(tripId)
-
-  // ── Aggregate activity queries per day ──
-  // CRITICAL: useMemo on both dayIds AND queries array — prevents
-  // One trip-level request replaces one activity request per itinerary day.
-  const { data: tripActivities, isSuccess: activitiesLoaded } = useTripActivities(tripId)
+  const { data: overview, isSuccess: activitiesLoaded } = useTripOverview(tripId)
+  const trip = overview?.trip
+  const expenseSummary = overview?.expense_summary
+  const accommodations = overview?.accommodations
+  const transportations = overview?.transportations
+  const tripActivities = overview?.activities
   const activitiesByDay = tripActivities?.items_by_day ?? {}
   const totalActivities = Object.values(activitiesByDay).reduce(
     (sum, items) => sum + items.length,

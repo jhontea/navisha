@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import {
@@ -10,10 +11,14 @@ import {
   useUpdateAccommodation,
 } from "../hooks/useAccommodations"
 import type { Accommodation, CreateAccommodationInput } from "../types"
-import { AccommodationForm } from "./AccommodationForm"
 import { AccommodationCard } from "./AccommodationCard"
 import { Hotel, Plus } from "lucide-react"
 import { toast } from "@/lib/toast"
+
+const AccommodationForm = dynamic(
+  () => import("./AccommodationForm").then((module) => module.AccommodationForm),
+  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
+)
 
 interface Props {
   tripId: string

@@ -45,11 +45,11 @@ export function useTrips() {
   })
 }
 
-export function useTrip(id: string) {
+export function useTrip(id: string, enabled = true) {
   return useQuery({
     queryKey: ["trips", "detail", id],
     queryFn: () => tripApi.get(id),
-    enabled: !!id,
+    enabled: enabled && !!id,
   })
 }
 
@@ -130,8 +130,10 @@ export function useUpdateDayNotes(tripId: string) {
   return useMutation({
     mutationFn: ({ dayId, notes }: { dayId: string; notes: string }) =>
       tripApi.updateDayNotes(dayId, notes),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: 'active' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+    },
   })
 }
 
@@ -140,8 +142,10 @@ export function useUpdateDayTitle(tripId: string) {
   return useMutation({
     mutationFn: ({ dayId, title }: { dayId: string; title: string }) =>
       tripApi.updateDayTitle(dayId, title),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "active" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+    },
   })
 }
 

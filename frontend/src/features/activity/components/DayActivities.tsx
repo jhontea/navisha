@@ -429,10 +429,10 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [copying, setCopying] = useState(false)
 
-  const createMut = useCreateActivity(dayId)
-  const updateMut = useUpdateActivity(editingId ?? "", dayId)
-  const deleteMut = useDeleteActivity(dayId)
-  const reorderMut = useReorderActivities(dayId)
+  const createMut = useCreateActivity(dayId, tripId)
+  const updateMut = useUpdateActivity(editingId ?? "", dayId, tripId)
+  const deleteMut = useDeleteActivity(dayId, tripId)
+  const reorderMut = useReorderActivities(dayId, tripId)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

@@ -14,6 +14,9 @@ import type {
 const listKey = (tripId: string) =>
   ["transportations", "list", tripId] as const
 
+const invalidateOverview = (qc: ReturnType<typeof useQueryClient>, tripId: string) =>
+  qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+
 export function useTransportations(tripId: string) {
   return useQuery({
     queryKey: listKey(tripId),
@@ -33,6 +36,7 @@ export function useCreateTransportation(tripId: string) {
       // Backend creates a linked expense when cost is provided — keep budget in sync
       qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
+      invalidateOverview(qc, tripId)
     },
   })
 }
@@ -46,6 +50,7 @@ export function useUpdateTransportation(id: string, tripId: string) {
       qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
+      invalidateOverview(qc, tripId)
     },
   })
 }
@@ -58,6 +63,7 @@ export function useDeleteTransportation(tripId: string) {
       qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
       qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
+      invalidateOverview(qc, tripId)
     },
   })
 }

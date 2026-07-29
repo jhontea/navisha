@@ -9,6 +9,7 @@ import { accommodationApi } from "@/features/accommodation/api"
 import { expenseApi } from "@/features/expense/api"
 import { transportationApi } from "@/features/transportation/api"
 import { tripApi } from "@/features/trip/api"
+import { tripOverviewApi, tripOverviewKey } from "@/features/trip/overview"
 
 interface TripTabBarProps {
   tripId: string
@@ -41,29 +42,19 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
   function prefetchTab(tab: (typeof TABS)[number]) {
     if (!tripId) return
 
-    void queryClient.prefetchQuery({
-      queryKey: ["trips", "detail", tripId],
-      queryFn: () => tripApi.get(tripId),
-    })
-
     if (tab.key === "overview") {
       void queryClient.prefetchQuery({
-        queryKey: ["accommodations", "list", tripId],
-        queryFn: () => accommodationApi.list(tripId),
-        staleTime: 5 * 60 * 1000,
-      })
-      void queryClient.prefetchQuery({
-        queryKey: ["transportations", "list", tripId],
-        queryFn: () => transportationApi.list(tripId),
-        staleTime: 5 * 60 * 1000,
-      })
-      void queryClient.prefetchQuery({
-        queryKey: ["expenses", "summary", tripId],
-        queryFn: () => expenseApi.summary(tripId),
+        queryKey: tripOverviewKey(tripId),
+        queryFn: () => tripOverviewApi.get(tripId),
         staleTime: 5 * 60 * 1000,
       })
       return
     }
+
+    void queryClient.prefetchQuery({
+      queryKey: ["trips", "detail", tripId],
+      queryFn: () => tripApi.get(tripId),
+    })
 
     if (tab.key === "transport") {
       void queryClient.prefetchQuery({
@@ -115,8 +106,8 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
             <Link
               key={tab.href}
               href={href}
-              onPointerEnter={() => prefetchTab(tab)}
-              onTouchStart={() => prefetchTab(tab)}
+              prefetch={false}
+              onMouseEnter={() => prefetchTab(tab)}
               onFocus={() => prefetchTab(tab)}
               role="tab"
               aria-current={isActive ? "page" : undefined}

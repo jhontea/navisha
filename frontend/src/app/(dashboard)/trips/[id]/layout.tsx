@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { TripHero } from "@/features/trip/components/TripHero"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
 import { useDeleteTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
+import { useTripOverview } from "@/features/trip/overview"
 import { getTripSaveDisabledReason } from "@/features/trip/lib/actionability"
 import { resolveTripCover } from "@/features/trip/lib/cover"
 import { ApiError } from "@/lib/api"
@@ -34,14 +35,15 @@ export default function TripDetailLayout({ children }: { children: ReactNode }) 
   const router = useRouter()
   const tripId = params.id
   const isStandaloneEditPage = pathname.endsWith("/edit")
-  const {
-    data: trip,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useTrip(tripId)
+  const isOverviewPage = pathname.endsWith("/overview")
+  const tripQuery = useTrip(tripId, !isOverviewPage)
+  const overviewQuery = useTripOverview(tripId, isOverviewPage)
+  const trip = isOverviewPage ? overviewQuery.data?.trip : tripQuery.data
+  const isLoading = isOverviewPage ? overviewQuery.isLoading : tripQuery.isLoading
+  const isError = isOverviewPage ? overviewQuery.isError : tripQuery.isError
+  const error = isOverviewPage ? overviewQuery.error : tripQuery.error
+  const refetch = isOverviewPage ? overviewQuery.refetch : tripQuery.refetch
+  const isFetching = isOverviewPage ? overviewQuery.isFetching : tripQuery.isFetching
   const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(tripId)
   const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
 

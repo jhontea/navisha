@@ -112,8 +112,7 @@ export function NavBar() {
           {/* Brand */}
           <Link
             href="/dashboard"
-            onPointerEnter={() => prefetchNav("/dashboard")}
-            onTouchStart={() => prefetchNav("/dashboard")}
+            onMouseEnter={() => prefetchNav("/dashboard")}
             onFocus={() => prefetchNav("/dashboard")}
             className="flex items-center gap-2.5 group shrink-0"
             aria-label="Navisha home"
@@ -143,8 +142,7 @@ export function NavBar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onPointerEnter={() => prefetchNav(item.href)}
-                  onTouchStart={() => prefetchNav(item.href)}
+                  onMouseEnter={() => prefetchNav(item.href)}
                   onFocus={() => prefetchNav(item.href)}
                   role="listitem"
                   aria-current={isActive ? "page" : undefined}
@@ -183,8 +181,7 @@ export function NavBar() {
             {/* Iter 24 — Profile: ring animation when active */}
             <Link
               href="/profile"
-              onPointerEnter={() => prefetchNav("/profile")}
-              onTouchStart={() => prefetchNav("/profile")}
+              onMouseEnter={() => prefetchNav("/profile")}
               onFocus={() => prefetchNav("/profile")}
               aria-current={pathname === "/profile" ? "page" : undefined}
               aria-label={isLoading ? "Loading profile" : `View profile: ${user?.name ?? "Account"}`}
@@ -267,9 +264,7 @@ export function NavBar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onPointerEnter={() => prefetchNav(item.href)}
-                onTouchStart={() => prefetchNav(item.href)}
-                onFocus={() => prefetchNav(item.href)}
+                prefetch={false}
                 aria-current={isActive ? "page" : undefined}
                 title={item.label}
                 aria-label={item.label}

@@ -32,36 +32,46 @@ export function useTripActivities(tripId: string) {
   })
 }
 
-export function useCreateActivity(dayId: string) {
+function invalidateActivityViews(
+  qc: ReturnType<typeof useQueryClient>,
+  dayId: string,
+  tripId: string,
+) {
+  qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: "active" })
+  qc.invalidateQueries({ queryKey: ["activities", "trip", tripId], refetchType: "active" })
+  qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+}
+
+export function useCreateActivity(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateActivityInput) => activityApi.create(dayId, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["activities"], refetchType: 'active' }),
+    onSuccess: () => invalidateActivityViews(qc, dayId, tripId),
   })
 }
 
-export function useUpdateActivity(id: string, _dayId: string) {
+export function useUpdateActivity(id: string, dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: UpdateActivityInput) => activityApi.update(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["activities"], refetchType: 'active' }),
+    onSuccess: () => invalidateActivityViews(qc, dayId, tripId),
   })
 }
 
-export function useDeleteActivity(_dayId: string) {
+export function useDeleteActivity(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => activityApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["activities"], refetchType: 'active' }),
+    onSuccess: () => invalidateActivityViews(qc, dayId, tripId),
   })
 }
 
-export function useReorderActivities(dayId: string) {
+export function useReorderActivities(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: ReorderInput) => activityApi.reorder(dayId, input),
     // Optimistic update is handled directly in DayActivities.onDragEnd
     // via qc.setQueryData — faster and bypasses TanStack Mutation lifecycle.
-    onSettled: () => qc.invalidateQueries({ queryKey: ["activities"], refetchType: 'active' }),
+    onSettled: () => invalidateActivityViews(qc, dayId, tripId),
   })
 }
