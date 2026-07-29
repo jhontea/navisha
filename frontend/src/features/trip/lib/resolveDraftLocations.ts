@@ -1,5 +1,5 @@
 import type { TripDraft, ActivityDraft } from "../types"
-import { searchLocationSuggestions } from "@/features/location/api"
+import { resolveLocationSuggestions } from "@/features/location/api"
 import { LOCATION_PROVIDER } from "@/features/location/config"
 import type { LocationSuggestion } from "@/features/location/types"
 
@@ -62,7 +62,7 @@ export async function resolveDraftLocations(
     })),
   }
 
-  const targets: { act: ActivityDraft; name: string }[] = []
+  const targets: { key: string; act: ActivityDraft; name: string }[] = []
   for (const day of cloned.days) {
     for (const act of day.activities) {
       if (act.type !== "location") continue
@@ -70,25 +70,29 @@ export async function resolveDraftLocations(
       const name = (act.location_name || act.title).trim()
       if (!name) continue
       markNeedsReview(act)
-      targets.push({ act, name })
+      targets.push({ key: `${day.day_number}:${targets.length}`, act, name })
     }
   }
   if (targets.length === 0) return cloned
 
   if (LOCATION_PROVIDER === "geoapify") {
-    await Promise.allSettled(
-      targets.map(async ({ act, name }) => {
-        const query = destination ? `${name}, ${destination}` : name
-        const response = await searchLocationSuggestions(query, "place")
+    try {
+      const response = await resolveLocationSuggestions(
+        targets.map(({ key, name }) => ({ key, name })),
+        destination,
+      )
+      targets.forEach(({ key, act, name }) => {
         const best = chooseBest(
-          response.suggestions.map(fromLocationSuggestion),
+          (response.results[key] ?? []).map(fromLocationSuggestion),
           name,
           destination,
           act.category,
         )
         if (best) applyCandidate(act, best)
-      }),
-    )
+      })
+    } catch {
+      // Fail open: unresolved activities remain reviewable and editable.
+    }
     return cloned
   }
 

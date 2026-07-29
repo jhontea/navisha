@@ -32,17 +32,17 @@ const R2_PUBLIC_ORIGIN = (() => {
     return "https://assets.navisha.cloud"
   }
 })()
-const R2_IMAGE_TRANSFORM =
-  "/cdn-cgi/image/width=1600,fit=cover,quality=75,format=auto"
+function stripR2ImageTransform(pathname: string): string {
+  return pathname.replace(/^\/cdn-cgi\/image\/[^/]+/, "")
+}
 
-function getOptimizedR2Url(pathname: string): string {
-  const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`
-
-  if (normalizedPath.startsWith(`${R2_IMAGE_TRANSFORM}/`)) {
-    return `${R2_PUBLIC_URL.replace(/\/$/, "")}${normalizedPath}`
-  }
-
-  return `${R2_PUBLIC_URL.replace(/\/$/, "")}${R2_IMAGE_TRANSFORM}${normalizedPath}`
+function getOptimizedR2Url(pathname: string, width: number): string {
+  const sourcePath = stripR2ImageTransform(pathname)
+  const normalizedPath = sourcePath.startsWith("/")
+    ? sourcePath
+    : `/${sourcePath}`
+  const transform = `/cdn-cgi/image/width=${width},fit=cover,quality=75,format=auto`
+  return `${R2_PUBLIC_URL.replace(/\/$/, "")}${transform}${normalizedPath}`
 }
 
 function normalizeLocation(value: string): string {
@@ -96,9 +96,12 @@ function findCover(destination: string) {
 }
 
 /** Resolve a stable default cover for a destination when no custom cover exists. */
-export function getDefaultTripCover(destination?: string): string {
+export function getDefaultTripCover(
+  destination?: string,
+  width = 1600,
+): string {
   const match = destination ? findCover(destination) : undefined
-  if (match) return getOptimizedR2Url(`/trip-covers/${match.filename}`)
+  if (match) return getOptimizedR2Url(`/trip-covers/${match.filename}`, width)
 
   return ""
 }
@@ -107,13 +110,30 @@ export function getDefaultTripCover(destination?: string): string {
 export function resolveTripCover(
   coverImageUrl?: string | null,
   destination?: string | null,
+  width = 1600,
 ): string {
   if (canRenderTripCover(coverImageUrl)) {
     const parsed = new URL(coverImageUrl)
     if (parsed.origin === R2_PUBLIC_ORIGIN) {
-      return `${getOptimizedR2Url(parsed.pathname)}${parsed.search}${parsed.hash}`
+      return `${getOptimizedR2Url(parsed.pathname, width)}${parsed.search}${parsed.hash}`
     }
     return coverImageUrl
   }
-  return getDefaultTripCover(destination ?? undefined)
+  return getDefaultTripCover(destination ?? undefined, width)
+}
+
+/** Responsive variants are emitted only when the source supports R2 transforms. */
+export function tripCoverSrcSet(
+  coverImageUrl?: string | null,
+  destination?: string | null,
+  widths: number[] = [480, 768, 960, 1280, 1600],
+): string | undefined {
+  const variants = widths.map((width) => ({
+    width,
+    url: resolveTripCover(coverImageUrl, destination, width),
+  }))
+  if (!variants[0]?.url || new Set(variants.map(({ url }) => url)).size < 2) {
+    return undefined
+  }
+  return variants.map(({ width, url }) => `${url} ${width}w`).join(", ")
 }

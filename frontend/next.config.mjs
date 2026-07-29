@@ -49,20 +49,11 @@ const nextConfig = {
         ],
       },
       {
-        // Catch-all EXCLUDING /_next/static/* — those are handled by the
-        // immutable-cache rule above. Without this exclusion, the no-store
-        // header below would also apply to static chunks (Next.js merges
-        // headers from all matching rules), defeating the immutable cache
-        // and forcing the browser to re-download every JS chunk on each
-        // navigation (high CPU/RAM on both browser and server).
-        // The negative lookahead `(?!_next/static/)` keeps dynamic HTML/RSC
-        // routes no-store while leaving static assets cacheable.
+        // Catch-all security headers. Cache policy stays owned by each App
+        // Router response, so public pages and map tiles can be cached while
+        // dynamic API responses remain no-store.
         source: '/((?!_next/static/).*)',
         headers: [
-          // Prevent browser caching of dynamic HTML/docs — avoids stale
-          // pages and "hard reload needed" bugs. Scoped to non-static routes;
-          // static chunks are handled by the /_next/static rule above.
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
           // Prevent MIME type sniffing
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           // Prevent clickjacking by blocking all framing

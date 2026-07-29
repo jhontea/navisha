@@ -57,9 +57,9 @@ func (r *postgresRepository) InsertTx(ctx context.Context, tx pgx.Tx, a *Accommo
 	return out, nil
 }
 
-func (r *postgresRepository) FindTripOwner(tripID string) (string, error) {
+func (r *postgresRepository) FindTripOwner(ctx context.Context, tripID string) (string, error) {
 	var userID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT user_id FROM trips WHERE id = $1`, tripID).Scan(&userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -70,9 +70,9 @@ func (r *postgresRepository) FindTripOwner(tripID string) (string, error) {
 	return userID, nil
 }
 
-func (r *postgresRepository) FindAccommodationOwner(id string) (string, string, error) {
+func (r *postgresRepository) FindAccommodationOwner(ctx context.Context, id string) (string, string, error) {
 	var userID, tripID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT t.user_id, a.trip_id
 		 FROM accommodations a
 		 JOIN trips t ON t.id = a.trip_id
@@ -86,8 +86,8 @@ func (r *postgresRepository) FindAccommodationOwner(id string) (string, string, 
 	return userID, tripID, nil
 }
 
-func (r *postgresRepository) List(tripID string) ([]Accommodation, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Accommodation, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
 		        check_in, check_out, confirmation_number, notes, created_at, updated_at
 		 FROM accommodations
@@ -109,8 +109,8 @@ func (r *postgresRepository) List(tripID string) ([]Accommodation, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) FindByID(id string) (*Accommodation, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Accommodation, error) {
+	row := r.db.QueryRow(ctx,
 		`SELECT id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
 		        check_in, check_out, confirmation_number, notes, created_at, updated_at
 		 FROM accommodations WHERE id = $1`, id)
@@ -124,8 +124,8 @@ func (r *postgresRepository) FindByID(id string) (*Accommodation, error) {
 	return a, nil
 }
 
-func (r *postgresRepository) Insert(a *Accommodation) (*Accommodation, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) Insert(ctx context.Context, a *Accommodation) (*Accommodation, error) {
+	row := r.db.QueryRow(ctx,
 		`INSERT INTO accommodations (trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
 		                             check_in, check_out, confirmation_number, notes)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -140,8 +140,8 @@ func (r *postgresRepository) Insert(a *Accommodation) (*Accommodation, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) Update(a *Accommodation) (*Accommodation, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) Update(ctx context.Context, a *Accommodation) (*Accommodation, error) {
+	row := r.db.QueryRow(ctx,
 		`UPDATE accommodations
 		    SET accommodation_type = $2, name = $3, location_name = $4, lat = $5, lng = $6,
 		        google_place_id = $7, check_in = $8, check_out = $9,
@@ -162,8 +162,8 @@ func (r *postgresRepository) Update(a *Accommodation) (*Accommodation, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) Delete(id string) error {
-	cmd, err := r.db.Exec(context.Background(),
+func (r *postgresRepository) Delete(ctx context.Context, id string) error {
+	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM accommodations WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("accommodation.Delete: %w", err)

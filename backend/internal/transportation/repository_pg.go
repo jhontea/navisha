@@ -62,9 +62,9 @@ func (r *postgresRepository) InsertTx(ctx context.Context, tx pgx.Tx, t *Transpo
 	return out, nil
 }
 
-func (r *postgresRepository) FindTripOwner(tripID string) (string, error) {
+func (r *postgresRepository) FindTripOwner(ctx context.Context, tripID string) (string, error) {
 	var userID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT user_id FROM trips WHERE id = $1`, tripID).Scan(&userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -75,9 +75,9 @@ func (r *postgresRepository) FindTripOwner(tripID string) (string, error) {
 	return userID, nil
 }
 
-func (r *postgresRepository) FindTransportationOwner(id string) (string, string, error) {
+func (r *postgresRepository) FindTransportationOwner(ctx context.Context, id string) (string, string, error) {
 	var userID, tripID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT t.user_id, x.trip_id
 		 FROM transportations x
 		 JOIN trips t ON t.id = x.trip_id
@@ -91,8 +91,8 @@ func (r *postgresRepository) FindTransportationOwner(id string) (string, string,
 	return userID, tripID, nil
 }
 
-func (r *postgresRepository) List(tripID string) ([]Transportation, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Transportation, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id, trip_id, type, label, operator, reference_number,
 		        from_location, to_location, departure_datetime, arrival_datetime,
 		        notes, created_at, updated_at
@@ -115,8 +115,8 @@ func (r *postgresRepository) List(tripID string) ([]Transportation, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) FindByID(id string) (*Transportation, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Transportation, error) {
+	row := r.db.QueryRow(ctx,
 		`SELECT id, trip_id, type, label, operator, reference_number,
 		        from_location, to_location, departure_datetime, arrival_datetime,
 		        notes, created_at, updated_at
@@ -131,8 +131,8 @@ func (r *postgresRepository) FindByID(id string) (*Transportation, error) {
 	return t, nil
 }
 
-func (r *postgresRepository) Insert(t *Transportation) (*Transportation, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) Insert(ctx context.Context, t *Transportation) (*Transportation, error) {
+	row := r.db.QueryRow(ctx,
 		`INSERT INTO transportations (trip_id, type, label, operator, reference_number,
 		                              from_location, to_location, departure_datetime,
 		                              arrival_datetime, notes)
@@ -150,8 +150,8 @@ func (r *postgresRepository) Insert(t *Transportation) (*Transportation, error) 
 	return out, nil
 }
 
-func (r *postgresRepository) Update(t *Transportation) (*Transportation, error) {
-	row := r.db.QueryRow(context.Background(),
+func (r *postgresRepository) Update(ctx context.Context, t *Transportation) (*Transportation, error) {
+	row := r.db.QueryRow(ctx,
 		`UPDATE transportations
 		    SET type = $2, label = $3, operator = $4, reference_number = $5,
 		        from_location = $6, to_location = $7, departure_datetime = $8,
@@ -173,8 +173,8 @@ func (r *postgresRepository) Update(t *Transportation) (*Transportation, error) 
 	return out, nil
 }
 
-func (r *postgresRepository) Delete(id string) error {
-	cmd, err := r.db.Exec(context.Background(),
+func (r *postgresRepository) Delete(ctx context.Context, id string) error {
+	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM transportations WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("transportation.Delete: %w", err)

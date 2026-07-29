@@ -16,9 +16,9 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <main className="relative flex min-h-dvh flex-col overflow-x-hidden bg-background">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -left-[10%] -top-[20%] h-[50%] w-[50%] animate-float-orb rounded-full bg-chromatic-sunset/15 blur-[150px]" />
-        <div className="absolute -bottom-[20%] -right-[10%] h-[50%] w-[50%] animate-float-orb rounded-full bg-chromatic-ocean/12 blur-[150px]" style={{ animationDelay: "-6s" }} />
-        <div className="absolute left-[30%] top-[40%] h-[30%] w-[30%] animate-float-orb rounded-full bg-chromatic-aurora/8 blur-[120px]" style={{ animationDelay: "-3s" }} />
+        <div className="auth-orb absolute -left-[10%] -top-[20%] h-[50%] w-[50%] animate-float-orb rounded-full bg-chromatic-sunset/15 blur-[150px]" />
+        <div className="auth-orb absolute -bottom-[20%] -right-[10%] h-[50%] w-[50%] animate-float-orb rounded-full bg-chromatic-ocean/12 blur-[150px]" style={{ animationDelay: "-6s" }} />
+        <div className="auth-orb absolute left-[30%] top-[40%] h-[30%] w-[30%] animate-float-orb rounded-full bg-chromatic-aurora/8 blur-[120px]" style={{ animationDelay: "-3s" }} />
       </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-6 sm:py-8 md:px-8">
@@ -47,7 +47,7 @@ export default async function LoginPage({ searchParams }: Props) {
               <Image
                 src={loginIllustration}
                 alt="Traveler ready to continue a secure journey"
-                priority
+                loading="lazy"
                 fill
                 className="object-contain object-bottom"
                 sizes="(min-width: 1024px) 48vw, 1px"

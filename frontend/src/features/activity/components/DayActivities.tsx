@@ -513,7 +513,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
 
       reorderMut.mutate({ ids: newOrder }, {
         onError: () => {
-          qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: 'all' })
+          qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: 'active' })
         },
       })
     })
@@ -571,7 +571,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
     setCopying(false)
 
     // Invalidate target day so the new copies show up.
-    qc.invalidateQueries({ queryKey: ["activities", "list", targetDayId], refetchType: 'all' })
+    qc.invalidateQueries({ queryKey: ["activities", "list", targetDayId], refetchType: 'active' })
 
     if (fail === 0) {
       toast(`Copied ${ok} ${ok === 1 ? "activity" : "activities"} to Day ${target.day_number}.`)

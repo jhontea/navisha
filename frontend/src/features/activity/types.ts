@@ -46,6 +46,10 @@ export interface ActivityListResponse {
   items: Activity[]
 }
 
+export interface TripActivityListResponse {
+  items_by_day: Record<string, Activity[]>
+}
+
 export interface CreateActivityInput {
   type: ActivityType
   title: string

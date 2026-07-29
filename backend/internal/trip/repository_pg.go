@@ -70,7 +70,7 @@ func (r *postgresRepository) Rollback(ctx context.Context, tx pgx.Tx) error {
 // List returns trips for a user with cursor pagination.
 // Order: start_date DESC, id DESC. Cursor encodes the last item from the previous page.
 // Fetches limit+1 rows to detect whether a next page exists.
-func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult, error) {
+func (r *postgresRepository) List(ctx context.Context, userID, cursor string, limit int) (ListResult, error) {
 	cursorDate, cursorID, hasCursor, err := decodeCursor(cursor)
 	if err != nil {
 		return ListResult{}, err
@@ -81,7 +81,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 		qErr error
 	)
 	if hasCursor {
-		rows, qErr = r.db.Query(context.Background(),
+		rows, qErr = r.db.Query(ctx,
 			`SELECT id, user_id, title, description, start_date, end_date,
 			        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 			 FROM trips
@@ -90,7 +90,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 			 LIMIT $4`,
 			userID, cursorDate, cursorID, limit+1)
 	} else {
-		rows, qErr = r.db.Query(context.Background(),
+		rows, qErr = r.db.Query(ctx,
 			`SELECT id, user_id, title, description, start_date, end_date,
 			        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 			 FROM trips
@@ -126,7 +126,7 @@ func (r *postgresRepository) List(userID, cursor string, limit int) (ListResult,
 	return out, nil
 }
 
-func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error) {
+func (r *postgresRepository) ListFiltered(ctx context.Context, userID, cursor string, limit int, from, to string) (ListResult, error) {
 	cursorDate, cursorID, hasCursor, err := decodeCursor(cursor)
 	if err != nil {
 		return ListResult{}, err
@@ -149,7 +149,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 	var qErr error
 	if hasCursor {
 		args = append(args, cursorDate, cursorID, limit+1)
-		rows, qErr = r.db.Query(context.Background(),
+		rows, qErr = r.db.Query(ctx,
 			fmt.Sprintf(
 				`SELECT id, user_id, title, description, start_date, end_date,
 					 base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
@@ -162,7 +162,7 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 			args...)
 	} else {
 		args = append(args, limit+1)
-		rows, qErr = r.db.Query(context.Background(),
+		rows, qErr = r.db.Query(ctx,
 			fmt.Sprintf(
 				`SELECT id, user_id, title, description, start_date, end_date,
 					 base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
@@ -201,8 +201,8 @@ func (r *postgresRepository) ListFiltered(userID, cursor string, limit int, from
 	return out, nil
 }
 
-func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) ListUpcoming(ctx context.Context, userID string, limit int) ([]Trip, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id, user_id, title, description, start_date, end_date,
 		        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 		 FROM trips
@@ -230,10 +230,10 @@ func (r *postgresRepository) ListUpcoming(userID string, limit int) ([]Trip, err
 	return trips, nil
 }
 
-func (r *postgresRepository) FindByID(id string) (*Trip, error) {
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Trip, error) {
 	t := &Trip{}
 	var budgetCategories []byte
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT id, user_id, title, description, start_date, end_date,
 		        base_currency, budget, budget_categories, cover_image_url, notes, created_at, updated_at
 		 FROM trips WHERE id = $1`, id).
@@ -305,10 +305,10 @@ func (r *postgresRepository) DeleteDays(ctx context.Context, tx pgx.Tx, tripID s
 	return nil
 }
 
-func (r *postgresRepository) Update(t *Trip) (*Trip, error) {
+func (r *postgresRepository) Update(ctx context.Context, t *Trip) (*Trip, error) {
 	out := &Trip{}
 	var budgetCategories []byte
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`UPDATE trips
 		    SET title = $2, description = $3, start_date = $4, end_date = $5,
 		        base_currency = $6, budget = $7, budget_categories = $8, cover_image_url = $9, notes = $10, updated_at = NOW()
@@ -355,8 +355,8 @@ func (r *postgresRepository) UpdateTx(ctx context.Context, tx pgx.Tx, t *Trip) (
 	return out, nil
 }
 
-func (r *postgresRepository) Delete(id string) error {
-	cmd, err := r.db.Exec(context.Background(),
+func (r *postgresRepository) Delete(ctx context.Context, id string) error {
+	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM trips WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("trip.Delete: %w", err)
@@ -367,9 +367,9 @@ func (r *postgresRepository) Delete(id string) error {
 	return nil
 }
 
-func (r *postgresRepository) FindDayOwner(dayID string) (string, error) {
+func (r *postgresRepository) FindDayOwner(ctx context.Context, dayID string) (string, error) {
 	var userID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT t.user_id
 		 FROM days d
 		 JOIN trips t ON t.id = d.trip_id
@@ -383,9 +383,9 @@ func (r *postgresRepository) FindDayOwner(dayID string) (string, error) {
 	return userID, nil
 }
 
-func (r *postgresRepository) UpdateDayNotes(dayID, notes string) (*Day, error) {
+func (r *postgresRepository) UpdateDayNotes(ctx context.Context, dayID, notes string) (*Day, error) {
 	d := &Day{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`UPDATE days SET notes = $2 WHERE id = $1
 		 RETURNING id, trip_id, date, day_number, title, notes`, dayID, notes).
 		Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Title, &d.Notes)
@@ -398,9 +398,9 @@ func (r *postgresRepository) UpdateDayNotes(dayID, notes string) (*Day, error) {
 	return d, nil
 }
 
-func (r *postgresRepository) UpdateDayTitle(dayID, title string) (*Day, error) {
+func (r *postgresRepository) UpdateDayTitle(ctx context.Context, dayID, title string) (*Day, error) {
 	d := &Day{}
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`UPDATE days SET title = $2 WHERE id = $1
 		 RETURNING id, trip_id, date, day_number, title, notes`, dayID, title).
 		Scan(&d.ID, &d.TripID, &d.Date, &d.DayNumber, &d.Title, &d.Notes)
@@ -413,8 +413,8 @@ func (r *postgresRepository) UpdateDayTitle(dayID, title string) (*Day, error) {
 	return d, nil
 }
 
-func (r *postgresRepository) ListDays(tripID string) ([]Day, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) ListDays(ctx context.Context, tripID string) ([]Day, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id, trip_id, date, day_number, title, notes
 		 FROM days WHERE trip_id = $1 ORDER BY day_number ASC`, tripID)
 	if err != nil {

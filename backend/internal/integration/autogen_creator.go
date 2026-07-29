@@ -29,10 +29,9 @@ var _ autogen.TripCreator = (*AutogenCreator)(nil)
 // generates day rows for the inclusive date range; activities are matched to
 // days by day_number (1-based). startDate/endDate are YYYY-MM-DD strings.
 //
-// Note: trip + days are created atomically inside trip.Create. Activities are
-// then added per day; a failure mid-way leaves the trip created with partial
-// activities. For MVP this is acceptable (user can edit), and the trip itself
-// is always consistent.
+// Trip + days are created atomically inside trip.Create. All activities are
+// then validated and inserted in one transaction, so the activity set cannot
+// be left partially written.
 func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, draft autogen.TripDraft, startDate, endDate, coverImageURL, description string) (string, error) {
 	start, err := time.Parse("2006-01-02", startDate)
 	if err != nil {
@@ -58,7 +57,7 @@ func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, dra
 	}
 
 	// Fetch the auto-generated days to map day_number -> day ID.
-	_, days, err := c.trips.Get(userID, t.ID)
+	_, days, err := c.trips.Get(ctx, userID, t.ID)
 	if err != nil {
 		return t.ID, fmt.Errorf("autogen.CreateFromDraft: load days: %w", err)
 	}
@@ -67,6 +66,7 @@ func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, dra
 		dayByNumber[d.DayNumber] = d.ID
 	}
 
+	batch := make([]activity.CreateManyInput, 0)
 	for _, dd := range draft.Days {
 		dayID, ok := dayByNumber[dd.DayNumber]
 		if !ok {
@@ -77,17 +77,17 @@ func (c *AutogenCreator) CreateFromDraft(ctx context.Context, userID string, dra
 			if perr != nil {
 				continue // skip activities we can't encode rather than failing the whole trip
 			}
-			_, err := c.activities.Create(ctx, userID, dayID, activity.CreateInput{
-				Type:      activity.Type(a.Type),
-				Title:     a.Title,
-				StartTime: a.StartTime,
-				EndTime:   a.EndTime,
-				Payload:   payload,
+			batch = append(batch, activity.CreateManyInput{
+				DayID: dayID,
+				CreateInput: activity.CreateInput{
+					Type: activity.Type(a.Type), Title: a.Title,
+					StartTime: a.StartTime, EndTime: a.EndTime, Payload: payload,
+				},
 			})
-			if err != nil {
-				return t.ID, fmt.Errorf("autogen.CreateFromDraft: create activity: %w", err)
-			}
 		}
+	}
+	if err := c.activities.CreateMany(ctx, userID, batch); err != nil {
+		return t.ID, fmt.Errorf("autogen.CreateFromDraft: create activities: %w", err)
 	}
 
 	return t.ID, nil

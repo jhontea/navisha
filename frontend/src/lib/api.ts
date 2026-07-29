@@ -91,8 +91,12 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
   // Include CSRF token in mutation requests (Double Submit Cookie pattern).
   const csrfToken = getCSRFToken()
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(init.headers as Record<string, string>),
+  }
+  // A JSON Content-Type makes even a cross-origin GET a non-simple CORS
+  // request, adding an OPTIONS round trip. Only requests with a body need it.
+  if (init.body !== undefined && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json"
   }
   if (csrfToken && init.method && init.method !== "GET") {
     headers["X-CSRF-Token"] = csrfToken

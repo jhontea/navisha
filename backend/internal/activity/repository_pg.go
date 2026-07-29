@@ -42,9 +42,9 @@ func (r *postgresRepository) Rollback(ctx context.Context, tx pgx.Tx) error {
 }
 
 // FindDayOwner resolves the owning user_id of a day via the day → trip → user chain.
-func (r *postgresRepository) FindDayOwner(dayID string) (string, error) {
+func (r *postgresRepository) FindDayOwner(ctx context.Context, dayID string) (string, error) {
 	var userID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT t.user_id
 		 FROM days d
 		 JOIN trips t ON t.id = d.trip_id
@@ -59,9 +59,9 @@ func (r *postgresRepository) FindDayOwner(dayID string) (string, error) {
 }
 
 // FindActivityOwner resolves (user_id, day_id) for an activity via JOIN.
-func (r *postgresRepository) FindActivityOwner(activityID string) (string, string, error) {
+func (r *postgresRepository) FindActivityOwner(ctx context.Context, activityID string) (string, string, error) {
 	var userID, dayID string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT t.user_id, a.day_id
 		 FROM activities a
 		 JOIN days d ON d.id = a.day_id
@@ -76,8 +76,8 @@ func (r *postgresRepository) FindActivityOwner(activityID string) (string, strin
 	return userID, dayID, nil
 }
 
-func (r *postgresRepository) ListByDay(dayID string) ([]Activity, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) ListByDay(ctx context.Context, dayID string) ([]Activity, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at
 		 FROM activities
 		 WHERE day_id = $1
@@ -101,10 +101,10 @@ func (r *postgresRepository) ListByDay(dayID string) ([]Activity, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) FindByID(id string) (*Activity, error) {
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Activity, error) {
 	a := &Activity{}
 	var typ string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`SELECT id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at
 		 FROM activities WHERE id = $1`, id).
 		Scan(&a.ID, &a.DayID, &typ, &a.Title, &a.StartTime, &a.EndTime,
@@ -119,10 +119,10 @@ func (r *postgresRepository) FindByID(id string) (*Activity, error) {
 	return a, nil
 }
 
-func (r *postgresRepository) Insert(a *Activity) (*Activity, error) {
+func (r *postgresRepository) Insert(ctx context.Context, a *Activity) (*Activity, error) {
 	out := &Activity{}
 	var typ string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`INSERT INTO activities (day_id, type, title, start_time, end_time, order_index, payload)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at`,
@@ -136,10 +136,72 @@ func (r *postgresRepository) Insert(a *Activity) (*Activity, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) Update(a *Activity) (*Activity, error) {
+func (r *postgresRepository) CountOwnedDaysTx(ctx context.Context, tx pgx.Tx, userID string, dayIDs []string) (int, error) {
+	var count int
+	err := tx.QueryRow(ctx,
+		`SELECT COUNT(*)
+		 FROM days d
+		 JOIN trips t ON t.id = d.trip_id
+		 WHERE d.id = ANY($1::uuid[]) AND t.user_id = $2`,
+		dayIDs, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("activity.CountOwnedDaysTx: %w", err)
+	}
+	return count, nil
+}
+
+func (r *postgresRepository) BatchInsertTx(ctx context.Context, tx pgx.Tx, activities []Activity) error {
+	if len(activities) == 0 {
+		return nil
+	}
+	dayIDs := make([]string, len(activities))
+	types := make([]string, len(activities))
+	titles := make([]string, len(activities))
+	startTimes := make([]string, len(activities))
+	endTimes := make([]string, len(activities))
+	payloads := make([]string, len(activities))
+	relativeOrders := make([]int, len(activities))
+	for i, item := range activities {
+		dayIDs[i] = item.DayID
+		types[i] = string(item.Type)
+		titles[i] = item.Title
+		startTimes[i] = item.StartTime
+		endTimes[i] = item.EndTime
+		payloads[i] = string(item.Payload)
+		if payloads[i] == "" {
+			payloads[i] = "{}"
+		}
+		relativeOrders[i] = item.OrderIndex
+	}
+
+	command, err := tx.Exec(ctx,
+		`WITH input AS (
+			SELECT * FROM unnest(
+				$1::uuid[], $2::text[], $3::text[], $4::text[],
+				$5::text[], $6::text[], $7::int[]
+			) AS value(day_id, type, title, start_time, end_time, payload_text, relative_order)
+		), bases AS (
+			SELECT day_id, COALESCE(MAX(order_index) + 1, 0) AS base_order
+			FROM activities WHERE day_id = ANY($1::uuid[]) GROUP BY day_id
+		)
+		INSERT INTO activities (day_id, type, title, start_time, end_time, payload, order_index)
+		SELECT input.day_id, input.type, input.title, input.start_time, input.end_time,
+		       input.payload_text::jsonb, COALESCE(bases.base_order, 0) + input.relative_order
+		FROM input LEFT JOIN bases ON bases.day_id = input.day_id`,
+		dayIDs, types, titles, startTimes, endTimes, payloads, relativeOrders)
+	if err != nil {
+		return fmt.Errorf("activity.BatchInsertTx: %w", err)
+	}
+	if command.RowsAffected() != int64(len(activities)) {
+		return fmt.Errorf("activity.BatchInsertTx: inserted %d of %d rows", command.RowsAffected(), len(activities))
+	}
+	return nil
+}
+
+func (r *postgresRepository) Update(ctx context.Context, a *Activity) (*Activity, error) {
 	out := &Activity{}
 	var typ string
-	err := r.db.QueryRow(context.Background(),
+	err := r.db.QueryRow(ctx,
 		`UPDATE activities
 		    SET title = $2, start_time = $3, end_time = $4, payload = $5, updated_at = NOW()
 		  WHERE id = $1
@@ -157,8 +219,8 @@ func (r *postgresRepository) Update(a *Activity) (*Activity, error) {
 	return out, nil
 }
 
-func (r *postgresRepository) Delete(id string) error {
-	cmd, err := r.db.Exec(context.Background(),
+func (r *postgresRepository) Delete(ctx context.Context, id string) error {
+	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM activities WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("activity.Delete: %w", err)
@@ -179,8 +241,8 @@ func (r *postgresRepository) UpdateOrderTx(ctx context.Context, tx pgx.Tx, activ
 	return nil
 }
 
-func (r *postgresRepository) ListIDsByDay(dayID string) ([]string, error) {
-	rows, err := r.db.Query(context.Background(),
+func (r *postgresRepository) ListIDsByDay(ctx context.Context, dayID string) ([]string, error) {
+	rows, err := r.db.Query(ctx,
 		`SELECT id FROM activities WHERE day_id = $1`, dayID)
 	if err != nil {
 		return nil, fmt.Errorf("activity.ListIDsByDay: %w", err)
@@ -240,13 +302,20 @@ func (r *postgresRepository) BatchUpdateOrderTx(ctx context.Context, tx pgx.Tx, 
 	if len(orderMap) == 0 {
 		return nil
 	}
+	ids := make([]string, 0, len(orderMap))
+	indexes := make([]int, 0, len(orderMap))
 	for id, idx := range orderMap {
-		_, err := tx.Exec(ctx,
-			`UPDATE activities SET order_index = $1, updated_at = NOW() WHERE id = $2`,
-			idx, id)
-		if err != nil {
-			return fmt.Errorf("activity.BatchUpdateOrderTx: %w", err)
-		}
+		ids = append(ids, id)
+		indexes = append(indexes, idx)
+	}
+	_, err := tx.Exec(ctx,
+		`UPDATE activities AS activity
+		 SET order_index = reordered.order_index, updated_at = NOW()
+		 FROM unnest($1::uuid[], $2::int[]) AS reordered(id, order_index)
+		 WHERE activity.id = reordered.id`,
+		ids, indexes)
+	if err != nil {
+		return fmt.Errorf("activity.BatchUpdateOrderTx: %w", err)
 	}
 	return nil
 }

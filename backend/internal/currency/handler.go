@@ -28,7 +28,7 @@ func (h *Handler) Rates(c echo.Context) error {
 	if base == "" {
 		base = "USD"
 	}
-	rates, err := h.usecase.Rates(base)
+	rates, err := h.usecase.Rates(c.Request().Context(), base)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -62,7 +62,7 @@ func (h *Handler) Convert(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than zero")
 	}
 
-	converted, rate, err := h.usecase.Convert(from, to, amount)
+	converted, rate, err := h.usecase.Convert(c.Request().Context(), from, to, amount)
 	if err != nil {
 		return mapErr(err)
 	}

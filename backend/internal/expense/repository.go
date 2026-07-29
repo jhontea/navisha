@@ -17,18 +17,18 @@ var (
 type Repository interface {
 	// FindTripOwner returns (user_id, base_currency) for the trip. Used for
 	// ownership check and to know the conversion target on insert.
-	FindTripOwner(tripID string) (userID, baseCurrency string, err error)
+	FindTripOwner(ctx context.Context, tripID string) (userID, baseCurrency string, err error)
 	// FindExpenseOwner returns (user_id, trip_id) via JOIN — used by Update/Delete.
-	FindExpenseOwner(expenseID string) (userID, tripID string, err error)
+	FindExpenseOwner(ctx context.Context, expenseID string) (userID, tripID string, err error)
 
-	List(tripID string) ([]Expense, error)
-	FindByID(id string) (*Expense, error)
-	Create(e *Expense) (*Expense, error)
+	List(ctx context.Context, tripID string) ([]Expense, error)
+	FindByID(ctx context.Context, id string) (*Expense, error)
+	Create(ctx context.Context, e *Expense) (*Expense, error)
 	// CreateTx inserts using an existing transaction. Called by cross-domain
 	// usecases (transportation/accommodation) when they need atomicity with
 	// their own entity insert.
 	CreateTx(ctx context.Context, tx pgx.Tx, e *Expense) (*Expense, error)
-	Update(e *Expense) (*Expense, error)
-	Delete(id string) error
-	Summary(tripID, baseCurrency string) (*Summary, error)
+	Update(ctx context.Context, e *Expense) (*Expense, error)
+	Delete(ctx context.Context, id string) error
+	Summary(ctx context.Context, tripID, baseCurrency string) (*Summary, error)
 }

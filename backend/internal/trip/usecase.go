@@ -27,14 +27,14 @@ const (
 
 type UsecaseInterface interface {
 	Create(ctx context.Context, userID string, in CreateInput) (*Trip, error)
-	List(userID, cursor string, limit int) (ListResult, error)
-	ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error)
-	ListUpcoming(userID string, limit int) ([]Trip, error)
-	Get(userID, tripID string) (*Trip, []Day, error)
+	List(ctx context.Context, userID, cursor string, limit int) (ListResult, error)
+	ListFiltered(ctx context.Context, userID, cursor string, limit int, from, to string) (ListResult, error)
+	ListUpcoming(ctx context.Context, userID string, limit int) ([]Trip, error)
+	Get(ctx context.Context, userID, tripID string) (*Trip, []Day, error)
 	Update(ctx context.Context, userID, tripID string, in UpdateInput) (*Trip, error)
-	Delete(userID, tripID string) error
-	UpdateDayTitle(userID, dayID, title string) (*Day, error)
-	UpdateDayNotes(userID, dayID, notes string) (*Day, error)
+	Delete(ctx context.Context, userID, tripID string) error
+	UpdateDayTitle(ctx context.Context, userID, dayID, title string) (*Day, error)
+	UpdateDayNotes(ctx context.Context, userID, dayID, notes string) (*Day, error)
 }
 
 type CreateInput struct {
@@ -128,31 +128,31 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 	return created, nil
 }
 
-func (u *Usecase) List(userID, cursor string, limit int) (ListResult, error) {
+func (u *Usecase) List(ctx context.Context, userID, cursor string, limit int) (ListResult, error) {
 	if limit <= 0 {
 		limit = defaultListLimit
 	}
 	if limit > maxListLimit {
 		limit = maxListLimit
 	}
-	return u.repo.List(userID, cursor, limit)
+	return u.repo.List(ctx, userID, cursor, limit)
 }
 
 // ListFiltered returns trips with optional date-range filter + cursor pagination.
 // from/to are YYYY-MM-DD strings; empty string means no bound.
-func (u *Usecase) ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error) {
+func (u *Usecase) ListFiltered(ctx context.Context, userID, cursor string, limit int, from, to string) (ListResult, error) {
 	if limit <= 0 {
 		limit = 12
 	}
 	if limit > maxListLimit {
 		limit = maxListLimit
 	}
-	return u.repo.ListFiltered(userID, cursor, limit, from, to)
+	return u.repo.ListFiltered(ctx, userID, cursor, limit, from, to)
 }
 
 // ListUpcoming returns trips whose end_date >= today (active + upcoming),
 // ordered by start_date ASC (soonest first), default and max 6.
-func (u *Usecase) ListUpcoming(userID string, limit int) ([]Trip, error) {
+func (u *Usecase) ListUpcoming(ctx context.Context, userID string, limit int) ([]Trip, error) {
 	if limit <= 0 {
 		limit = 6
 	}
@@ -161,19 +161,19 @@ func (u *Usecase) ListUpcoming(userID string, limit int) ([]Trip, error) {
 	if limit > maxUpcomingLimit {
 		limit = maxUpcomingLimit
 	}
-	return u.repo.ListUpcoming(userID, limit)
+	return u.repo.ListUpcoming(ctx, userID, limit)
 }
 
 // Get returns the trip with its days. Caller must own the trip.
-func (u *Usecase) Get(userID, tripID string) (*Trip, []Day, error) {
-	t, err := u.repo.FindByID(tripID)
+func (u *Usecase) Get(ctx context.Context, userID, tripID string) (*Trip, []Day, error) {
+	t, err := u.repo.FindByID(ctx, tripID)
 	if err != nil {
 		return nil, nil, err
 	}
 	if t.UserID != userID {
 		return nil, nil, apperr.ErrForbidden
 	}
-	days, err := u.repo.ListDays(tripID)
+	days, err := u.repo.ListDays(ctx, tripID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -183,7 +183,7 @@ func (u *Usecase) Get(userID, tripID string) (*Trip, []Day, error) {
 // Update mutates trip metadata. When the date range changes, days are
 // regenerated atomically: old days deleted, new days inserted.
 func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateInput) (*Trip, error) {
-	existing, err := u.repo.FindByID(tripID)
+	existing, err := u.repo.FindByID(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	existing.Notes = in.Notes
 
 	if !datesChanged {
-		return u.repo.Update(existing)
+		return u.repo.Update(ctx, existing)
 	}
 
 	// Dates changed: wrap trip update + day regeneration in a single transaction
@@ -266,46 +266,46 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	return updated, nil
 }
 
-func (u *Usecase) Delete(userID, tripID string) error {
-	existing, err := u.repo.FindByID(tripID)
+func (u *Usecase) Delete(ctx context.Context, userID, tripID string) error {
+	existing, err := u.repo.FindByID(ctx, tripID)
 	if err != nil {
 		return err
 	}
 	if existing.UserID != userID {
 		return apperr.ErrForbidden
 	}
-	return u.repo.Delete(tripID)
+	return u.repo.Delete(ctx, tripID)
 }
 
 // UpdateDayNotes mutates only the notes column on a single day.
 // Ownership chain day → trip → user verified via FindDayOwner JOIN.
-func (u *Usecase) UpdateDayNotes(userID, dayID, notes string) (*Day, error) {
-	owner, err := u.repo.FindDayOwner(dayID)
+func (u *Usecase) UpdateDayNotes(ctx context.Context, userID, dayID, notes string) (*Day, error) {
+	owner, err := u.repo.FindDayOwner(ctx, dayID)
 	if err != nil {
 		return nil, err
 	}
 	if owner != userID {
 		return nil, apperr.ErrForbidden
 	}
-	return u.repo.UpdateDayNotes(dayID, notes)
+	return u.repo.UpdateDayNotes(ctx, dayID, notes)
 }
 
 // UpdateDayTitle mutates the optional display title on a single day.
 // Ownership chain day → trip → user is verified before the update.
-func (u *Usecase) UpdateDayTitle(userID, dayID, title string) (*Day, error) {
+func (u *Usecase) UpdateDayTitle(ctx context.Context, userID, dayID, title string) (*Day, error) {
 	title = strings.TrimSpace(sanitize.Text(title))
 	if len(title) > maxDayTitleLength {
 		return nil, ErrDayTitleTooLong
 	}
 
-	owner, err := u.repo.FindDayOwner(dayID)
+	owner, err := u.repo.FindDayOwner(ctx, dayID)
 	if err != nil {
 		return nil, err
 	}
 	if owner != userID {
 		return nil, apperr.ErrForbidden
 	}
-	return u.repo.UpdateDayTitle(dayID, title)
+	return u.repo.UpdateDayTitle(ctx, dayID, title)
 }
 
 func validateDates(start, end time.Time) error {

@@ -52,7 +52,7 @@ func (h *Handler) List(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	dayID := c.Param("day_id")
-	out, err := h.usecase.List(userID, dayID)
+	out, err := h.usecase.List(c.Request().Context(), userID, dayID)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -118,7 +118,7 @@ func (h *Handler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "payload is too large")
 	}
 	req.Title = sanitize.Text(req.Title)
-	a, err := h.usecase.Update(userID, id, UpdateInput{
+	a, err := h.usecase.Update(c.Request().Context(), userID, id, UpdateInput{
 		Title:     req.Title,
 		StartTime: req.StartTime,
 		EndTime:   req.EndTime,
@@ -136,7 +136,7 @@ func (h *Handler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	id := c.Param("id")
-	if err := h.usecase.Delete(userID, id); err != nil {
+	if err := h.usecase.Delete(c.Request().Context(), userID, id); err != nil {
 		return mapErr(err)
 	}
 	return c.NoContent(http.StatusNoContent)

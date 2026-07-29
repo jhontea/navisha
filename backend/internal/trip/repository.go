@@ -36,24 +36,24 @@ type Repository interface {
 	Commit(ctx context.Context, tx pgx.Tx) error
 	Rollback(ctx context.Context, tx pgx.Tx) error
 
-	List(userID, cursor string, limit int) (ListResult, error)
+	List(ctx context.Context, userID, cursor string, limit int) (ListResult, error)
 	// ListFiltered returns trips with optional date-range filter + cursor pagination.
-	ListFiltered(userID, cursor string, limit int, from, to string) (ListResult, error)
+	ListFiltered(ctx context.Context, userID, cursor string, limit int, from, to string) (ListResult, error)
 	// ListUpcoming returns trips whose end_date >= today, ordered by start_date ASC.
-	ListUpcoming(userID string, limit int) ([]Trip, error)
-	FindByID(id string) (*Trip, error)
+	ListUpcoming(ctx context.Context, userID string, limit int) ([]Trip, error)
+	FindByID(ctx context.Context, id string) (*Trip, error)
 	InsertTrip(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error)
 	InsertDays(ctx context.Context, tx pgx.Tx, days []Day) error
 	DeleteDays(ctx context.Context, tx pgx.Tx, tripID string) error
-	Update(t *Trip) (*Trip, error)
+	Update(ctx context.Context, t *Trip) (*Trip, error)
 	// UpdateTx updates a trip row within an existing transaction (Phase 3D / Iter 8).
 	UpdateTx(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error)
-	Delete(id string) error
+	Delete(ctx context.Context, id string) error
 
-	ListDays(tripID string) ([]Day, error)
-	FindDayOwner(dayID string) (userID string, err error)
-	UpdateDayTitle(dayID, title string) (*Day, error)
-	UpdateDayNotes(dayID, notes string) (*Day, error)
+	ListDays(ctx context.Context, tripID string) ([]Day, error)
+	FindDayOwner(ctx context.Context, dayID string) (userID string, err error)
+	UpdateDayTitle(ctx context.Context, dayID, title string) (*Day, error)
+	UpdateDayNotes(ctx context.Context, dayID, notes string) (*Day, error)
 }
 
 var ErrDayNotFound = errors.New("day not found")

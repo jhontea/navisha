@@ -571,6 +571,21 @@ html {
   display: none;
 }
 
+/* Skip initial layout/paint for landing sections below the viewport. */
+.render-deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* Large animated blur filters are expensive on mobile GPUs. */
+@media (pointer: coarse) {
+  .landing-orb,
+  .auth-orb {
+    animation: none !important;
+    filter: blur(72px) !important;
+  }
+}
+
 /* ── Reduced Motion (accessibility) ── */
 @media (prefers-reduced-motion: reduce) {
   *,

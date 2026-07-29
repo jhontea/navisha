@@ -1,11 +1,16 @@
 "use client";
 
 import { memo, useState } from "react";
+import dynamic from "next/dynamic";
 import { Calendar, Clock, CreditCard, MapPin, Pencil, Share2, Trash2 } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { resolveTripCover } from "../lib/cover";
-import { TripShareDialog } from "./TripShareDialog";
+import { resolveTripCover, tripCoverSrcSet } from "../lib/cover";
+
+const TripShareDialog = dynamic(
+  () => import("./TripShareDialog").then((module) => module.TripShareDialog),
+  { ssr: false },
+);
 
 interface TripHeroProps {
   title: string;
@@ -52,7 +57,12 @@ export const TripHero = memo(function TripHero({
     ) + 1
   );
 
-  const resolvedCoverUrl = resolveTripCover(coverImageUrl, description);
+  const resolvedCoverUrl = resolveTripCover(coverImageUrl, description, 1280);
+  const coverSrcSet = tripCoverSrcSet(
+    coverImageUrl,
+    description,
+    [640, 960, 1280, 1600],
+  );
   const hasCover = Boolean(resolvedCoverUrl);
 
   return (
@@ -70,8 +80,12 @@ export const TripHero = memo(function TripHero({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={resolvedCoverUrl}
+            srcSet={coverSrcSet}
+            sizes="(max-width: 767px) 100vw, 1280px"
             alt=""
             aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
           />
           {/* Iter 44 — stronger gradient: covers more of image for legibility */}
@@ -156,7 +170,9 @@ export const TripHero = memo(function TripHero({
           </div>
         </div>
       </div>
-      {shareTripId && <TripShareDialog tripId={shareTripId} open={shareOpen} onOpenChange={setShareOpen} />}
+      {shareTripId && shareOpen && (
+        <TripShareDialog tripId={shareTripId} open={shareOpen} onOpenChange={setShareOpen} />
+      )}
     </div>
   );
 });

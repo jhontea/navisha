@@ -1,15 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import {
-  APIProvider,
-  Map as GoogleMap,
-  AdvancedMarker,
-  InfoWindow,
-  Pin,
-  useMap,
-} from "@vis.gl/react-google-maps"
-import { ExternalLink, MapPin } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
+import { ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MAP_PROVIDER } from "@/features/location/config"
 import {
@@ -19,38 +12,32 @@ import {
   MAX_WAYPOINTS,
 } from "@/features/trip/lib/mapsUrl"
 import type { Day } from "@/features/trip/types"
-import {
-  useTripLocations,
-  type LocationPoint,
-} from "../hooks/useTripLocations"
-import { MapLibreCanvas } from "./MapLibreCanvas"
+import { useTripLocations, type LocationPoint } from "../hooks/useTripLocations"
+import { colorForDay } from "./mapColors"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
-const MAP_ID = "cc475d9a8bf16e26f8975c02"
 
-// Day colors aligned with Navisha's cool/blue-spectrum chromatic theme.
-// 4 cool hues (blue, cyan, violet, teal) × 2 lightness shades = 8 distinct
-// colors. Adjacent days always differ in hue; lighter shades repeat only from
-// Day 5 onward (rare for trips ≤4 days). Replaces the old rainbow palette
-// (red/orange/yellow/green) which clashed with the app's cool theme.
-const DAY_COLORS = [
-  "#2563eb", // blue-600   — Day 1
-  "#0891b2", // cyan-600   — Day 2
-  "#7c3aed", // violet-600 — Day 3
-  "#0d9488", // teal-600    — Day 4
-  "#3b82f6", // blue-500   — Day 5
-  "#06b6d4", // cyan-500   — Day 6
-  "#8b5cf6", // violet-500 — Day 7
-  "#14b8a6", // teal-500    — Day 8
-]
-const colorForDay = (n: number) => DAY_COLORS[(n - 1) % DAY_COLORS.length]
+const mapLoading = () => (
+  <div className="flex h-full items-center justify-center bg-muted/20 text-sm text-muted-foreground">
+    Loading map…
+  </div>
+)
+const GoogleMapCanvas = dynamic(
+  () => import("./GoogleMapCanvas").then((module) => module.GoogleMapCanvas),
+  { ssr: false, loading: mapLoading },
+)
+const MapLibreCanvas = dynamic(
+  () => import("./MapLibreCanvas").then((module) => module.MapLibreCanvas),
+  { ssr: false, loading: mapLoading },
+)
 
 interface Props {
+  tripId: string
   days: Day[]
 }
 
-export function TripMap({ days }: Props) {
-  const { isLoading, isError, byDay, flat } = useTripLocations(days)
+export function TripMap({ tripId, days }: Props) {
+  const { isLoading, isError, byDay, flat } = useTripLocations(tripId, days)
   // null = "All days"
   const [activeDay, setActiveDay] = useState<string | null>(null)
 
@@ -351,27 +338,13 @@ export function TripMap({ days }: Props) {
             </p>
           </div>
         ) : MAP_PROVIDER === "google" ? (
-          <APIProvider apiKey={API_KEY}>
-            <GoogleMap
-              mapId={MAP_ID}
-              style={{ width: "100%", height: "100%" }}
-              defaultCenter={{
-                lat: visiblePoints[0].lat || 0,
-                lng: visiblePoints[0].lng || 0,
-              }}
-              defaultZoom={11}
-              gestureHandling="greedy"
-              disableDefaultUI={false}
-            >
-              <GeocodingLayer
-                visiblePoints={visiblePoints}
-                visibleByDay={visibleByDay}
-                onOpenInMaps={openSingleInMaps}
-                selectedActivityId={selectedActivityId}
-                onSelectActivity={handleSelectActivity}
-              />
-            </GoogleMap>
-          </APIProvider>
+          <GoogleMapCanvas
+            visiblePoints={visiblePoints}
+            visibleByDay={visibleByDay}
+            onOpenInMaps={openSingleInMaps}
+            selectedActivityId={selectedActivityId}
+            onSelectActivity={handleSelectActivity}
+          />
         ) : (
           <MapLibreCanvas
             visibleByDay={visibleByDay}
@@ -383,269 +356,4 @@ export function TripMap({ days }: Props) {
       </div>
     </div>
   )
-}
-
-// GeocodingLayer resolves coordinates for points that lack stored lat/lng
-// (e.g. AI-generated trips) by geocoding their locationName via Google's
-// Geocoder. Points that already carry valid coords pass through untouched.
-// This keeps the map accurate without trusting AI-invented coordinates.
-function GeocodingLayer({
-  visiblePoints,
-  visibleByDay,
-  onOpenInMaps,
-  selectedActivityId,
-  onSelectActivity,
-}: {
-  visiblePoints: LocationPoint[]
-  visibleByDay: { dayId: string; dayNumber: number; points: LocationPoint[] }[]
-  onOpenInMaps: (p: LocationPoint) => void
-  selectedActivityId: string | null
-  onSelectActivity: (p: LocationPoint) => void
-}) {
-  const map = useMap()
-  // activityId -> resolved {lat,lng}
-  const [resolved, setResolved] = useState<Record<string, { lat: number; lng: number }>>({})
-  const [loading, setLoading] = useState(false)
-
-  // Build the list of points that need geocoding (no real coords, but a name).
-  const needGeocode = visiblePoints.filter(
-    (p) =>
-      !hasValidCoords(p.lat, p.lng) &&
-      p.locationName.trim() !== "" &&
-      !resolved[p.activityId],
-  )
-
-  // Stable key: only re-run the geocode effect when the SET of unresolved
-  // locations actually changes (not on every render). Without this, the
-  // freshly-allocated `needGeocode` array would retrigger the effect forever.
-  const pendingKey = needGeocode.map((p) => p.activityId).join("|")
-
-  useEffect(() => {
-    if (!map || pendingKey === "") return
-
-    let cancelled = false
-    setLoading(true)
-
-    // The core Geocoder lives on window.google.maps once the JS API has
-    // finished loading. APIProvider may resolve the map ref slightly before
-    // the library is ready, so poll briefly until Geocoder exists.
-    const run = async () => {
-      // Wait (max ~5s) for the Geocoder constructor to become available.
-      let attempts = 0
-      while (attempts <= 50 && !cancelled) {
-        const G = window.google?.maps
-        if (G?.Geocoder) break
-        attempts++
-        await new Promise((r) => setTimeout(r, 100))
-      }
-      if (cancelled || attempts > 50) {
-        setLoading(false)
-        return
-      }
-
-      const geocoder = new window.google.maps.Geocoder()
-
-      // Geocode ALL pending points concurrently for speed.
-      const results = await Promise.allSettled(
-        needGeocode.map(async (p) => {
-          const res = await geocoder.geocode({ address: p.locationName })
-          const loc = res.results?.[0]?.geometry?.location
-          return loc
-            ? { id: p.activityId, lat: loc.lat(), lng: loc.lng() }
-            : null
-        }),
-      )
-
-      if (cancelled) return
-
-      const next: Record<string, { lat: number; lng: number }> = {}
-      for (const r of results) {
-        if (r.status === "fulfilled" && r.value) {
-          next[r.value.id] = { lat: r.value.lat, lng: r.value.lng }
-        }
-      }
-      if (Object.keys(next).length > 0) {
-        setResolved((prev) => ({ ...prev, ...next }))
-      }
-      setLoading(false)
-    }
-
-    run()
-
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, pendingKey])
-
-  // Merge resolved coords into points
-  const applyCoords = (pts: LocationPoint[]): LocationPoint[] =>
-    pts
-      .map((p) => {
-        if (hasValidCoords(p.lat, p.lng)) return p
-        const r = resolved[p.activityId]
-        return r ? { ...p, lat: r.lat, lng: r.lng } : p
-      })
-      .filter((p) => hasValidCoords(p.lat, p.lng))
-
-  const displayable = applyCoords(visiblePoints)
-
-  return (
-    <>
-      {displayable.length === 0 && needGeocode.length > 0 && loading && (
-        <div
-          className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm"
-          style={{ pointerEvents: "none" }}
-        >
-          <span className="material-symbols-outlined animate-spin text-primary" style={{ fontSize: 32 }}>
-            progress_activity
-          </span>
-          <p className="mt-2 text-sm font-medium text-muted-foreground">
-            Resolving locations…
-          </p>
-        </div>
-      )}
-      {displayable.length > 0 && (
-        <>
-          <Markers
-            points={displayable}
-            onOpenInMaps={onOpenInMaps}
-            selectedActivityId={selectedActivityId}
-            onSelectActivity={onSelectActivity}
-          />
-          {visibleByDay.map((d) => (
-            <Polyline
-              key={d.dayId}
-              path={applyCoords(d.points).map((p) => ({ lat: p.lat, lng: p.lng }))}
-              color={colorForDay(d.dayNumber)}
-            />
-          ))}
-          <FitBounds points={displayable} />
-        </>
-      )}
-    </>
-  )
-}
-
-function Markers({
-  points,
-  onOpenInMaps,
-  selectedActivityId,
-  onSelectActivity,
-}: {
-  points: LocationPoint[]
-  onOpenInMaps: (p: LocationPoint) => void
-  selectedActivityId: string | null
-  onSelectActivity: (p: LocationPoint) => void
-}) {
-  const [openIdx, setOpenIdx] = useState<number | null>(null)
-  const map = useMap()
-
-  // Fly to the selected marker when selection changes (e.g. card click).
-  useEffect(() => {
-    if (!map || !selectedActivityId) return
-    const idx = points.findIndex((p) => p.activityId === selectedActivityId)
-    if (idx === -1) return
-    const p = points[idx]
-    map.panTo({ lat: p.lat, lng: p.lng })
-    if ((map.getZoom() ?? 0) < 13) map.setZoom(13)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, selectedActivityId])
-
-  return (
-    <>
-      {points.map((p, i) => {
-        const isSelected = p.activityId === selectedActivityId
-        return (
-          <AdvancedMarker
-            key={p.activityId}
-            position={{ lat: p.lat, lng: p.lng }}
-            onClick={() => {
-              setOpenIdx(openIdx === i ? null : i)
-              onSelectActivity(p)
-            }}
-            title={p.title}
-          >
-            <Pin
-              background={colorForDay(p.dayNumber)}
-              borderColor={isSelected ? "#fbbf24" : "#ffffff"}
-              glyphColor="#ffffff"
-              glyph={String(i + 1)}
-              scale={isSelected ? 1.35 : 1}
-            />
-          </AdvancedMarker>
-        )
-      })}
-      {openIdx !== null && points[openIdx] && (
-        <InfoWindow
-          position={{
-            lat: points[openIdx].lat,
-            lng: points[openIdx].lng,
-          }}
-          onCloseClick={() => setOpenIdx(null)}
-        >
-          <div className="space-y-1 pr-2">
-            <p className="text-sm font-semibold">{points[openIdx].title}</p>
-            <p className="text-xs text-muted-foreground">
-              Day {points[openIdx].dayNumber}
-            </p>
-            {points[openIdx].address && (
-              <p className="text-xs">{points[openIdx].address}</p>
-            )}
-            <button
-              type="button"
-              onClick={() => onOpenInMaps(points[openIdx])}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-primary/20 transition-all hover:shadow-md hover:shadow-primary/30"
-            >
-              <MapPin className="h-3.5 w-3.5" />
-              Open in Google Maps
-            </button>
-          </div>
-        </InfoWindow>
-      )}
-    </>
-  )
-}
-
-function Polyline({
-  path,
-  color,
-}: {
-  path: { lat: number; lng: number }[]
-  color: string
-}) {
-  const map = useMap()
-  useEffect(() => {
-    if (!map || path.length < 2) return
-    const line = new google.maps.Polyline({
-      path,
-      map,
-      strokeColor: color,
-      strokeOpacity: 0.85,
-      strokeWeight: 3,
-    })
-    return () => line.setMap(null)
-  }, [map, path, color])
-  return null
-}
-
-function FitBounds({ points }: { points: LocationPoint[] }) {
-  const map = useMap()
-  const key = useMemo(
-    () => points.map((p) => p.activityId).join("|"),
-    [points],
-  )
-  useEffect(() => {
-    if (!map || points.length === 0) return
-    if (points.length === 1) {
-      map.setCenter({ lat: points[0].lat, lng: points[0].lng })
-      map.setZoom(13)
-      return
-    }
-    const bounds = new google.maps.LatLngBounds()
-    points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }))
-    map.fitBounds(bounds, 64)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, key])
-  return null
 }

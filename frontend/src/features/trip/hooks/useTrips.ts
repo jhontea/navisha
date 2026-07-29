@@ -59,7 +59,7 @@ export function useCreateTrip() {
     mutationFn: (input: CreateTripInput) => tripApi.create(input),
     onSuccess: () => {
       // Invalidate all trip list variants so dashboard + trips page update immediately
-      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
     },
   })
 }
@@ -69,8 +69,8 @@ export function useUpdateTrip(id: string) {
   return useMutation({
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
-      qc.invalidateQueries({ queryKey: ["summary", id], refetchType: "all" })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
+      qc.invalidateQueries({ queryKey: ["summary", id], refetchType: "active" })
     },
   })
 }
@@ -80,7 +80,7 @@ export function useDeleteTrip() {
   return useMutation({
     mutationFn: (id: string) => tripApi.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
     },
   })
 }
@@ -116,7 +116,7 @@ export function useCreateTripFromDraft() {
     mutationFn: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
       tripApi.createFromDraft(params),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
     },
   })
 }
@@ -131,7 +131,7 @@ export function useUpdateDayNotes(tripId: string) {
     mutationFn: ({ dayId, notes }: { dayId: string; notes: string }) =>
       tripApi.updateDayNotes(dayId, notes),
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: 'all' }),
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: 'active' }),
   })
 }
 
@@ -141,7 +141,7 @@ export function useUpdateDayTitle(tripId: string) {
     mutationFn: ({ dayId, title }: { dayId: string; title: string }) =>
       tripApi.updateDayTitle(dayId, title),
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "all" }),
+      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "active" }),
   })
 }
 

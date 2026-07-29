@@ -29,10 +29,10 @@ export function useCreateTransportation(tripId: string) {
     mutationFn: (input: CreateTransportationInput) =>
       transportationApi.create(tripId, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
       // Backend creates a linked expense when cost is provided — keep budget in sync
-      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'all' })
-      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
     },
   })
 }
@@ -43,9 +43,9 @@ export function useUpdateTransportation(id: string, tripId: string) {
     mutationFn: (input: UpdateTransportationInput) =>
       transportationApi.update(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
-      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'all' })
-      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
     },
   })
 }
@@ -55,9 +55,9 @@ export function useDeleteTransportation(tripId: string) {
   return useMutation({
     mutationFn: (id: string) => transportationApi.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'all' })
-      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'all' })
-      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'all' })
+      qc.invalidateQueries({ queryKey: listKey(tripId), refetchType: 'active' })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", tripId], refetchType: 'active' })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", tripId], refetchType: 'active' })
     },
   })
 }

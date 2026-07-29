@@ -22,21 +22,23 @@ type Repository interface {
 	Rollback(ctx context.Context, tx pgx.Tx) error
 
 	// Ownership: returns user_id that owns the day's parent trip, or ErrDayNotFound.
-	FindDayOwner(dayID string) (userID string, err error)
+	FindDayOwner(ctx context.Context, dayID string) (userID string, err error)
 	// FindActivityOwner returns (userID, dayID) for the activity's parent chain.
-	FindActivityOwner(activityID string) (userID, dayID string, err error)
+	FindActivityOwner(ctx context.Context, activityID string) (userID, dayID string, err error)
 
-	ListByDay(dayID string) ([]Activity, error)
+	ListByDay(ctx context.Context, dayID string) ([]Activity, error)
 	// ListByDayIDs fetches activities for multiple days in a single query (Phase 3D: N+1 fix).
 	ListByDayIDs(ctx context.Context, dayIDs []string) (map[string][]Activity, error)
-	FindByID(id string) (*Activity, error)
-	Insert(a *Activity) (*Activity, error)
-	Update(a *Activity) (*Activity, error)
-	Delete(id string) error
+	FindByID(ctx context.Context, id string) (*Activity, error)
+	Insert(ctx context.Context, a *Activity) (*Activity, error)
+	CountOwnedDaysTx(ctx context.Context, tx pgx.Tx, userID string, dayIDs []string) (int, error)
+	BatchInsertTx(ctx context.Context, tx pgx.Tx, activities []Activity) error
+	Update(ctx context.Context, a *Activity) (*Activity, error)
+	Delete(ctx context.Context, id string) error
 
 	// UpdateOrderTx runs in a tx so reorder is atomic.
 	UpdateOrderTx(ctx context.Context, tx pgx.Tx, activityID string, orderIndex int) error
 	// BatchUpdateOrderTx updates all order indexes in a single statement (Phase 3D).
 	BatchUpdateOrderTx(ctx context.Context, tx pgx.Tx, orderMap map[string]int) error
-	ListIDsByDay(dayID string) ([]string, error)
+	ListIDsByDay(ctx context.Context, dayID string) ([]string, error)
 }

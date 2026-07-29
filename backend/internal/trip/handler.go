@@ -102,7 +102,7 @@ func (h *Handler) ListFiltered(c echo.Context) error {
 	from := c.QueryParam("from") // YYYY-MM-DD or empty
 	to := c.QueryParam("to")
 
-	out, err := h.usecase.ListFiltered(userID, cursor, limit, from, to)
+	out, err := h.usecase.ListFiltered(c.Request().Context(), userID, cursor, limit, from, to)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -127,7 +127,7 @@ func (h *Handler) ListUpcoming(c echo.Context) error {
 			limit = n
 		}
 	}
-	trips, err := h.usecase.ListUpcoming(userID, limit)
+	trips, err := h.usecase.ListUpcoming(c.Request().Context(), userID, limit)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -151,7 +151,7 @@ func (h *Handler) List(c echo.Context) error {
 		}
 	}
 
-	out, err := h.usecase.List(userID, cursor, limit)
+	out, err := h.usecase.List(c.Request().Context(), userID, cursor, limit)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -173,7 +173,7 @@ func (h *Handler) Get(c echo.Context) error {
 	}
 	tripID := c.Param("id")
 
-	t, days, err := h.usecase.Get(userID, tripID)
+	t, days, err := h.usecase.Get(c.Request().Context(), userID, tripID)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -221,7 +221,7 @@ func (h *Handler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
 	}
 	tripID := c.Param("id")
-	if err := h.usecase.Delete(userID, tripID); err != nil {
+	if err := h.usecase.Delete(c.Request().Context(), userID, tripID); err != nil {
 		return mapErr(err)
 	}
 	if h.onDelete != nil {
@@ -248,7 +248,7 @@ func (h *Handler) UpdateDayTitle(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	d, err := h.usecase.UpdateDayTitle(userID, dayID, req.Title)
+	d, err := h.usecase.UpdateDayTitle(c.Request().Context(), userID, dayID, req.Title)
 	if err != nil {
 		return mapErr(err)
 	}
@@ -270,7 +270,7 @@ func (h *Handler) UpdateDayNotes(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
 	}
 	req.Notes = sanitize.Text(req.Notes)
-	d, err := h.usecase.UpdateDayNotes(userID, dayID, req.Notes)
+	d, err := h.usecase.UpdateDayNotes(c.Request().Context(), userID, dayID, req.Notes)
 	if err != nil {
 		return mapErr(err)
 	}

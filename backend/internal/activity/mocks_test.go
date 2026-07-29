@@ -32,6 +32,8 @@ type mockRepo struct {
 	listByDayIDsResult map[string][]Activity
 	listByDayIDsErr    error
 	batchUpdateErr     error
+	batchInsertErr     error
+	batchInserted      []Activity
 }
 
 type orderUpdate struct {
@@ -60,7 +62,7 @@ func (m *mockRepo) Rollback(_ context.Context, _ pgx.Tx) error {
 	return nil
 }
 
-func (m *mockRepo) FindDayOwner(dayID string) (string, error) {
+func (m *mockRepo) FindDayOwner(_ context.Context, dayID string) (string, error) {
 	if m.findDayErr != nil {
 		return "", m.findDayErr
 	}
@@ -70,7 +72,7 @@ func (m *mockRepo) FindDayOwner(dayID string) (string, error) {
 	return "", ErrDayNotFound
 }
 
-func (m *mockRepo) FindActivityOwner(activityID string) (string, string, error) {
+func (m *mockRepo) FindActivityOwner(_ context.Context, activityID string) (string, string, error) {
 	if m.findActErr != nil {
 		return "", "", m.findActErr
 	}
@@ -85,18 +87,18 @@ func (m *mockRepo) FindActivityOwner(activityID string) (string, string, error) 
 	return owner, a.DayID, nil
 }
 
-func (m *mockRepo) ListByDay(dayID string) ([]Activity, error) {
+func (m *mockRepo) ListByDay(_ context.Context, dayID string) ([]Activity, error) {
 	return m.listByDayResult, m.listByDayErr
 }
 
-func (m *mockRepo) FindByID(id string) (*Activity, error) {
+func (m *mockRepo) FindByID(_ context.Context, id string) (*Activity, error) {
 	if a, ok := m.activities[id]; ok {
 		return a, nil
 	}
 	return nil, ErrNotFound
 }
 
-func (m *mockRepo) Insert(a *Activity) (*Activity, error) {
+func (m *mockRepo) Insert(_ context.Context, a *Activity) (*Activity, error) {
 	if m.insertErr != nil {
 		return nil, m.insertErr
 	}
@@ -109,7 +111,7 @@ func (m *mockRepo) Insert(a *Activity) (*Activity, error) {
 	return &out, nil
 }
 
-func (m *mockRepo) Update(a *Activity) (*Activity, error) {
+func (m *mockRepo) Update(_ context.Context, a *Activity) (*Activity, error) {
 	if m.updateErr != nil {
 		return nil, m.updateErr
 	}
@@ -120,7 +122,7 @@ func (m *mockRepo) Update(a *Activity) (*Activity, error) {
 	return a, nil
 }
 
-func (m *mockRepo) Delete(id string) error {
+func (m *mockRepo) Delete(_ context.Context, id string) error {
 	if m.deleteErr != nil {
 		return m.deleteErr
 	}
@@ -136,7 +138,7 @@ func (m *mockRepo) UpdateOrderTx(_ context.Context, _ pgx.Tx, id string, order i
 	return nil
 }
 
-func (m *mockRepo) ListIDsByDay(dayID string) ([]string, error) {
+func (m *mockRepo) ListIDsByDay(_ context.Context, dayID string) ([]string, error) {
 	return m.dayIDs[dayID], nil
 }
 
@@ -162,5 +164,23 @@ func (m *mockRepo) BatchUpdateOrderTx(_ context.Context, _ pgx.Tx, orderMap map[
 	for id, order := range orderMap {
 		m.orderUpdates = append(m.orderUpdates, orderUpdate{id, order})
 	}
+	return nil
+}
+
+func (m *mockRepo) CountOwnedDaysTx(_ context.Context, _ pgx.Tx, userID string, dayIDs []string) (int, error) {
+	count := 0
+	for _, dayID := range dayIDs {
+		if m.dayOwners[dayID] == userID {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (m *mockRepo) BatchInsertTx(_ context.Context, _ pgx.Tx, activities []Activity) error {
+	if m.batchInsertErr != nil {
+		return m.batchInsertErr
+	}
+	m.batchInserted = append(m.batchInserted, activities...)
 	return nil
 }

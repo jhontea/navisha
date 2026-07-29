@@ -23,7 +23,7 @@ func NewAutogenDayContextProvider(trips trip.UsecaseInterface, activities activi
 var _ autogen.DayContextProvider = (*AutogenDayContextProvider)(nil)
 
 func (p *AutogenDayContextProvider) GetDayContext(ctx context.Context, userID, tripID, dayID string) (*autogen.DayContext, error) {
-	t, days, err := p.trips.Get(userID, tripID)
+	t, days, err := p.trips.Get(ctx, userID, tripID)
 	if err != nil {
 		if errors.Is(err, trip.ErrNotFound) {
 			return nil, autogen.ErrDayNotFound
@@ -42,7 +42,7 @@ func (p *AutogenDayContextProvider) GetDayContext(ctx context.Context, userID, t
 		return nil, autogen.ErrDayNotFound
 	}
 
-	activities, err := p.activities.List(userID, dayID)
+	activities, err := p.activities.List(ctx, userID, dayID)
 	if err != nil {
 		return nil, err
 	}

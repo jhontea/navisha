@@ -27,7 +27,7 @@ type Tokens struct {
 type UsecaseInterface interface {
 	GoogleAuthURL(state string) string
 	GoogleLogin(ctx context.Context, code string) (*User, *Tokens, error)
-	Me(id string) (*User, error)
+	Me(ctx context.Context, id string) (*User, error)
 	RefreshTokens(refreshToken string) (*Tokens, error)
 }
 
@@ -79,7 +79,7 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 		return nil, nil, ErrNotAllowed
 	}
 
-	usr, err := u.repo.Upsert(&User{
+	usr, err := u.repo.Upsert(ctx, &User{
 		GoogleID:  info.ID,
 		Email:     info.Email,
 		Name:      info.Name,
@@ -98,8 +98,8 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 }
 
 // Me returns the user by ID (called by the /auth/me endpoint).
-func (u *Usecase) Me(id string) (*User, error) {
-	usr, err := u.repo.FindByID(id)
+func (u *Usecase) Me(ctx context.Context, id string) (*User, error) {
+	usr, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("user.Me: %w", err)
 	}

@@ -46,7 +46,7 @@ var _ summary.TripDataProvider = (*TripContextProvider)(nil)
 // GetTripContext assembles the cross-domain snapshot. trip.Usecase.Get enforces
 // ownership (returns apperr.ErrForbidden for a non-owner), which propagates up.
 func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID string) (*summary.TripContext, error) {
-	t, days, err := p.trips.Get(userID, tripID)
+	t, days, err := p.trips.Get(ctx, userID, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 	}
 
 	// Accommodations
-	accs, err := p.accommodations.List(userID, tripID)
+	accs, err := p.accommodations.List(ctx, userID, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 	}
 
 	// Transportations
-	trans, err := p.transportations.List(userID, tripID)
+	trans, err := p.transportations.List(ctx, userID, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 	}
 
 	// Expense summary
-	exp, err := p.expenses.Summary(userID, tripID)
+	exp, err := p.expenses.Summary(ctx, userID, tripID)
 	if err != nil {
 		return nil, err
 	}

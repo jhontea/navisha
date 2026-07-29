@@ -8,7 +8,7 @@ import {
   type TripStatus,
 } from "../lib/status"
 import type { Trip } from "../types"
-import { resolveTripCover } from "../lib/cover"
+import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
 
 const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
   upcoming: { chip: "border-primary/70", dot: "bg-primary" },
@@ -32,7 +32,16 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
     percent: progressPct,
     daysUntilStart,
   } = getTripDateMetrics(trip.start_date, trip.end_date)
-  const coverUrl = resolveTripCover(trip.cover_image_url, trip.description)
+  const coverUrl = resolveTripCover(
+    trip.cover_image_url,
+    trip.description,
+    768,
+  )
+  const coverSrcSet = tripCoverSrcSet(
+    trip.cover_image_url,
+    trip.description,
+    [480, 640, 768, 960],
+  )
   const hasCover = Boolean(coverUrl)
   const style = STATUS_STYLE[status]
 
@@ -59,8 +68,12 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={coverUrl}
+              srcSet={coverSrcSet}
+              sizes="(max-width: 767px) calc(100vw - 2rem), 360px"
               alt=""
               aria-hidden="true"
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />

@@ -82,7 +82,12 @@ func main() {
 		slog.Error("failed to ping database", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("database connected", "max_conns", dbCfg.MaxConns, "min_conns", dbCfg.MinConns)
+	slog.Info("database connected",
+		"max_conns", dbCfg.MaxConns,
+		"min_conns", dbCfg.MinConns,
+		"region", databaseRegion(dbCfg.ConnConfig.Host),
+		"pooler", strings.Contains(dbCfg.ConnConfig.Host, "-pooler."),
+	)
 
 	// Redis — Phase 3D: tuned connection pool.
 	redisOpts, err := redis.ParseURL(cfg.Redis.URL)
@@ -161,6 +166,7 @@ func main() {
 	activityRepo := activity.NewPostgresRepository(db)
 	activityUsecase := activity.NewUsecase(activityRepo)
 	activityHandler := activity.NewHandler(activityUsecase)
+	tripActivitiesHandler := integration.NewTripActivitiesHandler(tripUsecase, activityUsecase)
 
 	// Location autocomplete (Geoapify key remains server-side).
 	locationClient := location.NewGeoapifyClient(
@@ -251,6 +257,12 @@ func main() {
 		},
 	}))
 	e.Use(echomw.Recover())
+	// Compress JSON responses to reduce transfer time on mobile networks.
+	// Small responses stay uncompressed to avoid CPU/header overhead.
+	e.Use(echomw.GzipWithConfig(echomw.GzipConfig{
+		Level:     5,
+		MinLength: 1024,
+	}))
 	// Build CORS origins: always include the configured FRONTEND_URL.
 	// In development, also allow any localhost port so the frontend can run
 	// on port 3001/3002/etc when 3000 is occupied.
@@ -269,6 +281,9 @@ func main() {
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowHeaders:     []string{echo.HeaderContentType, echo.HeaderAuthorization, "X-CSRF-Token"},
 		AllowCredentials: true,
+		// Mutations require a CSRF header and therefore a CORS preflight. Cache
+		// that result so repeated edits do not pay another network round trip.
+		MaxAge: 86400,
 	}))
 
 	// Security headers on every API response (defense in depth — Next.js also
@@ -303,8 +318,12 @@ func main() {
 	// Health check — DB and Redis status (Loop 5: robustness).
 	e.GET("/health", func(c echo.Context) error {
 		healthy := true
+		dbStarted := time.Now()
 		dbOk := db.Ping(c.Request().Context()) == nil
+		dbLatency := time.Since(dbStarted)
+		redisStarted := time.Now()
 		redisOk := rdb.Ping(c.Request().Context()).Err() == nil
+		redisLatency := time.Since(redisStarted)
 		if !dbOk || !redisOk {
 			healthy = false
 		}
@@ -314,8 +333,13 @@ func main() {
 		}
 		return c.JSON(status, map[string]any{
 			"status": map[bool]string{true: "ok", false: "degraded"}[healthy],
-			"db":     map[bool]string{true: "ok", false: "error"}[dbOk],
-			"redis":  map[bool]string{true: "ok", false: "error"}[redisOk],
+			// Preserve the existing string fields for current health-check clients.
+			"db":    map[bool]string{true: "ok", false: "error"}[dbOk],
+			"redis": map[bool]string{true: "ok", false: "error"}[redisOk],
+			"latency_ms": map[string]float64{
+				"db":    float64(dbLatency.Microseconds()) / 1000,
+				"redis": float64(redisLatency.Microseconds()) / 1000,
+			},
 		})
 	})
 
@@ -348,6 +372,7 @@ func main() {
 	tripHandler.RegisterRoutes(api, authMiddleware)
 	tripShareHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)
+	tripActivitiesHandler.RegisterRoutes(api, authMiddleware)
 	locationHandler.RegisterRoutes(api, authMiddleware)
 	currencyHandler.RegisterRoutes(api, authMiddleware)
 	expenseHandler.RegisterRoutes(api, authMiddleware)
@@ -394,4 +419,16 @@ func main() {
 		os.Exit(1)
 	}
 	slog.Info("server stopped")
+}
+
+func databaseRegion(host string) string {
+	for _, part := range strings.Split(host, ".") {
+		if strings.HasPrefix(part, "ap-") || strings.HasPrefix(part, "us-") ||
+			strings.HasPrefix(part, "eu-") || strings.HasPrefix(part, "sa-") ||
+			strings.HasPrefix(part, "ca-") || strings.HasPrefix(part, "me-") ||
+			strings.HasPrefix(part, "af-") {
+			return part
+		}
+	}
+	return "unknown"
 }
