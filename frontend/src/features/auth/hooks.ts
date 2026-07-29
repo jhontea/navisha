@@ -72,10 +72,9 @@ export function useLogout() {
 
 /**
  * Silently refreshes the access token while the user is active on the page.
- * Uses activity events (mousemove, keydown, click, scroll) to track last
- * interaction time. Only calls /auth/refresh when the user has been active
- * within INACTIVITY_THRESHOLD_MS. Stops refreshing once the tab is inactive
- * so the token can naturally expire in the background.
+ * Uses low-frequency pointer/keyboard activity to track the active session.
+ * Refresh pauses while the document is hidden and resumes at most once when
+ * iOS restores the tab, avoiding scroll listeners and reconnect request storms.
  *
  * Note: if this proactive refresh is missed and the access token expires,
  * lib/api.ts also performs an on-demand refresh-and-retry on any 401
@@ -87,35 +86,53 @@ export function useLogout() {
  */
 export function useTokenRefresh() {
   const lastActivityRef = useRef<number>(Date.now())
+  const lastAttemptRef = useRef<number>(Date.now())
+  const refreshInFlightRef = useRef(false)
 
   useEffect(() => {
-    // Track user activity
     const onActivity = () => {
       lastActivityRef.current = Date.now()
     }
 
-    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"]
-    events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }))
-
-    // Periodic refresh
-    const interval = setInterval(async () => {
+    const refreshIfActive = async () => {
+      if (document.visibilityState !== "visible" || refreshInFlightRef.current) return
       const idle = Date.now() - lastActivityRef.current
-      if (idle > INACTIVITY_THRESHOLD_MS) {
-        // User inactive — skip refresh, let token expire naturally
-        return
-      }
+      if (idle > INACTIVITY_THRESHOLD_MS) return
+
+      lastAttemptRef.current = Date.now()
+      refreshInFlightRef.current = true
       try {
         await api.post("/auth/refresh")
       } catch {
         // Refresh failed (token already expired, network error, or refresh
         // cookie gone). lib/api.ts will surface this on the next 401 by
         // redirecting to /login?reason=session-expired.
+      } finally {
+        refreshInFlightRef.current = false
       }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return
+      onActivity()
+      if (Date.now() - lastAttemptRef.current >= REFRESH_INTERVAL_MS) {
+        void refreshIfActive()
+      }
+    }
+
+    // pointerdown covers touch and mouse without running on every scroll frame.
+    window.addEventListener("pointerdown", onActivity, { passive: true })
+    window.addEventListener("keydown", onActivity)
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    const interval = window.setInterval(() => {
+      void refreshIfActive()
     }, REFRESH_INTERVAL_MS)
 
     return () => {
-      events.forEach((ev) => window.removeEventListener(ev, onActivity))
-      clearInterval(interval)
+      window.removeEventListener("pointerdown", onActivity)
+      window.removeEventListener("keydown", onActivity)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+      window.clearInterval(interval)
     }
   }, [])
 }

@@ -1,5 +1,6 @@
 import { Footer } from "@/components/landing/Footer";
 import { BackLink } from "@/components/BackLink";
+import { ArrowUpRight, Bug, Clock3, Headset, Mail, Scale, ShieldCheck } from "lucide-react";
 
 export const metadata = {
   title: "Contact",
@@ -23,9 +24,7 @@ export default function ContactPage() {
           {/* General */}
           <div className="rounded-2xl border bg-card p-6">
             <div className="mb-3 flex items-center gap-3">
-              <span className="material-symbols-outlined text-2xl text-primary">
-                mail
-              </span>
+              <Mail className="h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-lg font-semibold text-foreground">
                 General Inquiries
               </h2>
@@ -38,16 +37,14 @@ export default function ContactPage() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
               hello@navisha.cloud
-              <span className="material-symbols-outlined text-base">arrow_outward</span>
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </a>
           </div>
 
           {/* Support */}
           <div className="rounded-2xl border bg-card p-6">
             <div className="mb-3 flex items-center gap-3">
-              <span className="material-symbols-outlined text-2xl text-primary">
-                support_agent
-              </span>
+              <Headset className="h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-lg font-semibold text-foreground">
                 Support
               </h2>
@@ -61,16 +58,14 @@ export default function ContactPage() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
               support@navisha.cloud
-              <span className="material-symbols-outlined text-base">arrow_outward</span>
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </a>
           </div>
 
           {/* Privacy & Legal */}
           <div className="rounded-2xl border bg-card p-6">
             <div className="mb-3 flex items-center gap-3">
-              <span className="material-symbols-outlined text-2xl text-primary">
-                gavel
-              </span>
+              <Scale className="h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-lg font-semibold text-foreground">
                 Privacy &amp; Legal
               </h2>
@@ -84,14 +79,14 @@ export default function ContactPage() {
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
                 privacy@navisha.cloud
-                <span className="material-symbols-outlined text-base">arrow_outward</span>
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
               </a>
               <a
                 href="mailto:legal@navisha.cloud"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
                 legal@navisha.cloud
-                <span className="material-symbols-outlined text-base">arrow_outward</span>
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -103,22 +98,16 @@ export default function ContactPage() {
             </h2>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined mt-0.5 text-base text-primary">
-                  schedule
-                </span>
+                <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 We aim to respond to all inquiries within 24 hours on business days.
               </li>
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined mt-0.5 text-base text-primary">
-                  security
-                </span>
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 For security issues, please do not include sensitive data (passwords,
                 tokens) in your initial email — we&apos;ll provide a secure channel.
               </li>
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined mt-0.5 text-base text-primary">
-                  bug_report
-                </span>
+                <Bug className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 When reporting bugs, include your browser, device, and steps to
                 reproduce — it helps us fix things faster.
               </li>

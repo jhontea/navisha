@@ -69,8 +69,8 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://static.cloudflareinsights.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
               `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
               "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com",
               "frame-src 'self' https://accounts.google.com",
@@ -91,8 +91,8 @@ const nextConfig = {
                 value: [
                   "default-src 'self'",
                   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://static.cloudflareinsights.com",
-                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                  "font-src 'self' https://fonts.gstatic.com",
+                  "style-src 'self' 'unsafe-inline'",
+                  "font-src 'self'",
                   `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
                   "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com",
                   "frame-src 'self' https://accounts.google.com",

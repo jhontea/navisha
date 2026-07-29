@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Check, MapPin } from "lucide-react"
+import { Banknote, CalendarDays, Check, List, MapPin, StickyNote } from "lucide-react"
 import type { TripDraft } from "../types"
 import { suggestionKey } from "../lib/suggestionKey"
 import { cn } from "@/lib/utils"
@@ -81,16 +81,16 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
         )}
         <div className="flex flex-wrap gap-4 text-body-sm text-foreground-variant">
           <span className="inline-flex items-center gap-1.5">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>calendar_month</span>
+            <CalendarDays className="h-[18px] w-[18px]" aria-hidden="true" />
             {draft.days.length} hari
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>list</span>
+            <List className="h-[18px] w-[18px]" aria-hidden="true" />
             {totalActivities} aktivitas
           </span>
           {draft.budget > 0 && (
             <span className="inline-flex items-center gap-1.5">
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>payments</span>
+              <Banknote className="h-[18px] w-[18px]" aria-hidden="true" />
               {draft.budget.toLocaleString()} {draft.base_currency}
             </span>
           )}
@@ -180,13 +180,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                         {a.type === "location" ? (
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         ) : (
-                          <span
-                            className="material-symbols-outlined mt-0.5 text-outline"
-                            style={{ fontSize: 18 }}
-                            aria-hidden="true"
-                          >
-                            sticky_note_2
-                          </span>
+                          <StickyNote className="mt-0.5 h-[18px] w-[18px] shrink-0 text-outline" aria-hidden="true" />
                         )}
                         <span className="min-w-0">
                           <span className="block font-body-md text-foreground">

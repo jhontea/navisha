@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 
 const VITAL_NAMES = new Set(["CLS", "FCP", "FID", "INP", "LCP", "TTFB"])
 const RATINGS = new Set(["good", "needs-improvement", "poor"])
+const PLATFORMS = new Set(["ios", "android", "desktop"])
+const BROWSERS = new Set(["safari", "crios", "fxios", "chrome", "edge", "other"])
+const DEVICE_CLASSES = new Set(["touch", "desktop"])
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +49,18 @@ export async function POST(request: Request) {
         ? body.navigation_type.slice(0, 50)
         : "unknown",
     route: body.route,
+    platform:
+      typeof body.platform === "string" && PLATFORMS.has(body.platform)
+        ? body.platform
+        : "unknown",
+    browser:
+      typeof body.browser === "string" && BROWSERS.has(body.browser)
+        ? body.browser
+        : "unknown",
+    device_class:
+      typeof body.device_class === "string" && DEVICE_CLASSES.has(body.device_class)
+        ? body.device_class
+        : "unknown",
   }))
 
   return new NextResponse(null, {

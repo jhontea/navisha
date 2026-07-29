@@ -2,6 +2,7 @@
 
 import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { CircleAlert } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -32,9 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
         this.props.fallback ?? (
           <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-              <span className="material-symbols-outlined text-3xl text-destructive">
-                error
-              </span>
+              <CircleAlert className="h-8 w-8 text-destructive" aria-hidden="true" />
             </div>
             <h1 className="text-lg font-semibold text-foreground">
               Something went wrong

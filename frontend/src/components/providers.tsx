@@ -13,7 +13,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { useState } from "react"
-import { RouteProgress } from "@/components/RouteProgress"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -24,6 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             staleTime: 5 * 60 * 1000,        // 5 min — avoids cascade refetches
             gcTime: 10 * 60 * 1000,           // 10 min cache retention
             refetchOnWindowFocus: false,       // prevent tab-switch cascade
+            refetchOnReconnect: false,         // iOS tab resume must not refetch every stale query
             refetchOnMount: true,              // stale queries refetch on navigation
             retry: 1,
           },
@@ -33,7 +33,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RouteProgress />
       {children}
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />

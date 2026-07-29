@@ -1,23 +1,23 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
-import { Providers } from "@/components/providers"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
+import { RouteProgress } from "@/components/RouteProgress"
 import "./globals.css"
 
 const inter = localFont({
-  src: [
-    {
-      path: "./fonts/InterVariable.woff2",
-      style: "normal",
-    },
-    {
-      path: "./fonts/InterVariableItalic.woff2",
-      style: "italic",
-    },
-  ],
+  src: "./fonts/InterVariable.woff2",
   variable: "--font-inter",
   display: "swap",
   weight: "100 900",
+})
+
+const interItalic = localFont({
+  src: "./fonts/InterVariableItalic.woff2",
+  variable: "--font-inter-italic",
+  display: "swap",
+  style: "italic",
+  weight: "100 900",
+  preload: false,
 })
 
 const geistSans = localFont({
@@ -50,10 +50,11 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body
-        className={`${inter.variable} ${geistSans.variable} font-sans antialiased`}
+        className={`${inter.variable} ${interItalic.variable} ${geistSans.variable} font-sans antialiased`}
       >
         <WebVitalsReporter />
-        <Providers>{children}</Providers>
+        <RouteProgress />
+        {children}
       </body>
     </html>
   )

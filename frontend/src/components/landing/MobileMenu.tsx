@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowRight, Menu, X } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false)
@@ -40,16 +39,10 @@ export function MobileMenu() {
         )}
       </button>
 
-      <div
+      {open && <div
         id="mobile-menu"
         role="menu"
-        aria-hidden={!open}
-        className={cn(
-          "absolute left-0 right-0 top-16 z-50 overflow-hidden transition-all duration-200 ease-out sm:hidden",
-          open
-            ? "pointer-events-auto translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-2 opacity-0",
-        )}
+        className="absolute left-0 right-0 top-16 z-50 overflow-hidden animate-fade-in sm:hidden"
       >
         <div className="flex flex-col gap-1 border-t border-border/20 bg-white/98 px-4 py-3 shadow-lg backdrop-blur-2xl">
           <a
@@ -78,7 +71,7 @@ export function MobileMenu() {
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
-      </div>
+      </div>}
     </>
   )
 }

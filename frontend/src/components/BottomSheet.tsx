@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { X } from "lucide-react";
 
 interface BottomSheetProps {
   open: boolean;
@@ -70,7 +71,7 @@ export function BottomSheet({ open, onClose, children, title }: BottomSheetProps
               className="rounded-full p-1.5 text-muted-foreground hover:bg-muted transition-colors"
               aria-label="Close"
             >
-              <span className="material-symbols-outlined text-xl">close</span>
+              <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         )}
