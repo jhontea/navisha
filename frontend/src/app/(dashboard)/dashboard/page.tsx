@@ -6,6 +6,7 @@ import { StatsSection } from "@/features/trip/components/StatsSection"
 import { Sparkles, Compass, ArrowLeftRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useDashboardTrips } from "@/features/trip/hooks/useTrips"
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -23,6 +24,8 @@ function getGreeting() {
  */
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
+  const dashboardTrips = useDashboardTrips()
+  const legacyQueriesEnabled = dashboardTrips.isError
   const firstName = user?.name?.split(" ")[0] ?? "traveler"
 
   const hour = new Date().getHours()
@@ -68,7 +71,11 @@ export default function DashboardPage() {
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </div>
-        <TripList />
+        <TripList
+          enabled={legacyQueriesEnabled}
+          loading={dashboardTrips.isPending}
+          fallbackData={dashboardTrips.data?.upcoming}
+        />
       </section>
 
       {/* ── Quick Actions (SECONDARY) ── */}
@@ -129,7 +136,10 @@ export default function DashboardPage() {
         <h2 id="stats-heading" className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Travel Stats
         </h2>
-        <StatsSection />
+        <StatsSection
+          enabled={legacyQueriesEnabled}
+          fallbackTrips={dashboardTrips.data?.trips.items}
+        />
       </section>
 
     </div>

@@ -23,6 +23,11 @@ export interface TripListResponse {
   next_cursor: string
 }
 
+export interface DashboardTripsResponse {
+  upcoming: { items: Trip[] }
+  trips: TripListResponse
+}
+
 export interface CreateTripInput {
   title: string
   description?: string

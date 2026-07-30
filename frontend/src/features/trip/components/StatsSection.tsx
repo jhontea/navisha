@@ -1,46 +1,58 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { Plane, CalendarCheck, Globe, Award, Trophy, Gem, Medal } from "lucide-react"
 import { useTrips } from "../hooks/useTrips"
 import { tripStatus } from "../lib/status"
+import type { Trip } from "../types"
 
 /** Animated number counter that counts up on mount.
  *  Uses requestAnimationFrame (aligned to display refresh) instead of
  *  setInterval — smoother animation and lower CPU overhead, especially
  *  when multiple counters mount together on the dashboard. */
 function AnimatedCount({ to, duration = 800 }: { to: number; duration?: number }) {
-  const [count, setCount] = useState(0)
+  const elementRef = useRef<HTMLSpanElement>(null)
   const rafRef = useRef<number | null>(null)
-  const startRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (to === 0) { setCount(0); return }
+    const element = elementRef.current
+    if (!element) return
+    if (to === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      element.textContent = String(to)
+      return
+    }
+
+    let startedAt: number | null = null
 
     const step = (now: number) => {
-      if (startRef.current === null) startRef.current = now
-      const elapsed = now - startRef.current
+      if (startedAt === null) startedAt = now
+      const elapsed = now - startedAt
       const progress = Math.min(elapsed / duration, 1)
-      setCount(Math.floor(progress * to))
+      element.textContent = String(Math.floor(progress * to))
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(step)
       } else {
-        setCount(to)
+        element.textContent = String(to)
       }
     }
     rafRef.current = requestAnimationFrame(step)
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      startRef.current = null
     }
   }, [to, duration])
 
-  return <span className="tabular-nums">{count}</span>
+  return <span ref={elementRef} className="tabular-nums">0</span>
 }
 
-export function StatsSection() {
-  const { data } = useTrips()
-  const trips = data?.pages.flatMap((p) => p.items) ?? []
+export function StatsSection({
+  enabled = true,
+  fallbackTrips = [],
+}: {
+  enabled?: boolean
+  fallbackTrips?: Trip[]
+}) {
+  const { data } = useTrips(enabled)
+  const trips = data?.pages.flatMap((p) => p.items) ?? fallbackTrips
 
   const completed = trips.filter(
     (t) => tripStatus(t.start_date, t.end_date) === "past",

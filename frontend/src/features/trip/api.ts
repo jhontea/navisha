@@ -13,10 +13,13 @@ import type {
   ShareDurationDays,
   TripShareLink,
   AutogenQuota,
+  DashboardTripsResponse,
 } from "./types"
 
 
 export const tripApi = {
+  dashboard: () => api.get<DashboardTripsResponse>("/dashboard"),
+
   listUpcoming: (limit = 6) =>
     api.get<{ items: Trip[] }>("/trips/upcoming", { params: { limit: String(limit) } }),
 

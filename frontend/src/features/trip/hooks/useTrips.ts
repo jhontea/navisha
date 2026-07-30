@@ -14,17 +14,22 @@ import type {
   TripDetail,
   TripDraft,
   UpdateTripInput,
+  DashboardTripsResponse,
+  TripListResponse,
 } from "../types"
 import type { TripOverviewResponse } from "../overview"
+import type { InfiniteData } from "@tanstack/react-query"
+import { ApiError } from "@/lib/api"
 
 
 const LIMIT = 20
 
-export function useUpcomingTrips(limit = 6) {
+export function useUpcomingTrips(limit = 6, enabled = true) {
   return useQuery({
     queryKey: ["trips", "upcoming", limit],
     queryFn: () => tripApi.listUpcoming(limit),
     staleTime: 2 * 60 * 1000,
+    enabled,
   })
 }
 
@@ -38,13 +43,51 @@ export function useFilteredTrips(from?: string, to?: string) {
   })
 }
 
-export function useTrips() {
+export function useTrips(enabled = true) {
   return useInfiniteQuery({
     queryKey: ["trips", "list"],
     queryFn: ({ pageParam }) =>
       tripApi.list({ cursor: pageParam, limit: LIMIT }),
     initialPageParam: "",
     getNextPageParam: (last) => last.next_cursor || undefined,
+    enabled,
+  })
+}
+
+export function useDashboardTrips() {
+  const queryClient = useQueryClient()
+
+  return useQuery({
+    queryKey: ["trips", "dashboard"],
+    queryFn: async () => {
+      let dashboard: DashboardTripsResponse
+      try {
+        dashboard = await tripApi.dashboard()
+      } catch (error) {
+        if (!(error instanceof ApiError) || (error.status !== 404 && error.status !== 501)) {
+          throw error
+        }
+        const [upcoming, trips] = await Promise.all([
+          tripApi.listUpcoming(6),
+          tripApi.list({ limit: LIMIT }),
+        ])
+        dashboard = { upcoming, trips }
+      }
+
+      queryClient.setQueryData(["trips", "upcoming", 6], dashboard.upcoming)
+      queryClient.setQueryData<InfiniteData<TripListResponse, string>>(
+        ["trips", "list"],
+        (current) => current
+          ? {
+              ...current,
+              pages: [dashboard.trips, ...current.pages.slice(1)],
+            }
+          : { pages: [dashboard.trips], pageParams: [""] },
+      )
+      return dashboard
+    },
+    staleTime: 2 * 60 * 1000,
+    retry: false,
   })
 }
 
@@ -81,6 +124,7 @@ export function useUpdateTrip(id: string) {
       qc.invalidateQueries({ queryKey: ["trips", "upcoming"], refetchType: "none" })
       qc.invalidateQueries({ queryKey: ["trips", "list"], refetchType: "none" })
       qc.invalidateQueries({ queryKey: ["trips", "filtered"], refetchType: "none" })
+      qc.invalidateQueries({ queryKey: ["trips", "dashboard"], refetchType: "active" })
       qc.invalidateQueries({ queryKey: ["summary", id], refetchType: "active" })
     },
   })

@@ -1,6 +1,7 @@
 "use client"
 
 import { useReportWebVitals } from "next/web-vitals"
+import { useEffect } from "react"
 
 type WebVital = {
   id: string
@@ -10,6 +11,12 @@ type WebVital = {
   rating: string
   navigationType: string
 }
+
+type VitalPayload = ReturnType<typeof createPayload>
+const pendingMetrics = new Map<string, VitalPayload>()
+let flushTimer: ReturnType<typeof setTimeout> | undefined
+const FLUSH_DELAY_MS = 5_000
+const MAX_BATCH_SIZE = 10
 
 function normalizedRoute(pathname: string): string {
   return pathname
@@ -48,9 +55,8 @@ function clientDimensions() {
   }
 }
 
-function report(metric: WebVital) {
-  if (process.env.NODE_ENV !== "production") return
-  const payload = JSON.stringify({
+function createPayload(metric: WebVital) {
+  return {
     id: metric.id,
     name: metric.name,
     value: metric.value,
@@ -59,7 +65,18 @@ function report(metric: WebVital) {
     navigation_type: metric.navigationType,
     route: normalizedRoute(window.location.pathname),
     ...clientDimensions(),
-  })
+  }
+}
+
+function flushMetrics() {
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = undefined
+  }
+  if (pendingMetrics.size === 0) return
+
+  const payload = JSON.stringify(Array.from(pendingMetrics.values()))
+  pendingMetrics.clear()
 
   if (!navigator.sendBeacon("/api/vitals", payload)) {
     void fetch("/api/vitals", {
@@ -70,7 +87,33 @@ function report(metric: WebVital) {
   }
 }
 
+function report(metric: WebVital) {
+  if (process.env.NODE_ENV !== "production") return
+  pendingMetrics.set(`${metric.name}:${metric.id}`, createPayload(metric))
+
+  if (pendingMetrics.size >= MAX_BATCH_SIZE) {
+    flushMetrics()
+    return
+  }
+  if (flushTimer) clearTimeout(flushTimer)
+  flushTimer = setTimeout(flushMetrics, FLUSH_DELAY_MS)
+}
+
 export function WebVitalsReporter() {
   useReportWebVitals(report)
+
+  useEffect(() => {
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") flushMetrics()
+    }
+    window.addEventListener("pagehide", flushMetrics)
+    document.addEventListener("visibilitychange", flushWhenHidden)
+    return () => {
+      window.removeEventListener("pagehide", flushMetrics)
+      document.removeEventListener("visibilitychange", flushWhenHidden)
+      flushMetrics()
+    }
+  }, [])
+
   return null
 }

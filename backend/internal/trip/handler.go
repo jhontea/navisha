@@ -290,6 +290,12 @@ func parseDates(start, end string) (time.Time, time.Time, error) {
 }
 
 func toTripResponse(t *Trip) map[string]any {
+	return Response(t)
+}
+
+// Response returns the stable public trip representation shared by handlers
+// that compose trip data without changing the existing API contract.
+func Response(t *Trip) map[string]any {
 	return map[string]any{
 		"id":                t.ID,
 		"user_id":           t.UserID,
