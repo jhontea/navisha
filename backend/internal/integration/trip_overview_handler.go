@@ -1,52 +1,97 @@
 package integration
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
+	"sort"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/accommodation"
-	"github.com/ahmadhafizh/navisha/backend/internal/activity"
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/expense"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
-	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
 	"github.com/ahmadhafizh/navisha/backend/internal/trip"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
 
-// TripOverviewHandler serves the complete overview read model in one network
-// round trip. Domain usecases remain responsible for authorization and data
-// access; this handler only orchestrates their independent reads.
-type TripOverviewHandler struct {
-	trips          trip.UsecaseInterface
-	activities     activity.UsecaseInterface
-	accommodations accommodation.UsecaseInterface
-	transportation transportation.UsecaseInterface
-	expenses       expense.UsecaseInterface
+// TripOverviewStats is a deliberately small read model. The overview UI only
+// needs counts and budget totals, not every activity/stay/transport payload.
+type TripOverviewStats struct {
+	ActivityCountByDay  map[string]int
+	AccommodationCount  int
+	TransportationCount int
+	ExpenseTotal        float64
+	ExpenseByCategory   map[string]float64
 }
 
-func NewTripOverviewHandler(
-	trips trip.UsecaseInterface,
-	activities activity.UsecaseInterface,
-	accommodations accommodation.UsecaseInterface,
-	transportation transportation.UsecaseInterface,
-	expenses expense.UsecaseInterface,
-) *TripOverviewHandler {
-	return &TripOverviewHandler{
-		trips: trips, activities: activities, accommodations: accommodations,
-		transportation: transportation, expenses: expenses,
+type TripOverviewReader interface {
+	Stats(ctx context.Context, tripID string) (*TripOverviewStats, error)
+}
+
+type PostgresTripOverviewReader struct {
+	db *pgxpool.Pool
+}
+
+func NewPostgresTripOverviewReader(db *pgxpool.Pool) *PostgresTripOverviewReader {
+	return &PostgresTripOverviewReader{db: db}
+}
+
+// Stats retrieves every overview aggregate in one database round trip. Trip
+// ownership is checked once by trip.Usecase.Get before this method is called.
+func (r *PostgresTripOverviewReader) Stats(ctx context.Context, tripID string) (*TripOverviewStats, error) {
+	const query = `
+		WITH activity_counts AS (
+			SELECT d.id AS day_id, COUNT(a.id)::int AS activity_count
+			FROM days d
+			LEFT JOIN activities a ON a.day_id = d.id
+			WHERE d.trip_id = $1
+			GROUP BY d.id
+		), category_totals AS (
+			SELECT category, COALESCE(SUM(converted_amount), 0)::float8 AS total
+			FROM expenses
+			WHERE trip_id = $1
+			GROUP BY category
+		)
+		SELECT
+			(SELECT COUNT(*)::int FROM accommodations WHERE trip_id = $1),
+			(SELECT COUNT(*)::int FROM transportations WHERE trip_id = $1),
+			COALESCE((SELECT jsonb_object_agg(day_id, activity_count) FROM activity_counts), '{}'::jsonb),
+			COALESCE((SELECT SUM(converted_amount)::float8 FROM expenses WHERE trip_id = $1), 0),
+			COALESCE((SELECT jsonb_object_agg(category, total) FROM category_totals), '{}'::jsonb)`
+
+	var activityJSON []byte
+	var categoryJSON []byte
+	stats := &TripOverviewStats{}
+	if err := r.db.QueryRow(ctx, query, tripID).Scan(
+		&stats.AccommodationCount,
+		&stats.TransportationCount,
+		&activityJSON,
+		&stats.ExpenseTotal,
+		&categoryJSON,
+	); err != nil {
+		return nil, fmt.Errorf("trip overview stats: %w", err)
 	}
+	if err := json.Unmarshal(activityJSON, &stats.ActivityCountByDay); err != nil {
+		return nil, fmt.Errorf("trip overview activity counts: %w", err)
+	}
+	if err := json.Unmarshal(categoryJSON, &stats.ExpenseByCategory); err != nil {
+		return nil, fmt.Errorf("trip overview expense categories: %w", err)
+	}
+	return stats, nil
+}
+
+type TripOverviewHandler struct {
+	trips  trip.UsecaseInterface
+	reader TripOverviewReader
+}
+
+func NewTripOverviewHandler(trips trip.UsecaseInterface, reader TripOverviewReader) *TripOverviewHandler {
+	return &TripOverviewHandler{trips: trips, reader: reader}
 }
 
 func (h *TripOverviewHandler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	g.GET("/trips/:trip_id/overview", h.Get, authMiddleware)
-}
-
-type overviewPart struct {
-	name  string
-	value any
-	err   error
 }
 
 func (h *TripOverviewHandler) Get(c echo.Context) error {
@@ -62,50 +107,48 @@ func (h *TripOverviewHandler) Get(c echo.Context) error {
 		return mapTripOverviewError(err)
 	}
 
-	dayIDs := make([]string, len(days))
-	for i := range days {
-		dayIDs[i] = days[i].ID
+	stats, err := h.reader.Stats(ctx, tripID)
+	if err != nil {
+		return mapTripOverviewError(err)
 	}
 
-	parts := make(chan overviewPart, 4)
-	go func() {
-		items, partErr := h.activities.ListByDayIDs(ctx, userID, dayIDs)
-		parts <- overviewPart{name: "activities", value: items, err: partErr}
-	}()
-	go func() {
-		items, partErr := h.accommodations.List(ctx, userID, tripID)
-		parts <- overviewPart{name: "accommodations", value: items, err: partErr}
-	}()
-	go func() {
-		items, partErr := h.transportation.List(ctx, userID, tripID)
-		parts <- overviewPart{name: "transportations", value: items, err: partErr}
-	}()
-	go func() {
-		summary, partErr := h.expenses.Summary(ctx, userID, tripID)
-		parts <- overviewPart{name: "expense_summary", value: summary, err: partErr}
-	}()
+	categories := make([]string, 0, len(stats.ExpenseByCategory))
+	for category := range stats.ExpenseByCategory {
+		categories = append(categories, category)
+	}
+	sort.Strings(categories)
+	byCategory := make([]map[string]any, 0, len(categories))
+	for _, category := range categories {
+		total := stats.ExpenseByCategory[category]
+		byCategory = append(byCategory, map[string]any{"category": category, "total": total})
+	}
 
 	response := map[string]any{
-		"trip": tripOverviewTripResponse(t, days),
+		"trip":                  tripOverviewTripResponse(t, days),
+		"activity_count_by_day": stats.ActivityCountByDay,
+		"accommodation_count":   stats.AccommodationCount,
+		"transportation_count":  stats.TransportationCount,
+		"expense_summary": map[string]any{
+			"total_base": stats.ExpenseTotal, "base_currency": t.BaseCurrency, "by_category": byCategory,
+		},
 	}
-	for range 4 {
-		part := <-parts
-		if part.err != nil {
-			return mapTripOverviewError(fmt.Errorf("trip overview %s: %w", part.name, part.err))
-		}
-		switch part.name {
-		case "activities":
-			response[part.name] = map[string]any{"items_by_day": overviewActivities(dayIDs, part.value.(map[string][]activity.Activity))}
-		case "accommodations":
-			response[part.name] = map[string]any{"items": overviewAccommodations(part.value.([]accommodation.Accommodation))}
-		case "transportations":
-			response[part.name] = map[string]any{"items": overviewTransportations(part.value.([]transportation.Transportation))}
-		case "expense_summary":
-			response[part.name] = overviewExpenseSummary(part.value.(*expense.Summary))
-		}
-	}
+	return privateJSONWithETag(c, response)
+}
 
-	return c.JSON(http.StatusOK, response)
+func privateJSONWithETag(c echo.Context, response any) error {
+	body, err := json.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("trip overview encode: %w", err)
+	}
+	sum := sha256.Sum256(body)
+	etag := fmt.Sprintf("\"%x\"", sum[:12])
+	c.Response().Header().Set("Cache-Control", "private, no-cache, must-revalidate")
+	c.Response().Header().Del("Pragma")
+	c.Response().Header().Set("ETag", etag)
+	if c.Request().Header.Get("If-None-Match") == etag {
+		return c.NoContent(http.StatusNotModified)
+	}
+	return c.Blob(http.StatusOK, "application/json; charset=UTF-8", body)
 }
 
 func tripOverviewTripResponse(t *trip.Trip, days []trip.Day) map[string]any {
@@ -126,74 +169,9 @@ func tripOverviewTripResponse(t *trip.Trip, days []trip.Day) map[string]any {
 	}
 }
 
-func overviewActivities(dayIDs []string, byDay map[string][]activity.Activity) map[string][]map[string]any {
-	response := make(map[string][]map[string]any, len(dayIDs))
-	for _, dayID := range dayIDs {
-		items := byDay[dayID]
-		response[dayID] = make([]map[string]any, 0, len(items))
-		for i := range items {
-			response[dayID] = append(response[dayID], activityResponse(&items[i]))
-		}
-	}
-	return response
-}
-
-func overviewAccommodations(items []accommodation.Accommodation) []map[string]any {
-	response := make([]map[string]any, 0, len(items))
-	for i := range items {
-		a := &items[i]
-		response = append(response, map[string]any{
-			"id": a.ID, "trip_id": a.TripID, "accommodation_type": string(a.AccommodationType),
-			"name": a.Name, "location_name": a.LocationName, "lat": a.Lat, "lng": a.Lng,
-			"google_place_id": a.GooglePlaceID, "check_in": a.CheckIn.Format("2006-01-02"),
-			"check_out": a.CheckOut.Format("2006-01-02"), "confirmation_number": a.ConfirmationNumber,
-			"notes": a.Notes, "created_at": a.CreatedAt, "updated_at": a.UpdatedAt,
-		})
-	}
-	return response
-}
-
-func overviewTransportations(items []transportation.Transportation) []map[string]any {
-	response := make([]map[string]any, 0, len(items))
-	for i := range items {
-		t := &items[i]
-		response = append(response, map[string]any{
-			"id": t.ID, "trip_id": t.TripID, "type": string(t.Type), "label": t.Label,
-			"operator": t.Operator, "reference_number": t.ReferenceNumber,
-			"from_location": t.FromLocation, "to_location": t.ToLocation,
-			"departure_datetime": overviewTimeUTC(t.DepartureDatetime),
-			"arrival_datetime":   overviewTimeUTC(t.ArrivalDatetime), "notes": t.Notes,
-			"created_at": t.CreatedAt, "updated_at": t.UpdatedAt,
-		})
-	}
-	return response
-}
-
-func overviewTimeUTC(value *time.Time) *string {
-	if value == nil {
-		return nil
-	}
-	formatted := value.UTC().Format(time.RFC3339)
-	return &formatted
-}
-
-func overviewExpenseSummary(summary *expense.Summary) map[string]any {
-	categories := make([]map[string]any, 0, len(summary.ByCategory))
-	for _, item := range summary.ByCategory {
-		categories = append(categories, map[string]any{"category": string(item.Category), "total": item.Total})
-	}
-	return map[string]any{
-		"total_base": summary.TotalBase, "base_currency": summary.BaseCurrency, "by_category": categories,
-	}
-}
-
 func mapTripOverviewError(err error) error {
 	return apperr.MapHTTP(err,
 		apperr.HTTPMapping{Err: trip.ErrNotFound, Code: http.StatusNotFound, Message: "trip not found"},
-		apperr.HTTPMapping{Err: activity.ErrDayNotFound, Code: http.StatusNotFound, Message: "day not found"},
-		apperr.HTTPMapping{Err: accommodation.ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
-		apperr.HTTPMapping{Err: transportation.ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
-		apperr.HTTPMapping{Err: expense.ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 	)
 }

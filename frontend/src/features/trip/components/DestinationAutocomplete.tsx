@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps"
 import { GeoapifyAutocomplete } from "@/features/location/components/GeoapifyAutocomplete"
 import { LOCATION_PROVIDER } from "@/features/location/config"
@@ -45,12 +45,34 @@ export function DestinationAutocomplete(props: Props) {
     )
   }
 
-  // Wrap in APIProvider with the `places` library so we can use the legacy
-  // Autocomplete widget (backed by the classic Places API, which is the one
-  // enabled on this project's key). vis.gl dedupes script loads by key.
+  return <DeferredGoogleAutocomplete {...props} />
+}
+
+function DeferredGoogleAutocomplete(props: Props) {
+  const [activated, setActivated] = useState(false)
+
+  // Keep a fully functional text input before interaction. The large Places
+  // script starts only when the user actually focuses this field.
+  if (!activated) {
+    return (
+      <input
+        id={props.id}
+        disabled={props.disabled}
+        aria-invalid={props.ariaInvalid}
+        aria-describedby={props.ariaDescribedBy}
+        className={props.className}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+        onFocus={() => setActivated(true)}
+        placeholder={props.placeholder ?? "Search city, province, or country"}
+        autoComplete="off"
+      />
+    )
+  }
+
   return (
     <APIProvider apiKey={API_KEY} libraries={["places"]}>
-      <AutocompleteInput {...props} />
+      <AutocompleteInput {...props} autoFocus />
     </APIProvider>
   )
 }
@@ -65,7 +87,8 @@ function AutocompleteInput({
   disabled,
   ariaInvalid,
   ariaDescribedBy,
-}: Props) {
+  autoFocus,
+}: Props & { autoFocus?: boolean }) {
   const places = useMapsLibrary("places")
   const inputRef = useRef<HTMLInputElement>(null)
   // Stash latest onSelect so the effect doesn't re-attach the widget on every
@@ -111,6 +134,7 @@ function AutocompleteInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? "Search city, province, or country"}
       autoComplete="off"
+      autoFocus={autoFocus}
     />
   )
 }

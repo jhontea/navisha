@@ -10,9 +10,12 @@ import { tripApi } from "../api"
 import type {
   CreateTripInput,
   GenerateTripInput,
+  Day,
+  TripDetail,
   TripDraft,
   UpdateTripInput,
 } from "../types"
+import type { TripOverviewResponse } from "../overview"
 
 
 const LIMIT = 20
@@ -68,8 +71,16 @@ export function useUpdateTrip(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
+    onSuccess: (updated) => {
+      qc.setQueryData<TripDetail>(["trips", "detail", id], (current) =>
+        current ? { ...current, ...updated, days: current.days } : current,
+      )
+      qc.setQueryData<TripOverviewResponse>(["trips", "overview", id], (current) =>
+        current ? { ...current, trip: { ...current.trip, ...updated, days: current.trip.days } } : current,
+      )
+      qc.invalidateQueries({ queryKey: ["trips", "upcoming"], refetchType: "none" })
+      qc.invalidateQueries({ queryKey: ["trips", "list"], refetchType: "none" })
+      qc.invalidateQueries({ queryKey: ["trips", "filtered"], refetchType: "none" })
       qc.invalidateQueries({ queryKey: ["summary", id], refetchType: "active" })
     },
   })
@@ -130,10 +141,7 @@ export function useUpdateDayNotes(tripId: string) {
   return useMutation({
     mutationFn: ({ dayId, notes }: { dayId: string; notes: string }) =>
       tripApi.updateDayNotes(dayId, notes),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "active" })
-      qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
-    },
+    onSuccess: (updated) => updateDayCaches(qc, tripId, updated),
   })
 }
 
@@ -142,11 +150,18 @@ export function useUpdateDayTitle(tripId: string) {
   return useMutation({
     mutationFn: ({ dayId, title }: { dayId: string; title: string }) =>
       tripApi.updateDayTitle(dayId, title),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trips", "detail", tripId], refetchType: "active" })
-      qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
-    },
+    onSuccess: (updated) => updateDayCaches(qc, tripId, updated),
   })
+}
+
+function updateDayCaches(qc: ReturnType<typeof useQueryClient>, tripId: string, updated: Day) {
+  const updateDays = (days: Day[]) => days.map((day) => (day.id === updated.id ? updated : day))
+  qc.setQueryData<TripDetail>(["trips", "detail", tripId], (current) =>
+    current ? { ...current, days: updateDays(current.days) } : current,
+  )
+  qc.setQueryData<TripOverviewResponse>(["trips", "overview", tripId], (current) =>
+    current ? { ...current, trip: { ...current.trip, days: updateDays(current.trip.days) } } : current,
+  )
 }
 
 // ── AI Daily Quota ──

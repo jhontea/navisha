@@ -7,10 +7,12 @@ import {
 } from "@tanstack/react-query"
 import { activityApi } from "../api"
 import type {
+  ActivityListResponse,
   CreateActivityInput,
   ReorderInput,
   UpdateActivityInput,
 } from "../types"
+import type { TripOverviewResponse } from "@/features/trip/overview"
 
 const listKey = (dayId: string) => ["activities", "list", dayId] as const
 
@@ -37,16 +39,21 @@ function invalidateActivityViews(
   dayId: string,
   tripId: string,
 ) {
-  qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: "active" })
   qc.invalidateQueries({ queryKey: ["activities", "trip", tripId], refetchType: "active" })
-  qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+  qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "none" })
 }
 
 export function useCreateActivity(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateActivityInput) => activityApi.create(dayId, input),
-    onSuccess: () => invalidateActivityViews(qc, dayId, tripId),
+    onSuccess: (created) => {
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) => ({
+        items: current ? [...current.items, created] : [created],
+      }))
+      updateOverviewActivityCount(qc, tripId, dayId, 1)
+      invalidateActivityViews(qc, dayId, tripId)
+    },
   })
 }
 
@@ -54,7 +61,12 @@ export function useUpdateActivity(id: string, dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: UpdateActivityInput) => activityApi.update(id, input),
-    onSuccess: () => invalidateActivityViews(qc, dayId, tripId),
+    onSuccess: (updated) => {
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
+        current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
+      )
+      invalidateActivityViews(qc, dayId, tripId)
+    },
   })
 }
 
@@ -62,7 +74,13 @@ export function useDeleteActivity(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => activityApi.delete(id),
-    onSuccess: () => invalidateActivityViews(qc, dayId, tripId),
+    onSuccess: (_, deletedId) => {
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
+        current ? { items: current.items.filter((item) => item.id !== deletedId) } : current,
+      )
+      updateOverviewActivityCount(qc, tripId, dayId, -1)
+      invalidateActivityViews(qc, dayId, tripId)
+    },
   })
 }
 
@@ -72,6 +90,28 @@ export function useReorderActivities(dayId: string, tripId: string) {
     mutationFn: (input: ReorderInput) => activityApi.reorder(dayId, input),
     // Optimistic update is handled directly in DayActivities.onDragEnd
     // via qc.setQueryData — faster and bypasses TanStack Mutation lifecycle.
-    onSettled: () => invalidateActivityViews(qc, dayId, tripId),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: "active" })
+      invalidateActivityViews(qc, dayId, tripId)
+    },
   })
+}
+
+function updateOverviewActivityCount(
+  qc: ReturnType<typeof useQueryClient>,
+  tripId: string,
+  dayId: string,
+  delta: number,
+) {
+  qc.setQueryData<TripOverviewResponse>(["trips", "overview", tripId], (current) =>
+    current
+      ? {
+          ...current,
+          activity_count_by_day: {
+            ...current.activity_count_by_day,
+            [dayId]: Math.max(0, (current.activity_count_by_day[dayId] ?? 0) + delta),
+          },
+        }
+      : current,
+  )
 }
