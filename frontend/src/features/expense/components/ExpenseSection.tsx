@@ -169,20 +169,20 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
     return (
       <div
         key={e.id}
-        className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors group"
+        className="group flex items-center justify-between gap-2 p-3 transition-colors hover:bg-accent/30 sm:p-4"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <div
             className={cn(
-              "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+              "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 sm:rounded-xl",
               cfg.bg, cfg.text,
             )}
           >
-            <cfg.Icon className="h-5 w-5" aria-hidden="true" />
+            <cfg.Icon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
           </div>
-          <div>
-            <h5 className="font-label-md text-foreground">{e.title}</h5>
-            <p className="text-label-sm text-muted-foreground mt-0.5">
+          <div className="min-w-0">
+            <h5 className="truncate font-label-md text-foreground">{e.title}</h5>
+            <p className="mt-0.5 truncate text-label-sm text-muted-foreground">
               {cfg.label}
               {!isDateSort && (
                 <span className="ml-1 text-muted-foreground/70">· {formatExpenseDate(e.expense_date)}</span>
@@ -194,9 +194,9 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="text-right mr-2">
-            <p className="font-display text-headline-sm text-foreground">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="mr-1 text-right sm:mr-2">
+            <p className="font-display text-sm font-semibold text-foreground sm:text-headline-sm">
               {formatCurrency(e.amount, e.currency)}
             </p>
             {!sameCurrency && (
