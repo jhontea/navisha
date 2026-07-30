@@ -1,5 +1,5 @@
 import { BackLink } from "@/components/BackLink"
-import { CurrencyConverter } from "@/features/currency/components/CurrencyConverter"
+import { LazyCurrencyConverter } from "@/features/currency/components/LazyCurrencyConverter"
 
 export default function CurrencyPage() {
   return (
@@ -17,7 +17,7 @@ export default function CurrencyPage() {
       </header>
 
       <div className="glass rounded-2xl p-6 md:p-8">
-        <CurrencyConverter />
+        <LazyCurrencyConverter />
       </div>
     </div>
   )

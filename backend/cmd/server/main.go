@@ -333,6 +333,7 @@ func main() {
 		if !healthy {
 			status = http.StatusServiceUnavailable
 		}
+		poolStats := db.Stat()
 		return c.JSON(status, map[string]any{
 			"status": map[bool]string{true: "ok", false: "degraded"}[healthy],
 			// Preserve the existing string fields for current health-check clients.
@@ -341,6 +342,14 @@ func main() {
 			"latency_ms": map[string]float64{
 				"db":    float64(dbLatency.Microseconds()) / 1000,
 				"redis": float64(redisLatency.Microseconds()) / 1000,
+			},
+			"db_pool": map[string]any{
+				"acquired":              poolStats.AcquiredConns(),
+				"idle":                  poolStats.IdleConns(),
+				"total":                 poolStats.TotalConns(),
+				"max":                   poolStats.MaxConns(),
+				"empty_acquire_count":   poolStats.EmptyAcquireCount(),
+				"empty_acquire_wait_ms": float64(poolStats.EmptyAcquireWaitTime().Microseconds()) / 1000,
 			},
 		})
 	})
