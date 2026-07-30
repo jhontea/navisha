@@ -69,6 +69,7 @@ func TestChatCompletion_HappyPath(t *testing.T) {
 func TestChatCompletion_Non200Status(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte(`{"error":"sensitive provider detail"}`))
 	}))
 	defer srv.Close()
 
@@ -79,6 +80,12 @@ func TestChatCompletion_Non200Status(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for non-200 status")
+	}
+	if strings.Contains(err.Error(), "sensitive provider detail") {
+		t.Fatalf("provider response body leaked into error: %v", err)
+	}
+	if !strings.Contains(err.Error(), "status 429") {
+		t.Fatalf("expected status code in error, got: %v", err)
 	}
 }
 

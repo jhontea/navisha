@@ -1,4 +1,5 @@
 import { toast } from "@/lib/toast"
+import { clearPersistedQueries } from "@/lib/queryPersistence"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v1"
 
@@ -61,6 +62,9 @@ function bailToLoginOnError(): never {
   if (bailing) return new Promise<never>(() => {}) as never
   bailing = true
   if (typeof window !== "undefined") {
+    // Session expiry bypasses the explicit logout flow. Remove all cached
+    // account data before another user can sign in on this browser.
+    void clearPersistedQueries()
     toast("Your session has expired. Redirecting to login…", "info", 2500)
     // Let the toast paint before the reload so the user sees the message.
     window.setTimeout(() => {

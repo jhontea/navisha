@@ -368,6 +368,11 @@ func TestEdge_HealthAndSecurity(t *testing.T) {
 		if body["status"] == nil {
 			t.Error("expected 'status' field in health response")
 		}
+		for _, internalField := range []string{"db", "redis", "latency_ms", "db_pool"} {
+			if _, exposed := body[internalField]; exposed {
+				t.Errorf("health response must not expose internal field %q", internalField)
+			}
+		}
 	})
 
 	t.Run("Response has security headers", func(t *testing.T) {

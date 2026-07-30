@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -223,8 +222,9 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (string, e
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(res.Body, 2048))
-		return "", fmt.Errorf("llm.ChatCompletion: status %d: %s", res.StatusCode, string(respBody))
+		// Provider response bodies can contain request details or echoed user
+		// input. Keep them out of wrapped errors because callers log those errors.
+		return "", fmt.Errorf("llm.ChatCompletion: provider %q returned status %d", c.provider, res.StatusCode)
 	}
 
 	var raw chatResponse
