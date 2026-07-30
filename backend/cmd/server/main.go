@@ -198,6 +198,7 @@ func main() {
 	accommodationHandler := accommodation.NewHandler(accommodationUsecase)
 	tripOverviewReader := integration.NewPostgresTripOverviewReader(db)
 	tripOverviewHandler := integration.NewTripOverviewHandler(tripUsecase, tripOverviewReader)
+	dashboardHandler := integration.NewDashboardHandler(tripUsecase)
 
 	// ── LLM Client (provider-agnostic: DeepSeek or OpenRouter) ──
 	// Replaces the old openrouter.Client. Provider is selected via LLM_PROVIDER
@@ -395,6 +396,7 @@ func main() {
 	activityHandler.RegisterRoutes(api, authMiddleware)
 	tripActivitiesHandler.RegisterRoutes(api, authMiddleware)
 	tripOverviewHandler.RegisterRoutes(api, authMiddleware)
+	dashboardHandler.RegisterRoutes(api, authMiddleware)
 	locationHandler.RegisterRoutes(api, authMiddleware)
 	currencyHandler.RegisterRoutes(api, authMiddleware)
 	expenseHandler.RegisterRoutes(api, authMiddleware)

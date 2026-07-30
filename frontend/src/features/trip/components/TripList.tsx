@@ -7,13 +7,22 @@ import { OnboardingCard } from "./OnboardingCard"
 import { useAuth } from "@/features/auth/hooks"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import type { Trip } from "../types"
 
 // W-HOME-01 — how far each arrow click scrolls the carousel (px).
 // Tuned to roughly one card width so navigation feels natural.
 const SCROLL_STEP = 320
 
-export function TripList() {
-  const { data, isLoading, isError, error: _error } = useUpcomingTrips(6)
+export function TripList({
+  enabled = true,
+  loading = false,
+  fallbackData,
+}: {
+  enabled?: boolean
+  loading?: boolean
+  fallbackData?: { items: Trip[] }
+}) {
+  const { data, isLoading, isError, error: _error } = useUpcomingTrips(6, enabled)
   const { user } = useAuth()
   const firstName = user?.name?.split(" ")[0]
 
@@ -51,7 +60,7 @@ export function TripList() {
     })
   }
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="flex flex-col gap-4">
         {[1, 2, 3].map((i) => (
@@ -69,7 +78,7 @@ export function TripList() {
     )
   }
 
-  const trips = data?.items ?? []
+  const trips = data?.items ?? fallbackData?.items ?? []
 
   if (trips.length === 0) {
     return <OnboardingCard userName={firstName} />

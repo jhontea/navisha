@@ -58,7 +58,7 @@ func (r *PostgresTripOverviewReader) Stats(ctx context.Context, tripID string) (
 			(SELECT COUNT(*)::int FROM accommodations WHERE trip_id = $1),
 			(SELECT COUNT(*)::int FROM transportations WHERE trip_id = $1),
 			COALESCE((SELECT jsonb_object_agg(day_id, activity_count) FROM activity_counts), '{}'::jsonb),
-			COALESCE((SELECT SUM(converted_amount)::float8 FROM expenses WHERE trip_id = $1), 0),
+			COALESCE((SELECT SUM(total)::float8 FROM category_totals), 0),
 			COALESCE((SELECT jsonb_object_agg(category, total) FROM category_totals), '{}'::jsonb)`
 
 	var activityJSON []byte
