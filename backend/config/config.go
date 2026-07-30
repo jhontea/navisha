@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"strings"
 
@@ -25,7 +26,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port int
+	Port       int
+	TrustProxy bool `mapstructure:"trust_proxy"`
 }
 
 type DBConfig struct {
@@ -78,6 +80,7 @@ type LocationConfig struct {
 }
 
 type AppConfig struct {
+	Environment     string   `mapstructure:"environment"`
 	FrontendURL     string   `mapstructure:"frontend_url"`
 	CookieDomain    string   `mapstructure:"cookie_domain"`
 	AllowedEmails   []string `mapstructure:"allowed_emails"`
@@ -201,9 +204,11 @@ func Load() (*Config, error) {
 		"google.client_id":           "GOOGLE_CLIENT_ID",
 		"google.client_secret":       "GOOGLE_CLIENT_SECRET",
 		"google.redirect_url":        "GOOGLE_REDIRECT_URL",
+		"server.trust_proxy":         "TRUST_PROXY",
 		"location.geoapify_api_key":  "GEOAPIFY_API_KEY",
 		"location.geoapify_base_url": "GEOAPIFY_BASE_URL",
 		"app.frontend_url":           "FRONTEND_URL",
+		"app.environment":            "APP_ENV",
 		"app.cookie_domain":          "COOKIE_DOMAIN",
 		"app.share_link_secret":      "SHARE_LINK_SECRET",
 		"currency.api_key":           "CURRENCYFREAKS_API_KEY",
@@ -236,5 +241,74 @@ func Load() (*Config, error) {
 		cfg.App.AllowedEmails = emails
 	}
 
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &cfg, nil
+}
+
+// Validate rejects configurations that would make authentication unsafe.
+// Development permits explicit placeholder secrets for local-only use, while
+// production fails closed before opening network listeners or DB connections.
+func (c *Config) Validate() error {
+	env := strings.ToLower(strings.TrimSpace(c.App.Environment))
+	if env == "" {
+		env = "development"
+		c.App.Environment = env
+	}
+	if env != "development" && env != "test" && env != "production" {
+		return fmt.Errorf("config.Validate: APP_ENV must be development, test, or production")
+	}
+
+	if strings.TrimSpace(c.JWT.Secret) == "" || strings.TrimSpace(c.JWT.RefreshSecret) == "" {
+		return fmt.Errorf("config.Validate: JWT_SECRET and JWT_REFRESH_SECRET are required")
+	}
+	if c.JWT.Secret == c.JWT.RefreshSecret {
+		return fmt.Errorf("config.Validate: JWT access and refresh secrets must differ")
+	}
+	if c.JWT.AccessTTL <= 0 || c.JWT.RefreshTTL <= 0 {
+		return fmt.Errorf("config.Validate: JWT TTL values must be positive")
+	}
+
+	if env == "production" {
+		for name, value := range map[string]string{
+			"JWT_SECRET":         c.JWT.Secret,
+			"JWT_REFRESH_SECRET": c.JWT.RefreshSecret,
+			"SHARE_LINK_SECRET":  c.App.ShareLinkSecret,
+		} {
+			if !isStrongSecret(value) {
+				return fmt.Errorf("config.Validate: %s must be a non-placeholder secret of at least 32 characters", name)
+			}
+		}
+		if c.App.ShareLinkSecret == c.JWT.Secret || c.App.ShareLinkSecret == c.JWT.RefreshSecret {
+			return fmt.Errorf("config.Validate: SHARE_LINK_SECRET must differ from JWT secrets")
+		}
+		frontend, err := url.Parse(c.App.FrontendURL)
+		if err != nil || frontend.Scheme != "https" || frontend.Host == "" {
+			return fmt.Errorf("config.Validate: FRONTEND_URL must be an absolute HTTPS URL in production")
+		}
+		if strings.TrimSpace(c.App.CookieDomain) == "" {
+			return fmt.Errorf("config.Validate: COOKIE_DOMAIN is required in production for CSRF protection")
+		}
+	} else {
+		for name, value := range map[string]string{
+			"JWT_SECRET":         c.JWT.Secret,
+			"JWT_REFRESH_SECRET": c.JWT.RefreshSecret,
+		} {
+			if !isStrongSecret(value) {
+				slog.Warn("insecure development secret; never use this configuration in production", "name", name)
+			}
+		}
+	}
+
+	return nil
+}
+
+func isStrongSecret(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	lower := strings.ToLower(trimmed)
+	return len(trimmed) >= 32 &&
+		!strings.HasPrefix(lower, "change-me") &&
+		!strings.Contains(lower, "placeholder")
 }

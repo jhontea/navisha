@@ -2,6 +2,9 @@ package user
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +19,7 @@ import (
 
 // ErrNotAllowed is returned when an email is not in the whitelist.
 var ErrNotAllowed = errors.New("email not allowed")
+var ErrEmailUnverified = errors.New("google email is not verified")
 
 type Tokens struct {
 	AccessToken  string
@@ -28,7 +32,8 @@ type UsecaseInterface interface {
 	GoogleAuthURL(state string) string
 	GoogleLogin(ctx context.Context, code string) (*User, *Tokens, error)
 	Me(ctx context.Context, id string) (*User, error)
-	RefreshTokens(refreshToken string) (*Tokens, error)
+	RefreshTokens(ctx context.Context, refreshToken string) (*Tokens, error)
+	Logout(ctx context.Context, refreshToken string) error
 }
 
 type Usecase struct {
@@ -73,6 +78,9 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 	if err != nil {
 		return nil, nil, fmt.Errorf("user.GoogleLogin: fetch userinfo: %w", err)
 	}
+	if !info.Verified {
+		return nil, nil, ErrEmailUnverified
+	}
 
 	// Whitelist check — reject before touching the DB.
 	if !u.isEmailAllowed(info.Email) {
@@ -80,16 +88,17 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 	}
 
 	usr, err := u.repo.Upsert(ctx, &User{
-		GoogleID:  info.ID,
-		Email:     info.Email,
-		Name:      info.Name,
-		AvatarURL: info.Picture,
+		GoogleID:      info.ID,
+		Email:         info.Email,
+		Name:          info.Name,
+		AvatarURL:     info.Picture,
+		EmailVerified: info.Verified,
 	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("user.GoogleLogin: upsert: %w", err)
 	}
 
-	tokens, err := u.issueTokens(usr.ID)
+	tokens, err := u.issueTokens(ctx, usr.ID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,28 +116,77 @@ func (u *Usecase) Me(ctx context.Context, id string) (*User, error) {
 }
 
 // RefreshTokens validates a refresh token and issues a new token pair.
-func (u *Usecase) RefreshTokens(refreshToken string) (*Tokens, error) {
-	userID, err := u.jwtSvc.ValidateRefreshToken(refreshToken)
+func (u *Usecase) RefreshTokens(ctx context.Context, refreshToken string) (*Tokens, error) {
+	details, err := u.jwtSvc.ValidateRefreshTokenDetails(refreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("user.RefreshTokens: invalid refresh token: %w", err)
 	}
-	tokens, err := u.issueTokens(userID)
+
+	newSessionID, err := randomSessionID()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("user.RefreshTokens session id: %w", err)
 	}
-	return tokens, nil
+	access, err := u.jwtSvc.GenerateAccessToken(details.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("user.RefreshTokens access: %w", err)
+	}
+	refresh, expiresAt, err := u.jwtSvc.GenerateRefreshTokenForSession(details.UserID, newSessionID)
+	if err != nil {
+		return nil, fmt.Errorf("user.RefreshTokens refresh: %w", err)
+	}
+	if err := u.repo.RotateRefreshSession(
+		ctx, details.SessionID, details.UserID, tokenHash(refreshToken),
+		newSessionID, tokenHash(refresh), expiresAt,
+	); err != nil {
+		return nil, fmt.Errorf("user.RefreshTokens rotate: %w", err)
+	}
+	return &Tokens{AccessToken: access, RefreshToken: refresh}, nil
 }
 
-func (u *Usecase) issueTokens(userID string) (*Tokens, error) {
+func (u *Usecase) Logout(ctx context.Context, refreshToken string) error {
+	if refreshToken == "" {
+		return nil
+	}
+	details, err := u.jwtSvc.ValidateRefreshTokenDetails(refreshToken)
+	if err != nil {
+		return nil // Logout remains idempotent for expired or malformed cookies.
+	}
+	if err := u.repo.RevokeRefreshSession(ctx, details.SessionID, details.UserID, tokenHash(refreshToken)); err != nil {
+		return fmt.Errorf("user.Logout: %w", err)
+	}
+	return nil
+}
+
+func (u *Usecase) issueTokens(ctx context.Context, userID string) (*Tokens, error) {
 	access, err := u.jwtSvc.GenerateAccessToken(userID)
 	if err != nil {
 		return nil, fmt.Errorf("user.issueTokens: access: %w", err)
 	}
-	refresh, err := u.jwtSvc.GenerateRefreshToken(userID)
+	sessionID, err := randomSessionID()
+	if err != nil {
+		return nil, fmt.Errorf("user.issueTokens session id: %w", err)
+	}
+	refresh, expiresAt, err := u.jwtSvc.GenerateRefreshTokenForSession(userID, sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("user.issueTokens: refresh: %w", err)
 	}
+	if err := u.repo.CreateRefreshSession(ctx, sessionID, userID, tokenHash(refresh), expiresAt); err != nil {
+		return nil, fmt.Errorf("user.issueTokens: persist refresh session: %w", err)
+	}
 	return &Tokens{AccessToken: access, RefreshToken: refresh}, nil
+}
+
+func randomSessionID() (string, error) {
+	b := make([]byte, 24)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func tokenHash(token string) []byte {
+	sum := sha256.Sum256([]byte(token))
+	return sum[:]
 }
 
 func fetchGoogleUserInfo(ctx context.Context, cfg *gooauth2.Config, token *gooauth2.Token) (*oauth.GoogleUserInfo, error) {

@@ -235,21 +235,31 @@ func main() {
 	// Echo
 	e := echo.New()
 	e.HideBanner = true
+	if cfg.Server.TrustProxy {
+		// The first untrusted X-Forwarded-For hop is treated as the client.
+		e.IPExtractor = echo.ExtractIPFromXFFHeader()
+	} else {
+		e.IPExtractor = echo.ExtractIPDirect()
+	}
 
 	// Phase 3D: structured request logging with slog + request ID.
 	e.Use(echomw.RequestID())
 	e.Use(echomw.RequestLoggerWithConfig(echomw.RequestLoggerConfig{
 		LogStatus:   true,
-		LogURI:      true,
+		LogURI:      false,
 		LogMethod:   true,
 		LogLatency:  true,
 		LogRemoteIP: true,
 		LogValuesFunc: func(c echo.Context, v echomw.RequestLoggerValues) error {
 			userID, _ := c.Get(appMiddleware.UserIDKey).(string)
+			route := c.Path()
+			if route == "" {
+				route = "unmatched"
+			}
 			slog.Info("request",
 				"request_id", v.RequestID,
 				"method", v.Method,
-				"uri", v.URI,
+				"route", route,
 				"status", v.Status,
 				"latency_ms", v.Latency.Milliseconds(),
 				"remote_ip", v.RemoteIP,
@@ -305,7 +315,7 @@ func main() {
 	e.Use(appMiddleware.BodyLimit(maxBodySize))
 
 	// Phase 3D: per-user rate limiting via Redis sliding window.
-	// Uses JWT extraction to identify users even before auth middleware runs,
+	// Validates JWTs to identify users even before auth middleware runs,
 	// falling back to IP for unauthenticated requests.
 	rateLimiter := appMiddleware.NewRateLimiter(rdb, jwtSvc, appMiddleware.RateLimitConfig{
 		Enabled:       cfg.RateLimit.Enabled,
