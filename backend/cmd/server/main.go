@@ -196,9 +196,8 @@ func main() {
 	accommodationRepo := accommodation.NewPostgresRepository(db)
 	accommodationUsecase := accommodation.NewUsecase(accommodationRepo, expenseUsecase)
 	accommodationHandler := accommodation.NewHandler(accommodationUsecase)
-	tripOverviewHandler := integration.NewTripOverviewHandler(
-		tripUsecase, activityUsecase, accommodationUsecase, transportationUsecase, expenseUsecase,
-	)
+	tripOverviewReader := integration.NewPostgresTripOverviewReader(db)
+	tripOverviewHandler := integration.NewTripOverviewHandler(tripUsecase, tripOverviewReader)
 
 	// ── LLM Client (provider-agnostic: DeepSeek or OpenRouter) ──
 	// Replaces the old openrouter.Client. Provider is selected via LLM_PROVIDER

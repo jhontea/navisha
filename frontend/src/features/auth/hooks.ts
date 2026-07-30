@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { api, ApiError, setLoggingOut } from "@/lib/api"
+import { clearPersistedQueries } from "@/lib/queryPersistence"
 import { useAuthStore } from "./store"
 import type { User } from "./types"
 
@@ -65,6 +66,7 @@ export function useLogout() {
       await queryClient.cancelQueries()
       setUser(null)
       queryClient.clear()
+      await clearPersistedQueries()
       router.push("/login")
     },
   })

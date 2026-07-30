@@ -5,6 +5,8 @@ import { NavBar } from "@/components/NavBar"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { useTokenRefresh } from "@/features/auth/hooks"
 import { Providers } from "@/components/providers"
+import { RouteProgress } from "@/components/RouteProgress"
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
 
 export default function DashboardLayout({
   children,
@@ -15,6 +17,8 @@ export default function DashboardLayout({
 
   return (
     <Providers>
+      <RouteProgress />
+      <ServiceWorkerRegistration />
       <ErrorBoundary>
         <div className="relative flex min-h-screen flex-col bg-background">
           {/* ── Ambient gradient blobs (CSS-only, pointer-events off) ── */}

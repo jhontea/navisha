@@ -81,6 +81,7 @@ export function HeroSection() {
           src={travelHeroIllustration}
           alt="Traveler planning a route with a map, itinerary, and suitcase"
           priority
+          placeholder="blur"
           sizes="(min-width: 1280px) 320px, (min-width: 768px) 460px, (min-width: 640px) 380px, 300px"
           className="h-auto w-full"
         />

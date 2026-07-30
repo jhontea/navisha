@@ -48,6 +48,7 @@ export default async function LoginPage({ searchParams }: Props) {
                 src={loginIllustration}
                 alt="Traveler ready to continue a secure journey"
                 loading="lazy"
+                placeholder="blur"
                 fill
                 className="object-contain object-bottom"
                 sizes="(min-width: 1024px) 48vw, 1px"

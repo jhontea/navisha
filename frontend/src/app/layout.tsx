@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
-import { RouteProgress } from "@/components/RouteProgress"
 import "./globals.css"
 
 const inter = localFont({
@@ -47,7 +46,6 @@ export default function RootLayout({
         className={`${inter.variable} ${interItalic.variable} font-sans antialiased`}
       >
         <WebVitalsReporter />
-        <RouteProgress />
         {children}
       </body>
     </html>

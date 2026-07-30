@@ -12,7 +12,11 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import {
+  restorePersistedQueries,
+  subscribeToQueryPersistence,
+} from "@/lib/queryPersistence"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -30,6 +34,34 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   )
+  const [isRestored, setIsRestored] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    void restorePersistedQueries(queryClient).finally(() => {
+      if (active) setIsRestored(true)
+    })
+    return () => {
+      active = false
+    }
+  }, [queryClient])
+
+  useEffect(() => {
+    if (!isRestored) return
+    return subscribeToQueryPersistence(queryClient)
+  }, [isRestored, queryClient])
+
+  if (!isRestored) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-background"
+        role="status"
+        aria-label="Restoring saved trip data"
+      >
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+      </div>
+    )
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

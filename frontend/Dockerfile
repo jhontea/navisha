@@ -47,8 +47,8 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME="0.0.0.0"
 
-# Create public dir (project may not have one, COPY would fail if missing)
-RUN mkdir -p ./public
+# Public assets include the dashboard service worker.
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Standalone output from Next.js
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

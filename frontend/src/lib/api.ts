@@ -104,7 +104,7 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
 
   let res = await fetch(url.toString(), {
     ...init,
-    cache: "no-store",
+    cache: init.cache ?? "no-store",
     credentials: "include",
     headers,
     signal: signal ?? null,
@@ -120,7 +120,7 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
       // Replay the original request with fresh cookies.
       res = await fetch(url.toString(), {
         ...init,
-        cache: "no-store",
+        cache: init.cache ?? "no-store",
         credentials: "include",
         headers,
         signal: signal ?? null,

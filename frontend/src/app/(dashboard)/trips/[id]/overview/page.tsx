@@ -316,12 +316,9 @@ export default function TripOverviewPage() {
   const { data: overview, isSuccess: activitiesLoaded } = useTripOverview(tripId)
   const trip = overview?.trip
   const expenseSummary = overview?.expense_summary
-  const accommodations = overview?.accommodations
-  const transportations = overview?.transportations
-  const tripActivities = overview?.activities
-  const activitiesByDay = tripActivities?.items_by_day ?? {}
+  const activitiesByDay = overview?.activity_count_by_day ?? {}
   const totalActivities = Object.values(activitiesByDay).reduce(
-    (sum, items) => sum + items.length,
+    (sum, count) => sum + count,
     0,
   )
 
@@ -337,9 +334,9 @@ export default function TripOverviewPage() {
   const upcomingIdx = trip.days.findIndex((d) => d.date >= today)
   const startIdx = upcomingIdx === -1 ? Math.max(0, trip.days.length - 3) : upcomingIdx
   const nextUpDay = trip.days[startIdx]
-  const nextUpActivityCount = nextUpDay ? activitiesByDay[nextUpDay.id]?.length ?? 0 : 0
+  const nextUpActivityCount = nextUpDay ? activitiesByDay[nextUpDay.id] ?? 0 : 0
   const emptyDayCount = activitiesLoaded
-    ? trip.days.filter((day) => (activitiesByDay[day.id]?.length ?? 0) === 0).length
+    ? trip.days.filter((day) => (activitiesByDay[day.id] ?? 0) === 0).length
     : 0
   const overCategoryCount = Object.entries(trip.budget_categories ?? {}).filter(([category, planned]) => {
     const actual = expenseSummary?.by_category.find((item) => item.category === category)?.total ?? 0
@@ -366,7 +363,7 @@ export default function TripOverviewPage() {
             <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-aurora/10 border border-chromatic-aurora/15 p-4 text-center">
               <Hotel className="mb-1.5 h-5 w-5 text-chromatic-aurora" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground tabular-nums">
-                {accommodations?.items.length ?? 0}
+                {overview?.accommodation_count ?? 0}
               </span>
               <span className="text-xs text-muted-foreground">Stays</span>
             </div>
@@ -374,7 +371,7 @@ export default function TripOverviewPage() {
             <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-ocean/10 border border-chromatic-ocean/15 p-4 text-center">
               <Plane className="mb-1.5 h-5 w-5 text-chromatic-ocean" aria-hidden="true" />
               <span className="text-xl font-bold text-foreground tabular-nums">
-                {transportations?.items.length ?? 0}
+                {overview?.transportation_count ?? 0}
               </span>
               <span className="text-xs text-muted-foreground">Transport</span>
             </div>
@@ -412,8 +409,8 @@ export default function TripOverviewPage() {
             budgetCategories={trip.budget_categories ?? {}}
             actualByCategory={expenseSummary?.by_category ?? []}
             hasActivities={totalActivities > 0}
-            hasStay={(accommodations?.items.length ?? 0) > 0}
-            hasTransport={(transportations?.items.length ?? 0) > 0}
+            hasStay={(overview?.accommodation_count ?? 0) > 0}
+            hasTransport={(overview?.transportation_count ?? 0) > 0}
             hasDays={trip.days.length > 0}
           />
 
@@ -450,8 +447,8 @@ export default function TripOverviewPage() {
         <NeedsAttention
           tripId={tripId}
           hasActivities={totalActivities > 0}
-          hasStay={(accommodations?.items.length ?? 0) > 0}
-          hasTransport={(transportations?.items.length ?? 0) > 0}
+          hasStay={(overview?.accommodation_count ?? 0) > 0}
+          hasTransport={(overview?.transportation_count ?? 0) > 0}
           hasBudget={trip.budget > 0}
           overBudget={trip.budget > 0 && (expenseSummary?.total_base ?? 0) > trip.budget}
           emptyDayCount={emptyDayCount}
