@@ -21,6 +21,7 @@ import {
   restorePersistedQueries,
   subscribeToQueryPersistence,
 } from "@/lib/queryPersistence"
+import { useAuthStore } from "@/features/auth/store"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -38,28 +39,34 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   )
-  const [isRestored, setIsRestored] = useState(false)
+  const userID = useAuthStore((state) => state.user?.id ?? null)
+  const [restoredUserID, setRestoredUserID] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!userID) {
+      setRestoredUserID(null)
+      return
+    }
+
     let active = true
-    void restorePersistedQueries(queryClient)
+    void restorePersistedQueries(queryClient, userID)
       .catch(() => undefined)
       .finally(() => {
-        if (active) setIsRestored(true)
+        if (active) setRestoredUserID(userID)
       })
     return () => {
       active = false
     }
-  }, [queryClient])
+  }, [queryClient, userID])
 
   useEffect(() => {
-    if (!isRestored) return
-    return subscribeToQueryPersistence(queryClient)
-  }, [isRestored, queryClient])
+    if (!userID || restoredUserID !== userID) return
+    return subscribeToQueryPersistence(queryClient, userID)
+  }, [queryClient, restoredUserID, userID])
 
   return (
     <QueryClientProvider client={queryClient}>
-      <IsRestoringProvider value={!isRestored}>
+      <IsRestoringProvider value={Boolean(userID && restoredUserID !== userID)}>
         {children}
       </IsRestoringProvider>
       {process.env.NODE_ENV === "development" && (

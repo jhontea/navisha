@@ -8,7 +8,8 @@ import {
 
 const DB_NAME = "navisha-query-cache"
 const STORE_NAME = "snapshots"
-const CACHE_KEY = "dashboard-v1"
+const LEGACY_CACHE_KEY = "dashboard-v1"
+const CACHE_KEY_PREFIX = "dashboard-v2:"
 const MAX_AGE_MS = 30 * 60 * 1000
 const WRITE_DEBOUNCE_MS = 750
 const DB_OPEN_TIMEOUT_MS = 150
@@ -17,8 +18,13 @@ const MAX_PERSISTED_QUERIES = 40
 const MAX_SNAPSHOT_BYTES = 1_500_000
 
 interface PersistedSnapshot {
+  userID: string
   savedAt: number
   state: DehydratedState
+}
+
+function cacheKey(userID: string): string {
+  return `${CACHE_KEY_PREFIX}${userID}`
 }
 
 const PERSISTED_PREFIXES = new Set([
@@ -87,7 +93,7 @@ function createBoundedState(queryClient: QueryClient): DehydratedState {
   return { ...state, queries }
 }
 
-async function readSnapshot(): Promise<PersistedSnapshot | null> {
+async function readSnapshot(userID: string): Promise<PersistedSnapshot | null> {
   const db = await openDatabase()
   if (!db) return null
 
@@ -101,21 +107,25 @@ async function readSnapshot(): Promise<PersistedSnapshot | null> {
       resolve(snapshot)
     }
     const timeout = setTimeout(() => finish(null), DB_READ_TIMEOUT_MS)
-    const transaction = db.transaction(STORE_NAME, "readonly")
-    const request = transaction.objectStore(STORE_NAME).get(CACHE_KEY)
+    const transaction = db.transaction(STORE_NAME, "readwrite")
+    const store = transaction.objectStore(STORE_NAME)
+    // Older builds used one cache key for every account. It is never hydrated
+    // again and is removed as soon as an authenticated user initializes cache.
+    store.delete(LEGACY_CACHE_KEY)
+    const request = store.get(cacheKey(userID))
     request.onsuccess = () => finish((request.result as PersistedSnapshot | undefined) ?? null)
     request.onerror = () => finish(null)
     transaction.onerror = () => finish(null)
   })
 }
 
-async function writeSnapshot(snapshot: PersistedSnapshot): Promise<void> {
+async function writeSnapshot(userID: string, snapshot: PersistedSnapshot): Promise<void> {
   const db = await openDatabase()
   if (!db) return
 
   await new Promise<void>((resolve) => {
     const transaction = db.transaction(STORE_NAME, "readwrite")
-    transaction.objectStore(STORE_NAME).put(snapshot, CACHE_KEY)
+    transaction.objectStore(STORE_NAME).put(snapshot, cacheKey(userID))
     transaction.oncomplete = () => {
       db.close()
       resolve()
@@ -127,24 +137,24 @@ async function writeSnapshot(snapshot: PersistedSnapshot): Promise<void> {
   })
 }
 
-export async function restorePersistedQueries(queryClient: QueryClient): Promise<void> {
-  const snapshot = await readSnapshot()
+export async function restorePersistedQueries(queryClient: QueryClient, userID: string): Promise<void> {
+  const snapshot = await readSnapshot(userID)
   if (!snapshot) return
-  if (Date.now() - snapshot.savedAt > MAX_AGE_MS) {
-    void clearPersistedQueries()
+  if (snapshot.userID !== userID || Date.now() - snapshot.savedAt > MAX_AGE_MS) {
+    void clearPersistedQueries(userID)
     return
   }
   hydrate(queryClient, snapshot.state)
 }
 
-export function subscribeToQueryPersistence(queryClient: QueryClient): () => void {
+export function subscribeToQueryPersistence(queryClient: QueryClient, userID: string): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
 
   const unsubscribe = queryClient.getQueryCache().subscribe(() => {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
       const state = createBoundedState(queryClient)
-      void writeSnapshot({ savedAt: Date.now(), state })
+      void writeSnapshot(userID, { userID, savedAt: Date.now(), state })
     }, WRITE_DEBOUNCE_MS)
   })
 
@@ -154,13 +164,19 @@ export function subscribeToQueryPersistence(queryClient: QueryClient): () => voi
   }
 }
 
-export async function clearPersistedQueries(): Promise<void> {
+export async function clearPersistedQueries(userID?: string): Promise<void> {
   const db = await openDatabase()
   if (!db) return
 
   await new Promise<void>((resolve) => {
     const transaction = db.transaction(STORE_NAME, "readwrite")
-    transaction.objectStore(STORE_NAME).delete(CACHE_KEY)
+    const store = transaction.objectStore(STORE_NAME)
+    if (userID) {
+      store.delete(cacheKey(userID))
+    } else {
+      // Also removes the legacy unscoped dashboard-v1 snapshot.
+      store.clear()
+    }
     transaction.oncomplete = () => {
       db.close()
       resolve()

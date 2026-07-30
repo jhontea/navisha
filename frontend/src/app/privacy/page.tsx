@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <BackLink href="/" label="Back to Home" className="mb-8" />
         <div className="glass-lg rounded-2xl p-8">
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Privacy Policy</h1>
-        <p className="mb-8 text-sm text-muted-foreground">Last updated: June 26, 2026</p>
+        <p className="mb-8 text-sm text-muted-foreground">Last updated: July 30, 2026</p>
         <div className="prose prose-sm prose-gray max-w-none space-y-6">
           <section>
             <h2 className="text-xl font-semibold text-foreground">1. Overview</h2>
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             <p className="text-muted-foreground font-medium mt-4">Trip Content</p>
             <p className="text-muted-foreground">Trip names, destinations, itineraries, activities, accommodations, transportation, expenses, and AI-generated summaries.</p>
             <p className="text-muted-foreground font-medium mt-4">Technical</p>
-            <p className="text-muted-foreground">Authentication cookies (HTTP-only, Secure). Request logs (method, path, status, latency). No analytics or tracking.</p>
+            <p className="text-muted-foreground">Authentication cookies (HTTP-only, Secure). Operational request logs may include method, route, status, latency, IP address, request ID, and account ID. We do not use advertising trackers.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">3. Third-Party Services</h2>
@@ -35,7 +35,8 @@ export default function PrivacyPage() {
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">4. AI Processing</h2>
-            <p className="text-muted-foreground">When you use AI features, trip data is sent to our LLM providers solely to generate your requested content. Data is not used for model training.</p>
+            <p className="text-muted-foreground">When you use AI features, the trip details needed for the requested result may be sent to DeepSeek, OpenRouter, and a model provider selected through OpenRouter. This can include destinations, travel dates, activities, accommodation names and locations, transportation details, budget totals, and expense summaries. We do not intentionally send booking confirmation numbers or authentication credentials. Provider retention and model-training practices are governed by the selected provider&apos;s policies and our configured privacy settings; they may vary by provider and model.</p>
+            <p className="mt-3 text-muted-foreground">To make the dashboard faster, selected trip and expense responses may be cached in your browser&apos;s IndexedDB for up to 30 minutes. The cache is scoped to the signed-in account and cleared on logout or session expiry.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">5. Storage & Security</h2>

@@ -330,38 +330,15 @@ func main() {
 
 	// Health check — DB and Redis status (Loop 5: robustness).
 	e.GET("/health", func(c echo.Context) error {
-		healthy := true
-		dbStarted := time.Now()
 		dbOk := db.Ping(c.Request().Context()) == nil
-		dbLatency := time.Since(dbStarted)
-		redisStarted := time.Now()
 		redisOk := rdb.Ping(c.Request().Context()).Err() == nil
-		redisLatency := time.Since(redisStarted)
-		if !dbOk || !redisOk {
-			healthy = false
-		}
+		healthy := dbOk && redisOk
 		status := http.StatusOK
 		if !healthy {
 			status = http.StatusServiceUnavailable
 		}
-		poolStats := db.Stat()
-		return c.JSON(status, map[string]any{
+		return c.JSON(status, map[string]string{
 			"status": map[bool]string{true: "ok", false: "degraded"}[healthy],
-			// Preserve the existing string fields for current health-check clients.
-			"db":    map[bool]string{true: "ok", false: "error"}[dbOk],
-			"redis": map[bool]string{true: "ok", false: "error"}[redisOk],
-			"latency_ms": map[string]float64{
-				"db":    float64(dbLatency.Microseconds()) / 1000,
-				"redis": float64(redisLatency.Microseconds()) / 1000,
-			},
-			"db_pool": map[string]any{
-				"acquired":              poolStats.AcquiredConns(),
-				"idle":                  poolStats.IdleConns(),
-				"total":                 poolStats.TotalConns(),
-				"max":                   poolStats.MaxConns(),
-				"empty_acquire_count":   poolStats.EmptyAcquireCount(),
-				"empty_acquire_wait_ms": float64(poolStats.EmptyAcquireWaitTime().Microseconds()) / 1000,
-			},
 		})
 	})
 

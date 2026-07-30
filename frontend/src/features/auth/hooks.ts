@@ -30,6 +30,7 @@ export function useAuth() {
     } else if (query.isError) {
       setUser(null)
       setLoading(false)
+      void clearPersistedQueries()
     }
   }, [query.isSuccess, query.isError, query.data, setUser, setLoading])
 
