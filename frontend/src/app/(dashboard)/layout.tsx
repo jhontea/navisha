@@ -1,24 +1,17 @@
-"use client"
-
 import Link from "next/link"
 import { NavBar } from "@/components/NavBar"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { useTokenRefresh } from "@/features/auth/hooks"
 import { Providers } from "@/components/providers"
-import { RouteProgress } from "@/components/RouteProgress"
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
+import { DashboardRuntime } from "@/components/DashboardRuntime"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  useTokenRefresh()
-
   return (
     <Providers>
-      <RouteProgress />
-      <ServiceWorkerRegistration />
+      <DashboardRuntime />
       <ErrorBoundary>
         <div className="relative flex min-h-screen flex-col bg-background">
           {/* ── Ambient gradient blobs (CSS-only, pointer-events off) ── */}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
+import { getInclusiveDayCount } from "../lib/dates"
 
 interface DateRangeValue {
   startDate: string
@@ -291,20 +292,6 @@ function formatDateRange(
   }
 
   return `${formatDate(start, true)} — ${formatDate(end, true)}`
-}
-
-export function getInclusiveDayCount(startDate: string, endDate: string) {
-  const start = parseISODate(startDate)
-  const end = parseISODate(endDate)
-  if (!start || !end || end < start) return null
-
-  const startUTC = Date.UTC(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate(),
-  )
-  const endUTC = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate())
-  return Math.floor((endUTC - startUTC) / 86_400_000) + 1
 }
 
 function formatDate(date: Date, includeYear: boolean) {

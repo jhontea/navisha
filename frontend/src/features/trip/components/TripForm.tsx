@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import { ChevronDown, CreditCard, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
@@ -15,15 +16,27 @@ import {
   fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
 import { FormActions } from "@/components/forms/FormActions"
-import { DestinationAutocomplete } from "./DestinationAutocomplete"
-import {
-  getInclusiveDayCount,
-  TravelDateRangePicker,
-} from "./TravelDateRangePicker"
+import { getInclusiveDayCount } from "../lib/dates"
 import type { CreateTripInput, Trip } from "../types"
 import { canRenderTripCover, getDefaultTripCover } from "../lib/cover"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+const DestinationAutocomplete = dynamic(
+  () => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete),
+  {
+    ssr: false,
+    loading: () => <div className="input-base h-11 animate-pulse bg-muted/30" aria-hidden="true" />,
+  },
+)
+
+const TravelDateRangePicker = dynamic(
+  () => import("./TravelDateRangePicker").then((module) => module.TravelDateRangePicker),
+  {
+    ssr: false,
+    loading: () => <div className="h-20 animate-pulse rounded-xl bg-muted/30" aria-hidden="true" />,
+  },
+)
 
 const schema = z
   .object({

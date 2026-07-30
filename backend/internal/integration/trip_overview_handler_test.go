@@ -64,6 +64,9 @@ func TestTripOverviewCompactResponseAndETag(t *testing.T) {
 	if rec.Header().Get("ETag") == "" {
 		t.Fatal("ETag header is missing")
 	}
+	if rec.Header().Get("Server-Timing") == "" {
+		t.Fatal("Server-Timing header is missing")
+	}
 	var response map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
 		t.Fatalf("decode response: %v", err)

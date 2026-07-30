@@ -1,9 +1,17 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
-import { TripForm } from "@/features/trip/components/TripForm"
 import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
+
+const TripForm = dynamic(
+  () => import("@/features/trip/components/TripForm").then((module) => module.TripForm),
+  {
+    ssr: false,
+    loading: () => <div className="h-96 animate-pulse rounded-xl bg-muted/30" aria-hidden="true" />,
+  },
+)
 
 export default function EditTripPage() {
   const params = useParams<{ id: string }>()

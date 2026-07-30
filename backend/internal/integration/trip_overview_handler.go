@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
@@ -102,15 +103,24 @@ func (h *TripOverviewHandler) Get(c echo.Context) error {
 
 	ctx := c.Request().Context()
 	tripID := c.Param("trip_id")
+	tripStarted := time.Now()
 	t, days, err := h.trips.Get(ctx, userID, tripID)
 	if err != nil {
 		return mapTripOverviewError(err)
 	}
+	tripDuration := time.Since(tripStarted)
 
+	overviewStarted := time.Now()
 	stats, err := h.reader.Stats(ctx, tripID)
 	if err != nil {
 		return mapTripOverviewError(err)
 	}
+	overviewDuration := time.Since(overviewStarted)
+	c.Response().Header().Set("Server-Timing", fmt.Sprintf(
+		"trip;dur=%.2f, overview;dur=%.2f",
+		float64(tripDuration.Microseconds())/1000,
+		float64(overviewDuration.Microseconds())/1000,
+	))
 
 	categories := make([]string, 0, len(stats.ExpenseByCategory))
 	for category := range stats.ExpenseByCategory {

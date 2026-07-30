@@ -10,7 +10,11 @@
 // DO NOT reduce staleTime below 5min or enable refetchOnWindowFocus.
 // See: /memories/navisha-frontend-patterns.md
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import {
+  IsRestoringProvider,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { useEffect, useState } from "react"
 import {
@@ -38,9 +42,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true
-    void restorePersistedQueries(queryClient).finally(() => {
-      if (active) setIsRestored(true)
-    })
+    void restorePersistedQueries(queryClient)
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setIsRestored(true)
+      })
     return () => {
       active = false
     }
@@ -51,21 +57,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return subscribeToQueryPersistence(queryClient)
   }, [isRestored, queryClient])
 
-  if (!isRestored) {
-    return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-background"
-        role="status"
-        aria-label="Restoring saved trip data"
-      >
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
-      </div>
-    )
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <IsRestoringProvider value={!isRestored}>
+        {children}
+      </IsRestoringProvider>
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}

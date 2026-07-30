@@ -1,10 +1,18 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { TripForm } from "@/features/trip/components/TripForm"
+import dynamic from "next/dynamic"
 import { useCreateTrip } from "@/features/trip/hooks/useTrips"
 import { BackLink } from "@/components/BackLink"
 import { Lightbulb, Luggage } from "lucide-react"
+
+const TripForm = dynamic(
+  () => import("@/features/trip/components/TripForm").then((module) => module.TripForm),
+  {
+    ssr: false,
+    loading: () => <div className="h-96 animate-pulse rounded-xl bg-muted/30" aria-hidden="true" />,
+  },
+)
 
 export default function NewTripPage() {
   const router = useRouter()
