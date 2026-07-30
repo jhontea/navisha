@@ -66,16 +66,16 @@ export const AccommodationCard = memo(function AccommodationCard({
         cfg.border,
       )}
     >
-      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
+      <div className="flex items-start gap-2.5 px-3 pb-2.5 pt-3 sm:gap-3 sm:px-4 sm:pb-3 sm:pt-4">
         <div
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110",
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl",
             cfg.bg,
             cfg.text,
           )}
           aria-hidden="true"
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
 
         <div className="flex-1 min-w-0 space-y-1">
