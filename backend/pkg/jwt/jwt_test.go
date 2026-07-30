@@ -51,6 +51,21 @@ func TestGenerateAndValidateRefreshToken(t *testing.T) {
 	}
 }
 
+func TestRefreshTokenCarriesSessionID(t *testing.T) {
+	svc := newTestService()
+	token, _, err := svc.GenerateRefreshTokenForSession("user-456", "session-123")
+	if err != nil {
+		t.Fatalf("GenerateRefreshTokenForSession: %v", err)
+	}
+	details, err := svc.ValidateRefreshTokenDetails(token)
+	if err != nil {
+		t.Fatalf("ValidateRefreshTokenDetails: %v", err)
+	}
+	if details.UserID != "user-456" || details.SessionID != "session-123" {
+		t.Fatalf("details = %+v", details)
+	}
+}
+
 func TestAccessTokenCannotBeValidatedAsRefresh(t *testing.T) {
 	svc := newTestService()
 

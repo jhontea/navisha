@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -21,6 +23,12 @@ type claims struct {
 	jwt.RegisteredClaims
 }
 
+type RefreshTokenDetails struct {
+	UserID    string
+	SessionID string
+	ExpiresAt time.Time
+}
+
 func NewService(accessSecret, refreshSecret string, accessTTL, refreshTTL int) *Service {
 	return &Service{
 		accessSecret:  []byte(accessSecret),
@@ -37,7 +45,21 @@ func (s *Service) GenerateAccessToken(userID string) (string, error) {
 }
 
 func (s *Service) GenerateRefreshToken(userID string) (string, error) {
-	return s.generate(userID, s.refreshSecret, s.refreshTTL)
+	sessionID, err := randomID()
+	if err != nil {
+		return "", fmt.Errorf("jwt.GenerateRefreshToken: %w", err)
+	}
+	token, _, err := s.GenerateRefreshTokenForSession(userID, sessionID)
+	return token, err
+}
+
+func (s *Service) GenerateRefreshTokenForSession(userID, sessionID string) (string, time.Time, error) {
+	expiresAt := time.Now().Add(s.refreshTTL)
+	token, err := s.generateWithID(userID, sessionID, s.refreshSecret, s.refreshTTL)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return token, expiresAt, nil
 }
 
 func (s *Service) ValidateAccessToken(tokenStr string) (string, error) {
@@ -48,11 +70,28 @@ func (s *Service) ValidateRefreshToken(tokenStr string) (string, error) {
 	return s.validate(tokenStr, s.refreshSecret)
 }
 
+func (s *Service) ValidateRefreshTokenDetails(tokenStr string) (*RefreshTokenDetails, error) {
+	token, err := s.parse(tokenStr, s.refreshSecret)
+	if err != nil {
+		return nil, err
+	}
+	c, ok := token.Claims.(*claims)
+	if !ok || !token.Valid || c.ID == "" || c.ExpiresAt == nil {
+		return nil, fmt.Errorf("jwt.validate_refresh_details: invalid claims")
+	}
+	return &RefreshTokenDetails{UserID: c.UserID, SessionID: c.ID, ExpiresAt: c.ExpiresAt.Time}, nil
+}
+
 func (s *Service) generate(userID string, secret []byte, ttl time.Duration) (string, error) {
+	return s.generateWithID(userID, "", secret, ttl)
+}
+
+func (s *Service) generateWithID(userID, tokenID string, secret []byte, ttl time.Duration) (string, error) {
 	now := time.Now()
 	c := &claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        tokenID,
 			Issuer:    s.issuer,
 			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
@@ -69,14 +108,9 @@ func (s *Service) generate(userID string, secret []byte, ttl time.Duration) (str
 }
 
 func (s *Service) validate(tokenStr string, secret []byte) (string, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &claims{}, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok || t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
-		return secret, nil
-	}, jwt.WithIssuer(s.issuer), jwt.WithLeeway(s.Leeway))
+	token, err := s.parse(tokenStr, secret)
 	if err != nil {
-		return "", fmt.Errorf("jwt.validate: %w", err)
+		return "", err
 	}
 
 	c, ok := token.Claims.(*claims)
@@ -86,21 +120,23 @@ func (s *Service) validate(tokenStr string, secret []byte) (string, error) {
 	return c.UserID, nil
 }
 
-// ExtractUserIDUnverified parses a JWT WITHOUT signature validation.
-// Returns the user_id claim on a best-effort basis. Used by the rate limiter
-// (which runs before auth middleware) to identify users. The auth middleware
-// still performs full validation later in the chain.
-//
-// Never use this for authorization decisions — only for rate-limit bucketing.
-func (s *Service) ExtractUserIDUnverified(tokenStr string) (string, error) {
-	parser := jwt.NewParser()
-	token, _, err := parser.ParseUnverified(tokenStr, &claims{})
+func (s *Service) parse(tokenStr string, secret []byte) (*jwt.Token, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &claims{}, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok || t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return secret, nil
+	}, jwt.WithIssuer(s.issuer), jwt.WithLeeway(s.Leeway))
 	if err != nil {
-		return "", fmt.Errorf("jwt.extract_unverified: %w", err)
+		return nil, fmt.Errorf("jwt.validate: %w", err)
 	}
-	c, ok := token.Claims.(*claims)
-	if !ok || c.UserID == "" {
-		return "", fmt.Errorf("jwt.extract_unverified: no user_id claim")
+	return token, nil
+}
+
+func randomID() (string, error) {
+	b := make([]byte, 24)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("random id: %w", err)
 	}
-	return c.UserID, nil
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }

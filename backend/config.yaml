@@ -1,5 +1,7 @@
 server:
   port: 8090
+  # Enable only when requests arrive through a trusted reverse proxy.
+  trust_proxy: false
 
 db:
   pool_size: 10
@@ -59,3 +61,6 @@ rate_limit:
   auth_per_minute: 20
   llm_per_minute: 5
   general_per_min: 100
+
+app:
+  environment: development

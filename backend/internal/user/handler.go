@@ -70,6 +70,9 @@ func (h *Handler) GoogleCallback(c echo.Context) error {
 		if errors.Is(err, ErrNotAllowed) {
 			return c.Redirect(http.StatusTemporaryRedirect, h.frontendURL+"/login?error=not_allowed")
 		}
+		if errors.Is(err, ErrEmailUnverified) {
+			return c.Redirect(http.StatusTemporaryRedirect, h.frontendURL+"/login?error=email_unverified")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "login failed")
 	}
 
@@ -79,6 +82,11 @@ func (h *Handler) GoogleCallback(c echo.Context) error {
 
 // Logout clears auth cookies.
 func (h *Handler) Logout(c echo.Context) error {
+	if cookie, err := c.Cookie("refresh_token"); err == nil {
+		if err := h.usecase.Logout(c.Request().Context(), cookie.Value); err != nil {
+			c.Logger().Errorf("logout session revoke failed: %v", err)
+		}
+	}
 	h.clearTokenCookies(c)
 	return c.JSON(http.StatusOK, map[string]string{"message": "logged out"})
 }
@@ -90,7 +98,7 @@ func (h *Handler) Refresh(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing refresh token")
 	}
 
-	tokens, err := h.usecase.RefreshTokens(cookie.Value)
+	tokens, err := h.usecase.RefreshTokens(c.Request().Context(), cookie.Value)
 	if err != nil {
 		h.clearTokenCookies(c)
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid refresh token")
@@ -159,6 +167,7 @@ func (h *Handler) clearTokenCookies(c echo.Context) {
 			Domain:   h.cookieDomain,
 			Expires:  time.Unix(0, 0),
 			MaxAge:   -1,
+			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteNoneMode,
 		})

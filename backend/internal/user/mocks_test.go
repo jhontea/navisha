@@ -43,8 +43,10 @@ func (m *mockUsecase) Me(_ context.Context, id string) (*User, error) {
 	return m.meUser, m.meErr
 }
 
-func (m *mockUsecase) RefreshTokens(refreshToken string) (*Tokens, error) {
+func (m *mockUsecase) RefreshTokens(_ context.Context, refreshToken string) (*Tokens, error) {
 	m.refreshCalls++
 	m.refreshToken = refreshToken
 	return m.refreshResult, m.refreshErr
 }
+
+func (m *mockUsecase) Logout(_ context.Context, _ string) error { return nil }

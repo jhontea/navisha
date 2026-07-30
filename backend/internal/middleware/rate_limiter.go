@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
@@ -22,9 +23,22 @@ import (
 // each check.
 type RateLimiter struct {
 	rdb    *redis.Client
-	jwtSvc *jwt.Service // optional: for extracting user ID from JWT before auth middleware runs
+	jwtSvc *jwt.Service // optional: validates JWT before auth middleware runs
 	config RateLimitConfig
+	seq    atomic.Uint64
 }
+
+var slidingWindowScript = redis.NewScript(`
+redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
+local count = redis.call('ZCARD', KEYS[1])
+if count >= tonumber(ARGV[2]) then
+  redis.call('EXPIRE', KEYS[1], tonumber(ARGV[5]))
+  return 0
+end
+redis.call('ZADD', KEYS[1], ARGV[3], ARGV[4])
+redis.call('EXPIRE', KEYS[1], tonumber(ARGV[5]))
+return 1
+`)
 
 // RateLimitConfig defines the per-endpoint-group rate limits.
 type RateLimitConfig struct {
@@ -59,19 +73,7 @@ func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 			// 1. Context UserIDKey (set by auth middleware, if it ran before us)
 			// 2. JWT Authorization header (unverified — rate-limit bucketing only)
 			// 3. Client IP (fallback for public/unauthenticated routes)
-			ident := ""
-			if userID, ok := c.Get(UserIDKey).(string); ok && userID != "" {
-				ident = userID
-			} else if rl.jwtSvc != nil {
-				if token := tokenFromRequest(c); token != "" {
-					if userID, err := rl.jwtSvc.ExtractUserIDUnverified(token); err == nil && userID != "" {
-						ident = userID
-					}
-				}
-			}
-			if ident == "" {
-				ident = "ip:" + c.RealIP()
-			}
+			ident := rl.identifier(c)
 
 			bucket, limit := rl.bucketAndLimit(c.Request().URL.Path)
 			if limit <= 0 {
@@ -96,6 +98,20 @@ func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+func (rl *RateLimiter) identifier(c echo.Context) string {
+	if userID, ok := c.Get(UserIDKey).(string); ok && userID != "" {
+		return userID
+	}
+	if rl.jwtSvc != nil {
+		if token := tokenFromRequest(c); token != "" {
+			if userID, err := rl.jwtSvc.ValidateAccessToken(token); err == nil && userID != "" {
+				return userID
+			}
+		}
+	}
+	return "ip:" + c.RealIP()
 }
 
 // bucketAndLimit returns the Redis key bucket name and per-minute limit for a path.
@@ -140,33 +156,11 @@ func (rl *RateLimiter) check(ctx context.Context, redisKey string, limit int) (b
 	now := time.Now()
 	windowStart := now.Add(-time.Minute)
 
-	pipe := rl.rdb.Pipeline()
-
-	// Remove entries outside the sliding window.
-	pipe.ZRemRangeByScore(ctx, redisKey, "0", strconv.FormatInt(windowStart.UnixNano(), 10))
-
-	// Count entries still in the window (before adding this request).
-	countCmd := pipe.ZCard(ctx, redisKey)
-
-	// Set expiry on the key so stale users don't accumulate.
-	pipe.Expire(ctx, redisKey, 2*time.Minute)
-
-	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
-		return false, fmt.Errorf("rate limit redis pipe: %w", err)
-	}
-
-	count, err := countCmd.Result()
+	member := strconv.FormatInt(now.UnixNano(), 10) + "-" + strconv.FormatUint(rl.seq.Add(1), 10)
+	result, err := slidingWindowScript.Run(ctx, rl.rdb, []string{redisKey},
+		windowStart.UnixNano(), limit, now.UnixNano(), member, 120).Int()
 	if err != nil {
-		return false, fmt.Errorf("rate limit zcard: %w", err)
+		return false, fmt.Errorf("rate limit redis script: %w", err)
 	}
-
-	// Only add this request if under the limit.
-	if count < int64(limit) {
-		member := strconv.FormatInt(now.UnixNano(), 10)
-		if err := rl.rdb.ZAdd(ctx, redisKey, redis.Z{Score: float64(now.UnixNano()), Member: member}).Err(); err != nil {
-			return false, fmt.Errorf("rate limit zadd: %w", err)
-		}
-	}
-
-	return count < int64(limit), nil
+	return result == 1, nil
 }

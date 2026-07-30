@@ -106,6 +106,26 @@ func TestGoogleCallback_Success(t *testing.T) {
 	}
 }
 
+func TestGoogleCallback_AuthCookiesUseConfiguredDomain(t *testing.T) {
+	mu := &mockUsecase{
+		loginUser:   &User{ID: "u1"},
+		loginTokens: &Tokens{AccessToken: "a", RefreshToken: "r"},
+	}
+	h := NewHandler(mu, "https://navisha.cloud", ".navisha.cloud", 3600, 604800)
+	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz&code=c", nil)
+	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	rec := httptest.NewRecorder()
+	if err := h.GoogleCallback(echo.New().NewContext(req, rec)); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"access_token", "refresh_token"} {
+		cookie := findCookie(rec.Result().Cookies(), name)
+		if cookie == nil || cookie.Domain != "navisha.cloud" || !cookie.HttpOnly || !cookie.Secure {
+			t.Fatalf("%s should use the configured shared domain, got %+v", name, cookie)
+		}
+	}
+}
+
 func TestGoogleCallback_InvalidState(t *testing.T) {
 	tests := []struct {
 		name        string

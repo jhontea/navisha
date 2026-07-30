@@ -69,6 +69,18 @@ go test -tags integration ./tests/integration/... -v -count=1 -timeout=300s
 - **`.env`** — secrets (not committed, see `.env.example`)
 - Viper merges: env vars override config.yaml values
 
+Production must set `APP_ENV=production`. Startup then fails closed unless
+`JWT_SECRET`, `JWT_REFRESH_SECRET`, and `SHARE_LINK_SECRET` are distinct,
+non-placeholder values of at least 32 characters, `FRONTEND_URL` uses HTTPS,
+and `COOKIE_DOMAIN` is configured for the shared CSRF cookie. Set
+`TRUST_PROXY=true` only when the service is behind a trusted reverse proxy;
+otherwise client IPs are read directly from the connection.
+
+Refresh tokens are single-use and backed by `refresh_sessions`. Deployments
+apply migration `020_harden_auth_sessions.sql` automatically at startup.
+Existing refresh tokens issued before this migration do not contain a session
+ID, so users may need to sign in once after deployment.
+
 ## Supported Currencies
 
 IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND

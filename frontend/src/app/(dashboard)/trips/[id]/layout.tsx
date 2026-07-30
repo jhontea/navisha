@@ -62,7 +62,10 @@ export default function TripDetailLayout({ children }: { children: ReactNode }) 
 
   if (isStandaloneEditPage) return children
 
-  if (isLoading && !trip) {
+  // During persisted-query restoration there can briefly be no data while
+  // isLoading is false. Keep showing the skeleton until the query either
+  // provides data or reaches a real error state.
+  if (!trip && (isLoading || !isError)) {
     return (
       <div className="flex flex-col">
         <Skeleton variant="glass" className="h-[220px] w-full rounded-none md:mx-auto md:h-[240px] md:max-w-max-width md:rounded-2xl" />

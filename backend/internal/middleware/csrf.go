@@ -4,10 +4,8 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -27,12 +25,14 @@ const csrfTokenLen = 32
 func CSRF(cookieDomain string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if isLocalhost(c) || cookieDomain == "" {
+			if cookieDomain == "" {
 				return next(c)
 			}
 
 			if isSafeMethod(c.Request().Method) {
-				ensureCSRFCookie(c, cookieDomain)
+				if err := ensureCSRFCookie(c, cookieDomain); err != nil {
+					return echo.NewHTTPError(http.StatusInternalServerError, "csrf token unavailable").SetInternal(err)
+				}
 				return next(c)
 			}
 
@@ -69,17 +69,6 @@ func isSafeMethod(method string) bool {
 	return false
 }
 
-func isLocalhost(c echo.Context) bool {
-	host := c.Request().Host
-	if host == "" {
-		return false
-	}
-	if h, _, err := net.SplitHostPort(host); err == nil {
-		host = h
-	}
-	return host == "localhost" || host == "127.0.0.1" || host == "::1"
-}
-
 func hasBearerAuthorization(c echo.Context) bool {
 	return strings.HasPrefix(c.Request().Header.Get(echo.HeaderAuthorization), "Bearer ")
 }
@@ -89,12 +78,16 @@ func isOAuthCallback(path string) bool {
 		strings.HasSuffix(path, "/auth/callback")
 }
 
-func ensureCSRFCookie(c echo.Context, cookieDomain string) {
+func ensureCSRFCookie(c echo.Context, cookieDomain string) error {
 	token := ""
 	if ck, err := c.Cookie(csrfCookieName); err == nil && ck.Value != "" {
 		token = ck.Value
 	} else {
-		token = generateCSRFToken()
+		var err error
+		token, err = generateCSRFToken()
+		if err != nil {
+			return err
+		}
 	}
 
 	clearDomain := cookieDomain
@@ -122,15 +115,13 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) {
 		Secure:   true,
 		SameSite: http.SameSiteNoneMode,
 	})
+	return nil
 }
 
-func generateCSRFToken() string {
+func generateCSRFToken() (string, error) {
 	b := make([]byte, csrfTokenLen)
 	if _, err := rand.Read(b); err != nil {
-		base := time.Now().UnixNano()
-		for i := range b {
-			b[i] = byte((base>>uint(i%8))>>uint(i%7)) ^ byte(i)
-		}
+		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(b)
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
