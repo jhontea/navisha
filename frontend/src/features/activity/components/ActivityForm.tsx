@@ -237,7 +237,7 @@ export function ActivityForm({
           aria-label="Activity context"
           className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.04] p-3 sm:grid-cols-2"
         >
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
             <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span className="text-muted-foreground">Adding to</span>
             <span className="font-semibold text-foreground">
@@ -245,20 +245,20 @@ export function ActivityForm({
             </span>
           </div>
           {context.destination && (
-            <div className="flex items-center gap-2 text-sm sm:justify-end">
+            <div className="flex min-w-0 items-center gap-2 text-sm sm:justify-end">
               <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-              <span className="text-muted-foreground">Near</span>
-              <span className="truncate font-semibold text-foreground">
+              <span className="shrink-0 text-muted-foreground">Near</span>
+              <span className="min-w-0 truncate font-semibold text-foreground">
                 {context.destination}
               </span>
             </div>
           )}
         </aside>
       )}
-      {/* Type switcher */}
+      {/* Type switcher — stacked full-width on mobile to avoid horizontal overflow, inline row on sm+ */}
       {!lockType && (
         <div
-          className="flex rounded-xl border border-border/30 bg-muted/30 p-1 gap-1"
+          className="flex flex-col gap-1 rounded-xl border border-border/30 bg-muted/30 p-1 sm:flex-row"
           role="group"
           aria-label="Activity type"
         >
@@ -272,13 +272,13 @@ export function ActivityForm({
                 aria-pressed={selected}
                 onClick={() => setValue("type", t)}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                  "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all duration-150 sm:flex-1 sm:px-3 sm:py-2 sm:text-sm",
                   selected
                     ? "bg-background text-foreground shadow-sm border border-border/30"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/50",
                 )}
               >
-                <meta.Icon className={cn("h-3.5 w-3.5", selected ? "text-primary" : "")} />
+                <meta.Icon className={cn("h-3.5 w-3.5 shrink-0", selected ? "text-primary" : "")} />
                 {meta.label}
               </button>
             )
@@ -307,7 +307,7 @@ export function ActivityForm({
       {/* Location fields */}
       {type === "location" && (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
             <Field label="Start time" htmlFor="activity-start-time" optional error={errors.start_time?.message} errorId="activity-start-time-error">
               <Controller
                 control={control}
@@ -699,7 +699,7 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <FormFieldLabel htmlFor={htmlFor} required={required} optional={optional}>{label}</FormFieldLabel>
       {children}
       <FormFieldError id={errorId}>{error}</FormFieldError>
