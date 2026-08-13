@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { memo } from "react"
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatDateShort } from "@/lib/utils"
 import { Calendar, MapPin, ChevronRight, Clock } from "lucide-react"
 import {
   STATUS_LABEL,
@@ -23,6 +23,7 @@ const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
  * Iter 35 — description fallback: show "Tap to view" when no description
  * Iter 36 — currency badge: pill with bg-primary/8 → primary/10 (higher contrast)
  * Iter 37 — total days shown always, not just when active
+ * Iter 38 — bottom row: short dates + wrap on mobile so date/days/currency never collide
  */
 export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   const {
@@ -143,22 +144,27 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
 
         <div className="flex-1" />
 
-        {/* Bottom row */}
-        <div className="flex items-center justify-between pt-1 border-t border-border/20">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
+        {/* Bottom row — Iter 38: wraps on mobile so date/days/currency never collide */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-1 border-t border-border/20">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
               <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
-              <time className="tabular-nums text-[11px]">
-                {formatDate(trip.start_date)} — {formatDate(trip.end_date)}
+              <time className="whitespace-nowrap tabular-nums text-[11px]">
+                <span className="sm:hidden">
+                  {formatDateShort(trip.start_date)} — {formatDateShort(trip.end_date)}
+                </span>
+                <span className="hidden sm:inline">
+                  {formatDate(trip.start_date)} — {formatDate(trip.end_date)}
+                </span>
               </time>
             </div>
             {/* Iter 37 — always show total days */}
-            <div className="flex items-center gap-1 text-muted-foreground/70">
+            <div className="flex shrink-0 items-center gap-1 text-muted-foreground/70">
               <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
               <span className="text-[11px]">{totalDays}d</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             {/* Iter 36 — currency pill: higher contrast */}
             <span className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary">
               {trip.base_currency}
