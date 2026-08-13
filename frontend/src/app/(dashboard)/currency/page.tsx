@@ -7,8 +7,8 @@ export default function CurrencyPage() {
       <BackLink href="/dashboard" label="Back to Dashboard" className="mb-6" />
 
       {/* Page header */}
-      <header className="mb-10 text-center">
-        <h1 className="text-headline-lg font-headline-lg text-gradient-sunset mb-2">
+      <header className="mb-6 md:mb-10 text-center">
+        <h1 className="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-gradient-sunset mb-2">
           Currency Converter
         </h1>
         <p className="text-body-md font-body-md text-muted-foreground">
@@ -16,7 +16,7 @@ export default function CurrencyPage() {
         </p>
       </header>
 
-      <div className="glass rounded-2xl p-6 md:p-8">
+      <div className="glass rounded-2xl p-4 sm:p-6 md:p-8">
         <LazyCurrencyConverter />
       </div>
     </div>

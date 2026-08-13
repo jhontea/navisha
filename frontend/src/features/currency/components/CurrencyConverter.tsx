@@ -7,7 +7,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { useConvert, useSupportedCurrencies } from "../hooks/useCurrency"
 import { MaterialIcon } from "@/components/MaterialIcon"
@@ -84,18 +83,20 @@ export function CurrencyConverter() {
   return (
     <div className="flex flex-col gap-10">
       {/* Converter Interface */}
-      <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+      <div className="relative flex flex-col md:flex-row items-center justify-center gap-3 md:gap-8">
         {/* From Card */}
-        <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
+        <div className="w-full md:flex-1 glass rounded-xl p-5 md:p-8 soft-shadow transition-all hover:border-primary/30">
           <Label htmlFor={amountId} className="text-label-sm font-label-sm text-muted-foreground uppercase tracking-wider mb-4 block">From</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={from} onValueChange={(v) => v && setFrom(v)}>
-              <SelectTrigger className="w-auto bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl leading-none" aria-hidden="true">
+              <SelectTrigger className="w-auto max-w-full min-w-0 bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
                     {getCurrencyFlag(from)}
                   </span>
-                  <SelectValue />
+                  <span className="truncate">
+                    {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
+                  </span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -116,7 +117,8 @@ export function CurrencyConverter() {
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
             aria-label={`Amount in ${getCurrencyLabel(from, options.find(o => o.code === from)?.name)}`}
-            className="w-full bg-transparent border-none text-display font-display text-foreground focus:ring-0 p-0"
+            maxLength={12}
+            className="w-full min-w-0 bg-transparent border-none text-[28px] leading-[36px] md:text-display md:leading-[56px] font-display text-foreground focus:ring-0 p-0"
           />
           <p className="text-label-md font-label-md text-outline mt-2">
             {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
@@ -128,22 +130,24 @@ export function CurrencyConverter() {
           type="button"
           onClick={swap}
           aria-label="Swap currencies"
-          className="swap-button z-10 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 hover:rotate-180 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:absolute md:left-1/2 md:-translate-x-1/2"
+          className="swap-button z-10 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 rotate-90 md:rotate-0 md:hover:rotate-180 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:absolute md:left-1/2 md:-translate-x-1/2"
         >
           <MaterialIcon name="swap_horiz" size={28} />
         </button>
 
         {/* To Card */}
-        <div className="w-full md:flex-1 glass rounded-xl p-8 soft-shadow transition-all hover:border-primary/30">
+        <div className="w-full md:flex-1 glass rounded-xl p-5 md:p-8 soft-shadow transition-all hover:border-primary/30">
           <Label className="text-label-sm font-label-sm text-muted-foreground uppercase tracking-wider mb-4 block">To</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={to} onValueChange={(v) => v && setTo(v)}>
-              <SelectTrigger className="w-auto bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl leading-none" aria-hidden="true">
+              <SelectTrigger className="w-auto max-w-full min-w-0 bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
                     {getCurrencyFlag(to)}
                   </span>
-                  <SelectValue />
+                  <span className="truncate">
+                    {getCurrencyLabel(to, options.find(o => o.code === to)?.name)}
+                  </span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -156,7 +160,7 @@ export function CurrencyConverter() {
               </SelectContent>
             </Select>
           </div>
-          <div className="w-full bg-transparent border-none text-display font-display text-primary focus:ring-0 p-0" aria-live="polite">
+          <div className="w-full min-w-0 break-words bg-transparent border-none text-[28px] leading-[36px] md:text-display md:leading-[56px] font-display text-primary focus:ring-0 p-0" aria-live="polite">
             {isLoading ? (
               <p className="text-muted-foreground">Converting...</p>
             ) : result ? (
@@ -273,7 +277,7 @@ function RecentConversions({
               className="flex flex-1 items-center gap-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               aria-label={`Reuse conversion ${r.amount} ${r.from} to ${r.to}`}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-high transition-colors group-hover:bg-primary-fixed">
+              <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-high transition-colors group-hover:bg-primary-fixed">
                 <MaterialIcon
                   name="history"
                   size={20}
@@ -281,7 +285,7 @@ function RecentConversions({
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-body-md font-body-md text-foreground">
+                <p className="break-words text-body-md font-body-md text-foreground">
                   <span className="tabular-nums">
                     {r.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                   </span>{" "}
