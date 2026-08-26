@@ -22,6 +22,9 @@ type Suggestion struct {
 	CountryCode string  `json:"country_code"`
 	Latitude    float64 `json:"lat"`
 	Longitude   float64 `json:"lng"`
+	// SourceURL carries the original (redirect-resolved) Google Maps link
+	// when the suggestion came from POST /locations/link. Empty otherwise.
+	SourceURL string `json:"source_url,omitempty"`
 }
 
 type AutocompleteClient interface {

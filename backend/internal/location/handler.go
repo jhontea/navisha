@@ -20,6 +20,7 @@ func NewHandler(client AutocompleteClient) *Handler {
 func (h *Handler) RegisterRoutes(group *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	group.GET("/locations/autocomplete", h.Autocomplete, authMiddleware)
 	group.POST("/locations/resolve", h.Resolve, authMiddleware)
+	group.POST("/locations/link", h.MapsLink, authMiddleware)
 }
 
 type resolveRequest struct {
@@ -62,6 +63,37 @@ func (h *Handler) Autocomplete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadGateway, "location provider is unavailable")
 	}
 	return c.JSON(http.StatusOK, map[string]any{"suggestions": items})
+}
+
+// mapsLinkRequest is the body for POST /locations/link.
+type mapsLinkRequest struct {
+	URL string `json:"url"`
+}
+
+// MapsLink resolves a pasted Google Maps link (including short goo.gl links)
+// into a single place suggestion. Coordinates are taken from the link and the
+// address is enriched via reverse geocoding when possible.
+func (h *Handler) MapsLink(c echo.Context) error {
+	var request mapsLinkRequest
+	if err := c.Bind(&request); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	raw := strings.TrimSpace(request.URL)
+	if raw == "" || len(raw) > 2048 {
+		return echo.NewHTTPError(http.StatusBadRequest, "url must be 1 to 2048 characters")
+	}
+
+	suggestion, err := ResolveMapsLink(c.Request().Context(), http.DefaultClient, h.client.(*GeoapifyClient), raw)
+	if err != nil {
+		if errors.Is(err, ErrNotConfigured) {
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "location provider is not configured")
+		}
+		if errors.Is(err, ErrUnsupportedLink) {
+			return echo.NewHTTPError(http.StatusBadRequest, "not a recognized Google Maps place link")
+		}
+		return echo.NewHTTPError(http.StatusBadGateway, "failed to resolve maps link")
+	}
+	return c.JSON(http.StatusOK, map[string]any{"suggestion": suggestion})
 }
 
 // Resolve batches place lookups behind one application request. Upstream

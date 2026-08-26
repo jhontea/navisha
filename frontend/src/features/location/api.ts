@@ -3,6 +3,7 @@ import type {
   LocationSearchKind,
   LocationSuggestionsResponse,
   BatchLocationSuggestionsResponse,
+  MapsLinkResponse,
 } from "./types"
 
 export function searchLocationSuggestions(
@@ -26,4 +27,8 @@ export function resolveLocationSuggestions(
     { items, destination },
     { signal },
   )
+}
+
+export function resolveMapsLink(url: string, signal?: AbortSignal) {
+  return api.post<MapsLinkResponse>("/locations/link", { url }, { signal })
 }

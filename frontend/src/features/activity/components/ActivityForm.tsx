@@ -448,6 +448,12 @@ export function ActivityForm({
                     setValue("lng", String(p.lng), { shouldValidate: true })
                     setValue("address", p.address)
                     setValue("google_place_id", p.google_place_id)
+                    // Keep the original Google Maps link so "Open in Google
+                    // Maps" can reopen the exact place (name + pin + place
+                    // token), not a coordinate approximation.
+                    if (p.source_url) {
+                      setValue("external_url", p.source_url)
+                    }
                   }}
                 />
               )}

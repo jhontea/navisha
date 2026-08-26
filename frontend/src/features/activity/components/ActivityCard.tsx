@@ -13,12 +13,28 @@ import {
 import { cn } from "@/lib/utils"
 import { formatActivityTimeRange } from "../lib/time"
 import { normalizeExternalUrl } from "../lib/externalUrl"
+import { buildMapsPinUrl } from "@/features/trip/lib/mapsUrl"
 import type {
   Activity,
   LocationPayload,
   NotePayload,
   TodoPayload,
 } from "../types"
+
+/** True when the stored external URL is a Google Maps link worth reopening directly. */
+function isGoogleMapsUrl(url: string | null): boolean {
+  if (!url) return false
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return host === "google.com" ||
+      host === "maps.google.com" ||
+      host.endsWith(".google.com") ||
+      host === "goo.gl" ||
+      host.endsWith(".goo.gl")
+  } catch {
+    return false
+  }
+}
 
 interface Props {
   activity: Activity
@@ -192,7 +208,11 @@ function ActivityBody({ activity, onEdit }: { activity: Activity; onEdit: () => 
               <p className="text-xs flex-1">{p.address}</p>
               {!needsReview && p.lat != null && p.lng != null && (
                 <a
-                  href={`https://maps.google.com/?q=${p.lat},${p.lng}`}
+                  href={
+                    isGoogleMapsUrl(externalUrl)
+                      ? externalUrl
+                      : buildMapsPinUrl(p.lat, p.lng, p.location_name)
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Open in Google Maps"

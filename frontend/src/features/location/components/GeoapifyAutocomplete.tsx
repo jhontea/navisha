@@ -2,8 +2,19 @@
 
 import { useEffect, useId, useRef, useState } from "react"
 import { Loader2, MapPin, X } from "lucide-react"
-import { searchLocationSuggestions } from "../api"
+import { resolveMapsLink, searchLocationSuggestions } from "../api"
 import type { LocationSearchKind, LocationSuggestion } from "../types"
+
+// Detects a pasted Google Maps link (full or short). When it matches, the
+// value is resolved via POST /locations/link instead of the suggestion flow.
+const MAPS_LINK_RE =
+  /^https?:\/\/(www\.)?(maps\.app\.goo\.gl|goo\.gl|google\.[a-z.]+|maps\.google\.[a-z.]+)\/(maps\/)?/i
+
+function isMapsLink(text: string): boolean {
+  const trimmed = text.trim()
+  if (!/^https?:\/\//i.test(trimmed)) return false
+  return MAPS_LINK_RE.test(trimmed)
+}
 
 interface Props {
   value: string
@@ -39,6 +50,12 @@ export function GeoapifyAutocomplete({
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const selectedValueRef = useRef(value)
+  // When a suggestion is chosen, the parent often sets the value twice
+  // (once to the full description via onChange, then again to the short name
+  // via onSelect). This flag suppresses the search effect for exactly one
+  // commit so the two value updates don't re-trigger a fetch and re-open the
+  // suggestion list ("double appearance" bug).
+  const suppressSearchRef = useRef(false)
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -46,6 +63,13 @@ export function GeoapifyAutocomplete({
   const [error, setError] = useState("")
 
   useEffect(() => {
+    // A selection just committed — skip searching and re-sync the guard to the
+    // value the parent actually kept (short name vs. full description).
+    if (suppressSearchRef.current) {
+      suppressSearchRef.current = false
+      selectedValueRef.current = value.trim()
+      return
+    }
     const query = value.trim()
     if (query === selectedValueRef.current) return
     if (query.length < 3) {
@@ -54,6 +78,36 @@ export function GeoapifyAutocomplete({
       setActiveIndex(-1)
       setError("")
       return
+    }
+
+    // Pasted Google Maps link → resolve directly instead of suggesting.
+    if (isMapsLink(query)) {
+      const controller = new AbortController()
+      setIsLoading(true)
+      setError("")
+      setIsOpen(false)
+      setSuggestions([])
+      setActiveIndex(-1)
+      ;(async () => {
+        try {
+          const { suggestion } = await resolveMapsLink(query, controller.signal)
+          if (controller.signal.aborted) return
+          selectedValueRef.current = suggestion.description
+          suppressSearchRef.current = true
+          onChange(suggestion.description)
+          onSelect(suggestion)
+        } catch (requestError) {
+          if (controller.signal.aborted) return
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Could not resolve this maps link",
+          )
+        } finally {
+          if (!controller.signal.aborted) setIsLoading(false)
+        }
+      })()
+      return () => controller.abort()
     }
 
     const controller = new AbortController()
@@ -94,6 +148,7 @@ export function GeoapifyAutocomplete({
 
   const choose = (suggestion: LocationSuggestion) => {
     selectedValueRef.current = suggestion.description
+    suppressSearchRef.current = true
     setSuggestions([])
     setIsOpen(false)
     setActiveIndex(-1)

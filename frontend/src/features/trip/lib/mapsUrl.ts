@@ -68,15 +68,22 @@ export function buildMapsSearchUrl(query: string): string {
 }
 
 /**
- * Build a Google Maps URL that centers on a single location (lat, lng)
- * with an optional place name query for the marker label.
+ * Build a Google Maps URL that opens a single location.
  *
- * Pattern: `https://www.google.com/maps?q=lat,lng&query=Name`
+ * With a name, uses the search + viewport shape
+ * (`/maps/search/<Name>/@lat,lng,17z`): the name is searched but biased to
+ * the stored coordinates, so ambiguous names (branches, chains) resolve to
+ * the right area and the correct place is the first result. Verified against
+ * "Toko Bubur Dibawah Pohon Rindang" — plain name search returns many
+ * branches city-wide; with the viewport, the stored branch ranks first.
+ *
+ * Without a name, falls back to a coordinate query so the pin still opens at
+ * the exact stored point.
  */
 export function buildMapsPinUrl(lat: number, lng: number, name?: string): string {
-  const base = `https://www.google.com/maps?q=${lat},${lng}`
-  if (name) {
-    return `${base}&query=${encodeURIComponent(name)}`
+  const trimmedName = name?.trim()
+  if (trimmedName) {
+    return `https://www.google.com/maps/search/${encodeURIComponent(trimmedName)}/@${lat},${lng},17z`
   }
-  return base
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
 }
