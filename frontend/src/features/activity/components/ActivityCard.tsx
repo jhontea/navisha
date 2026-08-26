@@ -22,7 +22,7 @@ import type {
 } from "../types"
 
 /** True when the stored external URL is a Google Maps link worth reopening directly. */
-function isGoogleMapsUrl(url: string | null): boolean {
+function isGoogleMapsUrl(url: string | null): url is string {
   if (!url) return false
   try {
     const host = new URL(url).hostname.toLowerCase()

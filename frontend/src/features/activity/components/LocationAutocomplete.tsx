@@ -17,6 +17,8 @@ export interface PlaceData {
   lat: number
   lng: number
   google_place_id: string
+  /** Original Google Maps link when the place came from a pasted URL. */
+  source_url?: string
 }
 
 interface Props {

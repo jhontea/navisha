@@ -50,6 +50,12 @@ export function GeoapifyAutocomplete({
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const selectedValueRef = useRef(value)
+  // Stash latest callbacks in refs so the search effect doesn't need them as
+  // dependencies (parents pass inline closures that change every render).
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
   // When a suggestion is chosen, the parent often sets the value twice
   // (once to the full description via onChange, then again to the short name
   // via onSelect). This flag suppresses the search effect for exactly one
@@ -94,8 +100,8 @@ export function GeoapifyAutocomplete({
           if (controller.signal.aborted) return
           selectedValueRef.current = suggestion.description
           suppressSearchRef.current = true
-          onChange(suggestion.description)
-          onSelect(suggestion)
+          onChangeRef.current(suggestion.description)
+          onSelectRef.current(suggestion)
         } catch (requestError) {
           if (controller.signal.aborted) return
           setError(
