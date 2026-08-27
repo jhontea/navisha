@@ -15,6 +15,13 @@ const TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ||
   "© OpenStreetMap contributors © CARTO"
 
+// OpenFreeMap provides free, unlimited vector tiles with no API key and
+// allows commercial use. Its "positron" style matches the CARTO light look
+// the app previously used. The raster proxy (TILE_URL) remains as a fallback
+// when the style cannot be fetched.
+const OPENFREEMAP_STYLE_URL =
+  process.env.NEXT_PUBLIC_MAP_STYLE_URL || "https://tiles.openfreemap.org/styles/positron"
+
 interface Props {
   visibleByDay: DayLocations[]
   onOpenInMaps: (point: LocationPoint) => void
@@ -76,7 +83,9 @@ export function MapLibreCanvas({
 
     setMapError(false)
     const allPoints = displayableByDay.flatMap((day) => day.points)
-    const style: StyleSpecification = {
+    let cancelled = false
+
+    const rasterFallback: StyleSpecification = {
       version: 8,
       sources: {
         osm: {
@@ -91,137 +100,158 @@ export function MapLibreCanvas({
       layers: [{ id: "osm", type: "raster", source: "osm" }],
     }
 
-    let map: maplibregl.Map
-    try {
-      map = new maplibregl.Map({
-        container: containerRef.current,
-        style,
-        center: [allPoints[0].lng, allPoints[0].lat],
-        zoom: 11,
-        attributionControl: {},
-      })
-    } catch {
-      setMapError(true)
-      return
-    }
-    mapRef.current = map
-    // Reset marker registry on (re)create so stale refs from a previous map
-    // instance don't leak into the fly-to/highlight effect.
-    markerElsRef.current = new Map()
-
-    map.addControl(new maplibregl.NavigationControl(), "top-right")
-    map.on("error", (event) => {
-      if (event.error) setMapError(true)
-    })
-
-    const updateRouteOverlay = () => {
-      const container = map.getContainer()
-      setRouteOverlay({
-        width: container.clientWidth || 1,
-        height: container.clientHeight || 1,
-        routes: displayableByDay
-          .filter((day) => day.points.length >= 2)
-          .map((day) => ({
-            id: day.dayId,
-            color: colorForDay(day.dayNumber),
-            points: day.points.map((point) =>
-              map.project([point.lng, point.lat]),
-            ),
-          })),
-      })
-    }
-
-    map.on("move", updateRouteOverlay)
-    map.on("resize", updateRouteOverlay)
-
-    map.once("load", () => {
-      allPoints.forEach((point, index) => {
-        const markerElement = document.createElement("button")
-        markerElement.type = "button"
-        markerElement.title = point.title
-        markerElement.setAttribute("aria-label", point.title)
-        markerElement.textContent = String(index + 1)
-        Object.assign(markerElement.style, {
-          width: "30px",
-          height: "30px",
-          borderRadius: "9999px",
-          border: "2px solid white",
-          background: colorForDay(point.dayNumber),
-          color: "white",
-          fontSize: "12px",
-          fontWeight: "700",
-          cursor: "pointer",
-          boxShadow: "0 2px 8px rgb(0 0 0 / 0.28)",
-          zIndex: "2",
+    const createMap = (style: StyleSpecification | string) => {
+      if (cancelled || !containerRef.current) return
+      let map: maplibregl.Map
+      try {
+        map = new maplibregl.Map({
+          container: containerRef.current,
+          style,
+          center: [allPoints[0].lng, allPoints[0].lat],
+          zoom: 11,
+          attributionControl: {},
         })
-
-        // Register marker for fly-to + highlight (focus-on-click). Clicking a
-        // marker selects the matching list card (two-way sync).
-        markerElsRef.current.set(point.activityId, markerElement)
-        markerElement.addEventListener("click", () => {
-          onSelectActivity?.(point)
-        })
-
-        const popupContent = document.createElement("div")
-        popupContent.style.maxWidth = "240px"
-        const title = document.createElement("p")
-        title.textContent = point.title
-        title.style.fontWeight = "700"
-        title.style.marginBottom = "4px"
-        popupContent.appendChild(title)
-
-        const dayLabel = document.createElement("p")
-        dayLabel.textContent = `Day ${point.dayNumber}`
-        dayLabel.style.fontSize = "12px"
-        dayLabel.style.marginBottom = "4px"
-        popupContent.appendChild(dayLabel)
-
-        if (point.address) {
-          const address = document.createElement("p")
-          address.textContent = point.address
-          address.style.fontSize = "12px"
-          address.style.marginBottom = "8px"
-          popupContent.appendChild(address)
-        }
-
-        const openButton = document.createElement("button")
-        openButton.type = "button"
-        openButton.textContent = "Open in Google Maps"
-        Object.assign(openButton.style, {
-          border: "0",
-          borderRadius: "6px",
-          padding: "6px 10px",
-          background: "#2563eb",
-          color: "white",
-          fontSize: "12px",
-          fontWeight: "600",
-          cursor: "pointer",
-        })
-        openButton.addEventListener("click", () => onOpenInMaps(point))
-        popupContent.appendChild(openButton)
-
-        new maplibregl.Marker({ element: markerElement })
-          .setLngLat([point.lng, point.lat])
-          .setPopup(new maplibregl.Popup({ offset: 22 }).setDOMContent(popupContent))
-          .addTo(map)
-      })
-
-      if (allPoints.length === 1) {
-        map.setCenter([allPoints[0].lng, allPoints[0].lat])
-        map.setZoom(13)
-      } else {
-        const bounds = new maplibregl.LngLatBounds()
-        allPoints.forEach((point) => bounds.extend([point.lng, point.lat]))
-        map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 })
+      } catch {
+        setMapError(true)
+        return
       }
-      updateRouteOverlay()
-    })
+      mapRef.current = map
+      // Reset marker registry on (re)create so stale refs from a previous map
+      // instance don't leak into the fly-to/highlight effect.
+      markerElsRef.current = new Map()
+
+      map.addControl(new maplibregl.NavigationControl(), "top-right")
+      map.on("error", (event) => {
+        if (event.error) setMapError(true)
+      })
+
+      const updateRouteOverlay = () => {
+        const container = map.getContainer()
+        setRouteOverlay({
+          width: container.clientWidth || 1,
+          height: container.clientHeight || 1,
+          routes: displayableByDay
+            .filter((day) => day.points.length >= 2)
+            .map((day) => ({
+              id: day.dayId,
+              color: colorForDay(day.dayNumber),
+              points: day.points.map((point) =>
+                map.project([point.lng, point.lat]),
+              ),
+            })),
+        })
+      }
+
+      map.on("move", updateRouteOverlay)
+      map.on("resize", updateRouteOverlay)
+
+      map.once("load", () => {
+        allPoints.forEach((point, index) => {
+          const markerElement = document.createElement("button")
+          markerElement.type = "button"
+          markerElement.title = point.title
+          markerElement.setAttribute("aria-label", point.title)
+          markerElement.textContent = String(index + 1)
+          Object.assign(markerElement.style, {
+            width: "30px",
+            height: "30px",
+            borderRadius: "9999px",
+            border: "2px solid white",
+            background: colorForDay(point.dayNumber),
+            color: "white",
+            fontSize: "12px",
+            fontWeight: "700",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgb(0 0 0 / 0.28)",
+            zIndex: "2",
+          })
+
+          // Register marker for fly-to + highlight (focus-on-click). Clicking a
+          // marker selects the matching list card (two-way sync).
+          markerElsRef.current.set(point.activityId, markerElement)
+          markerElement.addEventListener("click", () => {
+            onSelectActivity?.(point)
+          })
+
+          const popupContent = document.createElement("div")
+          popupContent.style.maxWidth = "240px"
+          const title = document.createElement("p")
+          title.textContent = point.title
+          title.style.fontWeight = "700"
+          title.style.marginBottom = "4px"
+          popupContent.appendChild(title)
+
+          const dayLabel = document.createElement("p")
+          dayLabel.textContent = `Day ${point.dayNumber}`
+          dayLabel.style.fontSize = "12px"
+          dayLabel.style.marginBottom = "4px"
+          popupContent.appendChild(dayLabel)
+
+          if (point.address) {
+            const address = document.createElement("p")
+            address.textContent = point.address
+            address.style.fontSize = "12px"
+            address.style.marginBottom = "8px"
+            popupContent.appendChild(address)
+          }
+
+          const openButton = document.createElement("button")
+          openButton.type = "button"
+          openButton.textContent = "Open in Google Maps"
+          Object.assign(openButton.style, {
+            border: "0",
+            borderRadius: "6px",
+            padding: "6px 10px",
+            background: "#2563eb",
+            color: "white",
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+          })
+          openButton.addEventListener("click", () => onOpenInMaps(point))
+          popupContent.appendChild(openButton)
+
+          new maplibregl.Marker({ element: markerElement })
+            .setLngLat([point.lng, point.lat])
+            .setPopup(new maplibregl.Popup({ offset: 22 }).setDOMContent(popupContent))
+            .addTo(map)
+        })
+
+        if (allPoints.length === 1) {
+          map.setCenter([allPoints[0].lng, allPoints[0].lat])
+          map.setZoom(13)
+        } else {
+          const bounds = new maplibregl.LngLatBounds()
+          allPoints.forEach((point) => bounds.extend([point.lng, point.lat]))
+          map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 })
+        }
+        updateRouteOverlay()
+      })
+    }
+
+    // Prefer the OpenFreeMap vector style (free, no key, same Positron look).
+    // If it cannot be fetched, fall back to the same-origin raster proxy.
+    ;(async () => {
+      let style: StyleSpecification | string = OPENFREEMAP_STYLE_URL
+      try {
+        const styleResponse = await fetch(OPENFREEMAP_STYLE_URL, {
+          signal: AbortSignal.timeout(8_000),
+        })
+        if (!styleResponse.ok) throw new Error(`style ${styleResponse.status}`)
+        style = (await styleResponse.json()) as StyleSpecification
+      } catch {
+        style = rasterFallback
+      }
+      createMap(style)
+    })()
 
     return () => {
-      map.off("move", updateRouteOverlay)
-      map.off("resize", updateRouteOverlay)
-      map.remove()
-      mapRef.current = null
+      cancelled = true
+      const map = mapRef.current
+      if (map) {
+        map.remove()
+        mapRef.current = null
+      }
       markerElsRef.current = new Map()
     }
     // Re-init only when the displayed point SET changes (pointsKey), not on
@@ -229,100 +259,100 @@ export function MapLibreCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pointsKey, onOpenInMaps, onSelectActivity])
 
-  // Focus-on-click: fly to the selected marker + highlight it (amber border +
-  // larger shadow + raised z-index) without recreating the map. Runs only
-  // when selection changes. NOTE: we intentionally do NOT touch `transform`
-  // because MapLibre overwrites it on every move to position the marker.
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !selectedActivityId) return
-    const allPoints = displayableByDay.flatMap((d) => d.points)
-    const point = allPoints.find((p) => p.activityId === selectedActivityId)
-    if (!point) return
+    // Focus-on-click: fly to the selected marker + highlight it (amber border +
+    // larger shadow + raised z-index) without recreating the map. Runs only
+    // when selection changes. NOTE: we intentionally do NOT touch `transform`
+    // because MapLibre overwrites it on every move to position the marker.
+    useEffect(() => {
+      const map = mapRef.current
+      if (!map || !selectedActivityId) return
+      const allPoints = displayableByDay.flatMap((d) => d.points)
+      const point = allPoints.find((p) => p.activityId === selectedActivityId)
+      if (!point) return
 
-    map.flyTo({
-      center: [point.lng, point.lat],
-      zoom: Math.max(map.getZoom(), 13),
-      duration: 800,
-    })
+      map.flyTo({
+        center: [point.lng, point.lat],
+        zoom: Math.max(map.getZoom(), 13),
+        duration: 800,
+      })
 
-    markerElsRef.current.forEach((el, id) => {
-      const isSelected = id === selectedActivityId
-      el.style.borderColor = isSelected ? "#fbbf24" : "white"
-      el.style.borderWidth = isSelected ? "3px" : "2px"
-      el.style.boxShadow = isSelected
-        ? "0 0 0 4px rgb(251 191 36 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4)"
-        : "0 2px 8px rgb(0 0 0 / 0.28)"
-      el.style.zIndex = isSelected ? "10" : "2"
-    })
-  }, [selectedActivityId, displayableByDay])
+      markerElsRef.current.forEach((el, id) => {
+        const isSelected = id === selectedActivityId
+        el.style.borderColor = isSelected ? "#fbbf24" : "white"
+        el.style.borderWidth = isSelected ? "3px" : "2px"
+        el.style.boxShadow = isSelected
+          ? "0 0 0 4px rgb(251 191 36 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4)"
+          : "0 2px 8px rgb(0 0 0 / 0.28)"
+        el.style.zIndex = isSelected ? "10" : "2"
+      })
+    }, [selectedActivityId, displayableByDay])
 
-  if (displayableByDay.length === 0) {
+    if (displayableByDay.length === 0) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center bg-muted/20 p-6 text-center">
+          <p className="text-sm font-medium text-muted-foreground">
+            Location coordinates are unavailable
+          </p>
+          <p className="mt-1 max-w-sm text-xs text-muted-foreground/70">
+            Re-select the activity locations to store coordinates and show them
+            on the map.
+          </p>
+        </div>
+      )
+    }
+
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-muted/20 p-6 text-center">
-        <p className="text-sm font-medium text-muted-foreground">
-          Location coordinates are unavailable
-        </p>
-        <p className="mt-1 max-w-sm text-xs text-muted-foreground/70">
-          Re-select the activity locations to store coordinates and show them
-          on the map.
-        </p>
+      <div className="relative h-full w-full">
+        <div ref={containerRef} className="h-full w-full" />
+        {routeOverlay.routes.length > 0 && (
+          <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+            viewBox={`0 0 ${routeOverlay.width} ${routeOverlay.height}`}
+            preserveAspectRatio="none"
+          >
+            {routeOverlay.routes.flatMap((route) => {
+              const points = route.points
+                .map((point) => `${point.x},${point.y}`)
+                .join(" ")
+              return [
+                <polyline
+                  key={`${route.id}-outline`}
+                  points={points}
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.95"
+                />,
+                <polyline
+                  key={`${route.id}-line`}
+                  data-route-line={route.id}
+                  points={points}
+                  fill="none"
+                  stroke={route.color}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />,
+              ]
+            })}
+          </svg>
+        )}
+        {mapError && (
+          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 text-xs shadow-md">
+            <span>Some map tiles could not be loaded.</span>
+            <a
+              href="https://www.openstreetmap.org"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 font-semibold text-primary"
+            >
+              OpenStreetMap <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        )}
       </div>
     )
-  }
-
-  return (
-    <div className="relative h-full w-full">
-      <div ref={containerRef} className="h-full w-full" />
-      {routeOverlay.routes.length > 0 && (
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
-          viewBox={`0 0 ${routeOverlay.width} ${routeOverlay.height}`}
-          preserveAspectRatio="none"
-        >
-          {routeOverlay.routes.flatMap((route) => {
-            const points = route.points
-              .map((point) => `${point.x},${point.y}`)
-              .join(" ")
-            return [
-              <polyline
-                key={`${route.id}-outline`}
-                points={points}
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.95"
-              />,
-              <polyline
-                key={`${route.id}-line`}
-                data-route-line={route.id}
-                points={points}
-                fill="none"
-                stroke={route.color}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />,
-            ]
-          })}
-        </svg>
-      )}
-      {mapError && (
-        <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 text-xs shadow-md">
-          <span>Some map tiles could not be loaded.</span>
-          <a
-            href="https://www.openstreetmap.org"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 font-semibold text-primary"
-          >
-            OpenStreetMap <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-      )}
-    </div>
-  )
 }

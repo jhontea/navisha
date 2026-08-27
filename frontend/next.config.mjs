@@ -72,7 +72,11 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self'",
               `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
-              "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com",
+              "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com https://tiles.openfreemap.org",
+              // MapLibre spawns its tile worker from a blob: URL. Without an
+              // explicit worker-src, the script-src fallback blocks it and
+              // vector tiles never load.
+              "worker-src 'self' blob:",
               "frame-src 'self' https://accounts.google.com",
               "object-src 'none'",
               "base-uri 'self'",
@@ -94,7 +98,8 @@ const nextConfig = {
                   "style-src 'self' 'unsafe-inline'",
                   "font-src 'self'",
                   `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
-                  "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com",
+                  "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com https://tiles.openfreemap.org",
+                  "worker-src 'self' blob:",
                   "frame-src 'self' https://accounts.google.com",
                   "object-src 'none'",
                   "base-uri 'self'",
