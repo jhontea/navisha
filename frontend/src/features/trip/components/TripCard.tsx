@@ -58,7 +58,7 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
 
   return (
     <Link
-      href={`/trips/${trip.id}/overview`}
+      href={`/trips/${trip.id}`}
       className="group relative flex flex-col overflow-hidden rounded-2xl glass transition-all duration-300 hover:bg-white/25 hover:shadow-chromatic hover:-translate-y-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       aria-label={`View trip: ${trip.title}`}
     >

@@ -64,6 +64,9 @@ export function NavBar() {
 
   const profile = NAV_ITEMS[2];
   const profileActive = profile.isActive(pathname);
+  // Inside a trip the trip tab bar takes the bottom of the screen on phones
+  // (one navigation bar at a time).
+  const inTrip = /^\/trips\/(?!new$|generate$)[^/]+/.test(pathname);
 
   return (
     <>
@@ -137,7 +140,8 @@ export function NavBar() {
         </nav>
       </header>
 
-      {/* ── Mobile: bottom bar ── */}
+      {/* ── Mobile: bottom bar (hidden inside a trip) ── */}
+      {!inTrip && (
       <nav
         className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         aria-label="Main navigation"
@@ -176,6 +180,7 @@ export function NavBar() {
           })}
         </ul>
       </nav>
+      )}
     </>
   );
 }

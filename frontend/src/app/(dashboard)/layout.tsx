@@ -23,7 +23,7 @@ export default function DashboardLayout({
 
         {/* Main content — pb-28 for floating mobile nav clearance, safe-area bottom for notched phones */}
         {/* pt-14 = 56px on desktop matches flush fixed NavBar height (h-14) */}
-        <main id="main-content" className="animate-fade-in flex-1 pb-28 pt-4 md:pb-10 md:pt-14" style={{ paddingBottom: 'max(7rem, calc(7rem + env(safe-area-inset-bottom)))' }}>
+        <main id="main-content" className="flex-1 pb-28 pt-4 md:pb-10 md:pt-14" style={{ paddingBottom: 'max(7rem, calc(7rem + env(safe-area-inset-bottom)))' }}>
           {children}
         </main>
 

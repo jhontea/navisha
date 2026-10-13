@@ -1,10 +1,8 @@
 "use client"
 
-import { useParams } from "next/navigation"
 import { MoneyText } from "@/components/MoneyText"
 import { StatTile } from "@/components/StatTile"
 import Link from "next/link"
-import dynamic from "next/dynamic"
 import {
   Calendar,
   Hotel,
@@ -28,13 +26,6 @@ import { Progress } from "@/components/ui/progress"
 
 import type { Day } from "@/features/trip/types"
 
-const TripSummaryCard = dynamic(
-  () => import("@/features/summary/components/TripSummaryCard").then((module) => module.TripSummaryCard),
-  {
-    ssr: false,
-    loading: () => <div className="h-40 animate-pulse rounded-2xl bg-muted" />,
-  },
-)
 
 // Helper to get today's date in YYYY-MM-DD format
 function getToday(): string {
@@ -69,8 +60,8 @@ function PlanningHealth({
   const checklistItems = [
     { label: "Itinerary days added", done: hasDays, href: `/trips/${tripId}` },
     { label: "Activities planned", done: hasActivities, href: `/trips/${tripId}` },
-    { label: "Accommodation arranged", done: hasStay, href: `/trips/${tripId}/stay` },
-    { label: "Transport arranged", done: hasTransport, href: `/trips/${tripId}/transport` },
+    { label: "Stays booked", done: hasStay, href: `/trips/${tripId}/bookings` },
+    { label: "Transport booked", done: hasTransport, href: `/trips/${tripId}/bookings` },
     { label: "Trip budget set", done: tripBudget > 0, href: `/trips/${tripId}/budget` },
   ]
   const completedItems = checklistItems.filter((item) => item.done).length
@@ -255,8 +246,8 @@ function NeedsAttention({
 }) {
   const items = [
     !hasActivities && { label: "Add activities to your itinerary", href: `/trips/${tripId}` },
-    !hasStay && { label: "Arrange accommodation", href: `/trips/${tripId}/stay` },
-    !hasTransport && { label: "Add transport details", href: `/trips/${tripId}/transport` },
+    !hasStay && { label: "Add where you are staying", href: `/trips/${tripId}/bookings` },
+    !hasTransport && { label: "Add transport details", href: `/trips/${tripId}/bookings` },
     !hasBudget && { label: "Set a trip budget", href: `/trips/${tripId}/budget` },
     overBudget && { label: "Review the budget overrun", href: `/trips/${tripId}/budget` },
     emptyDayCount > 0 && { label: `${emptyDayCount} itinerary day${emptyDayCount === 1 ? "" : "s"} need activities`, href: `/trips/${tripId}` },
@@ -316,9 +307,12 @@ function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; act
   )
 }
 
-export default function TripOverviewPage() {
-  const params = useParams<{ id: string }>()
-  const tripId = params.id
+/**
+ * Trip overview (stats, planning health, budget, progress, needs attention,
+ * next up). Shown as a collapsible panel above the Itinerary since D3; the
+ * AI summary has its own tab.
+ */
+export function TripOverview({ tripId }: { tripId: string }) {
 
   const { data: overview, isSuccess: activitiesLoaded } = useTripOverview(tripId)
   const trip = overview?.trip
@@ -351,11 +345,11 @@ export default function TripOverviewPage() {
   }).length
 
   return (
-    <main className="flex flex-col">
+    <div className="flex flex-col">
       {/* Content */}
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-6 md:px-margin-desktop md:py-8">
+      <div className="w-full pt-4">
         {/* Iter 93 — Hero summary section: bento grid on md+ */}
-        <section className="mb-8 animate-fade-in">
+        <section className="mb-8">
           {/* Iter 94 — stat chips: 2x2 grid on sm, row on md */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatTile
@@ -428,11 +422,6 @@ export default function TripOverviewPage() {
           </div>
         </section>
 
-        {/* Iter 96 — AI Trip Summary */}
-        <section className="mb-10">
-          <TripSummaryCard tripId={tripId} />
-        </section>
-
         <NeedsAttention
           tripId={tripId}
           hasActivities={totalActivities > 0}
@@ -448,7 +437,7 @@ export default function TripOverviewPage() {
 
       </div>
 
-    </main>
+    </div>
   )
 }
 

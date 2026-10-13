@@ -28,6 +28,17 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  // Trip tabs were reorganized in D3 (Itinerary · Map · Bookings · Budget ·
+  // Summary). Keep old bookmarks and shared links working.
+  async redirects() {
+    return [
+      { source: '/trips/:id/overview', destination: '/trips/:id', permanent: true },
+      { source: '/trips/:id/transport', destination: '/trips/:id/bookings', permanent: true },
+      { source: '/trips/:id/stay', destination: '/trips/:id/bookings', permanent: true },
+      // Editing now happens in a sheet from the trip header menu.
+      { source: '/trips/:id/edit', destination: '/trips/:id', permanent: false },
+    ];
+  },
   // Security headers for all routes
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';

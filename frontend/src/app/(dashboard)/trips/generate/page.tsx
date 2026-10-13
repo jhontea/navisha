@@ -182,7 +182,7 @@ function GenerateTripPageContent() {
         cover_image_url: getDefaultTripCover(destination),
         description,
       })
-      router.push(`/trips/${trip_id}/overview`)
+      router.push(`/trips/${trip_id}`)
     } catch (err) {
       setResolving(false)
       setFormError(
