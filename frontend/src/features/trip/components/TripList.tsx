@@ -6,21 +6,51 @@ import { TripCard } from "./TripCard"
 import { OnboardingCard } from "./OnboardingCard"
 import { useAuth } from "@/features/auth/hooks"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import Link from "next/link"
 import type { Trip } from "../types"
 
 // W-HOME-01 — how far each arrow click scrolls the carousel (px).
 // Tuned to roughly one card width so navigation feels natural.
 const SCROLL_STEP = 320
 
+function NoUpcomingTrips() {
+  return (
+    <div className="rounded-xl border bg-card p-6">
+      <p className="text-base font-semibold text-foreground">No upcoming trips</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Your past trips are still in your trip list.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Link
+          href="/trips/new"
+          className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          Plan a trip
+        </Link>
+        <Link
+          href="/trips"
+          className="inline-flex h-11 items-center rounded-lg border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          View all trips
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export function TripList({
   enabled = true,
   loading = false,
   fallbackData,
+  hasAnyTrips = false,
 }: {
   enabled?: boolean
   loading?: boolean
   fallbackData?: { items: Trip[] }
+  /** Whether the user owns any trip at all (past ones included). */
+  hasAnyTrips?: boolean
 }) {
   const { data, isLoading, isError, error: _error } = useUpcomingTrips(6, enabled)
   const { user } = useAuth()
@@ -81,7 +111,9 @@ export function TripList({
   const trips = data?.items ?? fallbackData?.items ?? []
 
   if (trips.length === 0) {
-    return <OnboardingCard userName={firstName} />
+    // Onboarding is for users with no trips at all. Someone whose trips are
+    // all in the past just has nothing upcoming.
+    return hasAnyTrips ? <NoUpcomingTrips /> : <OnboardingCard userName={firstName} />
   }
 
   return (
