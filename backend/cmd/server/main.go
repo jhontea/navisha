@@ -149,9 +149,20 @@ func main() {
 	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg, cfg.App.AllowedEmails)
 	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL, cfg.App.CookieDomain, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
 
-	// Trip domain
+	// Currency domain
+	currencyClient := pkgcurrency.NewClient(cfg.Currency.APIKey)
+	currencyRepo := currency.NewRedisRepository(rdb, currencyClient, cfg.Currency.CacheTTL)
+	currencyUsecase := currency.NewUsecase(currencyRepo)
+	currencyHandler := currency.NewHandler(currencyUsecase)
+
+	// Expense domain (depends on currency.Usecase via Converter interface)
+	expenseRepo := expense.NewPostgresRepository(db)
+	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
+	expenseHandler := expense.NewHandler(expenseUsecase)
+
+	// Trip domain (expenseUsecase reconverts expenses when base currency changes)
 	tripRepo := trip.NewPostgresRepository(db)
-	tripUsecase := trip.NewUsecase(tripRepo)
+	tripUsecase := trip.NewUsecase(tripRepo, expenseUsecase)
 	tripHandler := trip.NewHandler(tripUsecase)
 	shareSecret := cfg.App.ShareLinkSecret
 	if shareSecret == "" {
@@ -175,17 +186,6 @@ func main() {
 		time.Duration(cfg.Location.GeoapifyTimeoutSecs)*time.Second,
 	)
 	locationHandler := location.NewHandler(locationClient)
-
-	// Currency domain
-	currencyClient := pkgcurrency.NewClient(cfg.Currency.APIKey)
-	currencyRepo := currency.NewRedisRepository(rdb, currencyClient, cfg.Currency.CacheTTL)
-	currencyUsecase := currency.NewUsecase(currencyRepo)
-	currencyHandler := currency.NewHandler(currencyUsecase)
-
-	// Expense domain (depends on currency.Usecase via Converter interface)
-	expenseRepo := expense.NewPostgresRepository(db)
-	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
-	expenseHandler := expense.NewHandler(expenseUsecase)
 
 	// Transportation domain (uses expenseUsecase for atomic linked-expense create)
 	transportationRepo := transportation.NewPostgresRepository(db)

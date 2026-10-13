@@ -114,6 +114,32 @@ func (m *mockRepo) CreateTx(_ context.Context, _ pgx.Tx, e *Expense) (*Expense, 
 	return m.Create(context.Background(), e)
 }
 
+func (m *mockRepo) ListForRebaseTx(_ context.Context, _ pgx.Tx, tripID string) ([]Expense, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
+	out := []Expense{}
+	for id, e := range m.expenses {
+		if m.expenseOf[id] == tripID {
+			out = append(out, *e)
+		}
+	}
+	return out, nil
+}
+
+func (m *mockRepo) UpdateConvertedTx(_ context.Context, _ pgx.Tx, id string, converted float64, base string) error {
+	if m.updateErr != nil {
+		return m.updateErr
+	}
+	e, ok := m.expenses[id]
+	if !ok {
+		return ErrNotFound
+	}
+	e.ConvertedAmount = converted
+	e.BaseCurrency = base
+	return nil
+}
+
 // mockConverter returns a fixed multiplier.
 type mockConverter struct {
 	rate float64

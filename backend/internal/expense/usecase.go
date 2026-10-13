@@ -120,6 +120,27 @@ func (u *Usecase) CreateLinkedExpenseTx(
 	return err
 }
 
+// RebaseTx reconverts every expense of the trip into newBase inside the
+// caller's transaction. Called by trip.Update when the base currency changes,
+// so stored converted_amount values never mix currencies. The caller has
+// already verified trip ownership.
+func (u *Usecase) RebaseTx(ctx context.Context, tx pgx.Tx, tripID, newBase string) error {
+	expenses, err := u.repo.ListForRebaseTx(ctx, tx, tripID)
+	if err != nil {
+		return err
+	}
+	for _, e := range expenses {
+		converted, _, err := u.converter.Convert(ctx, e.Currency, newBase, e.Amount)
+		if err != nil {
+			return fmt.Errorf("expense.RebaseTx convert %s→%s: %w", e.Currency, newBase, err)
+		}
+		if err := u.repo.UpdateConvertedTx(ctx, tx, e.ID, converted, newBase); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (u *Usecase) List(ctx context.Context, userID, tripID string) ([]Expense, error) {
 	owner, _, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {

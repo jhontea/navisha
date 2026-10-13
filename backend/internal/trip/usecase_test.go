@@ -99,7 +99,7 @@ func TestValidateBudgetCategories(t *testing.T) {
 func TestUsecase_Create_Success(t *testing.T) {
 	setupCurrencies()
 	repo := newMockRepo()
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	in := CreateInput{
 		Title:        "Bali trip",
@@ -130,7 +130,7 @@ func TestUsecase_Create_Success(t *testing.T) {
 func TestUsecase_Create_InvalidCurrency(t *testing.T) {
 	setupCurrencies()
 	repo := newMockRepo()
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	in := CreateInput{
 		Title:        "x",
@@ -150,7 +150,7 @@ func TestUsecase_Create_InvalidCurrency(t *testing.T) {
 func TestUsecase_Create_InvalidDates(t *testing.T) {
 	setupCurrencies()
 	repo := newMockRepo()
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	in := CreateInput{
 		Title:        "x",
@@ -168,7 +168,7 @@ func TestUsecase_Create_InsertDaysFails_RollsBack(t *testing.T) {
 	setupCurrencies()
 	repo := newMockRepo()
 	repo.insertDaysErr = errors.New("db error")
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	in := CreateInput{
 		Title:        "x",
@@ -193,7 +193,7 @@ func TestUsecase_Create_InsertDaysFails_RollsBack(t *testing.T) {
 func TestUsecase_Get_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	_, _, err := u.Get(context.Background(), "user-1", "t1")
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -205,7 +205,7 @@ func TestUsecase_Get_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-1"}
 	repo.listDaysResult = []Day{{ID: "d1", TripID: "t1", DayNumber: 1}}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	tr, days, err := u.Get(context.Background(), "user-1", "t1")
 	if err != nil {
@@ -223,7 +223,7 @@ func TestUsecase_Update_Forbidden(t *testing.T) {
 	setupCurrencies()
 	repo := newMockRepo()
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	_, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
 		Title:        "x",
@@ -246,7 +246,7 @@ func TestUsecase_Update_OmittedBudgetPreservesExisting(t *testing.T) {
 		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
 		BaseCurrency: "IDR", Budget: 5_000_000,
 	}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
 		Title:        "renamed",
@@ -272,7 +272,7 @@ func TestUsecase_Update_ExplicitBudgetZero(t *testing.T) {
 		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
 		BaseCurrency: "IDR", Budget: 5_000_000,
 	}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	zero := 0.0
 	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
@@ -290,10 +290,102 @@ func TestUsecase_Update_ExplicitBudgetZero(t *testing.T) {
 	}
 }
 
+// Changing the base currency must reconvert expenses in the same
+// transaction as the trip update (bug A1.1: totals labelled with the new
+// currency but summed in the old one).
+func TestUsecase_Update_CurrencyChangeRebasesExpenses(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{
+		ID: "t1", UserID: "user-1",
+		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
+		BaseCurrency: "IDR",
+	}
+	rebaser := &mockRebaser{}
+	u := NewUsecase(repo, rebaser)
+
+	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title:        "x",
+		StartDate:    date(2026, 7, 1),
+		EndDate:      date(2026, 7, 3),
+		BaseCurrency: "USD",
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if got.BaseCurrency != "USD" {
+		t.Errorf("BaseCurrency = %q, want USD", got.BaseCurrency)
+	}
+	if len(rebaser.calls) != 1 || rebaser.calls[0] != "t1→USD" {
+		t.Errorf("rebase calls = %v, want [t1→USD]", rebaser.calls)
+	}
+	if repo.beginTxCalls != 1 || repo.commitCalls != 1 {
+		t.Errorf("tx begin/commit = %d/%d, want 1/1", repo.beginTxCalls, repo.commitCalls)
+	}
+	if repo.insertedDays != nil {
+		t.Errorf("days regenerated although dates did not change")
+	}
+}
+
+func TestUsecase_Update_RebaseFailsDoesNotCommit(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{
+		ID: "t1", UserID: "user-1",
+		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
+		BaseCurrency: "IDR",
+	}
+	rebaseErr := errors.New("rates unavailable")
+	u := NewUsecase(repo, &mockRebaser{err: rebaseErr})
+
+	_, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title:        "x",
+		StartDate:    date(2026, 7, 1),
+		EndDate:      date(2026, 7, 3),
+		BaseCurrency: "USD",
+	})
+	if !errors.Is(err, rebaseErr) {
+		t.Fatalf("err = %v, want rebase error", err)
+	}
+	if repo.commitCalls != 0 {
+		t.Errorf("commit called %d times, want 0", repo.commitCalls)
+	}
+	if repo.rollbackCalls == 0 {
+		t.Errorf("rollback not called")
+	}
+}
+
+func TestUsecase_Update_SameCurrencySkipsRebase(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{
+		ID: "t1", UserID: "user-1",
+		StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3),
+		BaseCurrency: "IDR",
+	}
+	rebaser := &mockRebaser{}
+	u := NewUsecase(repo, rebaser)
+
+	if _, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title:        "x",
+		StartDate:    date(2026, 7, 1),
+		EndDate:      date(2026, 7, 3),
+		BaseCurrency: "IDR",
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if len(rebaser.calls) != 0 {
+		t.Errorf("rebase called %v, want none", rebaser.calls)
+	}
+	if repo.beginTxCalls != 0 {
+		t.Errorf("tx opened although nothing structural changed")
+	}
+}
+
 func TestUsecase_Delete_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-other"}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	err := u.Delete(context.Background(), "user-1", "t1")
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -304,7 +396,7 @@ func TestUsecase_Delete_Forbidden(t *testing.T) {
 func TestUsecase_Delete_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-1"}
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	if err := u.Delete(context.Background(), "user-1", "t1"); err != nil {
 		t.Errorf("Delete: %v", err)
@@ -316,7 +408,7 @@ func TestUsecase_Delete_Success(t *testing.T) {
 func TestUsecase_UpdateDayNotes_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["d1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	d, err := u.UpdateDayNotes(context.Background(), "user-1", "d1", "remember sunscreen")
 	if err != nil {
@@ -330,7 +422,7 @@ func TestUsecase_UpdateDayNotes_Success(t *testing.T) {
 func TestUsecase_UpdateDayNotes_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["d1"] = "user-other"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	_, err := u.UpdateDayNotes(context.Background(), "user-1", "d1", "x")
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -340,7 +432,7 @@ func TestUsecase_UpdateDayNotes_Forbidden(t *testing.T) {
 
 func TestUsecase_UpdateDayNotes_DayNotFound(t *testing.T) {
 	repo := newMockRepo()
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	_, err := u.UpdateDayNotes(context.Background(), "user-1", "missing", "x")
 	if !errors.Is(err, ErrDayNotFound) {
@@ -353,7 +445,7 @@ func TestUsecase_UpdateDayNotes_DayNotFound(t *testing.T) {
 func TestUsecase_UpdateDayTitle_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["d1"] = "user-1"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	d, err := u.UpdateDayTitle(context.Background(), "user-1", "d1", "  Shibuya & Harajuku  ")
 	if err != nil {
@@ -367,7 +459,7 @@ func TestUsecase_UpdateDayTitle_Success(t *testing.T) {
 func TestUsecase_UpdateDayTitle_Forbidden(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["d1"] = "user-other"
-	u := NewUsecase(repo)
+	u := NewUsecase(repo, &mockRebaser{})
 
 	_, err := u.UpdateDayTitle(context.Background(), "user-1", "d1", "Arrival Day")
 	if !errors.Is(err, apperr.ErrForbidden) {
@@ -376,7 +468,7 @@ func TestUsecase_UpdateDayTitle_Forbidden(t *testing.T) {
 }
 
 func TestUsecase_UpdateDayTitle_TooLong(t *testing.T) {
-	u := NewUsecase(newMockRepo())
+	u := NewUsecase(newMockRepo(), &mockRebaser{})
 
 	_, err := u.UpdateDayTitle(context.Background(), "user-1", "d1", strings.Repeat("a", maxDayTitleLength+1))
 	if !errors.Is(err, ErrDayTitleTooLong) {
@@ -399,7 +491,7 @@ func TestUsecase_List_LimitClamping(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := newMockRepo()
-			u := NewUsecase(repo)
+			u := NewUsecase(repo, &mockRebaser{})
 			if _, err := u.List(context.Background(), "user-1", "", tc.inLimit); err != nil {
 				t.Errorf("List: %v", err)
 			}

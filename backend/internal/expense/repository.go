@@ -29,6 +29,11 @@ type Repository interface {
 	// their own entity insert.
 	CreateTx(ctx context.Context, tx pgx.Tx, e *Expense) (*Expense, error)
 	Update(ctx context.Context, e *Expense) (*Expense, error)
+	// ListForRebaseTx returns the trip's expenses locked FOR UPDATE inside
+	// tx, so a base-currency change can reconvert them atomically.
+	ListForRebaseTx(ctx context.Context, tx pgx.Tx, tripID string) ([]Expense, error)
+	// UpdateConvertedTx rewrites only converted_amount + base_currency.
+	UpdateConvertedTx(ctx context.Context, tx pgx.Tx, id string, converted float64, base string) error
 	Delete(ctx context.Context, id string) error
 	Summary(ctx context.Context, tripID, baseCurrency string) (*Summary, error)
 }

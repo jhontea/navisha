@@ -140,6 +140,45 @@ func (r *postgresRepository) Update(ctx context.Context, e *Expense) (*Expense, 
 	return out, nil
 }
 
+func (r *postgresRepository) ListForRebaseTx(ctx context.Context, tx pgx.Tx, tripID string) ([]Expense, error) {
+	rows, err := tx.Query(ctx,
+		`SELECT id, amount, currency
+		 FROM expenses
+		 WHERE trip_id = $1
+		 FOR UPDATE`, tripID)
+	if err != nil {
+		return nil, fmt.Errorf("expense.ListForRebaseTx: %w", err)
+	}
+	defer rows.Close()
+
+	out := []Expense{}
+	for rows.Next() {
+		e := Expense{TripID: tripID}
+		if err := rows.Scan(&e.ID, &e.Amount, &e.Currency); err != nil {
+			return nil, fmt.Errorf("expense.ListForRebaseTx scan: %w", err)
+		}
+		out = append(out, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("expense.ListForRebaseTx rows: %w", err)
+	}
+	return out, nil
+}
+
+func (r *postgresRepository) UpdateConvertedTx(ctx context.Context, tx pgx.Tx, id string, converted float64, base string) error {
+	cmd, err := tx.Exec(ctx,
+		`UPDATE expenses
+		    SET converted_amount = $2, base_currency = $3, updated_at = NOW()
+		  WHERE id = $1`, id, converted, base)
+	if err != nil {
+		return fmt.Errorf("expense.UpdateConvertedTx: %w", err)
+	}
+	if cmd.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *postgresRepository) Delete(ctx context.Context, id string) error {
 	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM expenses WHERE id = $1`, id)
