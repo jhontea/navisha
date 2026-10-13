@@ -1,25 +1,15 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { getCurrencySymbol } from "./currency"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  IDR: "Rp",
-  USD: "$",
-  JPY: "¥",
-  SGD: "S$",
-  KRW: "₩",
-  EUR: "€",
-  MYR: "RM",
-  THB: "฿",
-  VND: "₫",
-}
 
 export function formatCurrency(amount: number, currency: string): string {
 
-  const symbol = CURRENCY_SYMBOLS[currency] ?? currency
+  const symbol = getCurrencySymbol(currency)
   // Preserve up to 2 decimal places (e.g. USD 2.5 should not become 3),
   // but drop trailing zeros so whole amounts stay clean (e.g. IDR 10,000,000).
   const formatted = amount.toLocaleString(undefined, {
