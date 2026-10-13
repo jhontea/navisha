@@ -14,7 +14,12 @@ import {
   CheckCircle2,
   TrendingUp,
 } from "lucide-react"
-import { getTripDateMetrics, toLocalISODate } from "@/features/trip/lib/status"
+import {
+  getTripDateMetrics,
+  toLocalISODate,
+  tripProgressLabel,
+  tripProgressShort,
+} from "@/features/trip/lib/status"
 import { useTripOverview } from "@/features/trip/overview"
 import { formatDate, formatCurrency, cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
@@ -324,8 +329,8 @@ export default function TripOverviewPage() {
 
   if (!trip) return null
 
-  const { currentDay, totalDays, percent: progressPercent, started } =
-    getTripDateMetrics(trip.start_date, trip.end_date)
+  const dateMetrics = getTripDateMetrics(trip.start_date, trip.end_date)
+  const { totalDays, percent: progressPercent } = dateMetrics
 
 
   // Don't render every single day — surface the current day and the ones
@@ -393,11 +398,7 @@ export default function TripOverviewPage() {
               {totalDays} {totalDays === 1 ? "day" : "days"}
             </span>
             <span className="text-sm text-muted-foreground">
-              {started
-                ? `Day ${currentDay} of ${totalDays} · in progress`
-                : new Date(trip.start_date) > new Date()
-                ? "Upcoming"
-                : "Completed"}
+              {tripProgressLabel(dateMetrics)}
             </span>
           </div>
 
@@ -421,9 +422,7 @@ export default function TripOverviewPage() {
                 Trip Progress
               </h4>
               <span className="shrink-0 text-right text-sm text-muted-foreground">
-                {started
-                  ? `Day ${currentDay} of ${totalDays}`
-                  : "Not started yet"}
+                {tripProgressShort(dateMetrics)}
               </span>
             </div>
             <Progress

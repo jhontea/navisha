@@ -93,3 +93,17 @@ export const STATUS_LABEL: Record<TripStatus, string> = {
   active: "Active",
   past: "Past",
 }
+
+/** One-line trip progress for headers: "Upcoming", "Day 3 of 10 · in progress", "Completed". */
+export function tripProgressLabel(m: TripDateMetrics): string {
+  if (m.status === "active") return `Day ${m.currentDay} of ${m.totalDays} · in progress`
+  if (m.status === "past") return "Completed"
+  return "Upcoming"
+}
+
+/** Short progress for the progress bar: "Not started yet", "Day 3 of 10", "Completed". */
+export function tripProgressShort(m: TripDateMetrics): string {
+  if (m.status === "active") return `Day ${m.currentDay} of ${m.totalDays}`
+  if (m.status === "past") return "Completed"
+  return "Not started yet"
+}
