@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand column */}
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-2.5 w-fit group" aria-label="Navisha home">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora transition-transform group-hover:scale-105">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary transition-transform group-hover:scale-105">
                 <Compass className="h-4 w-4 text-white" aria-hidden="true" />
               </div>
               <span className="text-lg font-bold text-primary tracking-tight">Navisha</span>

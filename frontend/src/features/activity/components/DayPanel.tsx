@@ -120,7 +120,7 @@ export function DayPanel({
           aria-controls={`day-panel-${dayId}`}
           className="flex min-w-0 items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora text-sm font-bold text-white shadow-sm">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm">
             {dayNumber}
           </span>
           <span className="flex min-w-0 flex-col">

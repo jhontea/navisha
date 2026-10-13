@@ -182,13 +182,13 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
     return (
       <ShimmerOverlay
         active={generate.isPending}
-        className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/5 via-card to-chromatic-aurora/5 p-6 text-center shadow-sm md:p-8"
+        className="rounded-2xl border border-border/40 bg-primary/5 p-6 text-center shadow-sm md:p-8"
       >
         {generate.isPending ? (
           <GeneratingIndicator />
         ) : (
           <>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-chromatic-aurora/20 shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5 shadow-sm">
               <Sparkles className="h-7 w-7 text-primary" />
             </div>
             <h3 className="mb-2 text-lg font-semibold text-foreground">
@@ -228,7 +228,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
   return (
     <ShimmerOverlay
       active={generate.isPending}
-      className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-4 shadow-sm md:p-6 lg:p-8"
+      className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm md:p-6 lg:p-8"
     >
       {/* Header: icon + label | (generating indicator) | regenerate button */}
       <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:mb-5">

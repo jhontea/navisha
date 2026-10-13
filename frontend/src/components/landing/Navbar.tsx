@@ -14,7 +14,7 @@ export function Navbar() {
           className="group flex shrink-0 items-center gap-2.5"
           aria-label="Navisha home"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm transition-all group-hover:scale-105 group-hover:shadow-md">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary shadow-sm transition-all group-hover:scale-105 group-hover:shadow-md">
             <Compass className="h-4 w-4 text-white" aria-hidden="true" />
           </span>
           <span className="text-gradient-sunset text-[15px] font-bold tracking-tight">
@@ -37,7 +37,7 @@ export function Navbar() {
           </a>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-chromatic-aurora px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Start Planning
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

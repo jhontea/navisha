@@ -40,7 +40,7 @@ export function EmptyState({
   }
 
   const textSizes = {
-    sm: { title: "text-sm font-semibold", desc: "text-xs" },
+    sm: { title: "text-sm font-semibold", desc: "text-sm" },
     md: { title: "text-base font-semibold", desc: "text-sm" },
     lg: { title: "text-lg font-bold", desc: "text-sm" },
   }
@@ -51,7 +51,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center animate-fade-in-up",
+        "flex flex-col items-center justify-center text-center",
         size === "sm" ? "py-8 gap-3" : size === "lg" ? "py-16 gap-5" : "py-12 gap-4",
         className,
       )}
@@ -61,17 +61,10 @@ export function EmptyState({
         <div className="mb-2 text-primary">{illustration}</div>
       ) : (Icon || emoji) ? (
         <div className="relative">
-          {/* Iter 93 — animated bg blob */}
-          <div
-            className={cn(
-              "absolute inset-0 -z-10 rounded-full bg-primary/8 blur-xl scale-150",
-            )}
-            aria-hidden="true"
-          />
           <div
             className={cn(
               "relative flex items-center justify-center rounded-2xl",
-              "bg-muted/60 border border-border/30",
+              "bg-muted",
               s.wrapper,
             )}
           >
@@ -79,7 +72,7 @@ export function EmptyState({
             {emoji ? (
               <span className={s.emoji} role="img" aria-hidden="true">{emoji}</span>
             ) : Icon ? (
-              <Icon className={cn(s.icon, "text-muted-foreground/60")} aria-hidden="true" />
+              <Icon className={cn(s.icon, "text-muted-foreground")} aria-hidden="true" />
             ) : null}
           </div>
         </div>

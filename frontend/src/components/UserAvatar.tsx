@@ -30,6 +30,11 @@ export function UserAvatar({ src, name, className, textClassName = "text-xs", de
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
+        // The image can fail before hydration, when React's onError is not
+        // attached yet; catch that case when the element mounts.
+        ref={(img) => {
+          if (img && img.complete && img.naturalWidth === 0) setFailedSrc(src)
+        }}
         src={src}
         alt={decorative ? "" : (name ?? "User avatar")}
         aria-hidden={decorative || undefined}

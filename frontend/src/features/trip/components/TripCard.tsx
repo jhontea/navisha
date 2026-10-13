@@ -121,7 +121,7 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
           aria-label={`Trip progress: ${progressPct}%`}
         >
           <div
-            className="h-full bg-gradient-to-r from-[hsl(185,80%,40%)] to-primary transition-all duration-1000"
+            className="h-full bg-primary transition-all duration-1000"
             style={{ width: `${progressPct}%` }}
           />
         </div>

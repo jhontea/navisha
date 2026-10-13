@@ -118,7 +118,7 @@ export function NavBar() {
             className="flex items-center gap-2.5 group shrink-0"
             aria-label="Navisha home"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
               <Compass className="h-4 w-4 text-white" aria-hidden="true" />
             </div>
             {/* Iter 21 — gradient brand text */}

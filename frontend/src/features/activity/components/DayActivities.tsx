@@ -759,7 +759,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
 
       {activities.length < 6 && (
         <div className="relative pl-10 sm:pl-12">
-          <div className="absolute left-0 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-primary/30 bg-gradient-to-br from-primary/15 to-chromatic-aurora/15 text-primary shadow-sm shadow-primary/10">
+          <div className="absolute left-0 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-primary/30 bg-primary/5 text-primary shadow-sm">
             <Sparkles className="h-4 w-4" />
           </div>
           <DayAIPlanner

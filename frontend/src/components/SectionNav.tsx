@@ -19,7 +19,7 @@ export function SectionNav({ sections, activeSection, onSectionChange, className
             <button key={section.id} type="button" onClick={() => onSectionChange(section.id)}
               className={cn(
                 "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
-                isActive ? "bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/10"
+                isActive ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/10"
               )}>
               {section.icon}{section.label}
             </button>

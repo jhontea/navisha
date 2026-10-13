@@ -23,11 +23,11 @@ export default async function LoginPage({ searchParams }: Props) {
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-6 sm:py-8 md:px-8">
         <div className="grid w-full overflow-hidden rounded-[28px] border border-white/50 bg-white/55 shadow-2xl shadow-primary/10 backdrop-blur-xl lg:h-[min(680px,calc(100dvh-112px))] lg:min-h-[560px] lg:grid-cols-[1.05fr_0.95fr] lg:rounded-[36px]">
-          <section className="relative hidden overflow-hidden bg-gradient-to-br from-primary/12 via-chromatic-sky/10 to-chromatic-ocean/12 p-10 lg:flex lg:flex-col">
+          <section className="relative hidden overflow-hidden bg-primary/5 p-10 lg:flex lg:flex-col">
             <div className="pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" style={{ backgroundImage: "radial-gradient(circle, hsl(var(--primary) / 0.18) 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
             <Link href="/" className="relative z-10 flex w-fit items-center gap-2.5" aria-label="Navisha home">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-md">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-md">
                 <Compass className="h-5 w-5 text-white" aria-hidden="true" />
               </span>
               <span className="text-gradient-sunset text-lg font-bold tracking-tight">Navisha</span>
@@ -58,7 +58,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
           <section className="flex flex-col justify-center p-6 sm:p-10 lg:p-12">
             <Link href="/" className="mb-8 flex w-fit items-center gap-2.5 lg:hidden" aria-label="Navisha home">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-md">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-md">
                 <Compass className="h-5 w-5 text-white" aria-hidden="true" />
               </span>
               <span className="text-gradient-sunset text-lg font-bold tracking-tight">Navisha</span>

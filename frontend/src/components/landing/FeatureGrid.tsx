@@ -47,7 +47,7 @@ const budgetVisual = (
     </div>
 
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-      <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-chromatic-ocean to-primary transition-all duration-700" />
+      <div className="h-full w-[68%] rounded-full bg-primary transition-all duration-700" />
     </div>
 
     <div className="grid grid-cols-3 gap-2 pt-1">
@@ -94,7 +94,7 @@ const aiVisual = (
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-primary to-chromatic-aurora px-3 py-2 text-[10px] font-semibold text-white shadow-sm">
+      <div className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-[10px] font-semibold text-white shadow-sm">
         <Sparkles className="h-3 w-3" aria-hidden="true" />
         Generate itinerary
       </div>

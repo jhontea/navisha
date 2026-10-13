@@ -97,7 +97,23 @@ Utilitas lama `glass*`, `shadow-soft`, `soft-shadow`, `shadow-chromatic`, `trip-
 - Durasi 150ms (hover, toggle) dan 250ms (masuk/keluar panel), easing `ease-out`.
 - Tanpa animasi melayang/berdenyut dekoratif. Hormati `prefers-reduced-motion` (sudah global).
 
-## 8. Komponen (target D2)
+## 8. Komponen
+
+Katalog hidup: buka **`/dev/ui`** saat `npm run dev` (tidak ada di production).
+
+| Komponen | Lokasi | Catatan |
+|---|---|---|
+| Button | `components/ui/button.tsx` | Varian `default` (primary solid), `outline`, `secondary`, `ghost`, `destructive` (lembut), `danger` (solid). Ukuran `default` 44px (40px dari md), `sm` 36px, `lg` 48px, `xs` 32px khusus desktop. `gradient`/`glass`/`chromatic` hanya alias lama. |
+| IconButton | `components/IconButton.tsx` | `label` wajib (jadi `aria-label`); 44px default. |
+| MoneyText / `formatMoney` | `components/MoneyText.tsx`, `lib/money.ts` | Tanpa sen untuk IDR/JPY/KRW/VND, 2 desimal lainnya, `tabular-nums`. `formatCurrency` di `lib/utils` sekarang alias. |
+| StatTile | `components/StatTile.tsx` | Angka + label di kartu netral; `tone` hanya untuk status. |
+| ResponsiveSheet | `components/ResponsiveSheet.tsx` | Bottom sheet di HP, dialog dari `sm`. Pakai untuk semua form. |
+| EmptyState | `components/EmptyState.tsx` | 1 kalimat + 1 CTA; tanpa blob/animasi. |
+| UserAvatar | `components/UserAvatar.tsx` | Foto Google dengan `no-referrer`, fallback inisial. |
+| CurrencyBadge | `features/currency/components/CurrencyBadge.tsx` | Simbol mata uang, pengganti emoji bendera. |
+| Card, Badge, Input, Select, Tabs, Dialog, Skeleton | `components/ui/*` (coss ui) | Varian dekoratif Card (`glass`, `gradient-border`) sudah dinetralkan. |
+
+Target berikutnya:
 
 Button (primary, secondary, ghost, danger; sm/md), IconButton, Input/Select/Textarea, Card, Badge/Chip, Tabs, Dialog, BottomSheet, EmptyState, Skeleton, StatTile, MoneyText.
 

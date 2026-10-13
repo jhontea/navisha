@@ -216,7 +216,7 @@ export function DayAIPlanner({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex w-full items-center gap-2 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-chromatic-aurora/10 to-chromatic-sky/10 px-4 py-3 text-sm font-semibold text-primary shadow-sm shadow-primary/5 transition-all hover:border-primary/50 hover:from-primary/15 hover:via-chromatic-aurora/15 hover:to-chromatic-sky/15 hover:shadow-md hover:shadow-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="group flex w-full items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary shadow-sm transition-all hover:border-primary/50 hover:from-primary/15 hover:via-chromatic-aurora/15 hover:to-chromatic-sky/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <Sparkles className="h-4 w-4 transition-transform duration-200 group-hover:rotate-12" aria-hidden="true" />
         {hasAnchors ? "Build around existing activities" : "Plan this day with AI"}

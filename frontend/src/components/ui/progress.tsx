@@ -31,7 +31,7 @@ export function Progress({
 
   const variantStyles = {
     default: "bg-primary",
-    gradient: "bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky bg-[length:200%_200%]",
+    gradient: "bg-primary bg-[length:200%_200%]",
     glass: "bg-white/30 backdrop-blur-sm",
   }
 

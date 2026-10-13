@@ -1,6 +1,8 @@
 "use client"
 
 import { useParams } from "next/navigation"
+import { MoneyText } from "@/components/MoneyText"
+import { StatTile } from "@/components/StatTile"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import {
@@ -125,7 +127,7 @@ function PlanningHealth({
           </div>
 
           <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted" aria-label={`${checklistPercent}% of planning checklist complete`}>
-            <div className="h-full rounded-full bg-gradient-to-r from-primary to-chromatic-ocean transition-all" style={{ width: `${checklistPercent}%` }} />
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${checklistPercent}%` }} />
           </div>
 
           <div className="space-y-2">
@@ -356,40 +358,28 @@ export default function TripOverviewPage() {
         <section className="mb-8 animate-fade-in">
           {/* Iter 94 — stat chips: 2x2 grid on sm, row on md */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {/* Activities */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-primary/10 border border-primary/15 p-4 text-center">
-              <Calendar className="mb-1.5 h-5 w-5 text-primary" aria-hidden="true" />
-              <span className="text-xl font-bold text-foreground tabular-nums">
-                {activitiesLoaded ? totalActivities : "—"}
-              </span>
-              <span className="text-xs text-muted-foreground">Activities</span>
-            </div>
-            {/* Stays */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-aurora/10 border border-chromatic-aurora/15 p-4 text-center">
-              <Hotel className="mb-1.5 h-5 w-5 text-chromatic-aurora" aria-hidden="true" />
-              <span className="text-xl font-bold text-foreground tabular-nums">
-                {overview?.accommodation_count ?? 0}
-              </span>
-              <span className="text-xs text-muted-foreground">Stays</span>
-            </div>
-            {/* Transport */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-ocean/10 border border-chromatic-ocean/15 p-4 text-center">
-              <Plane className="mb-1.5 h-5 w-5 text-chromatic-ocean" aria-hidden="true" />
-              <span className="text-xl font-bold text-foreground tabular-nums">
-                {overview?.transportation_count ?? 0}
-              </span>
-              <span className="text-xs text-muted-foreground">Transport</span>
-            </div>
-            {/* Spent */}
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-chromatic-sunset/10 border border-chromatic-sunset/20 p-4 text-center">
-              <Wallet className="mb-1.5 h-5 w-5 text-chromatic-sunset" aria-hidden="true" />
-              <span className="text-base font-bold text-foreground tabular-nums leading-tight">
-                {expenseSummary
-                  ? formatCurrency(expenseSummary.total_base, expenseSummary.base_currency)
-                  : "—"}
-              </span>
-              <span className="text-xs text-muted-foreground">Spent</span>
-            </div>
+            <StatTile
+              label="Activities"
+              icon={Calendar}
+              value={activitiesLoaded ? totalActivities : "—"}
+            />
+            <StatTile label="Stays" icon={Hotel} value={overview?.accommodation_count ?? 0} />
+            <StatTile label="Transport" icon={Plane} value={overview?.transportation_count ?? 0} />
+            <StatTile
+              label="Spent"
+              icon={Wallet}
+              value={
+                expenseSummary ? (
+                  <MoneyText
+                    amount={expenseSummary.total_base}
+                    currency={expenseSummary.base_currency}
+                    className="text-lg"
+                  />
+                ) : (
+                  "—"
+                )
+              }
+            />
           </div>
 
           {/* Duration badge */}

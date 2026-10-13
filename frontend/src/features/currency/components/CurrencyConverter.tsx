@@ -129,7 +129,7 @@ export function CurrencyConverter() {
           type="button"
           onClick={swap}
           aria-label="Swap currencies"
-          className="swap-button z-10 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 rotate-90 md:rotate-0 md:hover:rotate-180 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:absolute md:left-1/2 md:-translate-x-1/2"
+          className="swap-button z-10 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all duration-300 hover:shadow-xl rotate-90 md:rotate-0 md:hover:rotate-180 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:absolute md:left-1/2 md:-translate-x-1/2"
         >
           <MaterialIcon name="swap_horiz" size={28} />
         </button>

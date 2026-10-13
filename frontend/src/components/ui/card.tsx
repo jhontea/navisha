@@ -10,9 +10,10 @@ function Card({
 }: React.ComponentProps<"div"> & { size?: "default" | "sm"; variant?: "default" | "glass" | "elevated" | "gradient-border" }) {
   const variantStyles = {
     default: "bg-card ring-1 ring-foreground/10",
-    glass: "glass border-white/20",
-    elevated: "bg-card shadow-[var(--elevation-2)] ring-1 ring-foreground/5",
-    "gradient-border": "bg-card ring-1 ring-transparent bg-clip-padding relative before:absolute before:inset-0 before:rounded-xl before:p-[1px] before:bg-gradient-to-br before:from-chromatic-sunset before:to-chromatic-ocean before:-z-10 before:[mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] before:[mask-composite:exclude]",
+    // D2: legacy decorative variants render as plain cards.
+    glass: "bg-card ring-1 ring-foreground/10",
+    elevated: "bg-card shadow-card ring-1 ring-foreground/5",
+    "gradient-border": "bg-card ring-1 ring-foreground/10",
   }
   return (
     <div

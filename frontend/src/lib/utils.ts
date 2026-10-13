@@ -1,22 +1,15 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { getCurrencySymbol } from "./currency"
+import { formatMoney } from "./money"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 
+/** @deprecated alias of formatMoney (lib/money.ts); kept for existing call sites. */
 export function formatCurrency(amount: number, currency: string): string {
-
-  const symbol = getCurrencySymbol(currency)
-  // Preserve up to 2 decimal places (e.g. USD 2.5 should not become 3),
-  // but drop trailing zeros so whole amounts stay clean (e.g. IDR 10,000,000).
-  const formatted = amount.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })
-  return `${symbol} ${formatted}`
+  return formatMoney(amount, currency)
 }
 
 
