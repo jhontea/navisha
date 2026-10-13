@@ -1,25 +1,19 @@
 "use client"
 
+import { AlertTriangle, ExternalLink, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+
+import { buttonVariants } from "@/components/ui/button"
 import {
-  ListChecks,
-  MapPin,
-  StickyNote,
-  Pencil,
-  Trash2,
-  Clock,
-  ExternalLink,
-  AlertTriangle,
-} from "lucide-react"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { buildMapsPinUrl } from "@/features/trip/lib/mapsUrl"
 import { formatActivityTimeRange } from "../lib/time"
 import { normalizeExternalUrl } from "../lib/externalUrl"
-import { buildMapsPinUrl } from "@/features/trip/lib/mapsUrl"
-import type {
-  Activity,
-  LocationPayload,
-  NotePayload,
-  TodoPayload,
-} from "../types"
+import type { Activity, LocationPayload, NotePayload, TodoPayload } from "../types"
 
 /** True when the stored external URL is a Google Maps link worth reopening directly. */
 function isGoogleMapsUrl(url: string | null): url is string {
@@ -42,144 +36,91 @@ interface Props {
   onDelete: () => void
   isDeleting: boolean
   overlapTitles?: string[]
+  /** Highlighted because it is selected on the map. */
+  selected?: boolean
+  /** Click on the card body (e.g. to focus it on the map). */
+  onSelect?: () => void
 }
 
-const TYPE_CONFIG = {
-  location: {
-    Icon: MapPin,
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
-    borderColor: "border-l-primary",
-    label: "Location",
-    badgeBg: "bg-primary/10 text-primary",
-  },
-  note: {
-    Icon: StickyNote,
-    iconBg: "bg-chromatic-amber/10",
-    iconColor: "text-chromatic-amber",
-    borderColor: "border-l-chromatic-amber",
-    label: "Note",
-    badgeBg: "bg-chromatic-amber/10 text-chromatic-amber",
-  },
-  todo: {
-    Icon: ListChecks,
-    iconBg: "bg-muted",
-    iconColor: "text-muted-foreground",
-    borderColor: "border-l-border",
-    label: "Todo",
-    badgeBg: "bg-muted text-muted-foreground",
-  },
-}
+const MENU_ITEM = "min-h-10 px-3 text-sm"
 
-/**
- * ActivityCard — individual activity within a day.
- * Iter 51 — compact time display with Clock icon
- * Iter 52 — location: external link icon when address is available (opens maps)
- * Iter 53 — todo: show completed count in badge (e.g. "2 / 5")
- * Iter 54 — action buttons: hover states, show on focus too (not just visible)
- * Iter 55 — note: better quote styling with left border accent
- */
+/** One activity on the day timeline: title, one meta line, type-specific body, ⋯ menu. */
 export function ActivityCard({
   activity,
   onEdit,
   onDelete,
   isDeleting,
   overlapTitles = [],
+  selected = false,
+  onSelect,
 }: Props) {
-  const config = TYPE_CONFIG[activity.type]
   const hasOverlap = overlapTitles.length > 0
-  const timeLabel = formatActivityTimeRange(
-    activity.start_time,
-    activity.end_time,
-  )
-  const locationNeedsReview = activity.type === "location" &&
-    (activity.payload as LocationPayload | null)?.location_verification === "needs_review"
+  const timeLabel = activity.type === "location" ? formatActivityTimeRange(activity.start_time, activity.end_time) : null
+  const location = activity.type === "location" ? (activity.payload as LocationPayload | null) : null
+  const needsReview = location?.location_verification === "needs_review"
+  const todo = activity.type === "todo" ? (activity.payload as TodoPayload | null) : null
+  const todoMeta = todo ? `${todo.items.filter((i) => i.completed).length} / ${todo.items.length} done` : null
+  const meta = [timeLabel, todoMeta].filter(Boolean).join(" · ")
 
   return (
     <div
+      onClick={onSelect}
       className={cn(
-        "group relative rounded-2xl border border-border/30 border-l-4 bg-card p-3 shadow-sm transition-all duration-200 sm:p-4",
-        "hover:shadow-md hover:border-border/50 hover:-translate-y-0.5",
-        config.borderColor,
-        hasOverlap && "ring-1 ring-chromatic-amber/30",
+        "rounded-xl border bg-card px-4 py-3 transition-shadow",
+        onSelect && "cursor-pointer hover:shadow-card",
+        selected && "ring-2 ring-primary",
+        hasOverlap && !selected && "border-warning/60",
       )}
     >
-      <div className="flex min-w-0 items-start md:pr-16">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          {/* Type badge + time — Iter 51 */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn(
-              "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
-              config.badgeBg,
-            )}>
-              {config.label}
-            </span>
-            {/* Iter 51 — time with icon */}
-            {activity.type === "location" && timeLabel && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-                <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                {timeLabel}
-              </span>
-            )}
-            {locationNeedsReview && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-chromatic-amber/10 px-2 py-0.5 text-[10px] font-semibold text-chromatic-amber">
-                <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                Location needs review
-              </span>
-            )}
-            {/* Iter 53 — todo: completed count */}
-            {activity.type === "todo" && activity.payload && (
-              <span className="text-xs text-muted-foreground">
-                {(() => {
-                  const p = activity.payload as TodoPayload
-                  const done = p.items.filter((i) => i.completed).length
-                  return `${done} / ${p.items.length} done`
-                })()}
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h4 className="text-sm font-semibold text-foreground leading-snug">
-            {activity.title}
-          </h4>
-
-          {hasOverlap && (
-            <p className="flex items-start gap-1.5 text-xs font-medium text-chromatic-amber" role="note">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>{formatOverlapMessage(overlapTitles)}</span>
-            </p>
-          )}
-
-          {/* Type-specific body */}
-          <ActivityBody activity={activity} onEdit={onEdit} />
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h4 className="text-sm font-semibold leading-snug text-foreground">{activity.title}</h4>
+          {meta && <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">{meta}</p>}
         </div>
 
-        {/* Iter 54 — Actions: always visible on mobile, hover/focus on desktop */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Actions for ${activity.title}`}
+            onClick={(e) => e.stopPropagation()}
+            className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "-mr-2 -mt-1 shrink-0 text-muted-foreground" })}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
+              <Pencil aria-hidden="true" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem className={MENU_ITEM} variant="destructive" disabled={isDeleting} onClick={onDelete}>
+              <Trash2 aria-hidden="true" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-        <div className="mt-2 flex justify-end gap-0.5 opacity-100 transition-opacity duration-150 md:absolute md:right-3 md:top-3 md:mt-0 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-          <button
-            type="button"
-            aria-label="Edit activity"
-            onClick={onEdit}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:opacity-100"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Delete activity"
-            disabled={isDeleting}
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive focus-visible:opacity-100"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+      {hasOverlap && (
+        <p className="mt-1.5 flex items-start gap-1.5 text-xs font-medium text-foreground" role="note">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />
+          <span>{formatOverlapMessage(overlapTitles)}</span>
+        </p>
+      )}
+
+      {needsReview && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit()
+          }}
+          className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-warning/50 bg-warning-bg px-3 text-xs font-semibold text-foreground hover:bg-warning/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <MapPin className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+          Review location
+        </button>
+      )}
+
+      <ActivityBody activity={activity} />
     </div>
   )
 }
@@ -189,7 +130,7 @@ function formatOverlapMessage(titles: string[]): string {
   return `Overlaps with ${titles[0]} and ${titles.length - 1} more`
 }
 
-function ActivityBody({ activity, onEdit }: { activity: Activity; onEdit: () => void }) {
+function ActivityBody({ activity }: { activity: Activity }) {
   if (!activity.payload) return null
 
   switch (activity.type) {
@@ -197,56 +138,43 @@ function ActivityBody({ activity, onEdit }: { activity: Activity; onEdit: () => 
       const p = activity.payload as LocationPayload
       const externalUrl = normalizeExternalUrl(p.external_url ?? "")
       const needsReview = p.location_verification === "needs_review"
+      const mapsHref =
+        !needsReview && p.lat != null && p.lng != null
+          ? isGoogleMapsUrl(externalUrl)
+            ? externalUrl
+            : buildMapsPinUrl(p.lat, p.lng, p.location_name)
+          : null
       return (
-        <div className="space-y-0.5 text-sm text-muted-foreground">
-          {p.location_name && (
-            <p className="font-medium text-foreground/80 text-sm">{p.location_name}</p>
-          )}
-          {/* Iter 52 — address with maps link */}
-          {p.address && (
-            <div className="flex items-start gap-1">
-              <p className="text-xs flex-1">{p.address}</p>
-              {!needsReview && p.lat != null && p.lng != null && (
+        <div className="mt-1.5 space-y-1 text-sm text-muted-foreground">
+          {(p.location_name || p.address) && (
+            <p className="flex items-start gap-1.5">
+              <span className="min-w-0 flex-1">
+                {p.location_name && <span className="text-foreground/80">{p.location_name}</span>}
+                {p.location_name && p.address && <span aria-hidden="true"> · </span>}
+                {p.address && <span className="text-xs">{p.address}</span>}
+              </span>
+              {mapsHref && (
                 <a
-                  href={
-                    isGoogleMapsUrl(externalUrl)
-                      ? externalUrl
-                      : buildMapsPinUrl(p.lat, p.lng, p.location_name)
-                  }
+                  href={mapsHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Open in Google Maps"
                   onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 text-primary/60 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
+                  className="-my-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               )}
-            </div>
+            </p>
           )}
-          {p.notes && (
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground/80">{p.notes}</p>
-          )}
-          {needsReview && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onEdit()
-              }}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-chromatic-amber/30 bg-chromatic-amber/10 px-3 py-1 text-xs font-semibold text-chromatic-amber transition-colors hover:bg-chromatic-amber/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chromatic-amber"
-            >
-              <MapPin className="h-3 w-3" aria-hidden="true" />
-              Review location
-            </button>
-          )}
-          {externalUrl && (
+          {p.notes && <p className="whitespace-pre-wrap">{p.notes}</p>}
+          {externalUrl && !isGoogleMapsUrl(externalUrl) && (
             <a
               href={externalUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(event) => event.stopPropagation()}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Open link
               <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -257,55 +185,27 @@ function ActivityBody({ activity, onEdit }: { activity: Activity; onEdit: () => 
     }
     case "note": {
       const p = activity.payload as NotePayload
-      return (
-        /* Iter 55 — quote styling: left accent border */
-        <blockquote className="mt-1 border-l-2 border-chromatic-amber/60 pl-2.5">
-          <p className="whitespace-pre-wrap text-sm italic text-muted-foreground leading-relaxed">
-            {p.content}
-          </p>
-        </blockquote>
-      )
+      return <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{p.content}</p>
     }
     case "todo": {
       const p = activity.payload as TodoPayload
-      const doneCount = p.items.filter((i) => i.completed).length
-      const totalCount = p.items.length
-      const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
       return (
-        <div className="space-y-2">
-          {/* Iter 53 — mini progress bar for todos */}
-          {totalCount > 0 && (
-            <div className="h-1 w-full rounded-full bg-muted overflow-hidden" aria-hidden="true">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-muted-foreground/40 to-muted-foreground/60 transition-all duration-500"
-                style={{ width: `${pct}%` }}
+        <ul className="mt-1.5 space-y-1">
+          {p.items.map((item) => (
+            <li key={item.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={item.completed}
+                readOnly
+                aria-label={item.text}
+                className="h-4 w-4 shrink-0 rounded accent-primary"
               />
-            </div>
-          )}
-          <ul className="space-y-1">
-            {p.items.map((item) => (
-              <li key={item.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  readOnly
-                  aria-label={item.text}
-                  className="h-3.5 w-3.5 rounded border-muted-foreground/30 accent-primary shrink-0"
-                />
-                <span
-                  className={cn(
-                    "leading-snug",
-                    item.completed
-                      ? "line-through text-muted-foreground/60"
-                      : "text-foreground/80",
-                  )}
-                >
-                  {item.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+              <span className={cn("leading-snug", item.completed ? "text-muted-foreground line-through" : "text-foreground/80")}>
+                {item.text}
+              </span>
+            </li>
+          ))}
+        </ul>
       )
     }
   }
