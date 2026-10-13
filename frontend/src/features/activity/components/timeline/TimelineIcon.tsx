@@ -2,7 +2,7 @@ import type { HTMLAttributes, Ref } from "react"
 import { Hotel, ListChecks, MapPin, StickyNote } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { transportIcon } from "./transportIcon"
+import { transportIcon } from "@/features/transportation/lib/transportType"
 
 type Kind = "location" | "note" | "todo" | "transport" | "stay"
 

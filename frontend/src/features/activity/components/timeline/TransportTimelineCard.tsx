@@ -1,23 +1,14 @@
 import { ArrowRight } from "lucide-react"
 
+import { transportTypeLabel } from "@/features/transportation/lib/transportType"
 import type { Transportation } from "@/features/transportation/types"
 import { extractTime } from "../../lib/timeline"
-
-const TYPE_LABEL: Record<string, string> = {
-  flight: "Flight",
-  bus: "Bus",
-  train: "Train",
-  ferry: "Ferry",
-  ship: "Ship",
-  car: "Car",
-  other: "Transport",
-}
 
 /** Read-only transport entry on a day's timeline (edited in Bookings). */
 export function TransportTimelineCard({ t }: { t: Transportation }) {
   const depTime = extractTime(t.departure_datetime)
   const arrTime = extractTime(t.arrival_datetime)
-  const heading = [TYPE_LABEL[t.type] ?? "Transport", t.label].filter(Boolean).join(" · ")
+  const heading = [transportTypeLabel(t.type), t.label].filter(Boolean).join(" · ")
   const meta = [t.operator, t.reference_number && `#${t.reference_number}`, depTime && arrTime && `${depTime} → ${arrTime}`]
     .filter(Boolean)
     .join(" · ")
