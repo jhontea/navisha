@@ -132,7 +132,7 @@ func (u *Usecase) RebaseTx(ctx context.Context, tx pgx.Tx, tripID, newBase strin
 	for _, e := range expenses {
 		converted, _, err := u.converter.Convert(ctx, e.Currency, newBase, e.Amount)
 		if err != nil {
-			return fmt.Errorf("expense.RebaseTx convert %s→%s: %w", e.Currency, newBase, err)
+			return fmt.Errorf("expense.RebaseTx convert %s→%s: %w: %w", e.Currency, newBase, apperr.ErrRatesUnavailable, err)
 		}
 		if err := u.repo.UpdateConvertedTx(ctx, tx, e.ID, converted, newBase); err != nil {
 			return err

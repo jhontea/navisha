@@ -291,7 +291,8 @@ func TestUsecase_RebaseTx_ConvertErrorStops(t *testing.T) {
 	repo.expenseOf["e1"] = "t1"
 
 	u := NewUsecase(repo, &rateConverter{rates: map[string]float64{}})
-	if err := u.RebaseTx(context.Background(), nil, "t1", "USD"); err == nil {
-		t.Fatal("RebaseTx: want error when a rate is missing")
+	err := u.RebaseTx(context.Background(), nil, "t1", "USD")
+	if !errors.Is(err, apperr.ErrRatesUnavailable) {
+		t.Fatalf("err = %v, want ErrRatesUnavailable", err)
 	}
 }
