@@ -15,5 +15,5 @@ export function MoneyText({
   currency: string
   className?: string
 }) {
-  return <span className={cn("tabular-nums", className)}>{formatMoney(amount, currency)}</span>
+  return <span className={cn("whitespace-nowrap tabular-nums", className)}>{formatMoney(amount, currency)}</span>
 }
