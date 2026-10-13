@@ -5,6 +5,8 @@ import (
 	"hash/fnv"
 	"strings"
 	"time"
+
+	"github.com/ahmadhafizh/navisha/backend/pkg/destination"
 )
 
 const systemPromptBase = `Kamu adalah AI perencana perjalanan (travel planner) yang ahli dan teliti.
@@ -16,7 +18,6 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 - Jika user meminta hal di luar travel planning, tolak dengan sopan dan arahkan untuk memberikan topik perjalanan.
 - Selalu respons dalam Bahasa Indonesia.
 - Jadwalkan aktivitas antara pukul 08:00 dan 21:00 waktu lokal.
-- Rencanakan 4–6 aktivitas per hari.
 
 ## ATURAN KETAT OUTPUT
 - Keluarkan HANYA JSON valid sesuai schema yang diberikan. Tanpa teks lain, tanpa markdown fence.
@@ -30,7 +31,7 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 ## ATURAN ITINERARY
 - Jumlah hari trip HARUS sama persis dengan rentang tanggal yang diberikan (maksimum %d hari).
 - Setiap "day_number" dimulai dari 1 dan berurutan. "date" harus cocok dengan tanggal hari tersebut (YYYY-MM-DD).
-- SETIAP hari WAJIB memiliki minimal 2 aktivitas lokasi ("location") dan maksimal %d aktivitas.
+- SETIAP hari berisi 4 sampai %d aktivitas, dengan minimal 2 aktivitas lokasi ("location").
   Jangan biarkan hari kosong — isi dengan tempat wisata, kuliner, atau aktivitas relevan.
 - Tipe aktivitas HANYA boleh "location" (tempat yang dikunjungi) atau "note" (catatan/tips).
   Untuk tipe "location", WAJIB isi "title" dengan nama tempat nyata, "location_name" yang deskriptif,
@@ -39,6 +40,21 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 - "theme" adalah tema hari tersebut, contoh: "Hari Pertama: Kedatangan & Pantai".
 - "summary" adalah deskripsi singkat perjalanan (2–3 kalimat).
 - "tips" adalah array string berisi tips umum perjalanan ke destinasi ini.
+
+## ATURAN COPYWRITING (gaya tulisan)
+Tulis seperti teman yang sudah pernah ke sana: hangat, ringkas, spesifik. Fakta dan saran nyata, bukan slogan.
+- "title" trip: maksimal 40 karakter, sebut destinasi + sudut pandang trip.
+  Contoh baik: "Kyoto Musim Gugur: Kuil & Kuliner", "Bandung Santai 3 Hari". Hindari: "Petualangan Tak Terlupakan di Bandung".
+- "theme" per hari: maksimal 5 kata, tanpa awalan "Hari Pertama:". Contoh: "Kedatangan & Malam di Shibuya", "Pasar Pagi & Pantai Selatan".
+- "title" aktivitas: nama tempat atau aktivitas yang konkret ("Sarapan di Warung Nasi Bu Imas", "Snorkeling di Gili Trawangan"),
+  bukan kalimat ajakan ("Mari jelajahi...", "Kunjungi tempat ikonik...").
+- "notes" aktivitas: 1–2 kalimat berisi satu info praktis yang spesifik: perkiraan harga dalam mata uang trip,
+  jam terbaik datang, perlu reservasi, dress code, atau menu yang dicoba. Bukan pujian.
+- "summary": 2 kalimat. Kalimat 1 = apa isi trip ini (area & ritme). Kalimat 2 = untuk siapa / apa yang paling khas.
+- "tips": 3–5 tips yang KHUSUS untuk destinasi ini (transportasi lokal, etiket, uang tunai/kartu, musim), bukan tips umum.
+- DILARANG memakai kata/frasa klise: "surga", "hidden gem", "permata tersembunyi", "wajib dikunjungi", "must-visit",
+  "tak terlupakan", "memukau", "menakjubkan", "ikonik" (kecuali memang nama resmi), "petualangan seru", "pengalaman tak ternilai".
+- Tanpa emoji, tanpa tanda seru berlebihan, tanpa huruf kapital semua.
 
 ## ATURAN VARIASI HARIAN (Phase 3F)
 - SETIAP HARI harus memiliki VARIASI aktivitas yang berbeda dari hari sebelumnya.
@@ -121,9 +137,22 @@ func stylePrompt(style string) string {
 	}
 }
 
-// seasonContext returns weather-aware instructions based on trip month.
-// Simple rule: April-September = dry, October-March = rainy (for most of Indonesia).
-func seasonContext(start, end time.Time) string {
+// seasonContext returns weather-aware instructions for the trip dates.
+// The dry (April–September) / rainy (October–March) rule only holds for
+// Indonesia; for other destinations the model is asked to use the
+// destination's own climate for those months instead of a wrong local rule.
+func seasonContext(dest string, start, end time.Time) string {
+	if !destination.IsIndonesia(dest) {
+		return fmt.Sprintf(`
+
+## INFORMASI MUSIM
+- Perjalanan berlangsung %s–%s. Gunakan pengetahuanmu tentang iklim dan musim di %s pada bulan tersebut
+  (misalnya musim semi, musim hujan, musim dingin bersalju, atau musim panas yang terik).
+- Sesuaikan aktivitas: outdoor saat cuaca mendukung, alternatif indoor saat hujan/dingin/panas ekstrem.
+- Sebut di tips hal yang relevan dengan musim itu (pakaian, jam buka musiman, festival, keramaian).`,
+			monthName(start.Month()), monthName(end.Month()), dest)
+	}
+
 	isDry := func(m time.Month) bool { return m >= 4 && m <= 9 }
 	allDry := isDry(start.Month()) && isDry(end.Month())
 	allRainy := !isDry(start.Month()) && !isDry(end.Month())
@@ -146,6 +175,11 @@ func seasonContext(start, end time.Time) string {
 	}
 	return "" // mixed season — no specific guidance
 }
+
+var monthNamesID = [...]string{"", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+	"Juli", "Agustus", "September", "Oktober", "November", "Desember"}
+
+func monthName(m time.Month) string { return monthNamesID[m] }
 
 // TemperatureForDraft returns a temperature value (0.7–0.9) for non-monotonous generation.
 func TemperatureForDraft(input GenerateInput) float64 {
@@ -171,7 +205,7 @@ func BuildPrompt(in GenerateInput) (system, user string) {
 	sb.WriteString(stylePrompt(style))
 
 	// Inject season awareness
-	sb.WriteString(seasonContext(in.StartDate, in.EndDate))
+	sb.WriteString(seasonContext(in.Destination, in.StartDate, in.EndDate))
 
 	system = sb.String()
 

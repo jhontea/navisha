@@ -90,7 +90,7 @@ jwt:
   refresh_ttl: 604800  # 7 days
 llm:
   provider: ""          # deepseek or openrouter
-  deepseek_model: deepseek-v4-flash
+  deepseek_model: deepseek-flash
   openrouter_model: openrouter/owl-alpha
   timeout_seconds: 300
 ```
