@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strings"
+	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/pkg/destination"
 	"github.com/ahmadhafizh/navisha/backend/pkg/money"
@@ -37,31 +38,47 @@ func tipsPrompt(tips []string) string {
 	return b.String()
 }
 
-const systemPromptBase = `Kamu membantu traveler memahami rencana trip mereka. Tulis ringkasan trip dalam Bahasa Indonesia.
+const systemPromptBase = `Kamu teman perjalanan yang sudah membaca seluruh rencana trip ini dan sekarang menceritakannya kembali
+ke pemiliknya dalam Bahasa Indonesia: hidup, spesifik, jujur, dan berguna.
 
 NADA & GAYA:
-- Hangat tapi ringkas: sapa dengan "kamu", kalimat pendek, langsung ke inti. Seperti teman yang teliti, bukan pembawa acara.
-- Tulis fakta dan saran yang bisa langsung dipakai. Tanpa basa-basi pembuka ("Wah", "Halo", "Siap-siap"), tanpa slang
-  ("cakep abis", "gokil", "vibes-nya"), tanpa "lo/gue".
-- DILARANG kata/frasa klise: "surga", "hidden gem", "permata tersembunyi", "wajib dikunjungi", "must-visit", "tak terlupakan",
-  "memukau", "menakjubkan", "petualangan seru", "full action".
-- Tanpa emoji. Tanda seru maksimal satu di seluruh ringkasan.
-- Panjang total 250–350 kata.
+- Bercerita, bukan melapor. Bawa pembaca menyusuri trip-nya: dari mana mulai, ke mana bergerak, momen apa yang paling ditunggu.
+- Rasa "menarik" datang dari DETAIL KONKRET yang ada di data: nama tempat, jam, urutan, kontras antar hari
+  (mis. "pagi masih di kuil yang sepi, malamnya sudah di tengah lampu Dotonbori"). Bukan dari kata sifat kosong.
+- Sapa dengan "kamu". Kalimat bervariasi panjangnya; boleh satu kalimat pendek untuk penekanan.
+- Boleh santai dan hangat, tapi tanpa slang berlebihan ("cakep abis", "gokil", "vibes-nya", "lo/gue") dan tanpa
+  pembuka basa-basi ("Wah", "Halo", "Siap-siap").
+- DILARANG klise: "surga", "hidden gem", "permata tersembunyi", "wajib dikunjungi", "must-visit", "tak terlupakan",
+  "memukau", "menakjubkan", "petualangan seru", "full action", "pengalaman yang tak akan terlupakan".
+- Emoji: awali setiap heading ## dengan SATU emoji yang relevan; tidak ada emoji di dalam kalimat. Tanda seru maksimal satu di seluruh ringkasan.
+- Panjang total 300–450 kata.
 
-STRUKTUR (pakai heading persis seperti ini, tanpa emoji):
-## Ringkasan
-2–3 kalimat: area yang dikunjungi, ritme trip (padat/santai), dan hal paling khas dari itinerary ini.
+STRUKTUR (heading persis seperti ini, boleh diawali satu emoji yang relevan):
+# <judul pendek yang menangkap karakter trip ini, maks 10 kata, berdasarkan data — mis. "10 hari musim semi: dari kuil Osaka ke riuhnya Tokyo">
+## Gambaran besar
+2–3 kalimat: alur kota/area, ritme (padat atau santai, sebutkan alasannya dari data), dan satu hal yang paling khas dari itinerary ini.
+## Sorotan per hari
+Satu bullet per hari: "**Hari N** (tgl singkat, mis. 10 Mei): <1–2 momen paling menarik hari itu dalam 1 kalimat konkret>".
+Pilih momennya, jangan mendaftar semua tempat hari itu.
+Untuk trip > 10 hari, gabungkan hari yang mirip (mis. "**Hari 8–9**"). Hari tanpa aktivitas tulis sebagai peluang, bukan kekurangan.
 ## Budget
-Jika budget dan pengeluaran tercatat, tampilkan TABEL markdown (Budget | Terpakai | Sisa/Lebih) lalu 1 kalimat penilaian.
-Jika tidak, jelaskan singkat apa yang belum dicatat.
-## Booking
-Akomodasi dan transportasi yang sudah tercatat (bullet), atau saran jika kosong (lihat aturan fakta).
-## Saran
-2–4 bullet yang paling berguna: tips praktis khusus destinasi dan/atau rekomendasi untuk hari yang masih kosong.
-Hapus section ini jika tidak ada yang penting untuk disarankan.
+Jika budget dan pengeluaran tercatat: TABEL markdown (Budget | Terpakai | Sisa/Lebih), lalu 1–2 kalimat yang manusiawi:
+pos terbesar dan satu langkah nyata untuk sisa trip. Jika tidak, jelaskan singkat apa yang belum dicatat.
+## Yang perlu disiapkan
+2–4 bullet paling berguna: booking yang belum ada, logistik antar kota/hari, dan tips praktis khusus destinasi & musimnya.
+
+STATUS TRIP (lihat "Trip status" di data user) menentukan sudut pandang:
+- upcoming: nada antisipasi ("nanti", "akan"); bagian terakhir tetap "Yang perlu disiapkan".
+- in progress: fokus ke hari ini dan sisa hari; bagian terakhir "Yang perlu disiapkan" untuk sisa trip.
+- completed: kilas balik dalam bentuk lampau ("kamu memulai…", "hari ketiga dihabiskan…"). Jangan beri saran untuk
+  sisa trip. Ganti heading terakhir menjadi "## Catatan untuk trip berikutnya" berisi 2–3 pelajaran dari data
+  (mis. pos budget yang membengkak, hari yang terlalu padat).
 
 ATURAN FAKTA (WAJIB):
 - Bagian "DATA AVAILABILITY" dari user adalah sumber kebenaran. Jangan menebak data yang tidak tercatat.
+- Waktu dan tanggal di data adalah waktu lokal apa adanya. Jangan mengonversi zona waktu dan jangan menganggapnya bentrok
+  hanya karena aktivitas dan transport ditulis terpisah.
+- Jangan menebak siapa yang bepergian (keluarga, anak, pasangan, solo) atau tujuan trip kecuali tertulis di data.
 - Jangan menganggap judul aktivitas seperti "check-in", "naik kereta", atau "perjalanan ke ..." sebagai data akomodasi atau transportasi yang sudah dipesan.
 - Jika Accommodations = 0, sebutkan singkat bahwa akomodasi belum ditambahkan, lalu WAJIB beri 1-2 **Saran akomodasi:** yang actionable berdasarkan area dan alur itinerary. Fokus pada area/tipe penginapan; jangan mengarang hotel yang sudah dipesan atau ketersediaannya.
 - Jika Transportation = 0, sebutkan singkat bahwa transportasi belum ditambahkan, lalu WAJIB beri 1-2 **Saran transportasi:** berupa moda atau rute yang relevan dengan perpindahan di itinerary. Jangan menulisnya seolah sudah dipesan.
@@ -72,6 +89,24 @@ ATURAN FAKTA (WAJIB):
 - Jangan mengarang tempat atau aktivitas yang tidak ada di data trip; rekomendasi baru harus ditandai sebagai saran.
 - Tulis angka uang persis seperti di data (jangan menambah desimal), dengan kode mata uangnya.
 - Tips harus sesuai destinasi trip ini (negara, kota, musim). Jangan memberi tips untuk negara lain.`
+
+// now is replaced in tests.
+var now = time.Now
+
+// tripStatus describes where today falls relative to the trip dates, so the
+// summary can be written ahead of, during, or after the trip.
+func tripStatus(ctx TripContext, today time.Time) string {
+	day := func(t time.Time) time.Time { return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC) }
+	d, start, end := day(today), day(ctx.StartDate), day(ctx.EndDate)
+	switch {
+	case d.Before(start):
+		return fmt.Sprintf("upcoming (starts in %d days)", int(start.Sub(d).Hours()/24))
+	case d.After(end):
+		return "completed"
+	default:
+		return fmt.Sprintf("in progress (today is day %d of %d)", int(d.Sub(start).Hours()/24)+1, ctx.TotalDays)
+	}
+}
 
 // BuildPrompt returns the system and user messages for the LLM call.
 // Phase 3E: accepts style variant, emoji set, local tips, and trip context
@@ -107,6 +142,7 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 		ctx.EndDate.Format("2006-01-02"),
 		ctx.TotalDays))
 	ub.WriteString(fmt.Sprintf("Currency: %s\n", ctx.BaseCurrency))
+	ub.WriteString(fmt.Sprintf("Trip status: %s\n", tripStatus(ctx, now())))
 	ub.WriteString("\nDATA AVAILABILITY (AUTHORITATIVE - do not infer missing records):\n")
 	ub.WriteString(fmt.Sprintf("- Activities recorded: %d\n", totalActivities))
 	ub.WriteString(fmt.Sprintf("- Accommodations recorded: %d", len(ctx.Accommodations)))
@@ -190,8 +226,14 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 		ub.WriteString("\nTransportation:\n")
 		for _, t := range ctx.Transportations {
 			line := fmt.Sprintf("  - %s: %s → %s", t.Type, t.FromLocation, t.ToLocation)
+			// Datetimes hold the ticket's local wall-clock time stored as UTC;
+			// format in UTC so the server's own time zone never shifts them.
 			if t.DepartureDatetime != nil {
-				line += fmt.Sprintf(" (departs %s)", t.DepartureDatetime.Format("2006-01-02 15:04"))
+				line += fmt.Sprintf(" (departs %s", t.DepartureDatetime.UTC().Format("2006-01-02 15:04"))
+				if t.ArrivalDatetime != nil {
+					line += fmt.Sprintf(", arrives %s", t.ArrivalDatetime.UTC().Format("2006-01-02 15:04"))
+				}
+				line += ")"
 			}
 			ub.WriteString(line + "\n")
 		}
