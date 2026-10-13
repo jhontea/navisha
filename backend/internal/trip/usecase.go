@@ -9,6 +9,7 @@ import (
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
+	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -61,12 +62,20 @@ type UpdateInput struct {
 	Notes            string
 }
 
-type Usecase struct {
-	repo Repository
+// ExpenseRebaser reconverts a trip's expenses into a new base currency inside
+// the caller's transaction. Satisfied by *expense.Usecase; defined here so
+// trip does not import expense.
+type ExpenseRebaser interface {
+	RebaseTx(ctx context.Context, tx pgx.Tx, tripID, newBase string) error
 }
 
-func NewUsecase(repo Repository) *Usecase {
-	return &Usecase{repo: repo}
+type Usecase struct {
+	repo    Repository
+	rebaser ExpenseRebaser
+}
+
+func NewUsecase(repo Repository, rebaser ExpenseRebaser) *Usecase {
+	return &Usecase{repo: repo, rebaser: rebaser}
 }
 
 // Create inserts a trip + auto-generated days in a single transaction.
@@ -220,6 +229,7 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	in.Notes = sanitize.Text(in.Notes)
 
 	datesChanged := !existing.StartDate.Equal(in.StartDate) || !existing.EndDate.Equal(in.EndDate)
+	currencyChanged := existing.BaseCurrency != in.BaseCurrency
 
 	existing.Title = in.Title
 	existing.Description = in.Description
@@ -235,12 +245,13 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	existing.CoverImageURL = in.CoverImageURL
 	existing.Notes = in.Notes
 
-	if !datesChanged {
+	if !datesChanged && !currencyChanged {
 		return u.repo.Update(ctx, existing)
 	}
 
-	// Dates changed: wrap trip update + day regeneration in a single transaction
-	// so the trip row and its days stay consistent (Phase 3D / Iter 8).
+	// Dates or base currency changed: wrap the trip update with day
+	// regeneration and/or expense reconversion in a single transaction so the
+	// trip row, its days and its expense totals stay consistent.
 	tx, err := u.repo.BeginTx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("trip.usecase.Update: begin tx: %w", err)
@@ -252,12 +263,20 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 		return nil, fmt.Errorf("trip.usecase.Update: update trip in tx: %w", err)
 	}
 
-	if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
-		return nil, err
+	if datesChanged {
+		if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
+			return nil, err
+		}
+		newDays := generateDays(tripID, in.StartDate, in.EndDate)
+		if err := u.repo.InsertDays(ctx, tx, newDays); err != nil {
+			return nil, err
+		}
 	}
-	newDays := generateDays(tripID, in.StartDate, in.EndDate)
-	if err := u.repo.InsertDays(ctx, tx, newDays); err != nil {
-		return nil, err
+
+	if currencyChanged {
+		if err := u.rebaser.RebaseTx(ctx, tx, tripID, in.BaseCurrency); err != nil {
+			return nil, fmt.Errorf("trip.usecase.Update: rebase expenses: %w", err)
+		}
 	}
 
 	if err := u.repo.Commit(ctx, tx); err != nil {

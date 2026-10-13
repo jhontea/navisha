@@ -146,3 +146,14 @@ func setupCurrencies() {
 func date(y, m, d int) time.Time {
 	return time.Date(y, time.Month(m), d, 0, 0, 0, 0, time.UTC)
 }
+
+// mockRebaser records expense reconversion requests from Update.
+type mockRebaser struct {
+	calls []string // "tripID→newBase"
+	err   error
+}
+
+func (m *mockRebaser) RebaseTx(_ context.Context, _ pgx.Tx, tripID, newBase string) error {
+	m.calls = append(m.calls, tripID+"→"+newBase)
+	return m.err
+}

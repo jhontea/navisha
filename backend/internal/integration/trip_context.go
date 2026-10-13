@@ -65,13 +65,9 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 		TripUpdatedAt: t.UpdatedAt,
 	}
 
-	// Days + activities — Phase 3D: batch-fetch all activities in one query
+	// Days + activities — batch-fetch all activities in one query
 	// instead of N individual queries (one per day).
-	dayIDs := make([]string, len(days))
-	for i, d := range days {
-		dayIDs[i] = d.ID
-	}
-	actsByDay, err := p.activities.ListByDayIDs(ctx, userID, dayIDs)
+	actsByDay, err := p.activities.ListByTrip(ctx, userID, tripID)
 	if err != nil {
 		return nil, err
 	}

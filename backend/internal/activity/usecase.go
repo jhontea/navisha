@@ -12,9 +12,9 @@ import (
 
 type UsecaseInterface interface {
 	List(ctx context.Context, userID, dayID string) ([]Activity, error)
-	// ListByDayIDs batch-fetches activities for multiple days owned by the same user.
-	// Phase 3D: eliminates N+1 queries when loading trip context.
-	ListByDayIDs(ctx context.Context, userID string, dayIDs []string) (map[string][]Activity, error)
+	// ListByTrip batch-fetches all activities of a trip owned by userID,
+	// grouped by day ID. Days without activities are absent from the map.
+	ListByTrip(ctx context.Context, userID, tripID string) (map[string][]Activity, error)
 	Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error)
 	CreateMany(ctx context.Context, userID string, inputs []CreateManyInput) error
 	Update(ctx context.Context, userID, activityID string, in UpdateInput) (*Activity, error)
@@ -59,19 +59,11 @@ func (u *Usecase) List(ctx context.Context, userID, dayID string) ([]Activity, e
 	return u.repo.ListByDay(ctx, dayID)
 }
 
-// ListByDayIDs batch-fetches activities for multiple days. Verifies ownership
-// via the first day (all days must belong to the same user's trip).
-// Phase 3D: eliminates N+1 queries when loading trip context.
-func (u *Usecase) ListByDayIDs(ctx context.Context, userID string, dayIDs []string) (map[string][]Activity, error) {
-	if len(dayIDs) == 0 {
-		return make(map[string][]Activity), nil
-	}
-	// Verify ownership on the first day; the caller (trip context) guarantees
-	// all dayIDs belong to the same trip, hence same user.
-	if err := u.verifyDayOwnership(ctx, userID, dayIDs[0]); err != nil {
-		return nil, err
-	}
-	return u.repo.ListByDayIDs(ctx, dayIDs)
+// ListByTrip batch-fetches all activities of a trip in one query (no N+1).
+// Ownership is enforced by the repository query itself, so it holds for
+// every day, not only the first.
+func (u *Usecase) ListByTrip(ctx context.Context, userID, tripID string) (map[string][]Activity, error) {
+	return u.repo.ListByTrip(ctx, userID, tripID)
 }
 
 func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error) {

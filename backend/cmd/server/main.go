@@ -149,9 +149,20 @@ func main() {
 	userUsecase := user.NewUsecase(userRepo, jwtSvc, oauthCfg, cfg.App.AllowedEmails)
 	userHandler := user.NewHandler(userUsecase, cfg.App.FrontendURL, cfg.App.CookieDomain, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
 
-	// Trip domain
+	// Currency domain
+	currencyClient := pkgcurrency.NewClient(cfg.Currency.APIKey)
+	currencyRepo := currency.NewRedisRepository(rdb, currencyClient, cfg.Currency.CacheTTL)
+	currencyUsecase := currency.NewUsecase(currencyRepo)
+	currencyHandler := currency.NewHandler(currencyUsecase)
+
+	// Expense domain (depends on currency.Usecase via Converter interface)
+	expenseRepo := expense.NewPostgresRepository(db)
+	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
+	expenseHandler := expense.NewHandler(expenseUsecase)
+
+	// Trip domain (expenseUsecase reconverts expenses when base currency changes)
 	tripRepo := trip.NewPostgresRepository(db)
-	tripUsecase := trip.NewUsecase(tripRepo)
+	tripUsecase := trip.NewUsecase(tripRepo, expenseUsecase)
 	tripHandler := trip.NewHandler(tripUsecase)
 	shareSecret := cfg.App.ShareLinkSecret
 	if shareSecret == "" {
@@ -175,17 +186,6 @@ func main() {
 		time.Duration(cfg.Location.GeoapifyTimeoutSecs)*time.Second,
 	)
 	locationHandler := location.NewHandler(locationClient)
-
-	// Currency domain
-	currencyClient := pkgcurrency.NewClient(cfg.Currency.APIKey)
-	currencyRepo := currency.NewRedisRepository(rdb, currencyClient, cfg.Currency.CacheTTL)
-	currencyUsecase := currency.NewUsecase(currencyRepo)
-	currencyHandler := currency.NewHandler(currencyUsecase)
-
-	// Expense domain (depends on currency.Usecase via Converter interface)
-	expenseRepo := expense.NewPostgresRepository(db)
-	expenseUsecase := expense.NewUsecase(expenseRepo, currencyUsecase)
-	expenseHandler := expense.NewHandler(expenseUsecase)
 
 	// Transportation domain (uses expenseUsecase for atomic linked-expense create)
 	transportationRepo := transportation.NewPostgresRepository(db)
@@ -307,9 +307,20 @@ func main() {
 	// Requires shared cookie domain in production (.navisha.cloud).
 	e.Use(appMiddleware.CSRF(cfg.App.CookieDomain))
 
-	// Per-request timeout (300s) to prevent hanging requests while allowing
-	// slow LLM calls (summary/generate). Matches llm.timeout_seconds config.
-	e.Use(appMiddleware.Timeout(300 * time.Second))
+	// Per-request timeout: 30s for regular requests so a stuck CRUD call does
+	// not hold a DB connection for minutes; LLM routes get the full LLM
+	// timeout (llm.timeout_seconds). Keep this list in sync with the
+	// summary/autogen handlers' RegisterRoutes.
+	llmTimeout := time.Duration(cfg.LLM.TimeoutSeconds) * time.Second
+	if llmTimeout <= 0 {
+		llmTimeout = 300 * time.Second
+	}
+	e.Use(appMiddleware.Timeout(30*time.Second, map[string]time.Duration{
+		"POST /api/v1/trips/:id/summary":                            llmTimeout,
+		"POST /api/v1/trips/generate":                               llmTimeout,
+		"POST /api/v1/trips/from-draft":                             llmTimeout,
+		"POST /api/v1/trips/:trip_id/days/:day_id/generate-preview": llmTimeout,
+	}))
 
 	// Loop 3: limit request body size to 1MB.
 	const maxBodySize = 1 << 20 // 1MB

@@ -230,3 +230,69 @@ func TestSummary_Success(t *testing.T) {
 		t.Errorf("unexpected summary: %+v", s)
 	}
 }
+
+// rateConverter converts with a per-pair rate table ("FROM→TO" → rate).
+type rateConverter struct {
+	rates map[string]float64
+}
+
+func (c *rateConverter) Convert(_ context.Context, from, to string, amount float64) (float64, float64, error) {
+	if from == to {
+		return amount, 1, nil
+	}
+	r, ok := c.rates[from+"→"+to]
+	if !ok {
+		return 0, 0, errors.New("no rate " + from + "→" + to)
+	}
+	return amount * r, r, nil
+}
+
+// Bug A1.1: after the trip base changes IDR→USD, every expense must be
+// reconverted from its original amount/currency into USD.
+func TestUsecase_RebaseTx_IDRToUSD(t *testing.T) {
+	repo := newMockRepo()
+	repo.trips["t1"] = tripMeta{owner: "user-1", base: "IDR"}
+	repo.expenses["e1"] = &Expense{ID: "e1", Amount: 160_000, Currency: "IDR", ConvertedAmount: 160_000, BaseCurrency: "IDR"}
+	repo.expenses["e2"] = &Expense{ID: "e2", Amount: 1_000, Currency: "JPY", ConvertedAmount: 107_000, BaseCurrency: "IDR"}
+	repo.expenses["e3"] = &Expense{ID: "e3", Amount: 5, Currency: "USD", ConvertedAmount: 80_000, BaseCurrency: "IDR"}
+	repo.expenses["other"] = &Expense{ID: "other", Amount: 1, Currency: "IDR", ConvertedAmount: 1, BaseCurrency: "IDR"}
+	for _, id := range []string{"e1", "e2", "e3"} {
+		repo.expenseOf[id] = "t1"
+	}
+	repo.expenseOf["other"] = "t2"
+
+	u := NewUsecase(repo, &rateConverter{rates: map[string]float64{
+		"IDR→USD": 1.0 / 16_000,
+		"JPY→USD": 0.0067,
+	}})
+
+	if err := u.RebaseTx(context.Background(), nil, "t1", "USD"); err != nil {
+		t.Fatalf("RebaseTx: %v", err)
+	}
+
+	want := map[string]float64{"e1": 10, "e2": 6.7, "e3": 5}
+	for id, w := range want {
+		e := repo.expenses[id]
+		if e.BaseCurrency != "USD" {
+			t.Errorf("%s base = %q, want USD", id, e.BaseCurrency)
+		}
+		if diff := e.ConvertedAmount - w; diff > 1e-9 || diff < -1e-9 {
+			t.Errorf("%s converted = %v, want %v", id, e.ConvertedAmount, w)
+		}
+	}
+	if other := repo.expenses["other"]; other.BaseCurrency != "IDR" {
+		t.Errorf("expense of another trip was rebased")
+	}
+}
+
+func TestUsecase_RebaseTx_ConvertErrorStops(t *testing.T) {
+	repo := newMockRepo()
+	repo.expenses["e1"] = &Expense{ID: "e1", Amount: 10, Currency: "KRW"}
+	repo.expenseOf["e1"] = "t1"
+
+	u := NewUsecase(repo, &rateConverter{rates: map[string]float64{}})
+	err := u.RebaseTx(context.Background(), nil, "t1", "USD")
+	if !errors.Is(err, apperr.ErrRatesUnavailable) {
+		t.Fatalf("err = %v, want ErrRatesUnavailable", err)
+	}
+}

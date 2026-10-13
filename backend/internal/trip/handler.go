@@ -349,5 +349,6 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrInvalidBudget, Code: http.StatusBadRequest, Message: "budget must not be negative"},
 		apperr.HTTPMapping{Err: ErrInvalidBudgetCategory, Code: http.StatusBadRequest, Message: "invalid budget category"},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
+		apperr.HTTPMapping{Err: apperr.ErrRatesUnavailable, Code: http.StatusServiceUnavailable, Message: "Couldn't fetch exchange rates. Base currency was not changed, try again later."},
 	)
 }
