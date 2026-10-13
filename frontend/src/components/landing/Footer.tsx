@@ -1,23 +1,23 @@
 import Link from "next/link"
-import { Compass, Heart } from "lucide-react"
+import { Compass } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/30 bg-gradient-to-b from-background to-muted">
+    <footer className="border-t bg-card">
       <div className="mx-auto max-w-max-width px-margin-mobile py-10 md:px-margin-desktop md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           {/* Brand column */}
           <div className="flex flex-col gap-4">
-            <Link href="/" className="flex items-center gap-2.5 w-fit group" aria-label="Navisha home">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary transition-transform group-hover:scale-105">
-                <Compass className="h-4 w-4 text-white" aria-hidden="true" />
-              </div>
-              <span className="text-lg font-bold text-primary tracking-tight">Navisha</span>
+            <Link href="/" className="flex min-h-11 w-fit items-center gap-2" aria-label="Navisha home">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Compass className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
+              </span>
+              <span className="text-base font-semibold text-foreground">Navisha</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              The travel planning app that helps you build beautiful itineraries, track your budget, and travel smarter.
+              Plan each day, see it on a map, and track spending in your currency.
             </p>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} Navisha. All rights reserved.
             </p>
           </div>
@@ -25,7 +25,7 @@ export function Footer() {
           {/* Product links */}
           <div>
             <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-widest">Product</p>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {[
                 { label: "Features", href: "#features" },
                 { label: "How it works", href: "#how-it-works" },
@@ -33,7 +33,7 @@ export function Footer() {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="inline-flex min-h-9 items-center text-sm text-muted-foreground hover:text-foreground"
                   >
                     {item.label}
                   </Link>
@@ -45,7 +45,7 @@ export function Footer() {
           {/* Legal links */}
           <div>
             <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-widest">Legal</p>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {[
                 { label: "Privacy Policy", href: "/privacy" },
                 { label: "Terms of Service", href: "/terms" },
@@ -54,25 +54,13 @@ export function Footer() {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="inline-flex min-h-9 items-center text-sm text-muted-foreground hover:text-foreground"
                   >
                     {item.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="border-t border-border/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Heart className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-            Made for travelers, by travelers
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-chromatic-ocean animate-pulse" aria-hidden="true" />
-            All systems operational
           </div>
         </div>
       </div>
