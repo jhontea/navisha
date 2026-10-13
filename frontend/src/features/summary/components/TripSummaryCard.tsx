@@ -4,306 +4,217 @@ import { useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Sparkles, Loader2, RefreshCw, AlertCircle, AlertTriangle, Trash2, ExternalLink } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { AlertCircle, AlertTriangle, ExternalLink, Loader2, MoreHorizontal, RefreshCw, Sparkles, Trash2 } from "lucide-react"
+
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { QuotaBadge } from "@/components/QuotaBadge"
 import { sanitizeText } from "@/lib/sanitize"
-import { cn } from "@/lib/utils"
-import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
-import {
-  useTripSummary,
-  useGenerateSummary,
-  useDeleteSummary,
-} from "../hooks/useTripSummary"
+import { useDeleteSummary, useGenerateSummary, useTripSummary } from "../hooks/useTripSummary"
 import { GeneratingIndicator } from "./GeneratingIndicator"
-import { ShimmerOverlay } from "./ShimmerOverlay"
-import type { TripSummary } from "../types"
 
-const summaryActionButtonClassName = cn(
-  primaryTripActionButtonClassName,
-  "flex-none rounded-2xl px-5 py-2 text-sm shadow-sm sm:flex-none",
-)
-
-// Custom component mapping for rich rendering
+// Markdown from the AI rendered with the app's type scale.
 const markdownComponents: Components = {
   table: (props) => (
-    <div className="my-4 overflow-x-auto rounded-lg border border-border">
+    <div className="my-4 overflow-x-auto rounded-lg border">
       <table className="min-w-full text-sm">{props.children}</table>
     </div>
   ),
-  thead: (props) => (
-    <thead className="bg-muted/50">{props.children}</thead>
-  ),
-  th: (props) => (
-    <th className="px-4 py-2 text-left font-semibold text-foreground">{props.children}</th>
-  ),
-  td: (props) => (
-    <td className="border-t border-border px-4 py-2 text-foreground/80">{props.children}</td>
-  ),
+  thead: (props) => <thead className="bg-muted">{props.children}</thead>,
+  th: (props) => <th className="px-3 py-2 text-left font-semibold text-foreground">{props.children}</th>,
+  td: (props) => <td className="border-t px-3 py-2 text-foreground tabular-nums">{props.children}</td>,
   a: (props) => (
     <a
       href={props.href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-primary underline underline-offset-2 hover:text-primary/80 inline-flex items-center gap-0.5"
+      className="inline-flex items-center gap-0.5 text-primary underline underline-offset-2 hover:text-primary/80"
     >
       {props.children}
-      <ExternalLink className="h-3 w-3" />
+      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
     </a>
   ),
-  h1: (props) => (
-    <h1 className="mt-6 mb-3 text-2xl font-bold text-foreground">{props.children}</h1>
-  ),
-  h2: (props) => (
-    <h2 className="mt-5 mb-3 text-xl font-semibold text-foreground">{props.children}</h2>
-  ),
-  h3: (props) => (
-    <h3 className="mt-4 mb-2 text-lg font-semibold text-foreground">{props.children}</h3>
-  ),
-  p: (props) => (
-    <p className="my-2 leading-relaxed text-foreground/85">{props.children}</p>
-  ),
-  ul: (props) => (
-    <ul className="my-2 ml-5 list-disc space-y-1 text-foreground/85">{props.children}</ul>
-  ),
-  ol: (props) => (
-    <ol className="my-2 ml-5 list-decimal space-y-1 text-foreground/85">{props.children}</ol>
-  ),
-  li: (props) => (
-    <li className="pl-1">{props.children}</li>
-  ),
-  strong: (props) => (
-    <strong className="font-semibold text-foreground">{props.children}</strong>
-  ),
+  h1: (props) => <h3 className="mb-2 mt-6 text-xl font-semibold text-foreground first:mt-0">{props.children}</h3>,
+  h2: (props) => <h3 className="mb-2 mt-6 text-lg font-semibold text-foreground first:mt-0">{props.children}</h3>,
+  h3: (props) => <h4 className="mb-1.5 mt-5 text-base font-semibold text-foreground">{props.children}</h4>,
+  p: (props) => <p className="my-2 leading-relaxed text-foreground">{props.children}</p>,
+  ul: (props) => <ul className="my-2 ml-5 list-disc space-y-1 text-foreground">{props.children}</ul>,
+  ol: (props) => <ol className="my-2 ml-5 list-decimal space-y-1 text-foreground">{props.children}</ol>,
+  li: (props) => <li className="pl-1 leading-relaxed">{props.children}</li>,
+  strong: (props) => <strong className="font-semibold text-foreground">{props.children}</strong>,
   blockquote: (props) => (
-    <blockquote className="my-3 border-l-4 border-primary/30 pl-4 italic text-muted-foreground">
-      {props.children}
-    </blockquote>
+    <blockquote className="my-3 border-l-2 border-border pl-4 text-muted-foreground">{props.children}</blockquote>
   ),
   hr: () => <hr className="my-6 border-border" />,
   code: (props) => {
     const { className, children } = props as React.HTMLAttributes<HTMLElement>
-    const isInline = !className
-    if (isInline) {
-      return (
-        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground/85">
-          {children}
-        </code>
-      )
-    }
+    if (!className) return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
     return (
-      <pre className="my-3 overflow-x-auto rounded-lg bg-muted/50 p-4 text-sm font-mono">
+      <pre className="my-3 overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm">
         <code className={className}>{children}</code>
       </pre>
     )
   },
 }
 
-interface TripSummaryCardProps {
-  tripId: string
-}
+const GENERATED_AT = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+})
 
-function SummaryContent({ summary, tripId }: { summary: TripSummary; tripId: string }) {
-  const deleteSummary = useDeleteSummary(tripId)
-
-  return (
-    <div className="space-y-4">
-      {/* Header row: badge + timestamp | delete */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary sm:text-sm">
-            AI Summary
-          </span>
-          {summary.is_outdated && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-chromatic-amber/10 px-2.5 py-1 text-[11px] font-semibold text-chromatic-amber">
-              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-              Outdated
-            </span>
-          )}
-          <span className="text-[11px] text-muted-foreground sm:text-xs">
-            {new Date(summary.updated_at).toLocaleString(undefined, {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1 text-destructive hover:text-destructive"
-          onClick={() => deleteSummary.mutate()}
-          disabled={deleteSummary.isPending}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Clear</span>
-        </Button>
-      </div>
-      <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:leading-relaxed">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={markdownComponents}
-        >
-          {sanitizeText(summary.content)}
-        </ReactMarkdown>
-      </div>
-    </div>
-  )
-}
-
-export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
+/** AI summary of the whole trip: generate, update when the trip changes, delete. */
+export function TripSummaryCard({ tripId }: { tripId: string }) {
   const { data: summary, isLoading } = useTripSummary(tripId)
   const generate = useGenerateSummary(tripId)
+  const deleteSummary = useDeleteSummary(tripId)
 
   const errStatus = (generate.error as { status?: number })?.status
   const isRateLimited = generate.isError && errStatus === 429
-  // Any non-rate-limit failure (503 LLM unavailable, network, 500, etc.)
   const isGenerateError = generate.isError && !isRateLimited
 
-  // Warn before leaving during summary generation
+  // Warn before leaving while a summary is being generated.
   useEffect(() => {
     if (!generate.isPending) return
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    const handler = (e: BeforeUnloadEvent) => e.preventDefault()
     window.addEventListener("beforeunload", handler)
     return () => window.removeEventListener("beforeunload", handler)
   }, [generate.isPending])
 
-  if (isLoading) {
-    return (
-      <div className="rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
-        <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-      </div>
-    )
-  }
+  if (isLoading) return <div className="h-48 animate-pulse rounded-xl bg-muted" aria-label="Loading summary" />
+
+  const errors = (
+    <>
+      {isRateLimited && (
+        <Notice tone="warning" title="Daily AI limit reached">
+          You&apos;ve used today&apos;s AI generations. The limit resets at the time shown below the button.
+        </Notice>
+      )}
+      {isGenerateError && (
+        <Notice tone="error" title="Couldn't generate the summary">
+          {summary ? "The previous summary is still shown below. " : ""}Try again in a moment.
+        </Notice>
+      )}
+    </>
+  )
 
   if (!summary) {
     return (
-      <ShimmerOverlay
-        active={generate.isPending}
-        className="rounded-2xl border border-border/40 bg-primary/5 p-6 text-center shadow-sm md:p-8"
-      >
+      <section className="mx-auto max-w-3xl rounded-xl border bg-card p-6 text-center md:p-8" aria-busy={generate.isPending}>
         {generate.isPending ? (
           <GeneratingIndicator />
         ) : (
           <>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5 shadow-sm">
-              <Sparkles className="h-7 w-7 text-primary" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold text-foreground">
-              AI Trip Summary
-            </h3>
-            <p className="mb-6 text-sm text-muted-foreground max-w-md mx-auto">
-              Generate a personalized AI summary of your trip, itinerary, stays, transport, and budget.
+            <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2 className="mt-3 text-lg font-semibold text-foreground">Trip summary</h2>
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+              A short write-up of this trip: the highlights of each day, where you&apos;re staying, how you&apos;re
+              getting around, and how the budget looks.
             </p>
-            {isGenerateError && (
-              <div className="mx-auto mb-4 flex max-w-md items-start gap-2 rounded-lg bg-destructive/10 p-3 text-left text-xs text-destructive sm:text-sm">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div>
-                  <p className="font-medium">Couldn&apos;t generate summary</p>
-                  <p className="opacity-90">
-                    The summary couldn&apos;t be generated. Try again in a moment.
-                  </p>
-                </div>
-              </div>
-            )}
-            <div className="flex w-full flex-col items-center gap-3">
-              <Button
-                onClick={() => generate.mutate()}
-                disabled={generate.isPending}
-                className={summaryActionButtonClassName}
-              >
-                <Sparkles className="h-4 w-4" />
+            <div className="mx-auto mt-4 max-w-md text-left">{errors}</div>
+            <div className="mt-5 flex flex-col items-center gap-2">
+              <Button onClick={() => generate.mutate()}>
+                <Sparkles aria-hidden="true" />
                 {isGenerateError ? "Try again" : "Generate summary"}
               </Button>
               <QuotaBadge />
             </div>
           </>
         )}
-      </ShimmerOverlay>
+      </section>
     )
   }
 
   return (
-    <ShimmerOverlay
-      active={generate.isPending}
-      className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm md:p-6 lg:p-8"
-    >
-      {/* Header: icon + label | (generating indicator) | regenerate button */}
-      <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:mb-5">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 flex-shrink-0 text-primary sm:h-5 sm:w-5" />
-          <h3 className="text-sm font-bold leading-tight text-foreground sm:text-base md:text-lg">
-            AI Trip Summary
-          </h3>
+    <section className="mx-auto max-w-3xl rounded-xl border bg-card" aria-busy={generate.isPending}>
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-6">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-foreground">Trip summary</h2>
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {generate.isPending ? (
+              <GeneratingIndicator compact />
+            ) : (
+              <>Generated {GENERATED_AT.format(new Date(summary.updated_at))}</>
+            )}
+          </p>
         </div>
-        {generate.isPending && (
-          <div className="w-full shrink-0 sm:w-auto">
-            <GeneratingIndicator compact />
-          </div>
-        )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
+            variant={summary.is_outdated ? "default" : "outline"}
             size="sm"
             onClick={() => generate.mutate()}
             disabled={generate.isPending}
-            className={cn(
-              summaryActionButtonClassName,
-              "w-full px-4 py-2 text-xs sm:w-auto sm:text-sm md:gap-2",
-            )}
           >
-            {generate.isPending ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
-            )}
-            <span className="sm:hidden">{summary.is_outdated ? "Update" : "Regen"}</span>
-            <span className="hidden sm:inline">{summary.is_outdated ? "Update summary" : "Regenerate"}</span>
+            {generate.isPending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
+            {summary.is_outdated ? "Update summary" : "Regenerate"}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Summary actions"
+              className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "text-muted-foreground" })}
+            >
+              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                className="min-h-10 px-3 text-sm"
+                variant="destructive"
+                disabled={deleteSummary.isPending || generate.isPending}
+                onClick={() => deleteSummary.mutate()}
+              >
+                <Trash2 aria-hidden="true" />
+                Delete summary
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+      </header>
+
+      <div className="px-4 py-4 sm:px-6">
+        <div className="mb-3 flex justify-end">
+          <QuotaBadge />
+        </div>
+        {summary.is_outdated && !generate.isPending && (
+          <Notice tone="warning" title="Your trip changed since this summary">
+            It may not include your latest days, bookings or expenses. Update it when you&apos;re ready.
+          </Notice>
+        )}
+        {errors}
+        <article className={generate.isPending ? "opacity-60 transition-opacity" : undefined}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {sanitizeText(summary.content)}
+          </ReactMarkdown>
+        </article>
       </div>
-      <div className="mb-3 sm:mb-4">
-        <QuotaBadge />
+    </section>
+  )
+}
+
+function Notice({ tone, title, children }: { tone: "warning" | "error"; title: string; children: React.ReactNode }) {
+  const Icon = tone === "warning" ? AlertTriangle : AlertCircle
+  return (
+    <div
+      role={tone === "error" ? "alert" : "status"}
+      className={
+        tone === "warning"
+          ? "mb-4 flex items-start gap-2 rounded-lg border border-warning/50 bg-warning-bg p-3 text-sm text-foreground"
+          : "mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-foreground"
+      }
+    >
+      <Icon className={tone === "warning" ? "mt-0.5 h-4 w-4 shrink-0 text-warning" : "mt-0.5 h-4 w-4 shrink-0 text-destructive"} aria-hidden="true" />
+      <div>
+        <p className="font-medium">{title}</p>
+        <p className="text-muted-foreground">{children}</p>
       </div>
-
-      {summary.is_outdated && !generate.isPending && (
-        <div className="mb-3 flex items-start gap-2 rounded-xl border border-chromatic-amber/20 bg-chromatic-amber/10 p-3 text-xs text-chromatic-amber sm:mb-4 sm:text-sm" role="status">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <div>
-            <p className="font-semibold">Trip details changed</p>
-            <p className="mt-0.5 opacity-90">
-              This summary may not include your latest itinerary, stay, transport, or budget changes. Update it when you&apos;re ready.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {isRateLimited && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg bg-chromatic-amber/10 p-2 text-xs text-chromatic-amber sm:mb-4 sm:p-3 sm:text-sm">
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
-          <div>
-            <p className="font-medium text-[11px] sm:text-sm">Daily limit reached</p>
-            <p className="text-[10px] opacity-90 sm:text-xs">
-              You&apos;ve used all AI generations for today. Resets at 00:00 UTC.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {isGenerateError && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-2 text-xs text-destructive sm:mb-4 sm:p-3 sm:text-sm">
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
-          <div>
-            <p className="font-medium text-[11px] sm:text-sm">Couldn&apos;t regenerate summary</p>
-            <p className="text-[10px] opacity-90 sm:text-xs">
-              The previous summary is still shown below. Try regenerating in a moment.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <SummaryContent summary={summary} tripId={tripId} />
-    </ShimmerOverlay>
+    </div>
   )
 }

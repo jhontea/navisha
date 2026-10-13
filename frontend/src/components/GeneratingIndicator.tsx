@@ -4,22 +4,22 @@ import { useEffect, useState } from "react"
 import { Loader2, Sparkles } from "lucide-react"
 
 const DEFAULT_MESSAGES = [
-  "Reading your itinerary...",
-  "Reviewing stays and transport...",
-  "Checking dates and timings...",
-  "Analyzing destinations...",
-  "Spotting highlights of your trip...",
-  "Finding interesting patterns...",
-  "Connecting the dots...",
-  "Calculating travel pace...",
-  "Crunching the budget...",
-  "Looking for trip insights...",
-  "Organizing key information...",
-  "Summarizing the essentials...",
-  "Preparing recommendations...",
-  "Polishing the wording...",
-  "Adding the finishing touches...",
-  "Almost there...",
+  "Reading your itinerary…",
+  "Reviewing stays and transport…",
+  "Checking dates and timings…",
+  "Analyzing destinations…",
+  "Spotting highlights of your trip…",
+  "Finding interesting patterns…",
+  "Connecting the dots…",
+  "Calculating travel pace…",
+  "Crunching the budget…",
+  "Looking for trip insights…",
+  "Organizing key information…",
+  "Summarizing the essentials…",
+  "Preparing recommendations…",
+  "Polishing the wording…",
+  "Adding the finishing touches…",
+  "Almost there…",
 ]
 
 const DEFAULT_ROTATE_INTERVAL_MS = 5000
@@ -34,7 +34,7 @@ interface GeneratingIndicatorProps {
 
 export function GeneratingIndicator({
   compact = false,
-  helperText = "This can take a little while - hang tight.",
+  helperText = "This can take up to a minute.",
   messages = DEFAULT_MESSAGES,
   rotateIntervalMs = DEFAULT_ROTATE_INTERVAL_MS,
 }: GeneratingIndicatorProps) {
@@ -53,7 +53,7 @@ export function GeneratingIndicator({
   if (compact) {
     return (
       <span
-        className="inline-flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:text-xs"
+        className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
         aria-live="polite"
       >
         <Loader2 className="h-3.5 w-3.5 flex-shrink-0 animate-spin" />
