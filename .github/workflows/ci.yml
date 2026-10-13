@@ -50,6 +50,9 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
+          # Build golangci-lint with the project's Go toolchain; the prebuilt
+          # binary targets an older Go than go.mod and exits with code 3.
+          install-mode: goinstall
           working-directory: backend
           only-new-issues: true
 
