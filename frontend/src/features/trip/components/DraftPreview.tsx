@@ -5,6 +5,7 @@ import { Banknote, CalendarDays, Check, List, MapPin, StickyNote } from "lucide-
 import type { TripDraft } from "../types"
 import { suggestionKey } from "../lib/suggestionKey"
 import { cn } from "@/lib/utils"
+import { formatMoney } from "@/lib/money"
 
 interface Props {
   draft: TripDraft
@@ -91,7 +92,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
           {draft.budget > 0 && (
             <span className="inline-flex items-center gap-1.5">
               <Banknote className="h-[18px] w-[18px]" aria-hidden="true" />
-              {draft.budget.toLocaleString()} {draft.base_currency}
+              {formatMoney(draft.budget, draft.base_currency)}
             </span>
           )}
         </div>

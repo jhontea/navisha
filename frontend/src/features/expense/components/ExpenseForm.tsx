@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
+import { formatMoney } from "@/lib/money"
 import {
   FormFieldError,
   FormFieldLabel,
@@ -257,8 +258,7 @@ export function ExpenseForm({
           {previewEnabled && preview && (
             <p className="text-label-sm text-primary font-medium flex items-center gap-1 mt-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-              ≈ {preview.converted_amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
-              {tripBaseCurrency}{" "}
+              ≈ {formatMoney(preview.converted_amount, tripBaseCurrency)}{" "}
               <span className="text-muted-foreground font-normal">
                 (1 {currency} = {preview.rate.toLocaleString(undefined, { maximumFractionDigits: 4 })} {tripBaseCurrency})
               </span>
