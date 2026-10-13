@@ -16,6 +16,7 @@ import {
   fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
 import { FormActions } from "@/components/forms/FormActions"
+import { buttonVariants } from "@/components/ui/button"
 import { getInclusiveDayCount } from "../lib/dates"
 import type { CreateTripInput, Trip } from "../types"
 import { canRenderTripCover, getDefaultTripCover } from "../lib/cover"
@@ -254,20 +255,20 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             role="switch"
             aria-checked={generateWithAI}
             onClick={() => setGenerateWithAI((enabled) => !enabled)}
-            className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               generateWithAI
-                ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
-                : "border-border/60 bg-background hover:border-primary/25 hover:bg-muted/30"
+                ? "border-primary/40 bg-primary/5"
+                : "bg-background hover:bg-muted/50"
             }`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Sparkles className="h-5 w-5" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold text-foreground">
                 Generate a draft with AI
               </span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+              <span className="mt-0.5 block text-sm leading-relaxed text-muted-foreground">
                 Start with a day-by-day itinerary that you can review and edit.
               </span>
             </span>
@@ -286,19 +287,19 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           </button>
 
           {generateWithAI && (
-            <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
+            <div className="rounded-xl border bg-muted/40 p-4">
               <p className="text-sm text-foreground">
                 Your destination and travel dates will be carried into the AI planner.
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 You can add travel preferences before Navisha generates the draft.
               </p>
               <button
                 type="button"
                 onClick={continueWithAI}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className={buttonVariants({ className: "mt-3" })}
               >
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                <Sparkles aria-hidden="true" />
                 Continue with AI
               </button>
             </div>

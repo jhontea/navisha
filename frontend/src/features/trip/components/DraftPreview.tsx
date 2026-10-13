@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Banknote, CalendarDays, Check, List, MapPin, StickyNote } from "lucide-react"
 import type { TripDraft } from "../types"
 import { suggestionKey } from "../lib/suggestionKey"
+import { buttonVariants } from "@/components/ui/button"
+import { formatWeekdayDate } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
 import { formatMoney } from "@/lib/money"
 
@@ -73,25 +75,25 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
   return (
     <div className="space-y-6">
       {/* Header summary */}
-      <div className="glass-lg rounded-xl p-6">
-        <h3 className="font-headline-md text-headline-md text-foreground mb-1">
+      <div className="rounded-xl border bg-card p-5 md:p-6">
+        <h2 className="mb-1 text-xl font-semibold text-foreground">
           {draft.title}
-        </h3>
+        </h2>
         {draft.summary && (
-          <p className="font-body-md text-foreground-variant mb-4">{draft.summary}</p>
+          <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{draft.summary}</p>
         )}
-        <div className="flex flex-wrap gap-4 text-body-sm text-foreground-variant">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground tabular-nums">
           <span className="inline-flex items-center gap-1.5">
-            <CalendarDays className="h-[18px] w-[18px]" aria-hidden="true" />
+            <CalendarDays className="h-4 w-4" aria-hidden="true" />
             {draft.days.length} {draft.days.length === 1 ? "day" : "days"}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <List className="h-[18px] w-[18px]" aria-hidden="true" />
+            <List className="h-4 w-4" aria-hidden="true" />
             {totalActivities} {totalActivities === 1 ? "activity" : "activities"}
           </span>
           {draft.budget > 0 && (
             <span className="inline-flex items-center gap-1.5">
-              <Banknote className="h-[18px] w-[18px]" aria-hidden="true" />
+              <Banknote className="h-4 w-4" aria-hidden="true" />
               {formatMoney(draft.budget, draft.base_currency)}
             </span>
           )}
@@ -100,15 +102,15 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
 
       {/* Curation toolbar */}
       {totalActivities > 0 && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2.5">
-          <span className="text-body-sm text-foreground-variant">
+        <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-1.5 shadow-card">
+          <span className="text-sm text-muted-foreground tabular-nums">
             <span className="font-semibold text-foreground">{selectedCount}</span>
             {" "}of {totalActivities} places selected
           </span>
           <button
             type="button"
             onClick={toggleAll}
-            className="rounded-full px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className={buttonVariants({ variant: "ghost", size: "sm", className: "text-primary" })}
           >
             {selectedCount === totalActivities ? "Clear all" : "Select all"}
           </button>
@@ -124,21 +126,18 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
           return (
           <div
             key={day.day_number}
-            className="rounded-xl border border-border bg-white p-5"
+            className="rounded-xl border bg-card p-4 md:p-5"
           >
             <div className="mb-3 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary font-label-sm text-label-sm">
-                {day.day_number}
-              </span>
-              <span className="font-label-md text-label-md text-foreground">
+              <span className="text-base font-semibold text-foreground">
                 Day {day.day_number}
+                <span className="font-normal text-muted-foreground"> · {formatWeekdayDate(day.date) ?? day.date}</span>
               </span>
-              <span className="text-body-sm text-foreground-variant">{day.date}</span>
               {dayKeys.length > 0 && (
                 <button
                   type="button"
                   onClick={() => toggleDay(dayKeys, dayAllSelected)}
-                  className="ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className={buttonVariants({ variant: "ghost", size: "sm", className: "ml-auto text-primary" })}
                 >
                   {dayAllSelected ? "Clear" : "Select all"}
                 </button>
@@ -146,11 +145,11 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
             </div>
 
             {day.activities.length === 0 ? (
-              <p className="pl-10 text-body-sm text-foreground-variant italic">
+              <p className="text-sm text-muted-foreground">
                 No activities for this day
               </p>
             ) : (
-              <ul className="space-y-2 pl-10">
+              <ul className="space-y-2">
                 {day.activities.map((a, i) => {
                   const key = suggestionKey(a)
                   const selected = selectedKeys.has(key)
@@ -161,10 +160,10 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                         aria-pressed={selected}
                         onClick={() => toggle(key)}
                         className={cn(
-                          "flex w-full items-start gap-2 rounded-lg border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                          "flex min-h-11 w-full items-start gap-2.5 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           selected
-                            ? "border-primary/35 bg-primary/5 shadow-sm shadow-primary/5"
-                            : "border-border/40 bg-background opacity-65 hover:opacity-100",
+                            ? "border-primary/40 bg-primary/5"
+                            : "bg-background text-muted-foreground hover:bg-muted/50",
                         )}
                       >
                         <span
@@ -181,23 +180,23 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                         {a.type === "location" ? (
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         ) : (
-                          <StickyNote className="mt-0.5 h-[18px] w-[18px] shrink-0 text-outline" aria-hidden="true" />
+                          <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                         )}
                         <span className="min-w-0">
-                          <span className="block font-body-md text-foreground">
+                          <span className="block text-sm font-medium text-foreground">
                             {a.title}
                             {(a.start_time || a.end_time) && (
-                              <span className="ml-2 text-body-sm text-foreground-variant">
+                              <span className="ml-2 font-normal text-muted-foreground tabular-nums">
                                 {a.start_time}
                                 {a.end_time ? `–${a.end_time}` : ""}
                               </span>
                             )}
                           </span>
                           {a.type === "location" && a.location_name && (
-                            <span className="block text-body-sm text-foreground-variant">{a.location_name}</span>
+                            <span className="block text-sm text-muted-foreground">{a.location_name}</span>
                           )}
                           {a.notes && (
-                            <span className="mt-0.5 block text-body-sm text-foreground-variant">{a.notes}</span>
+                            <span className="mt-0.5 block text-sm text-muted-foreground">{a.notes}</span>
                           )}
                         </span>
                       </button>

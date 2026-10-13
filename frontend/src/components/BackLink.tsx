@@ -16,12 +16,12 @@ interface BackLinkProps {
 
 const variantStyles: Record<BackLinkVariant, string> = {
   default:
-    "inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors",
+    "-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   subtle: "text-sm text-muted-foreground hover:text-primary transition-colors",
   primary:
     "inline-block text-sm text-primary hover:underline",
   glass:
-    "glass inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-foreground hover:bg-white/25 transition-all",
+    "inline-flex min-h-11 items-center gap-1.5 rounded-lg border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted",
 };
 
 /** Consistent back-navigation link. Phase 3A: replaces 10+ duplicated
@@ -45,6 +45,7 @@ export function BackLink({
         strokeLinecap="round"
         strokeLinejoin="round"
         className={variant === "subtle" ? "inline" : ""}
+        aria-hidden="true"
       >
         <path d="m15 18-6-6 6-6" />
       </svg>
