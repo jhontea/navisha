@@ -43,18 +43,25 @@ jobs:
       - name: Test
         run: go test -race ./...
 
-      # Lint gates PRs only: only-new-issues needs a PR diff, and code on
-      # main has already passed this step in its PR.
+      # Lint gates PRs only: it reports issues new relative to the PR base,
+      # and code on main has already passed this step in its PR. On failure
+      # each output line becomes an annotation, readable without log access.
       - name: Lint (new issues only)
         if: github.event_name == 'pull_request'
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.5.0
-          # Build golangci-lint with the project's Go toolchain; the prebuilt
-          # binary targets an older Go than go.mod and exits with code 3.
-          install-mode: goinstall
-          working-directory: backend
-          only-new-issues: true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=200 origin "$BASE_REF"
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
+          set +e
+          "$(go env GOPATH)/bin/golangci-lint" run --new-from-rev="origin/$BASE_REF" ./... > lint.txt 2>&1
+          code=$?
+          set -e
+          cat lint.txt
+          if [ "$code" -ne 0 ]; then
+            while IFS= read -r line; do echo "::error title=golangci-lint::$line"; done < lint.txt
+          fi
+          exit "$code"
 
   frontend:
     name: Frontend
