@@ -25,7 +25,6 @@ import { LocationProviderBoundary } from "@/features/location/components/Locatio
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
 import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizard"
 import { GeneratingItinerarySkeleton } from "@/features/trip/components/GeneratingItinerarySkeleton"
-import { ShimmerOverlay } from "@/features/summary/components/ShimmerOverlay"
 import {
   useCreateTripFromDraft,
   useGenerateTripDraft,
@@ -35,7 +34,8 @@ import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
 import { getDefaultTripCover } from "@/features/trip/lib/cover"
 import { suggestionKey } from "@/features/trip/lib/suggestionKey"
-import { primaryTripActionButtonClassName } from "@/features/trip/lib/styles"
+import { AlertCircle, Check, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
 import { ApiError } from "@/lib/api"
 import { QuotaBadge } from "@/components/QuotaBadge"
@@ -205,39 +205,26 @@ function GenerateTripPageContent() {
 
   return (
     <LocationProviderBoundary>
-    <div className="mx-auto max-w-3xl w-full px-margin-mobile md:px-margin-desktop pt-8 pb-28">
-      <BackLink href="/trips" label="Back to Trips" className="mb-6" />
+    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop">
+      <BackLink href="/trips" label="Back to Trips" className="mb-4" />
 
-      <header className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></svg>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Generate Trip with AI
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Answer a few questions and let AI build your starter itinerary. Up to {MAX_DAYS} days.
-            </p>
-          </div>
-        </div>
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold text-foreground">Generate a trip with AI</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Answer a few questions and get a day-by-day draft (up to {MAX_DAYS} days). You pick what to keep.
+        </p>
         <QuotaBadge className="mt-3" />
       </header>
 
-      {/* Wizard stays mounted during generation — no unmount/remount cycle */}
+      {/* Wizard stays mounted during generation; the overlay covers it (pattern 3 above). */}
       {!result ? (
-        <div className="relative animate-fade-in-up">
-          {/* Skeleton overlay during generation — covers wizard but doesn't unmount it */}
+        <div className="relative">
           {generate.isPending && (
-            <ShimmerOverlay
-              active
-              className="absolute inset-0 z-20 rounded-2xl border border-border/40 bg-card/95 p-6 shadow-sm backdrop-blur-md"
-            >
+            <div className="absolute inset-0 z-20 rounded-xl border bg-card p-6">
               <GeneratingItinerarySkeleton days={pendingDays} />
-            </ShimmerOverlay>
+            </div>
           )}
-          <div className={generate.isPending ? "opacity-20 pointer-events-none select-none" : ""}>
+          <div className={generate.isPending ? "pointer-events-none select-none opacity-20" : ""}>
             <GenerateChatWizard
               key={generationKey}
               onSubmit={handleGenerate}
@@ -246,80 +233,68 @@ function GenerateTripPageContent() {
             />
           </div>
           {formError && (
-            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-destructive shrink-0 mt-0.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-destructive">{formError}</p>
-                <button
-                  type="button"
-                  onClick={resetGeneration}
-                  className="mt-2 text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                >
-                  Try Again →
-                </button>
+            <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="text-foreground">{formError}</p>
+                <Button variant="link" className="mt-1 h-auto" onClick={resetGeneration}>
+                  Try again
+                </Button>
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div className="space-y-6 animate-fade-in-up">
+        <div className="space-y-6">
           <DraftPreview draft={result.draft} onSelectionChange={setSelectedKeys} />
 
           {formError && (
-            <div className="flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-destructive shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-              <p className="text-sm text-destructive">{formError}</p>
+            <div role="alert" className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+              <p className="text-sm text-foreground">{formError}</p>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={saving || noSelection}
-              className={primaryTripActionButtonClassName}
-            >
-              {saving ? (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  {resolving ? "Resolving locations…" : "Saving…"}
-                </>
-              ) : noSelection ? (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                  Select at least one place
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  Create trip
-                </>
-              )}
-            </button>
-            <button
-              type="button"
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              size="lg"
               onClick={() => {
                 setResult(null)
                 setFormError(null)
               }}
               disabled={saving}
-              className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl border border-border/50 px-8 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               Start over
-            </button>
+            </Button>
+            <Button size="lg" onClick={handleCreate} disabled={saving || noSelection}>
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                  {resolving ? "Finding the places…" : "Creating the trip…"}
+                </>
+              ) : noSelection ? (
+                "Select at least one place"
+              ) : (
+                <>
+                  <Check aria-hidden="true" />
+                  Create trip
+                </>
+              )}
+            </Button>
           </div>
         </div>
       )}
-    </div>
+    </main>
     </LocationProviderBoundary>
   )
 }
 
 function GenerateTripPageFallback() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-margin-mobile pt-8 md:px-margin-desktop">
-      <div className="h-10 w-28 animate-pulse rounded-xl bg-muted" />
-      <div className="mt-8 h-72 animate-pulse rounded-2xl border border-border/40 bg-muted/40" />
+    <div className="mx-auto w-full max-w-3xl px-margin-mobile pt-6 md:px-margin-desktop" aria-hidden="true">
+      <div className="h-8 w-56 animate-pulse rounded-lg bg-muted" />
+      <div className="mt-6 h-72 animate-pulse rounded-xl bg-muted" />
     </div>
   )
 }
