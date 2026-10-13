@@ -120,7 +120,7 @@ export function TravelDateRangePicker({
           aria-hidden="true"
         />
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="block text-xs font-medium text-muted-foreground">
             {label}
             {required && <span className="sr-only"> required</span>}
           </span>
@@ -175,7 +175,7 @@ export function TravelDateRangePicker({
             {WEEKDAYS.map((weekday) => (
               <span
                 key={weekday}
-                className="py-1 text-[11px] font-medium text-muted-foreground"
+                className="py-1 text-xs font-medium text-muted-foreground"
               >
                 {weekday}
               </span>

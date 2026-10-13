@@ -203,7 +203,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 <div>
                   <p className="font-medium">Couldn&apos;t generate summary</p>
                   <p className="opacity-90">
-                    Something went wrong while generating. Please try again in a moment.
+                    The summary couldn&apos;t be generated. Try again in a moment.
                   </p>
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
                 className={summaryActionButtonClassName}
               >
                 <Sparkles className="h-4 w-4" />
-                {isGenerateError ? "Try Again" : "Generate Summary"}
+                {isGenerateError ? "Try again" : "Generate summary"}
               </Button>
               <QuotaBadge />
             </div>
@@ -259,7 +259,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
               <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
             )}
             <span className="sm:hidden">{summary.is_outdated ? "Update" : "Regen"}</span>
-            <span className="hidden sm:inline">{summary.is_outdated ? "Update Summary" : "Regenerate"}</span>
+            <span className="hidden sm:inline">{summary.is_outdated ? "Update summary" : "Regenerate"}</span>
           </Button>
         </div>
       </div>
@@ -297,7 +297,7 @@ export function TripSummaryCard({ tripId }: TripSummaryCardProps) {
           <div>
             <p className="font-medium text-[11px] sm:text-sm">Couldn&apos;t regenerate summary</p>
             <p className="text-[10px] opacity-90 sm:text-xs">
-              Something went wrong. The previous summary is still shown below — try regenerating again in a moment.
+              The previous summary is still shown below. Try regenerating in a moment.
             </p>
           </div>
         </div>

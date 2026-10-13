@@ -3,12 +3,12 @@
 import { GeneratingIndicator } from "@/components/GeneratingIndicator"
 
 const MESSAGES = [
-  "Memahami preferensi perjalananmu...",
-  "Mencari aktivitas terbaik...",
-  "Menyusun itinerary harian...",
-  "Menyeimbangkan waktu dan lokasi...",
-  "Menambahkan tips perjalanan...",
-  "Hampir selesai...",
+  "Reading your preferences…",
+  "Finding places that fit…",
+  "Laying out each day…",
+  "Balancing time and distance…",
+  "Adding local tips…",
+  "Almost done…",
 ]
 
 interface Props {

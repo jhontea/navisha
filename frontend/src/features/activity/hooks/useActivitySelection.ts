@@ -46,7 +46,7 @@ export function useActivitySelection(
     const target = days.find((d) => d.id === targetDayId)
     if (!target) return
     if (targetDayId === dayId) {
-      toast("Cannot copy to the same day.", "error")
+      toast("Pick a different day to copy to.", "error")
       return
     }
     const selected = activities.filter((a) => selectedIds.has(a.id))
@@ -77,7 +77,7 @@ export function useActivitySelection(
     if (fail === 0) {
       toast(`Copied ${ok} ${ok === 1 ? "activity" : "activities"} to Day ${target.day_number}.`)
     } else if (ok === 0) {
-      toast("Failed to copy activities. Please try again.", "error")
+      toast("Couldn't copy the activities. Nothing was copied, so try again.", "error")
     } else {
       toast(`Copied ${ok}, ${fail} failed.`, "error")
     }

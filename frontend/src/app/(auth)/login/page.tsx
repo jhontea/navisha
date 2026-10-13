@@ -34,9 +34,9 @@ export default async function LoginPage({ searchParams }: Props) {
             </Link>
 
             <div className="relative z-10 mt-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Plan with confidence</p>
+              <p className="text-sm font-medium text-primary">Sign in to Navisha</p>
               <h1 className="mt-3 max-w-md font-display text-4xl font-bold leading-tight text-foreground">
-                Your next journey starts here.
+                Plan each day, see it on a map, and track spending in your currency.
               </h1>
               <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
                 Keep your itinerary, travel budget, and route organized in one beautiful place.

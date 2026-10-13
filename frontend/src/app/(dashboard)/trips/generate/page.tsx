@@ -136,7 +136,7 @@ function GenerateTripPageContent() {
         // (handled by refund on server error). Just show the message.
         if (!draftReceivedRef.current) {
           setFormError(
-            err instanceof ApiError ? err.message : "Failed to generate itinerary. Please try again.",
+            err instanceof ApiError ? err.message : "Couldn't generate the itinerary. Your answers are kept, so try again.",
           )
         }
       },
@@ -186,7 +186,7 @@ function GenerateTripPageContent() {
     } catch (err) {
       setResolving(false)
       setFormError(
-        err instanceof ApiError ? err.message : "Failed to save trip. Please try again.",
+        err instanceof ApiError ? err.message : "Couldn't create the trip. Nothing was saved, so try again.",
       )
     }
   }, [result, destination, create, router, selectedKeys])
@@ -287,12 +287,12 @@ function GenerateTripPageContent() {
               ) : noSelection ? (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                  Pilih minimal satu tempat
+                  Select at least one place
                 </>
               ) : (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  Create Trip
+                  Create trip
                 </>
               )}
             </button>
@@ -305,7 +305,7 @@ function GenerateTripPageContent() {
               disabled={saving}
               className="flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-2xl border border-border/50 px-8 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              Start Over
+              Start over
             </button>
           </div>
         </div>

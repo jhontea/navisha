@@ -18,7 +18,7 @@ import { StatsSection } from "@/features/trip/components/StatsSection"
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center gap-3">
-      <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+      <h2 className="text-sm font-semibold text-muted-foreground">
         {children}
       </h2>
       <span className="h-px flex-1 bg-border/40" aria-hidden="true" />
@@ -33,7 +33,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto w-full max-w-6xl animate-fade-in px-margin-mobile pb-28 pt-4 md:px-margin-desktop md:pb-8 md:pt-6">
       <header className="mb-5">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+        <p className="mb-1 text-sm font-medium text-primary">
           Account overview
         </p>
         <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

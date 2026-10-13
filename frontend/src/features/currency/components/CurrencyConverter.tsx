@@ -53,7 +53,7 @@ export function CurrencyConverter() {
   if (isError) {
     return (
       <div className="text-center text-sm text-destructive">
-        <p>Failed to load conversion rate. Please try again.</p>
+        <p>Couldn&apos;t load exchange rates. Check your connection and try again.</p>
       </div>
     )
   }
@@ -87,7 +87,7 @@ export function CurrencyConverter() {
       <div className="relative flex flex-col md:flex-row items-center justify-center gap-3 md:gap-8">
         {/* From Card */}
         <div className="w-full md:flex-1 glass rounded-xl p-5 md:p-8 soft-shadow transition-all hover:border-primary/30">
-          <Label htmlFor={amountId} className="text-label-sm font-label-sm text-muted-foreground uppercase tracking-wider mb-4 block">From</Label>
+          <Label htmlFor={amountId} className="mb-3 block text-sm font-medium text-muted-foreground">From</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={from} onValueChange={(v) => v && setFrom(v)}>
               <SelectTrigger className="w-auto max-w-full min-w-0 bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
@@ -136,7 +136,7 @@ export function CurrencyConverter() {
 
         {/* To Card */}
         <div className="w-full md:flex-1 glass rounded-xl p-5 md:p-8 soft-shadow transition-all hover:border-primary/30">
-          <Label className="text-label-sm font-label-sm text-muted-foreground uppercase tracking-wider mb-4 block">To</Label>
+          <Label className="mb-3 block text-sm font-medium text-muted-foreground">To</Label>
           <div className="flex items-center justify-between mb-6">
             <Select value={to} onValueChange={(v) => v && setTo(v)}>
               <SelectTrigger className="w-auto max-w-full min-w-0 bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
@@ -252,7 +252,7 @@ function RecentConversions({
     <section aria-label="Recent conversions">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-headline-sm font-headline-sm text-foreground">
-          Recent Conversions
+          Recent conversions
         </h3>
         <button
           type="button"

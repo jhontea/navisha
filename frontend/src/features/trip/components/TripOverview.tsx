@@ -81,7 +81,7 @@ function PlanningHealth({
     }))
   const overCategoryCount = categoryRows.filter((row) => row.actual > row.planned).length
   const categoryLabels: Record<string, string> = {
-    accommodation: "Accommodation",
+    accommodation: "Stay",
     transport: "Transport",
     food: "Food",
     activity: "Activity",
@@ -94,7 +94,7 @@ function PlanningHealth({
     <section className="mb-8" aria-labelledby="trip-health-heading">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planning health</p>
+          <p className="text-sm font-semibold text-foreground">Planning health</p>
           <h3 id="trip-health-heading" className="mt-1 text-lg font-bold text-foreground">
             Trip planning health
           </h3>
@@ -258,7 +258,7 @@ function NeedsAttention({
     <section className="mb-8" aria-labelledby="needs-attention-heading">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-chromatic-amber">Next actions</p>
+          <p className="text-sm font-semibold text-foreground">Next actions</p>
           <h3 id="needs-attention-heading" className="mt-1 text-lg font-bold text-foreground">Needs attention</h3>
         </div>
       </div>
@@ -291,7 +291,7 @@ function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; act
       {day ? (
         <Link href={`/trips/${tripId}#day-${day.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Day {day.day_number} · {formatDate(day.date)}</p>
+            <p className="text-sm font-medium text-primary">Day {day.day_number} · {formatDate(day.date)}</p>
             <p className="mt-1 text-sm font-semibold text-foreground">{day.title || "Continue planning this day"}</p>
             <p className="mt-1 text-xs text-muted-foreground">{activityCount} {activityCount === 1 ? "activity" : "activities"} planned</p>
           </div>
@@ -400,7 +400,7 @@ export function TripOverview({ tripId }: { tripId: string }) {
           <div className="glass mb-6 rounded-2xl p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h4 className="text-sm font-semibold text-foreground">
-                Trip Progress
+                Trip progress
               </h4>
               <span className="shrink-0 text-right text-sm text-muted-foreground">
                 {tripProgressShort(dateMetrics)}

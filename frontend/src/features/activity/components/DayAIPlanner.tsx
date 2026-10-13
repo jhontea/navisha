@@ -111,7 +111,7 @@ export function DayAIPlanner({
       setPreview(nextPreview)
       setSelectedKeys(new Set(nextPreview.activities.map(suggestionKey)))
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Could not generate this day.", "error")
+      toast(error instanceof Error ? error.message : "Couldn't generate suggestions for this day. Try again.", "error")
     } finally {
       setIsGenerating(false)
     }

@@ -106,7 +106,7 @@ export function TripMap({ tripId, days }: Props) {
 
   if (isError) {
     return (
-      <p className="text-xs text-destructive">Failed to load activities.</p>
+      <p className="text-xs text-destructive">Couldn&apos;t load the places for this map. Reload the page to try again.</p>
     )
   }
 
@@ -129,8 +129,8 @@ export function TripMap({ tripId, days }: Props) {
         {/* Day tabs */}
         <div className="border-b p-3 md:p-4">
           <div className="mb-2 hidden items-center justify-between md:flex">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Daily Itinerary
+            <span className="text-sm font-semibold text-muted-foreground">
+              Daily itinerary
             </span>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -276,18 +276,18 @@ export function TripMap({ tripId, days }: Props) {
         {/* Stats panel — hidden on mobile */}
         {totalPoints > 0 && (
           <div className="hidden border-t bg-muted/30 p-4 md:block">
-            <h5 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Route Info
+            <h5 className="mb-2 text-sm font-semibold text-muted-foreground">
+              Route info
             </h5>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-medium text-muted-foreground">
                   Locations
                 </p>
                 <p className="text-sm font-bold text-primary">{totalPoints}</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-medium text-muted-foreground">
                   Days
                 </p>
                 <p className="text-sm font-bold text-primary">

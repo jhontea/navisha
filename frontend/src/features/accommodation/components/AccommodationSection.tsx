@@ -148,10 +148,10 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
             deleteMut.mutate(confirmingDelete.id, {
               onSuccess: () => {
                 setConfirmingDelete(null)
-                toast("Stay removed.")
+                toast("Stay deleted.")
               },
               onError: () => {
-                toast("Couldn’t remove this stay. Please try again.", "error")
+                toast("Couldn’t delete this stay. Try again.", "error")
               },
             })
           }

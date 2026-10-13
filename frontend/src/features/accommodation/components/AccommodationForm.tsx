@@ -153,7 +153,7 @@ export function AccommodationForm({
       <fieldset disabled={isSubmitting} className="space-y-6">
       {/* Stay Type Selector */}
       <div>
-        <FormFieldLabel id="stay-type-label" className="mb-3 block uppercase tracking-wider">Stay Type</FormFieldLabel>
+        <FormFieldLabel id="stay-type-label" className="mb-3 block">Stay type</FormFieldLabel>
         <Controller
           control={control}
           name="accommodation_type"
@@ -197,7 +197,7 @@ export function AccommodationForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Accommodation Name */}
           <div className="space-y-2">
-            <FormFieldLabel htmlFor="stay-name" required>Accommodation Name</FormFieldLabel>
+            <FormFieldLabel htmlFor="stay-name" required>Stay name</FormFieldLabel>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -295,7 +295,7 @@ export function AccommodationForm({
 
       {/* Confirmation Number */}
       <div className="space-y-2">
-        <FormFieldLabel htmlFor="stay-confirmation" optional>Confirmation Number</FormFieldLabel>
+        <FormFieldLabel htmlFor="stay-confirmation" optional>Confirmation number</FormFieldLabel>
         <div className="relative">
           <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -313,7 +313,7 @@ export function AccommodationForm({
       {/* Cost field */}
       {withCost && (
         <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-          <FormFieldLabel optional className="text-xs uppercase tracking-wider">Cost</FormFieldLabel>
+          <FormFieldLabel optional className="text-sm">Cost</FormFieldLabel>
           <FormFieldDescription className="mt-1">
             Adds an expense to the trip budget when an amount is entered.
           </FormFieldDescription>
@@ -378,7 +378,7 @@ export function AccommodationForm({
       </div>
 
       {/* Form actions */}
-      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save Stay"} />
+      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save stay"} />
       {/*
       <div className="flex items-center gap-3">
         <button
@@ -397,7 +397,7 @@ export function AccommodationForm({
           ) : (
             <>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              {initial ? "Save Changes" : "Save Stay"}
+              {initial ? "Save changes" : "Save stay"}
             </>
           )}
         </button>
