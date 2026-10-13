@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --max-warnings 0",
     "audit": "npm audit --production",
     "audit:fix": "npm audit fix",
     "typecheck": "tsc --noEmit",

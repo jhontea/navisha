@@ -85,7 +85,7 @@ frontend/
 
 ### Styling
 - Follow `docs/DESIGN_SYSTEM.md` (tokens, type scale, category colors, anti AI-slop rules) and `docs/COPY_GUIDE.md` (glossary, button/error copy)
-- No `text-[Npx]` and no hex colors in classes (lint warns); no new `glass*` / `text-gradient*` / `shadow-soft` usage
+- No `text-[Npx]` and no hex colors in classes (lint fails: `--max-warnings 0`); no new `glass*` / `text-gradient*` / `shadow-soft` usage
 - Tailwind only — no inline styles
 - `cn()` from `lib/utils.ts` for conditional class merging
 - Responsive: mobile-first (sm → md → lg breakpoints)

@@ -364,7 +364,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 } disabled:opacity-60`}
               >
                 {currenciesLoading ? (
-                  <option value="">Loading currencies...</option>
+                  <option value="">Loading currencies…</option>
                 ) : (
                   currencies.map((c) => (
                     <option key={c.code} value={c.code}>

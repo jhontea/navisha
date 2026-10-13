@@ -117,7 +117,7 @@ export function CurrencyConverter() {
             placeholder="0.00"
             aria-label={`Amount in ${getCurrencyLabel(from, options.find(o => o.code === from)?.name)}`}
             maxLength={12}
-            className="w-full min-w-0 bg-transparent border-none text-[28px] leading-[36px] md:text-display md:leading-[56px] font-display text-foreground focus:ring-0 p-0"
+            className="w-full min-w-0 bg-transparent border-none text-3xl leading-tight md:text-display md:leading-[56px] font-display text-foreground focus:ring-0 p-0"
           />
           <p className="text-label-md font-label-md text-outline mt-2">
             {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
@@ -157,9 +157,9 @@ export function CurrencyConverter() {
               </SelectContent>
             </Select>
           </div>
-          <div className="w-full min-w-0 break-words bg-transparent border-none text-[28px] leading-[36px] md:text-display md:leading-[56px] font-display text-primary focus:ring-0 p-0" aria-live="polite">
+          <div className="w-full min-w-0 break-words bg-transparent border-none text-3xl leading-tight md:text-display md:leading-[56px] font-display text-primary focus:ring-0 p-0" aria-live="polite">
             {isLoading ? (
-              <p className="text-muted-foreground">Converting...</p>
+              <p className="text-muted-foreground">Converting…</p>
             ) : result ? (
               <p className="text-primary">
                 {result.converted_amount.toLocaleString(undefined, {

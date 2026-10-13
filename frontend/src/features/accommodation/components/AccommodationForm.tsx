@@ -234,7 +234,7 @@ export function AccommodationForm({
                     "stay-location-error",
                     Boolean(errors.location_name),
                   )}
-                  placeholder="Search for a location..."
+                  placeholder="Search for a location…"
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name || p.address)
                     setValue("lat", String(p.lat))
