@@ -7,7 +7,7 @@ export default function AuthCallbackPage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace("/dashboard")
+    router.replace("/trips")
   }, [router])
 
   return (

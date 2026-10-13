@@ -1,17 +1,17 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { BackLink } from "@/components/BackLink"
 import { EmptyState } from "@/components/EmptyState"
 import { TripCard } from "@/features/trip/components/TripCard"
 import { TripCTAs } from "@/features/trip/components/TripCTAs"
-import { useTrips } from "@/features/trip/hooks/useTrips"
+import { useDashboardTrips, useTrips } from "@/features/trip/hooks/useTrips"
+import { TripList } from "@/features/trip/components/TripList"
+import { StatsSection } from "@/features/trip/components/StatsSection"
+import { useAuth } from "@/features/auth/hooks"
 import { tripStatus } from "@/features/trip/lib/status"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, ChevronDown, Loader2, Map, ArrowDownUp } from "lucide-react"
-import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { EmptyTripsIllustration } from "@/components/illustrations/EmptyStateIllustrations"
 
 type FilterTab = "all" | "active" | "upcoming" | "past"
 
@@ -31,7 +31,21 @@ const SORT_OPTIONS: { id: SortMode; label: string }[] = [
   { id: "title",     label: "Title (A–Z)" },
 ]
 
+function greeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return "Good morning"
+  if (h < 17) return "Good afternoon"
+  return "Good evening"
+}
+
+/**
+ * Trips home (D3): the former dashboard (upcoming trips, stats) merged with
+ * the full trip list. /dashboard redirects here.
+ */
 export default function TripsPage() {
+  const { user } = useAuth()
+  const dashboardTrips = useDashboardTrips()
+  const legacyQueriesEnabled = dashboardTrips.isError
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
   const [sortMode, setSortMode] = useState<SortMode>("recent")
 
@@ -80,28 +94,39 @@ export default function TripsPage() {
   }), [allTrips])
 
   return (
-    <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-6 pb-28 animate-fade-in">
-      {/* Back to dashboard */}
-      <BackLink href="/dashboard" label="Back to Dashboard" />
-
+    <div className="mx-auto max-w-max-width w-full px-margin-mobile md:px-margin-desktop pt-6 pb-28">
       {/* ── Header ── */}
-      <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight font-heading md:text-3xl">
-            <span className="text-gradient-sunset">My Trips</span>
-          </h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading
-              ? "Loading your trips…"
-              : allTrips.length > 0
-                ? `${allTrips.length} trip${allTrips.length !== 1 ? "s" : ""} planned`
-                : "All your trips in one place"}
+            {greeting()}
+            {user?.name ? `, ${user.name.split(" ")[0]}` : ""}
           </p>
+          <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">Trips</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
           <TripCTAs />
         </div>
       </header>
+
+      {/* ── Upcoming (onboarding when the user has no trips yet) ── */}
+      <section className="mb-10" aria-labelledby="upcoming-heading">
+        {(dashboardTrips.data?.trips.items.length ?? 0) > 0 && (
+          <h2 id="upcoming-heading" className="mb-4 text-xl font-semibold text-foreground">
+            Upcoming
+          </h2>
+        )}
+        <TripList
+          enabled={legacyQueriesEnabled}
+          loading={dashboardTrips.isPending}
+          fallbackData={dashboardTrips.data?.upcoming}
+          hasAnyTrips={(dashboardTrips.data?.trips.items.length ?? 0) > 0 || allTrips.length > 0}
+        />
+      </section>
+
+      {!isLoading && allTrips.length > 0 && (
+        <h2 className="mb-4 text-xl font-semibold text-foreground">All trips</h2>
+      )}
 
       {/* ── Filter tabs + Sort ── */}
       {!isLoading && allTrips.length > 0 && (
@@ -129,7 +154,7 @@ export default function TripsPage() {
               {counts[tab.id] > 0 && (
                 <span
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none",
+                    "rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums leading-none",
                     activeTab === tab.id
                       ? "bg-primary/15 text-primary"
                       : "bg-muted text-muted-foreground",
@@ -175,23 +200,7 @@ export default function TripsPage() {
           <p className="text-xs text-muted-foreground">Please check your connection and try again.</p>
         </div>
 
-      ) : allTrips.length === 0 ? (
-        <EmptyState
-          size="lg"
-          illustration={<EmptyTripsIllustration className="h-40 w-40" />}
-          title="No trips yet"
-          description="Start planning your first adventure. Create a trip manually or let AI generate one for you."
-          action={
-            <Link
-              href="/trips/new"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              Create My First Trip
-            </Link>
-          }
-        />
-
-      ) : trips.length === 0 ? (
+      ) : allTrips.length === 0 ? null : trips.length === 0 ? (
         <EmptyState
           size="md"
           icon={Map}
@@ -246,6 +255,15 @@ export default function TripsPage() {
                 : `${trips.length} ${activeTab} trip${trips.length !== 1 ? "s" : ""} shown`}
             </p>
           )}
+        </section>
+      )}
+
+      {!isLoading && allTrips.length > 0 && (
+        <section className="mt-12" aria-labelledby="stats-heading">
+          <h2 id="stats-heading" className="mb-4 text-xl font-semibold text-foreground">
+            Travel stats
+          </h2>
+          <StatsSection enabled={legacyQueriesEnabled} fallbackTrips={dashboardTrips.data?.trips.items} />
         </section>
       )}
     </div>

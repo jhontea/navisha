@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 
 // Fully public — no auth check at all
 const OPEN_PATHS = ["/", "/privacy", "/terms", "/contact"]
-// Public but redirect to /dashboard if already logged in
+// Public but redirect to /trips (home) if already logged in
 const AUTH_PATHS = ["/login", "/auth/callback"]
 
 export function middleware(request: NextRequest) {
@@ -14,9 +14,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // The dashboard was merged into /trips (D3); keep old links working.
+  if (pathname === "/dashboard") {
+    return NextResponse.redirect(new URL("/trips", request.url), 308)
+  }
+
   if (AUTH_PATHS.includes(pathname)) {
     if (hasToken) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL("/trips", request.url))
     }
     return NextResponse.next()
   }

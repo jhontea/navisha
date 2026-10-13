@@ -21,7 +21,7 @@ export default function NewTripPage() {
   return (
     <div className="mx-auto max-w-2xl w-full px-margin-mobile md:px-margin-desktop pt-8 pb-28">
       {/* Page header */}
-      <BackLink href="/dashboard" className="mb-6" />
+      <BackLink href="/trips" label="Back to Trips" className="mb-6" />
 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
