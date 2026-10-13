@@ -1,0 +1,123 @@
+name: E2E
+
+# Playwright for the critical flows (create trip, add activity, add expense
+# and check the budget). Runs on demand and nightly, never on pull requests,
+# so PR CI stays as fast as before. Pushing a branch named e2e/** also runs
+# it, to try changes to the suite itself.
+#
+# Everything runs against throwaway Postgres and Redis service containers;
+# the backend starts with APP_ENV=test and E2E_AUTH=true, which enables
+# POST /api/v1/auth/test-login (rejected in any other environment).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 19 * * *" # 02:00 WIB
+  push:
+    branches: ["e2e/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: navisha
+          POSTGRES_PASSWORD: navisha
+          POSTGRES_DB: navisha_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U navisha"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Backend (test-only values; nothing here is a real secret)
+      DATABASE_URL: postgres://navisha:navisha@localhost:5432/navisha_e2e?sslmode=disable
+      REDIS_URL: redis://localhost:6379
+      APP_ENV: test
+      E2E_AUTH: "true"
+      JWT_SECRET: e2e-access-secret-0123456789abcdef0123
+      JWT_REFRESH_SECRET: e2e-refresh-secret-0123456789abcdef01
+      SHARE_LINK_SECRET: e2e-share-secret-0123456789abcdef0123
+      FRONTEND_URL: http://localhost:3000
+      GOOGLE_CLIENT_ID: e2e
+      GOOGLE_CLIENT_SECRET: e2e
+      GOOGLE_REDIRECT_URL: http://localhost:8090/api/v1/auth/google/callback
+      # Frontend
+      NEXT_PUBLIC_API_URL: http://localhost:8090/api/v1
+      NEXT_PUBLIC_R2_PUBLIC_URL: https://assets.navisha.cloud
+      NEXT_PUBLIC_MAP_PROVIDER: disabled
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Start backend
+        working-directory: backend
+        run: |
+          go build -o /tmp/navisha-server ./cmd/server
+          nohup /tmp/navisha-server > /tmp/backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8090/health > /dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/backend.log
+          exit 1
+
+      - name: Build and start frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          nohup npm start > /tmp/frontend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:3000/ > /dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/frontend.log
+          exit 1
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Upload report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            /tmp/backend.log
+            /tmp/frontend.log
+          retention-days: 7

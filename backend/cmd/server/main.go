@@ -379,6 +379,10 @@ func main() {
 	api.Use(appMiddleware.NoCache())
 
 	userHandler.RegisterRoutes(api, authMiddleware)
+	if cfg.App.Environment == "test" && cfg.App.E2EAuth {
+		slog.Warn("E2E_AUTH is on: POST /api/v1/auth/test-login signs in test users without Google")
+		userHandler.RegisterTestLogin(api, userUsecase)
+	}
 	tripHandler.RegisterRoutes(api, authMiddleware)
 	tripShareHandler.RegisterRoutes(api, authMiddleware)
 	activityHandler.RegisterRoutes(api, authMiddleware)

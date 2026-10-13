@@ -85,6 +85,9 @@ type AppConfig struct {
 	CookieDomain    string   `mapstructure:"cookie_domain"`
 	AllowedEmails   []string `mapstructure:"allowed_emails"`
 	ShareLinkSecret string   `mapstructure:"share_link_secret"`
+	// E2EAuth enables POST /auth/test-login for the Playwright suite. Only
+	// allowed with APP_ENV=test (see Validate); never set it elsewhere.
+	E2EAuth bool `mapstructure:"e2e_auth"`
 }
 
 // LLMConfig holds the active LLM provider configuration.
@@ -211,6 +214,7 @@ func Load() (*Config, error) {
 		"app.environment":            "APP_ENV",
 		"app.cookie_domain":          "COOKIE_DOMAIN",
 		"app.share_link_secret":      "SHARE_LINK_SECRET",
+		"app.e2e_auth":               "E2E_AUTH",
 		"currency.api_key":           "CURRENCYFREAKS_API_KEY",
 		"openrouter.api_key":         "OPENROUTER_API_KEY",
 		"openrouter.model":           "OPENROUTER_MODEL",
@@ -259,6 +263,10 @@ func (c *Config) Validate() error {
 	}
 	if env != "development" && env != "test" && env != "production" {
 		return fmt.Errorf("config.Validate: APP_ENV must be development, test, or production")
+	}
+
+	if c.App.E2EAuth && env != "test" {
+		return fmt.Errorf("config.Validate: E2E_AUTH is only allowed with APP_ENV=test")
 	}
 
 	if strings.TrimSpace(c.JWT.Secret) == "" || strings.TrimSpace(c.JWT.RefreshSecret) == "" {

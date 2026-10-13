@@ -51,3 +51,21 @@ func TestValidateProductionRejectsUnsafeAuthConfiguration(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateE2EAuthOnlyInTestEnvironment(t *testing.T) {
+	for _, env := range []string{"production", "development", ""} {
+		cfg := validProductionConfig()
+		cfg.App.Environment = env
+		cfg.App.E2EAuth = true
+		if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "E2E_AUTH") {
+			t.Errorf("APP_ENV=%q with E2E_AUTH=true: want E2E_AUTH error, got %v", env, err)
+		}
+	}
+
+	cfg := validProductionConfig()
+	cfg.App.Environment = "test"
+	cfg.App.E2EAuth = true
+	if err := cfg.Validate(); err != nil {
+		t.Errorf("APP_ENV=test with E2E_AUTH=true: %v", err)
+	}
+}
