@@ -1,0 +1,40 @@
+# Local development infrastructure only (Postgres + Redis).
+# Backend and frontend run natively: `go run ./cmd/server` and `npm run dev`.
+# Ports match backend/.env.example (5439 / 6389) to avoid clashing with
+# any Postgres/Redis already installed on the host.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: navisha-dev-postgres
+    environment:
+      POSTGRES_USER: navisha
+      POSTGRES_PASSWORD: navisha
+      POSTGRES_DB: navisha
+    ports:
+      - "5439:5432"
+    volumes:
+      - navisha_dev_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U navisha -d navisha"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    container_name: navisha-dev-redis
+    ports:
+      - "6389:6379"
+    volumes:
+      - navisha_dev_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  navisha_dev_postgres:
+  navisha_dev_redis:
