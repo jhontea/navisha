@@ -31,8 +31,6 @@ func TestTypeValid(t *testing.T) {
 	}
 }
 
-func ptrTime(t time.Time) *time.Time { return &t }
-
 func TestValidate(t *testing.T) {
 	dep := time.Date(2026, 7, 1, 8, 0, 0, 0, time.UTC)
 	arr := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)

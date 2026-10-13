@@ -35,27 +35,22 @@ frontend/
 │   │   ├── layout.tsx
 │   │   └── globals.css
 │   ├── features/                   # Feature slices — main code lives here
-│   │   ├── auth/
-│   │   │   ├── components/         # LoginButton, LogoutButton
-│   │   │   ├── hooks.ts            # useAuth, useLogout
-│   │   │   ├── store.ts            # Zustand auth store
-│   │   │   └── types.ts            # User
-│   │   ├── trip/
-│   │   │   ├── components/         # TripCard, TripForm, TripDetail
-│   │   │   ├── hooks/              # useTrips, useCreateTrip, useUpdateTrip
-│   │   │   └── types.ts            # Trip, TripSummary, Day, Activity, Transportation, Accommodation
-│   │   ├── itinerary/
-│   │   │   ├── components/         # DayView, ActivityCard, ActivityForm
-│   │   │   └── hooks/              # useActivities, useCreateActivity
-│   │   └── budget/
-│   │       ├── components/         # ExpenseList, ExpenseForm, BudgetSummary, CurrencyConverter
-│   │       ├── hooks/              # useExpenses, useCurrencyRates
-│   │       └── types.ts            # Expense, ExpenseSummary, CurrencyRate
+│   │   ├── accommodation/          # Stay CRUD + linked expense
+│   │   ├── activity/               # Day timeline, ActivityForm (location | note | todo), lib/time.ts
+│   │   ├── auth/                   # Login/logout, Zustand auth store
+│   │   ├── currency/               # Rates + standalone converter
+│   │   ├── expense/                # Expense list/form, budget summary
+│   │   ├── location/               # Autocomplete (Geoapify / Google)
+│   │   ├── map/                    # TripMap, MapLibre + Google renderers
+│   │   ├── summary/                # AI trip summary
+│   │   ├── transportation/         # Transport CRUD + linked expense
+│   │   └── trip/                   # Trip list/detail, overview, share, lib/dates.ts
 │   ├── components/
 │   │   ├── ui/                     # coss ui primitives (Base UI–backed) — do not modify generated files
 │   │   └── providers.tsx           # TanStack QueryClientProvider
 │   ├── lib/
 │   │   ├── api.ts                  # Typed fetch wrapper (credentials: include, ApiError)
+│   │   ├── currency.ts             # Supported currencies, flags, labels
 │   │   └── utils.ts                # cn(), formatCurrency(), formatDate(), formatDateRange()
 │   └── middleware.ts               # Auth guard: redirect unauthenticated → /login
 └── public/
@@ -64,7 +59,7 @@ frontend/
 ## Conventions
 
 ### Components
-- Server Components by default in `app/`
+- Target: Server Components by default in `app/`. Today all dashboard pages are `"use client"`; migrating is tracked in docs/PLANNING_REFACTOR_REDESIGN.md (A3.3)
 - Add `"use client"` only when using hooks, events, or browser APIs
 - Feature components in `features/<feature>/components/`
 - Primitive UI in `components/ui/` (coss ui — never modify generated files)
@@ -111,3 +106,7 @@ Cookie `access_token` is httpOnly — middleware checks for its presence only (c
 NEXT_PUBLIC_API_URL=http://localhost:8090/api/v1
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
+
+## Checks
+- `npm run lint`, `npm run typecheck`, `npm test` (Vitest, `*.test.ts` next to the source file), `npm run build`
+- Unit-test pure helpers in `lib/` and `features/*/lib/` first; component and E2E tests come later (plan R3).

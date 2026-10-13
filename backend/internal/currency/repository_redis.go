@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 
 	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
@@ -43,12 +44,11 @@ func (r *redisRepository) fetchUSD(ctx context.Context) (*cachedRates, error) {
 		if jsonErr := json.Unmarshal([]byte(cached), &out); jsonErr == nil {
 			return &out, nil
 		}
-	} else if errors.Is(err, redis.Nil) {
-		// Cache miss — proceed to upstream fetch below.
-	} else {
+	} else if !errors.Is(err, redis.Nil) {
 		// Redis error (connection refused, timeout) — log and fall through
 		// to upstream fetch so the app stays functional without Redis.
-		// The cache write will also be skipped gracefully below.
+		// A plain cache miss (redis.Nil) falls through silently.
+		slog.Warn("currency: redis cache read failed, fetching upstream", "error", err)
 	}
 
 	// Cache miss or Redis unavailable → upstream fetch

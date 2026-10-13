@@ -21,46 +21,13 @@ env:
   NEXT_PUBLIC_R2_PUBLIC_URL: https://assets.navisha.cloud
 
 jobs:
-  test-backend:
-    name: Backend Build + Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-
-      - name: Build + test
-        working-directory: backend
-        run: |
-          go build ./...
-          go test ./...
-
-  test-frontend:
-    name: Frontend Lint + Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install + lint + build
-        working-directory: frontend
-        run: |
-          npm install
-          npm run lint
-          npm run build
+  # Same checks that run on pull requests (see ci.yml).
+  ci:
+    uses: ./.github/workflows/ci.yml
 
   build-and-push-images:
     name: Build and Push Docker Images
-    needs: [test-backend, test-frontend]
+    needs: [ci]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

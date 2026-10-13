@@ -1,0 +1,68 @@
+version: "2"
+
+# Lint policy: CI runs with `only-new-issues`, so it fails only on findings
+# introduced by the change under review. Existing findings are cleaned up
+# gradually (see docs/PLANNING_REFACTOR_REDESIGN.md, phase R2).
+# Run locally: golangci-lint run ./...
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - revive
+    - gosec
+    - bodyclose
+    - sqlclosecheck
+    - contextcheck
+  settings:
+    revive:
+      rules:
+        # Keep revive to correctness/readability rules; skip doc-comment
+        # and naming style rules that would flag most of the existing code.
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: errorf
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: unused-parameter
+          disabled: true
+    gosec:
+      excludes:
+        # G104 duplicates errcheck.
+        - G104
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      # Tests may use fixed secrets, ignore errors on cleanup, and mocks
+      # may create fresh contexts.
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+          - bodyclose
+          - contextcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
