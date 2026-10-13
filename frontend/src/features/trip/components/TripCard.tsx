@@ -1,180 +1,80 @@
 import Link from "next/link"
 import { memo } from "react"
-import { formatDate, formatDateShort } from "@/lib/utils"
-import { Calendar, MapPin, ChevronRight, Clock } from "lucide-react"
-import {
-  STATUS_LABEL,
-  getTripDateMetrics,
-  type TripStatus,
-} from "../lib/status"
-import type { Trip } from "../types"
-import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import { MapPin } from "lucide-react"
 
-const STATUS_STYLE: Record<TripStatus, { chip: string; dot: string }> = {
-  upcoming: { chip: "border-primary/70", dot: "bg-primary" },
-  active:   { chip: "border-chromatic-ocean/70", dot: "bg-chromatic-ocean animate-pulse" },
-  past:     { chip: "border-muted-foreground/60", dot: "bg-muted-foreground" },
+import { cn } from "@/lib/utils"
+import { formatTripRange, tripTimingLabel } from "../lib/home"
+import { getTripDateMetrics } from "../lib/status"
+import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import type { Trip } from "../types"
+
+/** Trip cover photo, or a neutral block with a pin when there is none. */
+export function TripCover({
+  trip,
+  sizes,
+  className,
+  priority = false,
+}: {
+  trip: Trip
+  sizes: string
+  className?: string
+  priority?: boolean
+}) {
+  const src = resolveTripCover(trip.cover_image_url, trip.description, 768)
+  const srcSet = tripCoverSrcSet(trip.cover_image_url, trip.description, [480, 640, 768, 960])
+
+  return (
+    <div className={cn("relative overflow-hidden bg-muted", className)}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          srcSet={srcSet}
+          sizes={sizes}
+          alt=""
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
+          <MapPin className="h-8 w-8 text-muted-foreground/60" />
+        </div>
+      )}
+    </div>
+  )
 }
 
-/**
- * Trip card — cover image at top, title/meta in clean content area below.
- * Iter 33 — cover: taller on md+ screens for better visual weight
- * Iter 34 — active trip: progress bar shows gradient, day badge more legible
- * Iter 35 — description fallback: show "Tap to view" when no description
- * Iter 36 — currency badge: pill with bg-primary/8 → primary/10 (higher contrast)
- * Iter 37 — total days shown always, not just when active
- * Iter 38 — bottom row: short dates + wrap on mobile so date/days/currency never collide
- */
+/** One trip in the Trips grid: cover, title, destination, one meta line. */
 export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
-  const {
-    status,
-    totalDays,
-    currentDay,
-    percent: progressPct,
-    daysUntilStart,
-  } = getTripDateMetrics(trip.start_date, trip.end_date)
-  const coverUrl = resolveTripCover(
-    trip.cover_image_url,
-    trip.description,
-    768,
-  )
-  const coverSrcSet = tripCoverSrcSet(
-    trip.cover_image_url,
-    trip.description,
-    [480, 640, 768, 960],
-  )
-  const hasCover = Boolean(coverUrl)
-  const style = STATUS_STYLE[status]
-
-  // Iter 37 — days-until / days-total label
-  const daysMeta =
-    status === "upcoming"
-      ? daysUntilStart > 0
-        ? `${daysUntilStart}d away`
-        : "Starting soon"
-      : status === "past"
-      ? `${totalDays} day${totalDays !== 1 ? "s" : ""}`
-      : null
+  const metrics = getTripDateMetrics(trip.start_date, trip.end_date)
+  const timing = tripTimingLabel(metrics)
 
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl glass transition-all duration-300 hover:bg-white/25 hover:shadow-chromatic hover:-translate-y-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      aria-label={`View trip: ${trip.title}`}
+      className="group flex flex-col overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      {/* ── Cover image — Iter 33: taller on md ── */}
-      <div className="relative h-40 md:h-44 w-full shrink-0 overflow-hidden">
-        {hasCover ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={coverUrl}
-              srcSet={coverSrcSet}
-              sizes="(max-width: 767px) calc(100vw - 2rem), 360px"
-              alt=""
-              aria-hidden="true"
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-          </>
-        ) : (
-          <div className="trip-cover-gradient h-full w-full" />
+      <TripCover
+        trip={trip}
+        sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 380px"
+        className="aspect-[16/9] w-full"
+      />
+      <div className="flex flex-1 flex-col gap-1 px-4 py-3">
+        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground">{trip.title}</h3>
+        {trip.description && (
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="line-clamp-1">{trip.description}</span>
+          </p>
         )}
-
-        {/* Status chip — top-right */}
-        <div
-          className={`absolute right-3 top-3 z-10 rounded-full border bg-black/50 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md ${style.chip}`}
-          role="status"
-          aria-label={`Trip status: ${STATUS_LABEL[status]}`}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} aria-hidden="true" />
-            {STATUS_LABEL[status]}
-          </span>
-        </div>
-
-        {/* Iter 34 — Active: Day badge top-left with better contrast */}
-        {status === "active" && (
-          <div className="absolute left-3 top-3 z-10 rounded-full bg-black/50 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm tabular-nums">
-            Day {currentDay} of {totalDays}
-          </div>
-        )}
-
-        {/* Iter 37 — upcoming: days away badge */}
-        {status === "upcoming" && daysMeta && (
-          <div className="absolute left-3 top-3 z-10 rounded-full bg-black/40 px-2.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-            {daysMeta}
-          </div>
-        )}
-      </div>
-
-      {/* ── Active progress bar — Iter 34: gradient ── */}
-      {status === "active" && (
-        <div
-          className="h-1 w-full bg-muted overflow-hidden shrink-0"
-          role="progressbar"
-          aria-valuenow={progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Trip progress: ${progressPct}%`}
-        >
-          <div
-            className="h-full bg-primary transition-all duration-1000"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-      )}
-
-      {/* ── Content area ── */}
-      <div className="flex flex-1 flex-col gap-2 px-4 py-3">
-        {/* Title */}
-        <h3 className="text-base font-bold leading-snug font-heading text-foreground line-clamp-2">
-          {trip.title}
-        </h3>
-
-        {/* Iter 35 — description or fallback */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3 shrink-0 text-primary/60" aria-hidden="true" />
-          <span className="line-clamp-1">
-            {trip.description ?? "Tap to view details"}
-          </span>
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Bottom row — Iter 38: wraps on mobile so date/days/currency never collide */}
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-1 border-t border-border/20">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-              <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
-              <time className="whitespace-nowrap tabular-nums text-[11px]">
-                <span className="sm:hidden">
-                  {formatDateShort(trip.start_date)} — {formatDateShort(trip.end_date)}
-                </span>
-                <span className="hidden sm:inline">
-                  {formatDate(trip.start_date)} — {formatDate(trip.end_date)}
-                </span>
-              </time>
-            </div>
-            {/* Iter 37 — always show total days */}
-            <div className="flex shrink-0 items-center gap-1 text-muted-foreground/70">
-              <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-              <span className="text-[11px]">{totalDays}d</span>
-            </div>
-          </div>
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            {/* Iter 36 — currency pill: higher contrast */}
-            <span className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary">
-              {trip.base_currency}
-            </span>
-            <ChevronRight
-              className="h-3.5 w-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5"
-              aria-hidden="true"
-            />
-          </div>
-        </div>
+        <p className="mt-auto pt-1 text-xs text-muted-foreground tabular-nums">
+          <span className={cn(metrics.status === "active" && "font-medium text-primary")}>{timing}</span>
+          {" · "}
+          {formatTripRange(trip.start_date, trip.end_date)}
+          {" · "}
+          {trip.base_currency}
+        </p>
       </div>
     </Link>
   )

@@ -1,44 +1,30 @@
 "use client"
 
 import Link from "next/link"
-import { Sparkles, PenLine } from "lucide-react"
+import { PenLine, Sparkles } from "lucide-react"
 
-/** Welcome card shown to first-time users on the dashboard.
- *  Replaces the empty "No trips yet" state with a guided onboarding experience. */
+import { buttonVariants } from "@/components/ui/button"
+
+/** First-run state on the Trips page: the two ways to start a trip. */
 export function OnboardingCard({ userName }: { userName?: string }) {
-  const name = userName ?? "traveler"
-
   return (
-    <div className="glass-lg relative overflow-hidden rounded-3xl p-8 md:p-10 mb-10">
-      {/* Decorative gradient orbs */}
-      <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-chromatic-primary/10 blur-[80px]" />
-      <div className="absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-chromatic-ocean/8 blur-[80px]" />
-
-      <div className="relative z-10">
-        <h2 className="text-headline-md md:text-headline-lg font-heading text-foreground mb-2">
-          Welcome to Navisha, {name}! 👋
-        </h2>
-        <p className="text-body-lg text-muted-foreground mb-8 max-w-xl">
-          Your adventures start here. Plan your first trip and let us handle the details.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link
-            href="/trips/generate"
-            className="group flex items-center gap-3 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
-          >
-            <Sparkles className="h-5 w-5" />
-            Generate with AI
-            <span className="text-xs font-normal opacity-80">— recommended</span>
-          </Link>
-          <Link
-            href="/trips/new"
-            className="glass flex items-center gap-3 rounded-xl px-6 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-white/25 active:scale-[0.98]"
-          >
-            <PenLine className="h-5 w-5 text-chromatic-sky" />
-            Start from scratch
-          </Link>
-        </div>
+    <section aria-labelledby="onboarding-heading" className="rounded-xl border bg-card p-6 md:p-8">
+      <h2 id="onboarding-heading" className="text-xl font-semibold text-foreground">
+        {userName ? `Welcome, ${userName}` : "Welcome to Navisha"}
+      </h2>
+      <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+        Plan each day, see it on a map, and track spending in your currency. Start with your first trip.
+      </p>
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+        <Link href="/trips/generate" className={buttonVariants()}>
+          <Sparkles aria-hidden="true" />
+          Generate with AI
+        </Link>
+        <Link href="/trips/new" className={buttonVariants({ variant: "outline" })}>
+          <PenLine aria-hidden="true" />
+          Start from scratch
+        </Link>
       </div>
-    </div>
+    </section>
   )
 }
