@@ -29,7 +29,7 @@ html {
   /* Shared input style — used by TripForm, GenerateChatWizard, and form pages.
      Keeps the 200+ char Tailwind string DRY and consistent. */
   .input-base {
-    @apply w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface transition-all;
+    @apply w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md text-on-surface transition-all;
     @apply focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary;
     @apply placeholder:text-on-surface-variant/50;
     @apply disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60;
@@ -121,6 +121,22 @@ html {
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --success-bg: 142 71% 95%;
+
+    /* ── Design system tokens (D1) — see docs/DESIGN_SYSTEM.md ──
+       Expense category colors. Validated as a categorical palette in this
+       fixed order (adjacent pairs pass CVD checks); charts must keep the
+       order and always pair a color with a text label. */
+    --cat-stay: 213 68% 50%;      /* #2a78d6 */
+    --cat-transport: 159 73% 40%; /* #1baf7a */
+    --cat-food: 17 82% 56%;       /* #eb6834 */
+    --cat-activity: 249 48% 44%;  /* #4a3aa7 */
+    --cat-gift: 337 70% 70%;      /* #e87ba4 */
+    --cat-shopping: 41 100% 46%;  /* #eda100 */
+    --cat-other: 215 8% 53%;      /* #7d8590 */
+
+    /* Two elevation levels only: cards and overlays. */
+    --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+    --shadow-overlay: 0 10px 30px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
 
     /* Iter 4 — --glass-bg needs to be an RGB triplet for rgba() usage */
     --glass-bg: 255 255 255;
@@ -249,21 +265,9 @@ html {
     @apply border-border;
   }
 
-  /* Iter 6 — richer mesh background with subtle noise feel */
+  /* Plain page background (D1: no decorative mesh gradient). */
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(at 0% 0%, hsla(215,100%,96%,0.9) 0, transparent 55%),
-      radial-gradient(at 100% 0%, hsla(200,80%,95%,0.8) 0, transparent 55%),
-      radial-gradient(at 50% 100%, hsla(250,60%,96%,0.5) 0, transparent 55%),
-      radial-gradient(at 80% 50%, hsla(185,70%,97%,0.4) 0, transparent 40%);
-    background-attachment: fixed;
-  }
-  .dark body {
-    background-image:
-      radial-gradient(at 0% 0%, hsla(215,80%,8%,0.8) 0, transparent 55%),
-      radial-gradient(at 100% 0%, hsla(250,60%,8%,0.6) 0, transparent 55%),
-      radial-gradient(at 50% 100%, hsla(200,60%,6%,0.4) 0, transparent 55%);
   }
 }
 
@@ -271,17 +275,16 @@ html {
   .text-balance {
     text-wrap: balance;
   }
-  /* Chromatic gradient text */
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-  }
-  .text-gradient-sunset {
-    @apply bg-clip-text text-transparent bg-gradient-to-r;
-    background-image: linear-gradient(to right, hsl(var(--chromatic-sunset)), hsl(var(--chromatic-sunset-end)));
-  }
+  /* D1: gradient text is neutralized to solid primary. The class names stay
+     until components are cleaned up (D2/D4); do not use them in new code. */
+  .text-gradient,
+  .text-gradient-sunset,
   .text-gradient-ocean {
-    @apply bg-clip-text text-transparent bg-gradient-to-r;
-    background-image: linear-gradient(to right, hsl(var(--chromatic-ocean)), hsl(var(--chromatic-ocean-end)));
+    /* !important: these classes are paired with text-transparent and
+       bg-gradient-* utilities in components. */
+    color: hsl(var(--primary)) !important;
+    background-image: none !important;
+    -webkit-text-fill-color: hsl(var(--primary)) !important;
   }
   /* Tabular numbers for data displays */
   .tabular-nums {
@@ -308,99 +311,65 @@ html {
   }
 }
 
-/* ── Chromatic Shadows ── */
-.shadow-soft {
-  box-shadow: 0 10px 25px -5px hsla(var(--primary) / 0.08), 0 8px 10px -6px hsla(var(--primary) / 0.04);
-}
-/* ponytail: alias kept for legacy usage in CurrencyConverter */
-.soft-shadow {
-  box-shadow: 0 10px 25px -5px hsla(var(--primary) / 0.08), 0 8px 10px -6px hsla(var(--primary) / 0.04);
-}
-.shadow-chromatic {
-  box-shadow: 0 8px 32px hsla(var(--chromatic-sunset) / 0.12), 0 2px 8px hsla(var(--chromatic-ocean) / 0.06);
-}
+/* ── D1: legacy decorative utilities, neutralized ──
+   These class names are still used across components. Rather than editing
+   every file now, they render as plain surfaces; components drop the class
+   names when they are rebuilt (D2/D4). Do not use them in new code — use
+   bg-card + border + shadow-card instead (docs/DESIGN_SYSTEM.md). */
+
+/* Shadows: every legacy variant collapses to the single card level. */
+.shadow-soft,
+.soft-shadow,
+.shadow-chromatic,
 .trip-card-shadow {
-  box-shadow: var(--elevation-2);
+  box-shadow: var(--shadow-card);
+}
+.trip-card-hover {
+  transition: box-shadow 150ms ease;
 }
 .trip-card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--elevation-3);
+  box-shadow: var(--shadow-overlay);
 }
 
-/* ── Glassmorphism Utilities ── */
-/* Iter 4 — glass uses rgb() with --glass-bg CSS var */
-.glass-sm {
-  background: rgba(var(--glass-bg) / var(--glass-opacity-1));
-  backdrop-filter: blur(var(--glass-blur-sm));
-  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
-  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
+/* Glass: solid card surface, hairline border, no blur. */
+.glass-sm,
+.glass,
+.glass-lg,
+.glass-bg,
+.glass-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
 }
-.glass {
-  background: rgba(var(--glass-bg) / var(--glass-opacity-2));
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
-  box-shadow: var(--elevation-2);
-}
-.glass-lg {
-  background: rgba(var(--glass-bg) / var(--glass-opacity-3));
-  backdrop-filter: blur(var(--glass-blur-lg));
-  -webkit-backdrop-filter: blur(var(--glass-blur-lg));
-  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
-  box-shadow: var(--elevation-3);
+.glass,
+.glass-lg,
+.glass-card {
+  box-shadow: var(--shadow-card);
 }
 .glass-border {
-  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
+  border: 1px solid hsl(var(--border));
 }
-/* Inner highlight for glass — light refraction at top edge */
 .glass-highlight {
   position: relative;
 }
-.glass-highlight::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 8px;
-  right: 8px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(var(--glass-bg) / var(--glass-highlight-opacity)), transparent);
-  border-radius: 1px;
-  pointer-events: none;
-}
 
-/* Legacy glass classes — enhanced */
-.glass-bg {
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  background: rgba(var(--glass-bg) / var(--glass-opacity-2));
-}
-.glass-card {
-  background: rgba(var(--glass-bg) / var(--glass-opacity-2));
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid rgba(var(--glass-bg) / var(--glass-border-opacity));
-  box-shadow: var(--elevation-2);
-}
-
-/* Iter 9 — float animations (landing blobs + cards) */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Iter 9 — float-orb for hero background blobs */
-@keyframes floatOrb {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(20px, -15px) scale(1.04); }
-  66%  { transform: translate(-12px, 10px) scale(0.97); }
-  100% { transform: translate(0, 0) scale(1); }
-}
+/* Decorative motion and background orbs are removed. */
+.animate-float,
 .animate-float-orb {
-  animation: floatOrb 14s ease-in-out infinite;
+  animation: none;
+}
+.landing-orb,
+.auth-orb,
+.dashboard-ambient {
+  display: none;
+}
+
+/* Minimum readable text size: legacy 9–11px arbitrary sizes render at 12px.
+   New code must use the type scale (text-xs and up); lint warns on text-[Npx]. */
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.75rem !important;
+  line-height: 1rem;
 }
 
 /* Google Places Autocomplete dropdown — ensure it's above everything */

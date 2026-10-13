@@ -21,3 +21,6 @@ graphify-out/
 
 # OS
 .DS_Store
+
+# Local design audit screenshots (contain real trip data)
+design-audit/

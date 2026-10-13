@@ -68,12 +68,11 @@ export const ExpenseCard = memo(function ExpenseCard({
           {expense.category && (
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold text-foreground",
                 cat.bg,
-                cat.text,
               )}
             >
-              <Tag className="h-2.5 w-2.5" aria-hidden="true" />
+              <Tag className={cn("h-3 w-3", cat.text)} aria-hidden="true" />
               {expense.category}
             </span>
           )}
