@@ -307,9 +307,20 @@ func main() {
 	// Requires shared cookie domain in production (.navisha.cloud).
 	e.Use(appMiddleware.CSRF(cfg.App.CookieDomain))
 
-	// Per-request timeout (300s) to prevent hanging requests while allowing
-	// slow LLM calls (summary/generate). Matches llm.timeout_seconds config.
-	e.Use(appMiddleware.Timeout(300 * time.Second))
+	// Per-request timeout: 30s for regular requests so a stuck CRUD call does
+	// not hold a DB connection for minutes; LLM routes get the full LLM
+	// timeout (llm.timeout_seconds). Keep this list in sync with the
+	// summary/autogen handlers' RegisterRoutes.
+	llmTimeout := time.Duration(cfg.LLM.TimeoutSeconds) * time.Second
+	if llmTimeout <= 0 {
+		llmTimeout = 300 * time.Second
+	}
+	e.Use(appMiddleware.Timeout(30*time.Second, map[string]time.Duration{
+		"POST /api/v1/trips/:id/summary":                            llmTimeout,
+		"POST /api/v1/trips/generate":                               llmTimeout,
+		"POST /api/v1/trips/from-draft":                             llmTimeout,
+		"POST /api/v1/trips/:trip_id/days/:day_id/generate-preview": llmTimeout,
+	}))
 
 	// Loop 3: limit request body size to 1MB.
 	const maxBodySize = 1 << 20 // 1MB
