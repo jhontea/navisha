@@ -13,7 +13,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Chromatic Accent Tokens (blue-spectrum) ──
+        // ── Expense category colors (D1, docs/DESIGN_SYSTEM.md) ──
+        cat: {
+          stay: "hsl(var(--cat-stay))",
+          transport: "hsl(var(--cat-transport))",
+          food: "hsl(var(--cat-food))",
+          activity: "hsl(var(--cat-activity))",
+          gift: "hsl(var(--cat-gift))",
+          shopping: "hsl(var(--cat-shopping))",
+          other: "hsl(var(--cat-other))",
+        },
+        // ── Chromatic Accent Tokens (legacy, do not use in new code) ──
         "chromatic-sunset": "hsl(var(--chromatic-sunset))",
         "chromatic-sunset-end": "hsl(var(--chromatic-sunset-end))",
         "chromatic-ocean": "hsl(var(--chromatic-ocean))",
@@ -138,19 +148,17 @@ const config: Config = {
         "gutter": "1.5rem",
         "6": "1.5rem",
       },
+      // One family: `sans` for UI, `display` for headings (same Inter with
+      // tighter tracking, see .font-display in globals.css). The old
+      // per-role aliases (font-heading, font-body-md, …) were all Inter and
+      // are removed; leftover class names are no-ops until cleaned up.
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "sans-serif"],
-        heading: ["var(--font-inter)", "Inter", "sans-serif"],
-        "label-sm": ["var(--font-inter)", "Inter", "sans-serif"],
-        "body-sm": ["var(--font-inter)", "Inter", "sans-serif"],
-        "headline-md": ["var(--font-inter)", "Inter", "sans-serif"],
-        "body-md": ["var(--font-inter)", "Inter", "sans-serif"],
         display: ["var(--font-inter)", "Inter", "sans-serif"],
-        "headline-sm": ["var(--font-inter)", "Inter", "sans-serif"],
-        "body-lg": ["var(--font-inter)", "Inter", "sans-serif"],
-        "label-md": ["var(--font-inter)", "Inter", "sans-serif"],
-        "headline-lg": ["var(--font-inter)", "Inter", "sans-serif"],
-        "headline-lg-mobile": ["var(--font-inter)", "Inter", "sans-serif"],
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        overlay: "var(--shadow-overlay)",
       },
       keyframes: {
         shimmer: {
