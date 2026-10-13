@@ -1,188 +1,78 @@
 "use client"
 
-import { memo, type ComponentType } from "react"
-import {
-  ArrowRight,
-  Boxes,
-  Bus,
-  Car,
-  Clock,
-  Hash,
-  Pencil,
-  Plane,
-  Ship,
-  TramFront,
-  Train,
-  Trash2,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+import { memo } from "react"
+import { ArrowRight } from "lucide-react"
+
+import { BookingCard } from "@/components/BookingCard"
+import { daysBetween, formatClock, formatWeekdayDate, tripDayNumber } from "@/lib/calendar"
+import { transportIcon, transportTypeLabel } from "../lib/transportType"
 import type { Transportation } from "../types"
 
 interface Props {
   transportation: Transportation
+  days?: { date: string; day_number: number }[]
   onEdit: () => void
   onDelete: () => void
   isDeleting: boolean
 }
 
-const TRANSPORT_ICON: Record<string, ComponentType<{ className?: string }>> = {
-  flight: Plane,
-  train: Train,
-  bus: Bus,
-  ferry: TramFront,
-  ship: Ship,
-  car: Car,
-  other: Boxes,
-}
-
-const TRANSPORT_COLOR: Record<string, { bg: string; text: string; border: string }> = {
-  flight: { bg: "bg-chromatic-aurora/10", text: "text-chromatic-aurora", border: "border-l-chromatic-aurora" },
-  train: { bg: "bg-primary/10", text: "text-primary", border: "border-l-primary" },
-  bus: { bg: "bg-chromatic-ocean/10", text: "text-chromatic-ocean", border: "border-l-chromatic-ocean" },
-  ferry: { bg: "bg-chromatic-sky/10", text: "text-chromatic-sky", border: "border-l-chromatic-sky" },
-  ship: { bg: "bg-chromatic-ice/10", text: "text-chromatic-ice", border: "border-l-chromatic-ice" },
-  car: { bg: "bg-chromatic-amber/10", text: "text-chromatic-amber", border: "border-l-chromatic-amber" },
-  other: { bg: "bg-muted", text: "text-muted-foreground", border: "border-l-border" },
-}
-
-function getStyle(type?: string) {
-  const key = type?.toLowerCase() ?? "other"
-  return TRANSPORT_COLOR[key] ?? TRANSPORT_COLOR.other
-}
-
-function formatTime(dt?: string | null): string | null {
-  if (!dt) return null
-  const m = dt.match(/T(\d{2}):(\d{2})/)
-  return m ? `${m[1]}:${m[2]}` : null
-}
-
-function formatDate(dt?: string | null): string | null {
-  if (!dt) return null
-  const m = dt.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (!m) return null
-  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0)
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-}
-
+/** One transport booking: type and label, from → to with times, one meta line. */
 export const TransportationCard = memo(function TransportationCard({
-  transportation,
+  transportation: t,
+  days = [],
   onEdit,
   onDelete,
   isDeleting,
 }: Props) {
-  const type = transportation.type?.toLowerCase() ?? "other"
-  const Icon = TRANSPORT_ICON[type] ?? TRANSPORT_ICON.other
-  const style = getStyle(transportation.type)
-
-  const depTime = formatTime(transportation.departure_datetime)
-  const arrTime = formatTime(transportation.arrival_datetime)
-  const depDate = formatDate(transportation.departure_datetime)
+  const typeLabel = transportTypeLabel(t.type)
+  const heading = t.label ? `${typeLabel} · ${t.label}` : typeLabel
+  const depTime = formatClock(t.departure_datetime)
+  const arrTime = formatClock(t.arrival_datetime)
+  const dayShift = daysBetween(t.departure_datetime, t.arrival_datetime)
+  const dayNumber = tripDayNumber(t.departure_datetime, days)
+  const meta = [
+    formatWeekdayDate(t.departure_datetime),
+    dayNumber !== null ? `Day ${dayNumber}` : null,
+    t.reference_number ? `Ref ${t.reference_number}` : null,
+  ].filter(Boolean)
 
   return (
-    <div
-      className={cn(
-        "group relative rounded-2xl border border-border/30 border-l-4 bg-card shadow-sm",
-        "transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-border/50",
-        style.border,
-      )}
+    <BookingCard
+      icon={transportIcon(t.type)}
+      iconClassName="bg-cat-transport/15 text-cat-transport"
+      title={heading}
+      subtitle={t.operator || undefined}
+      actionsLabel={`Actions for ${heading}`}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      isDeleting={isDeleting}
     >
-      <div className="flex items-start gap-2.5 px-3 pb-2.5 pt-3 sm:gap-3 sm:px-4 sm:pb-3 sm:pt-4">
-        <div
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl",
-            style.bg,
-            style.text,
-          )}
-          aria-hidden="true"
-        >
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-        </div>
-
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {transportation.type}
-            </span>
-            {(transportation.label || transportation.operator) && (
-              <span className="truncate text-xs font-semibold text-foreground/80">
-                {transportation.label || transportation.operator}
-              </span>
-            )}
-            {transportation.label && transportation.operator && (
-              <span className="truncate text-xs text-muted-foreground">
-                {transportation.operator}
-              </span>
-            )}
+      {(t.from_location || t.to_location) && (
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+          <div className="min-w-0">
+            {depTime && <p className="text-base font-semibold text-foreground tabular-nums">{depTime}</p>}
+            <p className="line-clamp-3 text-sm text-muted-foreground">{t.from_location || "—"}</p>
           </div>
-
-          {(transportation.from_location || transportation.to_location) && (
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-foreground leading-snug">
-                  {transportation.from_location || "-"}
-                </p>
-                {depTime && (
-                  <p className="flex items-center gap-0.5 text-[11px] text-muted-foreground tabular-nums">
-                    <Clock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-                    {depTime}
-                    {depDate && <span className="ml-0.5">- {depDate}</span>}
-                  </p>
+          <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground" aria-label="to" />
+          <div className="min-w-0 text-right">
+            {arrTime && (
+              <p className="text-base font-semibold text-foreground tabular-nums">
+                {arrTime}
+                {dayShift !== null && dayShift > 0 && (
+                  <span className="ml-0.5 align-top text-xs font-medium text-muted-foreground">
+                    +{dayShift}
+                    <span className="sr-only"> {dayShift === 1 ? "day" : "days"} later</span>
+                  </span>
                 )}
-              </div>
-              <ArrowRight
-                className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50"
-                aria-hidden="true"
-              />
-              <div className="min-w-0 flex-1 text-right">
-                <p className="truncate text-xs font-semibold text-foreground leading-snug">
-                  {transportation.to_location || "-"}
-                </p>
-                {arrTime && (
-                  <p className="flex items-center justify-end gap-0.5 text-[11px] text-muted-foreground tabular-nums">
-                    <Clock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-                    {arrTime}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {transportation.reference_number && (
-            <div className="flex items-center gap-1.5">
-              <Hash className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
-              <span className="rounded-md border border-border/40 bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground/70">
-                {transportation.reference_number}
-              </span>
-            </div>
-          )}
-
-          {transportation.notes && (
-            <p className="text-xs text-muted-foreground/80 line-clamp-2 italic">
-              {transportation.notes}
-            </p>
-          )}
+              </p>
+            )}
+            <p className="line-clamp-3 text-sm text-muted-foreground">{t.to_location || "—"}</p>
+          </div>
         </div>
+      )}
 
-        <div className="flex shrink-0 flex-col gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label="Edit transportation"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:opacity-100"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isDeleting}
-            aria-label="Delete transportation"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive focus-visible:opacity-100"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
+      {meta.length > 0 && <p className="mt-2 text-xs text-muted-foreground tabular-nums">{meta.join(" · ")}</p>}
+      {t.notes && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{t.notes}</p>}
+    </BookingCard>
   )
 })

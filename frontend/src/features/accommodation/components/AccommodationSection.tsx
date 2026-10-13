@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
+import { dateSortKey } from "@/lib/calendar"
 import { toast } from "@/lib/toast"
 import {
   useAccommodations,
@@ -26,10 +27,12 @@ const AccommodationForm = dynamic(
 interface Props {
   tripId: string
   tripBaseCurrency: string
+  /** Trip days, to label bookings with their day number. */
+  days?: { date: string; day_number: number }[]
 }
 
 /** Stay list; add and edit open in a sheet (bottom sheet on phones). */
-export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
+export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Props) {
   const { data, isLoading, isError } = useAccommodations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Accommodation } | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Accommodation | null>(null)
@@ -38,7 +41,10 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
   const updateMut = useUpdateAccommodation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteAccommodation(tripId)
 
-  const items = data?.items ?? []
+  // Chronological; undated entries last.
+  const items = [...(data?.items ?? [])].sort((x, y) =>
+    dateSortKey(x.check_in).localeCompare(dateSortKey(y.check_in)),
+  )
 
   return (
     <section aria-labelledby="stays-heading">
@@ -88,6 +94,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
           <AccommodationCard
             key={a.id}
             accommodation={a}
+            days={days}
             onEdit={() => setSheet({ mode: "edit", item: a })}
             onDelete={() => setConfirmingDelete(a)}
             isDeleting={deleteMut.isPending && confirmingDelete?.id === a.id}

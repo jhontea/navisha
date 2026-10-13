@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
+import { dateSortKey } from "@/lib/calendar"
 import { toast } from "@/lib/toast"
 import {
   useCreateTransportation,
@@ -26,10 +27,12 @@ const TransportationForm = dynamic(
 interface Props {
   tripId: string
   tripBaseCurrency: string
+  /** Trip days, to label bookings with their day number. */
+  days?: { date: string; day_number: number }[]
 }
 
 /** Transport list; add and edit open in a sheet (bottom sheet on phones). */
-export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
+export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: Props) {
   const { data, isLoading, isError } = useTransportations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Transportation } | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Transportation | null>(null)
@@ -38,7 +41,10 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
   const updateMut = useUpdateTransportation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteTransportation(tripId)
 
-  const items = data?.items ?? []
+  // Chronological; undated entries last.
+  const items = [...(data?.items ?? [])].sort((x, y) =>
+    dateSortKey(x.departure_datetime).localeCompare(dateSortKey(y.departure_datetime)),
+  )
 
   return (
     <section aria-labelledby="transport-heading">
@@ -88,6 +94,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
           <TransportationCard
             key={t.id}
             transportation={t}
+            days={days}
             onEdit={() => setSheet({ mode: "edit", item: t })}
             onDelete={() => setConfirmingDelete(t)}
             isDeleting={deleteMut.isPending && confirmingDelete?.id === t.id}

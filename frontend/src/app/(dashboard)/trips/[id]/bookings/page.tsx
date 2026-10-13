@@ -23,9 +23,9 @@ export default function TripBookingsPage() {
   const baseCurrency = trip?.base_currency ?? "IDR"
 
   return (
-    <main className="mx-auto w-full max-w-max-width space-y-10 px-margin-mobile pb-6 pt-6 md:px-margin-desktop md:pb-8">
-      <TransportationSection tripId={id} tripBaseCurrency={baseCurrency} />
-      <AccommodationSection tripId={id} tripBaseCurrency={baseCurrency} />
+    <main className="mx-auto grid w-full max-w-max-width grid-cols-[minmax(0,1fr)] items-start gap-10 px-margin-mobile pb-6 pt-6 md:px-margin-desktop md:pb-8 lg:grid-cols-2 lg:gap-8">
+      <TransportationSection tripId={id} tripBaseCurrency={baseCurrency} days={trip?.days} />
+      <AccommodationSection tripId={id} tripBaseCurrency={baseCurrency} days={trip?.days} />
     </main>
   )
 }
