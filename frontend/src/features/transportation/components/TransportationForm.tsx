@@ -195,8 +195,8 @@ export function TransportationForm({
       <fieldset disabled={isSubmitting} className="space-y-6">
       {/* Transportation Type */}
       <div>
-        <FormFieldLabel id="transport-type-label" required className="mb-3 block uppercase tracking-wider">
-          Transportation Type
+        <FormFieldLabel id="transport-type-label" required className="mb-3 block">
+          Transport type
         </FormFieldLabel>
         <Controller
           control={control}
@@ -253,7 +253,7 @@ export function TransportationForm({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           {/* From Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <FormFieldLabel htmlFor="transport-from" required>From Location</FormFieldLabel>
+            <FormFieldLabel htmlFor="transport-from" required>From</FormFieldLabel>
             <Controller
               control={control}
               name="from_location"
@@ -278,7 +278,7 @@ export function TransportationForm({
 
           {/* To Location — Google Places Autocomplete */}
           <div className="space-y-2">
-            <FormFieldLabel htmlFor="transport-to" required>To Location</FormFieldLabel>
+            <FormFieldLabel htmlFor="transport-to" required>To</FormFieldLabel>
             <Controller
               control={control}
               name="to_location"
@@ -413,7 +413,7 @@ export function TransportationForm({
 
             {withCost && (
               <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-                <FormFieldLabel optional className="text-xs uppercase tracking-wider">Cost</FormFieldLabel>
+                <FormFieldLabel optional className="text-sm">Cost</FormFieldLabel>
                 <FormFieldDescription className="mt-1">
                   Adds an expense to the trip budget when an amount is entered.
                 </FormFieldDescription>
@@ -466,7 +466,7 @@ export function TransportationForm({
       </section>
 
       {/* Form actions */}
-      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save Transport"} />
+      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save transport"} />
       {/*
       <div className="flex items-center gap-3">
         <button
@@ -485,7 +485,7 @@ export function TransportationForm({
           ) : (
             <>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              {initial ? "Save Changes" : "Save Transport"}
+              {initial ? "Save changes" : "Save transport"}
             </>
           )}
         </button>

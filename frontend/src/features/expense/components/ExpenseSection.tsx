@@ -333,7 +333,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
                 toast("Expense deleted.")
               },
               onError: () => {
-                toast("Couldn’t delete this expense. Please try again.", "error")
+                toast("Couldn’t delete this expense. Try again.", "error")
               },
             })
           }

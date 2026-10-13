@@ -137,7 +137,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       <fieldset disabled={isSubmitting} className="space-y-5">
       {/* Trip Title */}
       <div className="space-y-1.5">
-        <FormFieldLabel htmlFor="trip-title" required>Trip Title</FormFieldLabel>
+        <FormFieldLabel htmlFor="trip-title" required>Title</FormFieldLabel>
         <input
           id="trip-title"
           aria-required="true"
@@ -344,7 +344,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
       {/* Base Currency — from backend */}
       <div className="space-y-1.5">
-        <FormFieldLabel htmlFor="currency" required>Base Currency</FormFieldLabel>
+        <FormFieldLabel htmlFor="currency" required>Base currency</FormFieldLabel>
         <div className="relative">
           <Controller
             name="base_currency"
@@ -387,7 +387,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
         onCancel={() => router.back()}
         isSubmitting={isSubmitting}
         submittingLabel={initial ? "Saving…" : "Creating…"}
-        submitLabel={submitLabel ?? (initial ? "Save Changes" : "Create Trip")}
+        submitLabel={submitLabel ?? (initial ? "Save changes" : "Create trip")}
       />
         </>
       )}

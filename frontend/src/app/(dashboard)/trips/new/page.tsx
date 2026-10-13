@@ -28,7 +28,7 @@ export default function NewTripPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
             <Luggage className="h-[22px] w-[22px] text-primary" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">New Trip</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">New trip</h1>
         </div>
         <p className="text-sm text-muted-foreground pl-[52px]">
           Let&apos;s start planning your next great adventure.
@@ -46,13 +46,13 @@ export default function NewTripPage() {
         />
       </div>
 
-      {/* Pro Tip */}
+      {/* Tip */}
       <div className="mt-6 flex gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-5 animate-fade-in-up">
         <div className="shrink-0 mt-0.5">
           <Lightbulb className="h-5 w-5 text-primary" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-primary mb-1">Pro Tip</p>
+          <p className="text-xs font-semibold text-primary mb-1">Tip</p>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Organizing by destination helps Navisha suggest the best transport routes and local
             currency tips automatically.

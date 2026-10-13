@@ -36,10 +36,10 @@ export class ErrorBoundary extends Component<Props, State> {
               <CircleAlert className="h-8 w-8 text-destructive" aria-hidden="true" />
             </div>
             <h1 className="text-lg font-semibold text-foreground">
-              Something went wrong
+              This page couldn&apos;t load
             </h1>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              An unexpected error occurred. Please try refreshing the page.
+              An unexpected error stopped this page. Reload to try again; your saved trips are not affected.
             </p>
             <Button
               className="mt-6"
@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.reload();
               }}
             >
-              Refresh Page
+              Reload page
             </Button>
           </div>
         )

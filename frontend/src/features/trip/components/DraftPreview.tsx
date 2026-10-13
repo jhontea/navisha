@@ -83,11 +83,11 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
         <div className="flex flex-wrap gap-4 text-body-sm text-foreground-variant">
           <span className="inline-flex items-center gap-1.5">
             <CalendarDays className="h-[18px] w-[18px]" aria-hidden="true" />
-            {draft.days.length} hari
+            {draft.days.length} {draft.days.length === 1 ? "day" : "days"}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <List className="h-[18px] w-[18px]" aria-hidden="true" />
-            {totalActivities} aktivitas
+            {totalActivities} {totalActivities === 1 ? "activity" : "activities"}
           </span>
           {draft.budget > 0 && (
             <span className="inline-flex items-center gap-1.5">
@@ -103,14 +103,14 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
         <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2.5">
           <span className="text-body-sm text-foreground-variant">
             <span className="font-semibold text-foreground">{selectedCount}</span>
-            {" "}/ {totalActivities} tempat dipilih
+            {" "}of {totalActivities} places selected
           </span>
           <button
             type="button"
             onClick={toggleAll}
             className="rounded-full px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            {selectedCount === totalActivities ? "Kosongkan semua" : "Pilih semua"}
+            {selectedCount === totalActivities ? "Clear all" : "Select all"}
           </button>
         </div>
       )}
@@ -131,7 +131,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                 {day.day_number}
               </span>
               <span className="font-label-md text-label-md text-foreground">
-                Hari {day.day_number}
+                Day {day.day_number}
               </span>
               <span className="text-body-sm text-foreground-variant">{day.date}</span>
               {dayKeys.length > 0 && (
@@ -140,14 +140,14 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                   onClick={() => toggleDay(dayKeys, dayAllSelected)}
                   className="ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  {dayAllSelected ? "Kosongkan" : "Pilih semua"}
+                  {dayAllSelected ? "Clear" : "Select all"}
                 </button>
               )}
             </div>
 
             {day.activities.length === 0 ? (
               <p className="pl-10 text-body-sm text-foreground-variant italic">
-                Belum ada aktivitas
+                No activities for this day
               </p>
             ) : (
               <ul className="space-y-2 pl-10">

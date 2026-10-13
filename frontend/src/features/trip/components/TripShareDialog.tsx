@@ -39,7 +39,7 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
   const generate = async () => {
     setLoading(true); setError(""); setCopied(false)
     try { setLink(await tripApi.createShareLink(tripId, duration)) }
-    catch { setError("Could not create the share link. Please try again.") }
+    catch { setError("Couldn't create the share link. Try again.") }
     finally { setLoading(false) }
   }
 

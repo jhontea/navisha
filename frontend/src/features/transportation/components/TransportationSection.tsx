@@ -149,10 +149,10 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
             deleteMut.mutate(confirmingDelete.id, {
               onSuccess: () => {
                 setConfirmingDelete(null)
-                toast("Transport removed.")
+                toast("Transport deleted.")
               },
               onError: () => {
-                toast("Couldn’t remove this transport entry. Please try again.", "error")
+                toast("Couldn’t delete this transport. Try again.", "error")
               },
             })
           }

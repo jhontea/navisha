@@ -9,7 +9,7 @@ export default function CurrencyPage() {
       {/* Page header */}
       <header className="mb-6 md:mb-10 text-center">
         <h1 className="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-gradient-sunset mb-2">
-          Currency Converter
+          Currency converter
         </h1>
         <p className="text-body-md font-body-md text-muted-foreground">
           Real-time exchange rates for your next adventure.

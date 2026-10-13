@@ -71,7 +71,7 @@ export function TransportationScheduleFields({
         <div className="space-y-2">
           <FormFieldLabel
             required
-            className="text-xs uppercase tracking-wide"
+            className="text-sm"
             htmlFor="departure-datetime"
           >
             Departure
@@ -104,7 +104,7 @@ export function TransportationScheduleFields({
             <div className="flex items-center justify-between gap-2">
               <FormFieldLabel
                 optional
-                className="text-xs uppercase tracking-wide"
+                className="text-sm"
                 htmlFor="arrival-datetime"
               >
                 Arrival

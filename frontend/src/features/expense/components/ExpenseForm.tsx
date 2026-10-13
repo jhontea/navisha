@@ -30,7 +30,7 @@ function localDateString(): string {
 const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW", "MYR", "THB", "EUR", "VND"] as const
 
 const CATEGORY_OPTIONS = [
-  { value: "food"          as ExpenseCategory, label: "Food & Dining",  placeholder: "e.g., Lunch at Ichiran" },
+  { value: "food"          as ExpenseCategory, label: "Food",  placeholder: "e.g., Lunch at Ichiran" },
   { value: "transport"     as ExpenseCategory, label: "Transport",      placeholder: "e.g., Suica Top-up" },
   { value: "accommodation" as ExpenseCategory, label: "Stay",           placeholder: "e.g., Park Hyatt Night 1" },
   { value: "activity"      as ExpenseCategory, label: "Activity",       placeholder: "e.g., TeamLab Tickets" },
@@ -159,7 +159,7 @@ export function ExpenseForm({
 
       {/* Title */}
       <div className="flex flex-col gap-1.5">
-        <FormFieldLabel htmlFor="expense-title" required>Expense Title</FormFieldLabel>
+        <FormFieldLabel htmlFor="expense-title" required>Title</FormFieldLabel>
         <div className="relative flex items-center">
           {selectedCategory && (() => {
             const catOpt = CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)
@@ -305,7 +305,7 @@ export function ExpenseForm({
       </div>
 
       {/* Actions */}
-      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Add Expense"} />
+      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Add expense"} />
       </fieldset>
     </form>
   )

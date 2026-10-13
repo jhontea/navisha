@@ -381,7 +381,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                 aria-hidden="true"
               />
               <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-              Generate Itinerary
+              Generate itinerary
             </button>
             <button
               type="button"
@@ -390,7 +390,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
               className="flex items-center justify-center gap-1.5 rounded-2xl border border-border/50 px-6 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted disabled:opacity-60"
             >
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-              Start Over
+              Start over
             </button>
           </div>
         </div>

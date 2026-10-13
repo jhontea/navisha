@@ -24,7 +24,7 @@ export function Footer() {
 
           {/* Product links */}
           <div>
-            <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-widest">Product</p>
+            <p className="text-xs font-semibold text-foreground mb-3">Product</p>
             <ul className="space-y-1">
               {[
                 { label: "Features", href: "#features" },
@@ -44,7 +44,7 @@ export function Footer() {
 
           {/* Legal links */}
           <div>
-            <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-widest">Legal</p>
+            <p className="text-xs font-semibold text-foreground mb-3">Legal</p>
             <ul className="space-y-1">
               {[
                 { label: "Privacy Policy", href: "/privacy" },

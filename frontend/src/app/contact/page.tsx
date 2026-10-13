@@ -26,7 +26,7 @@ export default function ContactPage() {
             <div className="mb-3 flex items-center gap-3">
               <Mail className="h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-lg font-semibold text-foreground">
-                General Inquiries
+                General questions
               </h2>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
