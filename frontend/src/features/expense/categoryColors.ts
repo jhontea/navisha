@@ -3,19 +3,43 @@ import type { ElementType } from "react"
 
 /**
  * Canonical category color map — single source of truth.
- * Used by ExpenseCard, ExpenseSection, BudgetSummary.
+ * Used by ExpenseCard, ExpenseSection, ExpenseForm, BudgetSummary.
+ *
+ * Colors come from the --cat-* tokens (docs/DESIGN_SYSTEM.md). `text` tints
+ * icons only; labels and values use text tokens (text-foreground /
+ * text-muted-foreground), never the category color.
  */
 export const CATEGORY_COLORS: Record<
   string,
   { bg: string; text: string; border: string; bar: string; emoji: string; Icon: ElementType; label: string }
 > = {
-  accommodation: { bg: "bg-primary/10",          text: "text-primary",           border: "border-l-primary",           bar: "bg-primary",           emoji: "🏨", Icon: Hotel,           label: "Stay"      },
-  transport:     { bg: "bg-chromatic-ocean/10",   text: "text-chromatic-ocean",   border: "border-l-chromatic-ocean",   bar: "bg-chromatic-ocean",   emoji: "✈️", Icon: Bus,             label: "Transport" },
-  food:          { bg: "bg-chromatic-amber/10",   text: "text-chromatic-amber",   border: "border-l-chromatic-amber",   bar: "bg-chromatic-amber",   emoji: "🍜", Icon: UtensilsCrossed, label: "Food"      },
-  activity:      { bg: "bg-chromatic-aurora/10",  text: "text-chromatic-aurora",  border: "border-l-chromatic-aurora",  bar: "bg-chromatic-aurora",  emoji: "🎭", Icon: Ticket,          label: "Activity"  },
-  souvenir:      { bg: "bg-chromatic-mint/10",    text: "text-chromatic-mint",    border: "border-l-chromatic-mint",    bar: "bg-chromatic-mint",    emoji: "🎁", Icon: Gift,            label: "Gift"      },
-  shopping:      { bg: "bg-chromatic-sky/10",     text: "text-chromatic-sky",     border: "border-l-chromatic-sky",     bar: "bg-chromatic-sky",     emoji: "🛍️", Icon: ShoppingBag,    label: "Shopping"  },
-  other:         { bg: "bg-muted",                text: "text-muted-foreground",  border: "border-l-border",            bar: "bg-muted-foreground",  emoji: "📌", Icon: Receipt,         label: "Other"     },
+  accommodation: { bg: "bg-cat-stay/10",      text: "text-cat-stay",      border: "border-l-cat-stay",      bar: "bg-cat-stay",      emoji: "🏨", Icon: Hotel,           label: "Stay"      },
+  transport:     { bg: "bg-cat-transport/10", text: "text-cat-transport", border: "border-l-cat-transport", bar: "bg-cat-transport", emoji: "✈️", Icon: Bus,             label: "Transport" },
+  food:          { bg: "bg-cat-food/10",      text: "text-cat-food",      border: "border-l-cat-food",      bar: "bg-cat-food",      emoji: "🍜", Icon: UtensilsCrossed, label: "Food"      },
+  activity:      { bg: "bg-cat-activity/10",  text: "text-cat-activity",  border: "border-l-cat-activity",  bar: "bg-cat-activity",  emoji: "🎭", Icon: Ticket,          label: "Activity"  },
+  souvenir:      { bg: "bg-cat-gift/10",      text: "text-cat-gift",      border: "border-l-cat-gift",      bar: "bg-cat-gift",      emoji: "🎁", Icon: Gift,            label: "Gift"      },
+  shopping:      { bg: "bg-cat-shopping/10",  text: "text-cat-shopping",  border: "border-l-cat-shopping",  bar: "bg-cat-shopping",  emoji: "🛍️", Icon: ShoppingBag,    label: "Shopping"  },
+  other:         { bg: "bg-cat-other/10",     text: "text-cat-other",     border: "border-l-cat-other",     bar: "bg-cat-other",     emoji: "📌", Icon: Receipt,         label: "Other"     },
+}
+
+/**
+ * Fixed display order for charts and legends. The palette is validated for
+ * color-vision deficiency in this order (adjacent pairs), so charts must not
+ * re-sort segments by amount.
+ */
+export const CATEGORY_ORDER = [
+  "accommodation",
+  "transport",
+  "food",
+  "activity",
+  "souvenir",
+  "shopping",
+  "other",
+] as const
+
+export function categoryRank(category: string): number {
+  const i = (CATEGORY_ORDER as readonly string[]).indexOf(category.toLowerCase())
+  return i === -1 ? CATEGORY_ORDER.length : i
 }
 
 export function getCategoryColor(category?: string) {

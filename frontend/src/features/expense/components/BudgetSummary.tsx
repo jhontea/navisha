@@ -3,7 +3,7 @@
 import { cn, formatCurrency } from "@/lib/utils"
 import { useExpenseSummary } from "../hooks/useExpenses"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CATEGORY_COLORS } from "../categoryColors"
+import { CATEGORY_COLORS, categoryRank } from "../categoryColors"
 
 const CATEGORY_CONFIG = Object.fromEntries(
   Object.entries(CATEGORY_COLORS).map(([k, v]) => [k, { bar: v.bar, dot: v.bar, label: v.label }])
@@ -37,6 +37,9 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
   }
 
   const total = data.total_base
+  const byCategory = [...data.by_category].sort(
+    (a, b) => categoryRank(a.category) - categoryRank(b.category),
+  )
   const usedPct = tripBudget && tripBudget > 0 ? (total / tripBudget) * 100 : null
   // stroke-dashoffset = CIRCUMFERENCE * (1 - pct/100)
   const dashOffset =
@@ -101,9 +104,10 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
           </span>
         </div>
 
-        {/* Stacked Bar */}
-        <div className="h-8 w-full flex rounded-full overflow-hidden mb-4 bg-muted">
-          {data.by_category.map((c) => {
+        {/* Stacked Bar — fixed category order (palette is validated for
+            that order) with a 2px surface gap between segments. */}
+        <div className="h-8 w-full flex gap-0.5 rounded-full overflow-hidden mb-4 bg-card">
+          {byCategory.map((c) => {
             const pct = total > 0 ? (c.total / total) * 100 : 0
             const cfg = CATEGORY_CONFIG[c.category] ?? CATEGORY_CONFIG.other
             return (
@@ -119,7 +123,7 @@ export function BudgetSummary({ tripId, tripBudget }: Props) {
 
         {/* Legend — flex-wrap so items don't get crammed on small screens */}
         <div className="flex flex-wrap gap-x-4 gap-y-2.5">
-          {data.by_category.map((c) => {
+          {byCategory.map((c) => {
             const cfg = CATEGORY_CONFIG[c.category] ?? CATEGORY_CONFIG.other
             const pct = total > 0 ? (c.total / total) * 100 : 0
             return (
