@@ -92,14 +92,10 @@ func NewTripOverviewHandler(trips trip.UsecaseInterface, reader TripOverviewRead
 }
 
 func (h *TripOverviewHandler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/trips/:trip_id/overview", h.Get, authMiddleware)
+	g.GET("/trips/:trip_id/overview", middleware.WithUser(h.Get), authMiddleware)
 }
 
-func (h *TripOverviewHandler) Get(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *TripOverviewHandler) Get(c echo.Context, userID string) error {
 
 	ctx := c.Request().Context()
 	tripID := c.Param("trip_id")

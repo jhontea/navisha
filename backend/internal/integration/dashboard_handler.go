@@ -20,14 +20,10 @@ func NewDashboardHandler(trips trip.UsecaseInterface) *DashboardHandler {
 }
 
 func (h *DashboardHandler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/dashboard", h.Get, authMiddleware)
+	g.GET("/dashboard", middleware.WithUser(h.Get), authMiddleware)
 }
 
-func (h *DashboardHandler) Get(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *DashboardHandler) Get(c echo.Context, userID string) error {
 
 	ctx := c.Request().Context()
 	var upcoming []trip.Trip

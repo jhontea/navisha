@@ -314,7 +314,7 @@ func TestMe_Success(t *testing.T) {
 	c := echo.New().NewContext(req, rec)
 	c.Set(middleware.UserIDKey, "u1")
 
-	if err := h.Me(c); err != nil {
+	if err := middleware.WithUser(h.Me)(c); err != nil {
 		t.Fatalf("Me: %v", err)
 	}
 	if rec.Code != http.StatusOK {
@@ -342,7 +342,7 @@ func TestMe_NotFound(t *testing.T) {
 	c := echo.New().NewContext(req, rec)
 	c.Set(middleware.UserIDKey, "missing")
 
-	err := h.Me(c)
+	err := middleware.WithUser(h.Me)(c)
 	httpErr, ok := err.(*echo.HTTPError)
 	if !ok || httpErr.Code != http.StatusNotFound {
 		t.Fatalf("err = %v, want 404", err)
@@ -358,7 +358,7 @@ func TestMe_OtherError(t *testing.T) {
 	c := echo.New().NewContext(req, rec)
 	c.Set(middleware.UserIDKey, "u1")
 
-	err := h.Me(c)
+	err := middleware.WithUser(h.Me)(c)
 	httpErr, ok := err.(*echo.HTTPError)
 	if !ok || httpErr.Code != http.StatusInternalServerError {
 		t.Fatalf("err = %v, want 500", err)

@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/ahmadhafizh/navisha/backend/pkg/dbtx"
+	"github.com/jackc/pgx/v5"
 )
 
 type UsecaseInterface interface {
@@ -136,23 +138,16 @@ func (u *Usecase) CreateMany(ctx context.Context, userID string, inputs []Create
 		dayIDs = append(dayIDs, dayID)
 	}
 
-	tx, err := u.repo.BeginTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer u.repo.Rollback(ctx, tx)
-
-	owned, err := u.repo.CountOwnedDaysTx(ctx, tx, userID, dayIDs)
-	if err != nil {
-		return err
-	}
-	if owned != len(dayIDs) {
-		return apperr.ErrForbidden
-	}
-	if err := u.repo.BatchInsertTx(ctx, tx, activities); err != nil {
-		return err
-	}
-	return u.repo.Commit(ctx, tx)
+	return dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		owned, err := u.repo.CountOwnedDaysTx(ctx, tx, userID, dayIDs)
+		if err != nil {
+			return err
+		}
+		if owned != len(dayIDs) {
+			return apperr.ErrForbidden
+		}
+		return u.repo.BatchInsertTx(ctx, tx, activities)
+	})
 }
 
 func (u *Usecase) Update(ctx context.Context, userID, activityID string, in UpdateInput) (*Activity, error) {
@@ -209,20 +204,13 @@ func (u *Usecase) Reorder(ctx context.Context, userID, dayID string, orderedIDs 
 		return ErrReorderMismatch
 	}
 
-	tx, err := u.repo.BeginTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer u.repo.Rollback(ctx, tx)
-
 	orderMap := make(map[string]int, len(orderedIDs))
 	for i, id := range orderedIDs {
 		orderMap[id] = i
 	}
-	if err := u.repo.BatchUpdateOrderTx(ctx, tx, orderMap); err != nil {
-		return err
-	}
-	return u.repo.Commit(ctx, tx)
+	return dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		return u.repo.BatchUpdateOrderTx(ctx, tx, orderMap)
+	})
 }
 
 func (u *Usecase) verifyDayOwnership(ctx context.Context, userID, dayID string) error {

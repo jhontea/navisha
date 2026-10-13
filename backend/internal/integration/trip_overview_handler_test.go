@@ -55,7 +55,7 @@ func TestTripOverviewCompactResponseAndETag(t *testing.T) {
 	c.SetParamValues("trip-1")
 	c.Set(middleware.UserIDKey, "user-1")
 
-	if err := handler.Get(c); err != nil {
+	if err := middleware.WithUser(handler.Get)(c); err != nil {
 		t.Fatalf("Get returned error: %v", err)
 	}
 	if rec.Code != http.StatusOK {
@@ -85,7 +85,7 @@ func TestTripOverviewCompactResponseAndETag(t *testing.T) {
 	conditionalContext.SetParamNames("trip_id")
 	conditionalContext.SetParamValues("trip-1")
 	conditionalContext.Set(middleware.UserIDKey, "user-1")
-	if err := handler.Get(conditionalContext); err != nil {
+	if err := middleware.WithUser(handler.Get)(conditionalContext); err != nil {
 		t.Fatalf("conditional Get returned error: %v", err)
 	}
 	if conditionalRec.Code != http.StatusNotModified {

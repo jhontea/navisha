@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/ahmadhafizh/navisha/backend/pkg/dbtx"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -100,32 +101,30 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	}
 
 	// Cost present → atomic: transport + expense both succeed or both rolled back.
-	tx, err := u.repo.BeginTx(ctx)
+	var created *Transportation
+	err = dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		var err error
+		if created, err = u.repo.InsertTx(ctx, tx, t); err != nil {
+			return err
+		}
+		title := created.Label
+		if title == "" {
+			title = string(created.Type)
+		}
+		// Use departure date as the expense date so it groups by travel day
+		var departureDate string
+		if created.DepartureDatetime != nil {
+			departureDate = created.DepartureDatetime.Format("2006-01-02")
+		}
+		if err := u.expenseCreator.CreateLinkedExpenseTx(
+			ctx, tx, userID, tripID, title,
+			in.Cost.Currency, "transport", in.Cost.Amount, departureDate,
+		); err != nil {
+			return fmt.Errorf("transportation.Create linked expense: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer u.repo.Rollback(ctx, tx)
-
-	created, err := u.repo.InsertTx(ctx, tx, t)
-	if err != nil {
-		return nil, err
-	}
-	title := created.Label
-	if title == "" {
-		title = string(created.Type)
-	}
-	// Use departure date as the expense date so it groups by travel day
-	var departureDate string
-	if created.DepartureDatetime != nil {
-		departureDate = created.DepartureDatetime.Format("2006-01-02")
-	}
-	if err := u.expenseCreator.CreateLinkedExpenseTx(
-		ctx, tx, userID, tripID, title,
-		in.Cost.Currency, "transport", in.Cost.Amount, departureDate,
-	); err != nil {
-		return nil, fmt.Errorf("transportation.Create linked expense: %w", err)
-	}
-	if err := u.repo.Commit(ctx, tx); err != nil {
 		return nil, err
 	}
 	return created, nil

@@ -32,7 +32,7 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	auth.GET("/google/callback", h.GoogleCallback)
 	auth.POST("/logout", h.Logout, authMiddleware)
 	auth.POST("/refresh", h.Refresh)
-	auth.GET("/me", h.Me, authMiddleware)
+	auth.GET("/me", middleware.WithUser(h.Me), authMiddleware)
 }
 
 // TestLoginer is implemented by *Usecase; kept out of UsecaseInterface so the
@@ -140,11 +140,7 @@ func (h *Handler) Refresh(c echo.Context) error {
 }
 
 // Me returns the authenticated user's profile.
-func (h *Handler) Me(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Me(c echo.Context, userID string) error {
 
 	usr, err := h.usecase.Me(c.Request().Context(), userID)
 	if err != nil {
