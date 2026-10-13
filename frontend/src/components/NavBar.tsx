@@ -1,322 +1,180 @@
 "use client";
 
 import Link from "next/link";
-import { UserAvatar } from "@/components/UserAvatar"
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import {
-  Compass,
-  LayoutDashboard,
-  User,
-  ArrowLeftRight,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Compass, Sparkles, User, type LucideIcon } from "lucide-react";
+
+import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { currencyApi } from "@/features/currency/api";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/hooks";
 import { tripApi } from "@/features/trip/api";
 import type { TripListResponse } from "@/features/trip/types";
 
-const NAV_ITEMS = [
-  { label: "Home",     href: "/dashboard", icon: LayoutDashboard },
-  { label: "My Trips", href: "/trips",     icon: Compass },
-  { label: "Currency", href: "/currency",  icon: ArrowLeftRight },
-  { label: "Profile",  href: "/profile",   icon: User },
-] as const;
+type NavItem = {
+  label: string;
+  /** Shorter label for the mobile bottom bar. */
+  shortLabel: string;
+  href: string;
+  icon: LucideIcon;
+  isActive: (pathname: string) => boolean;
+};
 
-/**
- * Responsive navigation.
- * Iter 21 — desktop: tighter brand, improved active pill, notification dot slot
- * Iter 22 — mobile bottom bar: larger touch targets, label always shown, active indicator refined
- * Iter 23 — skip-to-content link improved styling
- * Iter 24 — profile avatar: ring animation on active
- */
+// Global navigation (D3, docs/PLANNING_REFACTOR_REDESIGN.md B3): Trips is
+// home, one AI entry point, Profile (which also holds tools like the
+// currency converter).
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Trips",
+    shortLabel: "Trips",
+    href: "/trips",
+    icon: Compass,
+    isActive: (p) => p.startsWith("/trips") && !p.startsWith("/trips/generate"),
+  },
+  {
+    label: "Generate with AI",
+    shortLabel: "Generate",
+    href: "/trips/generate",
+    icon: Sparkles,
+    isActive: (p) => p.startsWith("/trips/generate"),
+  },
+  {
+    label: "Profile",
+    shortLabel: "Profile",
+    href: "/profile",
+    icon: User,
+    isActive: (p) => p.startsWith("/profile") || p.startsWith("/currency"),
+  },
+];
+
 export function NavBar() {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { user, isLoading } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
-  const prevPath = useRef(pathname);
-  const [bouncing, setBouncing] = useState<string | null>(null);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (prevPath.current !== pathname) {
-      setBouncing(pathname);
-      const t = setTimeout(() => setBouncing(null), 400);
-      prevPath.current = pathname;
-      return () => clearTimeout(t);
-    }
-  }, [pathname]);
-
-  function prefetchNav(href: string) {
-    if (href === "/dashboard") {
-      void queryClient.prefetchQuery({
-        queryKey: ["trips", "upcoming", 6],
-        queryFn: () => tripApi.listUpcoming(6),
-        staleTime: 2 * 60 * 1000,
-      });
-      return;
-    }
-
-    if (href === "/trips") {
-      void queryClient.prefetchInfiniteQuery({
-        queryKey: ["trips", "list"],
-        queryFn: ({ pageParam }) =>
-          tripApi.list({ cursor: pageParam as string, limit: 20 }),
-        initialPageParam: "",
-        getNextPageParam: (last: TripListResponse) => last.next_cursor || undefined,
-      });
-      return;
-    }
-
-    if (href === "/currency") {
-      void queryClient.prefetchQuery({
-        queryKey: ["currency", "supported"],
-        queryFn: () => currencyApi.supported(),
-        staleTime: 60 * 60 * 1000,
-      });
-    }
+  function prefetchTrips() {
+    void queryClient.prefetchInfiniteQuery({
+      queryKey: ["trips", "list"],
+      queryFn: ({ pageParam }) => tripApi.list({ cursor: pageParam as string, limit: 20 }),
+      initialPageParam: "",
+      getNextPageParam: (last: TripListResponse) => last.next_cursor || undefined,
+    });
   }
+
+  const profile = NAV_ITEMS[2];
+  const profileActive = profile.isActive(pathname);
 
   return (
     <>
-      {/* Iter 23 — Skip to main content: larger, more polished */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-primary focus:px-5 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:shadow-primary/30"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-primary-foreground"
       >
         Skip to main content
       </a>
 
       {/* ── Desktop: fixed top bar ── */}
       <header
-        className={cn(
-          "fixed inset-x-0 top-0 z-50 hidden md:flex h-14 items-center",
-          "transition-all duration-300",
-          scrolled
-            ? "bg-background/95 backdrop-blur-2xl border-b border-border/40 shadow-[0_1px_0_0_hsl(var(--border)/0.3)]"
-            : "bg-background/90 backdrop-blur-xl border-b border-border/30",
-        )}
+        className="fixed inset-x-0 top-0 z-50 hidden h-14 items-center border-b bg-background/95 backdrop-blur md:flex"
         role="banner"
       >
-        <nav
-          className="flex w-full items-center justify-between px-4 md:px-6 max-w-6xl mx-auto"
-          aria-label="Main navigation"
-        >
-          {/* Brand */}
+        <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6" aria-label="Main navigation">
           <Link
-            href="/dashboard"
-            onMouseEnter={() => prefetchNav("/dashboard")}
-            onFocus={() => prefetchNav("/dashboard")}
-            className="flex items-center gap-2.5 group shrink-0"
+            href="/trips"
+            onMouseEnter={prefetchTrips}
+            onFocus={prefetchTrips}
+            className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label="Navisha home"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary shadow-sm group-hover:shadow-md transition-all group-hover:scale-105">
-              <Compass className="h-4 w-4 text-white" aria-hidden="true" />
-            </div>
-            {/* Iter 21 — gradient brand text */}
-            <span className="text-gradient-sunset text-[15px] font-bold tracking-tight">
-              Navisha
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <Compass className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
             </span>
+            <span className="text-base font-semibold tracking-tight text-foreground">Navisha</span>
           </Link>
 
-          {/* Nav links — centred */}
-          <div className="flex items-center gap-0.5" role="list">
-            {NAV_ITEMS.slice(0, 3).map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
-              const isBouncing = bouncing
-                ? (item.href === "/dashboard"
-                    ? bouncing === "/dashboard"
-                    : bouncing.startsWith(item.href))
-                : false;
+          <ul className="flex items-center gap-1">
+            {NAV_ITEMS.slice(0, 2).map((item) => {
+              const active = item.isActive(pathname);
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onMouseEnter={() => prefetchNav(item.href)}
-                  onFocus={() => prefetchNav(item.href)}
-                  role="listitem"
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "relative flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
-                  )}
-                >
-                  {/* Iter 21 — active: bottom indicator dot */}
-                  {isActive && (
-                    <span
-                      className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <item.icon
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onMouseEnter={item.href === "/trips" ? prefetchTrips : undefined}
+                    onFocus={item.href === "/trips" ? prefetchTrips : undefined}
+                    aria-current={active ? "page" : undefined}
                     className={cn(
-                      "h-4 w-4 shrink-0 transition-all duration-300",
-                      isActive ? "text-primary" : "text-muted-foreground",
-                      isBouncing && "animate-bounce",
+                      "flex h-10 items-center gap-2 rounded-lg px-3.5 text-sm font-medium transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
-                    strokeWidth={isActive ? 2.5 : 2}
-                    aria-hidden="true"
-                  />
-                  {item.label}
-                </Link>
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    {item.label}
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
-          {/* Right side: avatar */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Iter 24 — Profile: ring animation when active */}
-            <Link
-              href="/profile"
-              onMouseEnter={() => prefetchNav("/profile")}
-              onFocus={() => prefetchNav("/profile")}
-              aria-current={pathname === "/profile" ? "page" : undefined}
-              aria-label={isLoading ? "Loading profile" : `View profile: ${user?.name ?? "Account"}`}
-              className={cn(
-                "flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                pathname === "/profile"
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
-              )}
-            >
-              {isLoading ? (
-                <>
-                  <Skeleton variant="avatar" className="h-7 w-7" />
-                  <span className="hidden xl:flex flex-col gap-1">
-                    <Skeleton variant="text" className="h-2 w-5" />
-                    <Skeleton variant="text" className="h-3 w-14" />
-                  </span>
-                  <Skeleton variant="text" className="hidden h-4 w-12 lg:block xl:hidden" />
-                </>
-              ) : (
-                <UserAvatar
-                  key={user?.id}
-                  src={user?.avatar_url}
-                  name={user?.name}
-                  decorative
-                  className={cn(
-                    "h-7 w-7 border-2",
-                    pathname === "/profile" ? "border-primary/60" : "border-transparent",
-                  )}
-                />
-              )}
-              <span className="hidden xl:inline text-sm leading-tight">
-                <span className="text-xs text-muted-foreground block leading-none">Hi,</span>
-                <span className="font-semibold">{user?.name?.split(" ")[0] ?? "Profile"}</span>
-              </span>
-              <span className="hidden lg:inline xl:hidden text-sm font-medium">
-                {user?.name?.split(" ")[0] ?? "Profile"}
-              </span>
-            </Link>
-          </div>
+          <Link
+            href="/profile"
+            aria-current={profileActive ? "page" : undefined}
+            aria-label={isLoading ? "Loading profile" : `Profile: ${user?.name ?? "Account"}`}
+            className={cn(
+              "flex h-10 shrink-0 items-center gap-2 rounded-lg px-2.5 text-sm font-medium transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              profileActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            {isLoading ? (
+              <Skeleton variant="avatar" className="h-7 w-7" />
+            ) : (
+              <UserAvatar key={user?.id} src={user?.avatar_url} name={user?.name} decorative className="h-7 w-7" />
+            )}
+            <span className="hidden lg:inline">{user?.name?.split(" ")[0] ?? "Profile"}</span>
+          </Link>
         </nav>
       </header>
 
-      {/* ── Mobile: floating glass bottom nav ── */}
-      {/* Iter 22 — larger, more floating, label always visible */}
+      {/* ── Mobile: bottom bar ── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
-        role="navigation"
+        className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         aria-label="Main navigation"
       >
-        <div
-          className={cn(
-            "mx-3 mb-3 flex items-center justify-around rounded-2xl border border-border/40 bg-background/95 px-1 pt-2 shadow-xl backdrop-blur-2xl",
-            "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
-            "transition-all duration-300",
-            scrolled && "shadow-2xl",
-          )}
-        >
+        <ul className="flex items-stretch justify-around">
           {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(item.href);
-            const isBouncing = bouncing
-              ? (item.href === "/dashboard"
-                  ? bouncing === "/dashboard"
-                  : bouncing.startsWith(item.href))
-              : false;
+            const active = item.isActive(pathname);
+            const showAvatar = item.href === "/profile" && !isLoading && user?.avatar_url;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-                aria-current={isActive ? "page" : undefined}
-                title={item.label}
-                aria-label={item.label}
-                className={cn(
-                  "group relative flex min-h-[52px] min-w-[52px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-2",
-                  "text-[11px] font-medium",
-                  "transition-all duration-200 active:scale-95",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-                )}
-              >
-                {/* Iter 22 — active: top pill indicator */}
-                {isActive && (
-                  <span
-                    className="absolute top-1 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-primary"
-                    aria-hidden="true"
-                  />
-                )}
-                {/* Iter 22 — icon chip */}
-                <span
+              <li key={item.href} className="flex-1">
+                <Link
+                  href={item.href}
+                  prefetch={false}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex h-8 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                    isActive
-                      ? "bg-primary/10"
-                      : "group-hover:bg-muted/60",
+                    "flex min-h-14 flex-col items-center justify-center gap-1 px-2 text-xs font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {item.href === "/profile" && isLoading ? (
-                    <Skeleton variant="avatar" className="h-5 w-5" />
-                  ) : item.href === "/profile" && user?.avatar_url ? (
+                  {showAvatar ? (
                     <UserAvatar
                       key={user.id}
                       src={user.avatar_url}
                       name={user.name}
                       decorative
-                      className={cn(
-                        "h-5 w-5",
-                        isActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
-                      )}
+                      className={cn("h-6 w-6", active && "ring-2 ring-primary ring-offset-1 ring-offset-background")}
                     />
                   ) : (
-                    <item.icon
-                      className={cn(
-                        "h-5 w-5 transition-all duration-300",
-                        isActive ? "text-primary" : "text-muted-foreground",
-                        isBouncing && "animate-bounce",
-                      )}
-                      strokeWidth={isActive ? 2.5 : 2}
-                      aria-hidden="true"
-                    />
+                    <item.icon className="h-6 w-6" strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
                   )}
-                </span>
-                {/* Iter 22 — label always visible */}
-                <span className="leading-none">{item.label}</span>
-              </Link>
+                  <span className="leading-none">{item.shortLabel}</span>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </nav>
     </>
   );
