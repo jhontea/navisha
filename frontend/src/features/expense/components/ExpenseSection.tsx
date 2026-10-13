@@ -4,7 +4,6 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import { MoneyText } from "@/components/MoneyText"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
@@ -15,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { toast } from "@/lib/toast"
+import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { cn } from "@/lib/utils"
 import { categoryRank, getCategoryColor } from "../categoryColors"
 import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } from "../hooks/useExpenses"
@@ -67,7 +66,6 @@ interface Props {
 export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
   const { data, isLoading, isError } = useExpenses(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; expense: Expense } | null>(null)
-  const [confirmingDelete, setConfirmingDelete] = useState<Expense | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [sortMode, setSortMode] = useState<SortMode>("date-desc")
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
@@ -76,7 +74,8 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
   const updateMut = useUpdateExpense(sheet?.mode === "edit" ? sheet.expense.id : "", tripId)
   const deleteMut = useDeleteExpense(tripId)
 
-  const allItems = data?.items ?? []
+  const pendingDeletes = usePendingDeletes()
+  const allItems = (data?.items ?? []).filter((e) => !pendingDeletes.has(e.id))
   const presentCategories = Array.from(new Set(allItems.map((e) => e.category as string))).sort(
     (a, b) => categoryRank(a) - categoryRank(b),
   )
@@ -150,8 +149,14 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
             <DropdownMenuItem
               className={MENU_ITEM}
               variant="destructive"
-              disabled={deleteMut.isPending && deleteMut.variables === e.id}
-              onClick={() => setConfirmingDelete(e)}
+              onClick={() =>
+                scheduleDelete({
+                  id: e.id,
+                  message: "Expense deleted.",
+                  errorMessage: "Couldn’t delete this expense. It’s back in the list.",
+                  commit: () => deleteMut.mutateAsync(e.id),
+                })
+              }
             >
               <Trash2 aria-hidden="true" />
               Delete
@@ -314,31 +319,6 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
         )}
       </ResponsiveSheet>
 
-      <ConfirmDialog
-        open={!!confirmingDelete}
-        onOpenChange={(open) => {
-          if (!open && !deleteMut.isPending) setConfirmingDelete(null)
-        }}
-        title={`Delete "${confirmingDelete?.title ?? ""}"?`}
-        description="This expense will be removed from the trip's budget."
-        confirmLabel="Delete expense"
-        destructive
-        isPending={deleteMut.isPending}
-        closeOnConfirm={false}
-        onConfirm={() => {
-          if (confirmingDelete && !deleteMut.isPending) {
-            deleteMut.mutate(confirmingDelete.id, {
-              onSuccess: () => {
-                setConfirmingDelete(null)
-                toast("Expense deleted.")
-              },
-              onError: () => {
-                toast("Couldn’t delete this expense. Try again.", "error")
-              },
-            })
-          }
-        }}
-      />
     </section>
   )
 }

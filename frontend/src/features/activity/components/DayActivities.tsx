@@ -14,8 +14,8 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSo
 import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, ChevronDown, PenLine, Plus, Sparkles } from "lucide-react"
 
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
+import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -73,12 +73,14 @@ export function DayActivities({
   onSelectModeChange,
 }: Props) {
   const qc = useQueryClient()
-  const { isLoading, activities, staticItems, overlapByActivity } = useDayTimeline(tripId, dayId, date)
+  const timeline = useDayTimeline(tripId, dayId, date)
+  const { isLoading, staticItems, overlapByActivity } = timeline
+  const pendingDeletes = usePendingDeletes()
+  const activities = timeline.activities.filter((a) => !pendingDeletes.has(a.id))
   const selection = useActivitySelection(dayId, days, activities, selectMode, onSelectModeChange)
   const { selectedActivityId, selectActivity } = useItineraryFocus()
 
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; activity: Activity } | { mode: "ai" } | null>(null)
-  const [confirmingDelete, setConfirmingDelete] = useState<Activity | null>(null)
   const [reorderKey, setReorderKey] = useState(0)
 
   const createMut = useCreateActivity(dayId, tripId)
@@ -165,8 +167,14 @@ export function DayActivities({
                       key={a.id}
                       activity={a}
                       onEdit={() => setSheet({ mode: "edit", activity: a })}
-                      onDelete={() => setConfirmingDelete(a)}
-                      isDeleting={deleteMut.isPending && confirmingDelete?.id === a.id}
+                      onDelete={() =>
+                        scheduleDelete({
+                          id: a.id,
+                          message: "Activity deleted.",
+                          errorMessage: "Couldn’t delete this activity. It’s back on the day.",
+                          commit: () => deleteMut.mutateAsync(a.id),
+                        })
+                      }
                       overlapTitles={overlapByActivity.get(a.id) ?? []}
                       selectMode={selectMode}
                       isSelected={selection.selectedIds.has(a.id)}
@@ -285,20 +293,6 @@ export function DayActivities({
         )}
       </ResponsiveSheet>
 
-      <ConfirmDialog
-        open={!!confirmingDelete}
-        onOpenChange={(o) => !o && setConfirmingDelete(null)}
-        title={`Delete "${confirmingDelete?.title ?? ""}"?`}
-        description="This activity will be removed from the day."
-        confirmLabel="Delete activity"
-        destructive
-        isPending={deleteMut.isPending}
-        onConfirm={() => {
-          if (confirmingDelete) {
-            deleteMut.mutate(confirmingDelete.id, { onSettled: () => setConfirmingDelete(null) })
-          }
-        }}
-      />
     </div>
   )
 }

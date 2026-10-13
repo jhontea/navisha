@@ -13,7 +13,6 @@ interface Props {
   days?: { date: string; day_number: number }[]
   onEdit: () => void
   onDelete: () => void
-  isDeleting: boolean
 }
 
 /** One transport booking: type and label, from → to with times, one meta line. */
@@ -22,7 +21,6 @@ export const TransportationCard = memo(function TransportationCard({
   days = [],
   onEdit,
   onDelete,
-  isDeleting,
 }: Props) {
   const typeLabel = transportTypeLabel(t.type)
   const heading = t.label ? `${typeLabel} · ${t.label}` : typeLabel
@@ -45,7 +43,6 @@ export const TransportationCard = memo(function TransportationCard({
       actionsLabel={`Actions for ${heading}`}
       onEdit={onEdit}
       onDelete={onDelete}
-      isDeleting={isDeleting}
     >
       {(t.from_location || t.to_location) && (
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">

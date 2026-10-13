@@ -34,7 +34,6 @@ interface Props {
   activity: Activity
   onEdit: () => void
   onDelete: () => void
-  isDeleting: boolean
   overlapTitles?: string[]
   /** Highlighted because it is selected on the map. */
   selected?: boolean
@@ -49,7 +48,6 @@ export function ActivityCard({
   activity,
   onEdit,
   onDelete,
-  isDeleting,
   overlapTitles = [],
   selected = false,
   onSelect,
@@ -91,7 +89,7 @@ export function ActivityCard({
               <Pencil aria-hidden="true" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className={MENU_ITEM} variant="destructive" disabled={isDeleting} onClick={onDelete}>
+            <DropdownMenuItem className={MENU_ITEM} variant="destructive" onClick={onDelete}>
               <Trash2 aria-hidden="true" />
               Delete
             </DropdownMenuItem>

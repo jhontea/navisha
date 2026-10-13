@@ -4,12 +4,11 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { Plane, Plus } from "lucide-react"
 
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
 import { dateSortKey } from "@/lib/calendar"
-import { toast } from "@/lib/toast"
+import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import {
   useCreateTransportation,
   useDeleteTransportation,
@@ -35,14 +34,14 @@ interface Props {
 export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: Props) {
   const { data, isLoading, isError } = useTransportations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Transportation } | null>(null)
-  const [confirmingDelete, setConfirmingDelete] = useState<Transportation | null>(null)
 
   const createMut = useCreateTransportation(tripId)
   const updateMut = useUpdateTransportation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteTransportation(tripId)
 
   // Chronological; undated entries last.
-  const items = [...(data?.items ?? [])].sort((x, y) =>
+  const pendingDeletes = usePendingDeletes()
+  const items = (data?.items ?? []).filter((x) => !pendingDeletes.has(x.id)).sort((x, y) =>
     dateSortKey(x.departure_datetime).localeCompare(dateSortKey(y.departure_datetime)),
   )
 
@@ -96,8 +95,14 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
             transportation={t}
             days={days}
             onEdit={() => setSheet({ mode: "edit", item: t })}
-            onDelete={() => setConfirmingDelete(t)}
-            isDeleting={deleteMut.isPending && confirmingDelete?.id === t.id}
+            onDelete={() =>
+              scheduleDelete({
+                id: t.id,
+                message: "Transport deleted.",
+                errorMessage: "Couldn’t delete this transport. It’s back in the list.",
+                commit: () => deleteMut.mutateAsync(t.id),
+              })
+            }
           />
         ))}
       </div>
@@ -133,31 +138,6 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
         )}
       </ResponsiveSheet>
 
-      <ConfirmDialog
-        open={!!confirmingDelete}
-        onOpenChange={(open) => {
-          if (!open && !deleteMut.isPending) setConfirmingDelete(null)
-        }}
-        title={`Delete "${confirmingDelete?.label || confirmingDelete?.type || ""}"?`}
-        description="This transport entry will be removed from the trip."
-        confirmLabel="Delete transport"
-        destructive
-        isPending={deleteMut.isPending}
-        closeOnConfirm={false}
-        onConfirm={() => {
-          if (confirmingDelete && !deleteMut.isPending) {
-            deleteMut.mutate(confirmingDelete.id, {
-              onSuccess: () => {
-                setConfirmingDelete(null)
-                toast("Transport deleted.")
-              },
-              onError: () => {
-                toast("Couldn’t delete this transport. Try again.", "error")
-              },
-            })
-          }
-        }}
-      />
     </section>
   )
 }

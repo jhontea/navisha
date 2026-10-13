@@ -4,12 +4,11 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { Hotel, Plus } from "lucide-react"
 
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
 import { dateSortKey } from "@/lib/calendar"
-import { toast } from "@/lib/toast"
+import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import {
   useAccommodations,
   useCreateAccommodation,
@@ -35,14 +34,14 @@ interface Props {
 export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Props) {
   const { data, isLoading, isError } = useAccommodations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Accommodation } | null>(null)
-  const [confirmingDelete, setConfirmingDelete] = useState<Accommodation | null>(null)
 
   const createMut = useCreateAccommodation(tripId)
   const updateMut = useUpdateAccommodation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteAccommodation(tripId)
 
   // Chronological; undated entries last.
-  const items = [...(data?.items ?? [])].sort((x, y) =>
+  const pendingDeletes = usePendingDeletes()
+  const items = (data?.items ?? []).filter((x) => !pendingDeletes.has(x.id)).sort((x, y) =>
     dateSortKey(x.check_in).localeCompare(dateSortKey(y.check_in)),
   )
 
@@ -96,8 +95,14 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
             accommodation={a}
             days={days}
             onEdit={() => setSheet({ mode: "edit", item: a })}
-            onDelete={() => setConfirmingDelete(a)}
-            isDeleting={deleteMut.isPending && confirmingDelete?.id === a.id}
+            onDelete={() =>
+              scheduleDelete({
+                id: a.id,
+                message: "Stay deleted.",
+                errorMessage: "Couldn’t delete this stay. It’s back in the list.",
+                commit: () => deleteMut.mutateAsync(a.id),
+              })
+            }
           />
         ))}
       </div>
@@ -132,31 +137,6 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
         )}
       </ResponsiveSheet>
 
-      <ConfirmDialog
-        open={!!confirmingDelete}
-        onOpenChange={(open) => {
-          if (!open && !deleteMut.isPending) setConfirmingDelete(null)
-        }}
-        title={`Delete "${confirmingDelete?.name ?? ""}"?`}
-        description="This stay will be removed from the trip."
-        confirmLabel="Delete stay"
-        destructive
-        isPending={deleteMut.isPending}
-        closeOnConfirm={false}
-        onConfirm={() => {
-          if (confirmingDelete && !deleteMut.isPending) {
-            deleteMut.mutate(confirmingDelete.id, {
-              onSuccess: () => {
-                setConfirmingDelete(null)
-                toast("Stay deleted.")
-              },
-              onError: () => {
-                toast("Couldn’t delete this stay. Try again.", "error")
-              },
-            })
-          }
-        }}
-      />
     </section>
   )
 }

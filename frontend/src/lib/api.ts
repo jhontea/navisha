@@ -179,8 +179,10 @@ export const api = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
 
+  // keepalive lets a delete that is flushed while the page closes (undo
+  // window, lib/pendingDeletes.ts) still reach the server.
   delete: <T>(path: string, options?: FetchOptions) =>
-    request<T>(path, { ...options, method: "DELETE" }),
+    request<T>(path, { keepalive: true, ...options, method: "DELETE" }),
 }
 
 export { ApiError }
