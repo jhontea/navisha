@@ -315,7 +315,7 @@ export function GeoapifyAutocomplete({
               )
             })
           )}
-          <p className="border-t px-3 py-1.5 text-right text-[10px] text-muted-foreground">
+          <p className="border-t px-3 py-1.5 text-right text-xs text-muted-foreground">
             Powered by Geoapify
           </p>
         </div>

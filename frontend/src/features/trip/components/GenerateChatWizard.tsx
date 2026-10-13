@@ -16,14 +16,14 @@ const MAX_DESCRIPTION = 100
 // friction: users tap a style instead of typing from scratch. Values are kept
 // short so 2-3 chips can combine within MAX_DESCRIPTION.
 const PROMPT_CHIPS: { label: string; value: string }[] = [
-  { label: "🍜 Foodie", value: "foodie, local cuisine" },
-  { label: "🏔️ Adventure", value: "adventure, outdoor activities" },
-  { label: "💰 Budget", value: "budget-friendly" },
-  { label: "🎭 Cultural", value: "cultural, historical sites" },
-  { label: "👨‍👩‍👧 Family", value: "family-friendly" },
-  { label: "💎 Hidden gems", value: "hidden gems, off the beaten path" },
-  { label: "🏖️ Relaxing", value: "relaxing, beaches" },
-  { label: "🌃 Nightlife", value: "nightlife and entertainment" },
+  { label: "Local food", value: "local food and markets" },
+  { label: "Outdoors", value: "outdoor activities and nature" },
+  { label: "On a budget", value: "budget-friendly" },
+  { label: "Culture & history", value: "cultural and historical sites" },
+  { label: "With kids", value: "family-friendly, with kids" },
+  { label: "Off the main sights", value: "quieter places away from the main tourist sights" },
+  { label: "Slow pace", value: "relaxed pace, fewer stops per day" },
+  { label: "Nightlife", value: "nightlife and evening entertainment" },
 ]
 
 // Steps in the conversation. Each maps to one field of GenerateTripInput.

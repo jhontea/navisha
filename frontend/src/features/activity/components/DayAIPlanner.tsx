@@ -29,11 +29,11 @@ interface Props {
 }
 
 const DAY_GENERATION_MESSAGES = [
-  "Reading your day...",
-  "Finding open time slots...",
-  "Matching places to your route...",
-  "Balancing activities and breaks...",
-  "Preparing your day plan...",
+  "Reading your day…",
+  "Finding open time slots…",
+  "Matching places to your route…",
+  "Balancing activities and breaks…",
+  "Preparing your day plan…",
 ]
 
 const DAY_INTENTS = [
@@ -290,7 +290,7 @@ export function DayAIPlanner({
               value={instruction}
               onChange={(event) => setInstruction(event.target.value.slice(0, customInstructionLimit))}
               maxLength={customInstructionLimit}
-              placeholder="Add details, e.g. prioritize the Shibuya area..."
+              placeholder="Add details, e.g. prioritize the Shibuya area…"
               aria-label="Additional AI planning details"
               className="bg-background"
               rows={2}
@@ -369,7 +369,7 @@ export function DayAIPlanner({
             <Button type="button" size="sm" variant="gradient" onClick={apply} disabled={isApplying || selectedActivities.length === 0} className="rounded-full px-5">
               {isApplying && <Loader2 className="h-4 w-4 animate-spin" />}
               {isApplying
-                ? "Adding..."
+                ? "Adding…"
                 : selectedActivities.length === 0
                   ? "Select at least one"
                   : `Add ${selectedActivities.length} to Day ${dayNumber}`}
