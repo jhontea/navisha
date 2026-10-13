@@ -20,11 +20,11 @@ func NewHandler(usecase UsecaseInterface) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/days/:day_id/activities", h.List, authMiddleware)
-	g.POST("/days/:day_id/activities", h.Create, authMiddleware)
-	g.PUT("/days/:day_id/activities/reorder", h.Reorder, authMiddleware)
-	g.PUT("/activities/:id", h.Update, authMiddleware)
-	g.DELETE("/activities/:id", h.Delete, authMiddleware)
+	g.GET("/days/:day_id/activities", middleware.WithUser(h.List), authMiddleware)
+	g.POST("/days/:day_id/activities", middleware.WithUser(h.Create), authMiddleware)
+	g.PUT("/days/:day_id/activities/reorder", middleware.WithUser(h.Reorder), authMiddleware)
+	g.PUT("/activities/:id", middleware.WithUser(h.Update), authMiddleware)
+	g.DELETE("/activities/:id", middleware.WithUser(h.Delete), authMiddleware)
 }
 
 type createRequest struct {
@@ -46,11 +46,7 @@ type reorderRequest struct {
 	IDs []string `json:"ids"`
 }
 
-func (h *Handler) List(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) List(c echo.Context, userID string) error {
 	dayID := c.Param("day_id")
 	out, err := h.usecase.List(c.Request().Context(), userID, dayID)
 	if err != nil {
@@ -63,11 +59,7 @@ func (h *Handler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": resp})
 }
 
-func (h *Handler) Create(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Create(c echo.Context, userID string) error {
 	dayID := c.Param("day_id")
 	var req createRequest
 	if err := c.Bind(&req); err != nil {
@@ -101,11 +93,7 @@ func (h *Handler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, toResponse(a))
 }
 
-func (h *Handler) Update(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Update(c echo.Context, userID string) error {
 	id := c.Param("id")
 	var req updateRequest
 	if err := c.Bind(&req); err != nil {
@@ -130,11 +118,7 @@ func (h *Handler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, toResponse(a))
 }
 
-func (h *Handler) Delete(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Delete(c echo.Context, userID string) error {
 	id := c.Param("id")
 	if err := h.usecase.Delete(c.Request().Context(), userID, id); err != nil {
 		return mapErr(err)
@@ -142,11 +126,7 @@ func (h *Handler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) Reorder(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Reorder(c echo.Context, userID string) error {
 	dayID := c.Param("day_id")
 	var req reorderRequest
 	if err := c.Bind(&req); err != nil {

@@ -43,3 +43,16 @@ func tokenFromRequest(c echo.Context) string {
 
 	return ""
 }
+
+// WithUser adapts a handler that needs the signed-in user's ID. It reads the
+// ID set by the auth middleware and answers 401 when it is missing, so
+// handlers no longer repeat that check.
+func WithUser(next func(c echo.Context, userID string) error) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		userID, ok := c.Get(UserIDKey).(string)
+		if !ok || userID == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
+		}
+		return next(c, userID)
+	}
+}

@@ -41,7 +41,7 @@ func TestDashboardResponsePreservesTripPayloads(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.Set(middleware.UserIDKey, "user-1")
 
-	if err := handler.Get(c); err != nil {
+	if err := middleware.WithUser(handler.Get)(c); err != nil {
 		t.Fatalf("Get returned error: %v", err)
 	}
 	var response struct {

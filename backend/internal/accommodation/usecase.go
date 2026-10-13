@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/ahmadhafizh/navisha/backend/pkg/dbtx"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -107,25 +108,23 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 	}
 
 	// Atomic: accommodation + linked expense both commit or both roll back.
-	tx, err := u.repo.BeginTx(ctx)
+	var created *Accommodation
+	err = dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		var err error
+		if created, err = u.repo.InsertTx(ctx, tx, a); err != nil {
+			return err
+		}
+		// Use check-in date as the expense date so it groups correctly on budget page
+		checkinDate := created.CheckIn.Format("2006-01-02")
+		if err := u.expenseCreator.CreateLinkedExpenseTx(
+			ctx, tx, userID, tripID, created.Name,
+			in.Cost.Currency, "accommodation", in.Cost.Amount, checkinDate,
+		); err != nil {
+			return fmt.Errorf("accommodation.Create linked expense: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer u.repo.Rollback(ctx, tx)
-
-	created, err := u.repo.InsertTx(ctx, tx, a)
-	if err != nil {
-		return nil, err
-	}
-	// Use check-in date as the expense date so it groups correctly on budget page
-	checkinDate := created.CheckIn.Format("2006-01-02")
-	if err := u.expenseCreator.CreateLinkedExpenseTx(
-		ctx, tx, userID, tripID, created.Name,
-		in.Cost.Currency, "accommodation", in.Cost.Amount, checkinDate,
-	); err != nil {
-		return nil, fmt.Errorf("accommodation.Create linked expense: %w", err)
-	}
-	if err := u.repo.Commit(ctx, tx); err != nil {
 		return nil, err
 	}
 	return created, nil

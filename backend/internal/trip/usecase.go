@@ -8,6 +8,7 @@ import (
 
 	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/currency"
+	"github.com/ahmadhafizh/navisha/backend/pkg/dbtx"
 	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/jackc/pgx/v5"
 )
@@ -115,23 +116,19 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 		Notes:            in.Notes,
 	}
 
-	tx, err := u.repo.BeginTx(ctx)
+	var created *Trip
+	err := dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		var err error
+		if created, err = u.repo.InsertTrip(ctx, tx, t); err != nil {
+			return fmt.Errorf("trip.usecase.Create insert trip: %w", err)
+		}
+		days := generateDays(created.ID, created.StartDate, created.EndDate)
+		if err := u.repo.InsertDays(ctx, tx, days); err != nil {
+			return fmt.Errorf("trip.usecase.Create insert days: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer u.repo.Rollback(ctx, tx)
-
-	created, err := u.repo.InsertTrip(ctx, tx, t)
-	if err != nil {
-		return nil, fmt.Errorf("trip.usecase.Create insert trip: %w", err)
-	}
-
-	days := generateDays(created.ID, created.StartDate, created.EndDate)
-	if err := u.repo.InsertDays(ctx, tx, days); err != nil {
-		return nil, fmt.Errorf("trip.usecase.Create insert days: %w", err)
-	}
-
-	if err := u.repo.Commit(ctx, tx); err != nil {
 		return nil, err
 	}
 	return created, nil
@@ -252,35 +249,30 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	// Dates or base currency changed: wrap the trip update with day
 	// regeneration and/or expense reconversion in a single transaction so the
 	// trip row, its days and its expense totals stay consistent.
-	tx, err := u.repo.BeginTx(ctx)
+	var updated *Trip
+	err = dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		var err error
+		if updated, err = u.repo.UpdateTx(ctx, tx, existing); err != nil {
+			return fmt.Errorf("trip.usecase.Update: update trip in tx: %w", err)
+		}
+		if datesChanged {
+			if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
+				return err
+			}
+			newDays := generateDays(tripID, in.StartDate, in.EndDate)
+			if err := u.repo.InsertDays(ctx, tx, newDays); err != nil {
+				return err
+			}
+		}
+		if currencyChanged {
+			if err := u.rebaser.RebaseTx(ctx, tx, tripID, in.BaseCurrency); err != nil {
+				return fmt.Errorf("trip.usecase.Update: rebase expenses: %w", err)
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("trip.usecase.Update: begin tx: %w", err)
-	}
-	defer u.repo.Rollback(ctx, tx)
-
-	updated, err := u.repo.UpdateTx(ctx, tx, existing)
-	if err != nil {
-		return nil, fmt.Errorf("trip.usecase.Update: update trip in tx: %w", err)
-	}
-
-	if datesChanged {
-		if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
-			return nil, err
-		}
-		newDays := generateDays(tripID, in.StartDate, in.EndDate)
-		if err := u.repo.InsertDays(ctx, tx, newDays); err != nil {
-			return nil, err
-		}
-	}
-
-	if currencyChanged {
-		if err := u.rebaser.RebaseTx(ctx, tx, tripID, in.BaseCurrency); err != nil {
-			return nil, fmt.Errorf("trip.usecase.Update: rebase expenses: %w", err)
-		}
-	}
-
-	if err := u.repo.Commit(ctx, tx); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("trip.usecase.Update: %w", err)
 	}
 	return updated, nil
 }

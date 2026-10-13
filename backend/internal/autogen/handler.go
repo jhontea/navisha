@@ -31,19 +31,15 @@ func (h *Handler) WithQuota(q *quota.Checker) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.POST("/trips/generate", h.Generate, authMiddleware)
-	g.POST("/trips/from-draft", h.CreateFromDraft, authMiddleware)
-	g.POST("/trips/:trip_id/days/:day_id/generate-preview", h.GenerateDayPreview, authMiddleware)
-	g.GET("/autogen/quota", h.GetQuota, authMiddleware)
+	g.POST("/trips/generate", middleware.WithUser(h.Generate), authMiddleware)
+	g.POST("/trips/from-draft", middleware.WithUser(h.CreateFromDraft), authMiddleware)
+	g.POST("/trips/:trip_id/days/:day_id/generate-preview", middleware.WithUser(h.GenerateDayPreview), authMiddleware)
+	g.GET("/autogen/quota", middleware.WithUser(h.GetQuota), authMiddleware)
 }
 
 // GetQuota returns the current daily AI quota status.
 // GET /api/v1/autogen/quota → { used, limit, remaining, resets_at }
-func (h *Handler) GetQuota(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) GetQuota(c echo.Context, userID string) error {
 	return c.JSON(http.StatusOK, h.quota.GetStatus(c, userID))
 }
 
@@ -51,11 +47,7 @@ type generateDayRequest struct {
 	Instruction string `json:"instruction"`
 }
 
-func (h *Handler) GenerateDayPreview(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) GenerateDayPreview(c echo.Context, userID string) error {
 	var req generateDayRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
@@ -91,11 +83,7 @@ type generateRequest struct {
 	BaseCurrency string `json:"base_currency"`
 }
 
-func (h *Handler) Generate(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Generate(c echo.Context, userID string) error {
 
 	var req generateRequest
 	if err := c.Bind(&req); err != nil {
@@ -157,11 +145,7 @@ type fromDraftRequest struct {
 	Description   string    `json:"description"`
 }
 
-func (h *Handler) CreateFromDraft(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) CreateFromDraft(c echo.Context, userID string) error {
 	var req fromDraftRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")

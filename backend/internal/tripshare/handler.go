@@ -13,25 +13,13 @@ type Handler struct{ usecase *Usecase }
 func NewHandler(usecase *Usecase) *Handler { return &Handler{usecase: usecase} }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, auth echo.MiddlewareFunc) {
-	g.POST("/trips/:id/share-links", h.Create, auth)
-	g.GET("/trips/:id/share-links/active", h.GetActive, auth)
-	g.DELETE("/trips/:id/share-links/active", h.Revoke, auth)
+	g.POST("/trips/:id/share-links", middleware.WithUser(h.Create), auth)
+	g.GET("/trips/:id/share-links/active", middleware.WithUser(h.GetActive), auth)
+	g.DELETE("/trips/:id/share-links/active", middleware.WithUser(h.Revoke), auth)
 	g.GET("/shared-trips/:token", h.Resolve)
 }
 
-func userID(c echo.Context) (string, error) {
-	id, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || id == "" {
-		return "", echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
-	return id, nil
-}
-
-func (h *Handler) Create(c echo.Context) error {
-	uid, err := userID(c)
-	if err != nil {
-		return err
-	}
+func (h *Handler) Create(c echo.Context, uid string) error {
 	var req struct {
 		DurationDays int `json:"duration_days"`
 	}
@@ -45,11 +33,7 @@ func (h *Handler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-func (h *Handler) GetActive(c echo.Context) error {
-	uid, err := userID(c)
-	if err != nil {
-		return err
-	}
+func (h *Handler) GetActive(c echo.Context, uid string) error {
 	result, err := h.usecase.GetActive(c.Request().Context(), uid, c.Param("id"))
 	if err != nil {
 		return mapError(err)
@@ -57,11 +41,7 @@ func (h *Handler) GetActive(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-func (h *Handler) Revoke(c echo.Context) error {
-	uid, err := userID(c)
-	if err != nil {
-		return err
-	}
+func (h *Handler) Revoke(c echo.Context, uid string) error {
 	if err := h.usecase.Revoke(c.Request().Context(), uid, c.Param("id")); err != nil {
 		return mapError(err)
 	}

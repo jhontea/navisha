@@ -29,15 +29,15 @@ func (h *Handler) SetOnDelete(fn func(userID, tripID string)) {
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/trips", h.List, authMiddleware)
-	g.GET("/trips/filter", h.ListFiltered, authMiddleware)
-	g.GET("/trips/upcoming", h.ListUpcoming, authMiddleware)
-	g.POST("/trips", h.Create, authMiddleware)
-	g.GET("/trips/:id", h.Get, authMiddleware)
-	g.PUT("/trips/:id", h.Update, authMiddleware)
-	g.DELETE("/trips/:id", h.Delete, authMiddleware)
-	g.PUT("/days/:day_id/title", h.UpdateDayTitle, authMiddleware)
-	g.PUT("/days/:day_id/notes", h.UpdateDayNotes, authMiddleware)
+	g.GET("/trips", middleware.WithUser(h.List), authMiddleware)
+	g.GET("/trips/filter", middleware.WithUser(h.ListFiltered), authMiddleware)
+	g.GET("/trips/upcoming", middleware.WithUser(h.ListUpcoming), authMiddleware)
+	g.POST("/trips", middleware.WithUser(h.Create), authMiddleware)
+	g.GET("/trips/:id", middleware.WithUser(h.Get), authMiddleware)
+	g.PUT("/trips/:id", middleware.WithUser(h.Update), authMiddleware)
+	g.DELETE("/trips/:id", middleware.WithUser(h.Delete), authMiddleware)
+	g.PUT("/days/:day_id/title", middleware.WithUser(h.UpdateDayTitle), authMiddleware)
+	g.PUT("/days/:day_id/notes", middleware.WithUser(h.UpdateDayNotes), authMiddleware)
 }
 
 type tripRequest struct {
@@ -52,11 +52,7 @@ type tripRequest struct {
 	Notes            string             `json:"notes"`
 }
 
-func (h *Handler) Create(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Create(c echo.Context, userID string) error {
 	var req tripRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
@@ -87,11 +83,7 @@ func (h *Handler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, toTripResponse(t))
 }
 
-func (h *Handler) ListFiltered(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) ListFiltered(c echo.Context, userID string) error {
 	cursor := c.QueryParam("cursor")
 	limit := 12
 	if v := c.QueryParam("limit"); v != "" {
@@ -116,11 +108,7 @@ func (h *Handler) ListFiltered(c echo.Context) error {
 	})
 }
 
-func (h *Handler) ListUpcoming(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) ListUpcoming(c echo.Context, userID string) error {
 	limit := 5
 	if v := c.QueryParam("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
@@ -138,11 +126,7 @@ func (h *Handler) ListUpcoming(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": items})
 }
 
-func (h *Handler) List(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) List(c echo.Context, userID string) error {
 	cursor := c.QueryParam("cursor")
 	limit := 0
 	if v := c.QueryParam("limit"); v != "" {
@@ -166,11 +150,7 @@ func (h *Handler) List(c echo.Context) error {
 	})
 }
 
-func (h *Handler) Get(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Get(c echo.Context, userID string) error {
 	tripID := c.Param("id")
 
 	t, days, err := h.usecase.Get(c.Request().Context(), userID, tripID)
@@ -183,11 +163,7 @@ func (h *Handler) Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-func (h *Handler) Update(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Update(c echo.Context, userID string) error {
 	tripID := c.Param("id")
 	var req tripRequest
 	if err := c.Bind(&req); err != nil {
@@ -215,11 +191,7 @@ func (h *Handler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, toTripResponse(t))
 }
 
-func (h *Handler) Delete(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Delete(c echo.Context, userID string) error {
 	tripID := c.Param("id")
 	if err := h.usecase.Delete(c.Request().Context(), userID, tripID); err != nil {
 		return mapErr(err)
@@ -238,11 +210,7 @@ type dayTitleRequest struct {
 	Title string `json:"title"`
 }
 
-func (h *Handler) UpdateDayTitle(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) UpdateDayTitle(c echo.Context, userID string) error {
 	dayID := c.Param("day_id")
 	var req dayTitleRequest
 	if err := c.Bind(&req); err != nil {
@@ -255,11 +223,7 @@ func (h *Handler) UpdateDayTitle(c echo.Context) error {
 	return c.JSON(http.StatusOK, toDayResponse(d))
 }
 
-func (h *Handler) UpdateDayNotes(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) UpdateDayNotes(c echo.Context, userID string) error {
 	dayID := c.Param("day_id")
 	var req dayNotesRequest
 	if err := c.Bind(&req); err != nil {

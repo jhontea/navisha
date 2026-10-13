@@ -23,14 +23,10 @@ func NewTripActivitiesHandler(trips trip.UsecaseInterface, activities activity.U
 }
 
 func (h *TripActivitiesHandler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/trips/:trip_id/activities", h.List, authMiddleware)
+	g.GET("/trips/:trip_id/activities", middleware.WithUser(h.List), authMiddleware)
 }
 
-func (h *TripActivitiesHandler) List(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *TripActivitiesHandler) List(c echo.Context, userID string) error {
 
 	tripID := c.Param("trip_id")
 	_, days, err := h.trips.Get(c.Request().Context(), userID, tripID)

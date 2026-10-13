@@ -6,7 +6,8 @@ Go 1.25, Echo framework, PostgreSQL 16+, Redis 7+, JWT (httpOnly cookie), Google
 ## Project Structure
 ```
 backend/
-├── cmd/server/           # main.go — wire dependencies, start server
+├── cmd/server/           # main.go (config, DB, Redis, migrations, start/shutdown), wire.go (domains), routes.go (Echo, middleware, routes)
+├── cmd/summarypreview/   # print the AI summary for one trip without saving (prompt work)
 ├── cmd/migrate/          # standalone migration CLI (`-status` lists pending)
 ├── internal/
 │   ├── accommodation/    # domain: accommodation CRUD + linked expense
@@ -27,6 +28,7 @@ backend/
 │   └── user/             # domain: Google OAuth login, JWT refresh, logout, email whitelist
 ├── pkg/
 │   ├── currency/         # CurrencyFreaks API HTTP client
+│   ├── dbtx/             # WithTx: begin → fn → commit, rollback on error or panic
 │   ├── jwt/              # token generation/validation
 │   ├── llm/              # Multi-provider LLM client (DeepSeek + OpenRouter, OpenAI-compatible)
 │   ├── oauth/            # Google OAuth helpers (OAuth2 config, user info fetch)
@@ -54,10 +56,16 @@ Cross-domain shared errors live in `apperr/`. Cross-domain references use string
 - Shared sentinel errors in `apperr/` (e.g. `apperr.ErrUnauthorized`)
 - Handlers map domain errors to HTTP status codes
 
+### Handlers
+- Authenticated handlers take the user ID as a parameter: `func (h *Handler) List(c echo.Context, userID string) error`, registered as `middleware.WithUser(h.List)` behind the auth middleware (401 when it is missing).
+
+### Transactions
+- Use `dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error { ... })`; repositories that need multi-statement writes expose `BeginTx` / `Commit` / `Rollback`.
+
 ### Dependency Injection
 - No global state
 - Constructor pattern: `func NewUsecase(repo Repository) *Usecase`
-- Wire everything in `cmd/server/main.go`
+- Wire domains in `cmd/server/wire.go`; middleware and routes in `cmd/server/routes.go`
 
 ### DB
 - `pgx` driver with `pgxpool` for connection pooling

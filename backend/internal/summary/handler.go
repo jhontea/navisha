@@ -28,16 +28,12 @@ func (h *Handler) WithQuota(q *quota.Checker) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.POST("/trips/:id/summary", h.Generate, authMiddleware)
-	g.GET("/trips/:id/summary", h.Get, authMiddleware)
-	g.DELETE("/trips/:id/summary", h.Delete, authMiddleware)
+	g.POST("/trips/:id/summary", middleware.WithUser(h.Generate), authMiddleware)
+	g.GET("/trips/:id/summary", middleware.WithUser(h.Get), authMiddleware)
+	g.DELETE("/trips/:id/summary", middleware.WithUser(h.Delete), authMiddleware)
 }
 
-func (h *Handler) Generate(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Generate(c echo.Context, userID string) error {
 	tripID := c.Param("id")
 
 	// ── Daily quota check (shared with autogen — same counter) ──
@@ -55,11 +51,7 @@ func (h *Handler) Generate(c echo.Context) error {
 	return c.JSON(http.StatusOK, toResponse(s))
 }
 
-func (h *Handler) Get(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Get(c echo.Context, userID string) error {
 	tripID := c.Param("id")
 
 	s, err := h.usecase.Get(c.Request().Context(), userID, tripID)
@@ -69,11 +61,7 @@ func (h *Handler) Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, toResponse(s))
 }
 
-func (h *Handler) Delete(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Delete(c echo.Context, userID string) error {
 	tripID := c.Param("id")
 
 	if err := h.usecase.Delete(c.Request().Context(), userID, tripID); err != nil {

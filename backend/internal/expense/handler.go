@@ -19,11 +19,11 @@ func NewHandler(usecase UsecaseInterface) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
-	g.GET("/trips/:trip_id/expenses", h.List, authMiddleware)
-	g.POST("/trips/:trip_id/expenses", h.Create, authMiddleware)
-	g.GET("/trips/:trip_id/expenses/summary", h.Summary, authMiddleware)
-	g.PUT("/expenses/:id", h.Update, authMiddleware)
-	g.DELETE("/expenses/:id", h.Delete, authMiddleware)
+	g.GET("/trips/:trip_id/expenses", middleware.WithUser(h.List), authMiddleware)
+	g.POST("/trips/:trip_id/expenses", middleware.WithUser(h.Create), authMiddleware)
+	g.GET("/trips/:trip_id/expenses/summary", middleware.WithUser(h.Summary), authMiddleware)
+	g.PUT("/expenses/:id", middleware.WithUser(h.Update), authMiddleware)
+	g.DELETE("/expenses/:id", middleware.WithUser(h.Delete), authMiddleware)
 }
 
 type expenseRequest struct {
@@ -36,11 +36,7 @@ type expenseRequest struct {
 	Note        string  `json:"note"`
 }
 
-func (h *Handler) List(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) List(c echo.Context, userID string) error {
 	tripID := c.Param("trip_id")
 	items, err := h.usecase.List(c.Request().Context(), userID, tripID)
 	if err != nil {
@@ -53,11 +49,7 @@ func (h *Handler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": resp})
 }
 
-func (h *Handler) Create(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Create(c echo.Context, userID string) error {
 	tripID := c.Param("trip_id")
 	var req expenseRequest
 	if err := c.Bind(&req); err != nil {
@@ -97,11 +89,7 @@ func (h *Handler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, toResponse(e))
 }
 
-func (h *Handler) Update(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Update(c echo.Context, userID string) error {
 	id := c.Param("id")
 	var req expenseRequest
 	if err := c.Bind(&req); err != nil {
@@ -136,11 +124,7 @@ func (h *Handler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, toResponse(e))
 }
 
-func (h *Handler) Delete(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Delete(c echo.Context, userID string) error {
 	id := c.Param("id")
 	if err := h.usecase.Delete(c.Request().Context(), userID, id); err != nil {
 		return mapErr(err)
@@ -148,11 +132,7 @@ func (h *Handler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) Summary(c echo.Context) error {
-	userID, ok := c.Get(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user context")
-	}
+func (h *Handler) Summary(c echo.Context, userID string) error {
 	tripID := c.Param("trip_id")
 	s, err := h.usecase.Summary(c.Request().Context(), userID, tripID)
 	if err != nil {
