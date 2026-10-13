@@ -35,7 +35,7 @@ export function OnboardingCard({ userName }: { userName?: string }) {
             className="glass flex items-center gap-3 rounded-xl px-6 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-white/25 active:scale-[0.98]"
           >
             <PenLine className="h-5 w-5 text-chromatic-sky" />
-            Plan Manually
+            Start from scratch
           </Link>
         </div>
       </div>

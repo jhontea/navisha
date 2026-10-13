@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { ArrowLeftRight, ChevronDown, Pencil, Receipt, Trash2, X } from "lucide-react"
+import { ArrowLeftRight, ChevronDown, Pencil, Plus, Receipt, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import { EmptyState } from "@/components/EmptyState"
 import { cn, formatCurrency } from "@/lib/utils"
@@ -271,74 +271,62 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
         <BudgetSummary tripId={tripId} tripBudget={tripBudget} />
       </section>
 
-      {/* Add Expense Form */}
+      {/* Expenses — list first; adding is a compact action next to the
+          heading (same pattern as Bookings). */}
       <section ref={addCardRef}>
-        <div className="glass rounded-xl p-8">
-          <h3 className="font-display text-headline-sm text-foreground mb-6">Add New Expense</h3>
-
-          {addOpen ? (
-            <ExpenseForm
-              tripBaseCurrency={tripBaseCurrency}
-              isSubmitting={createMut.isPending}
-              onCancel={() => setAddOpen(false)}
-              onSubmit={async (input: CreateExpenseInput) => {
-                await createMut.mutateAsync(input)
-                setAddOpen(false)
-              }}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-white shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">Log an expense</p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Track food, transport, activities, and more
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display text-xl font-semibold text-foreground">Expenses</h3>
+              {!isLoading && !isError && items.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {items.length} {items.length === 1 ? "expense" : "expenses"}
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 font-label-md text-white shadow-md transition-all hover:shadow-lg active:scale-95"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" x2="12" y1="5" y2="19" />
-                  <line x1="5" x2="19" y1="12" y2="12" />
-                </svg>
-                Add Expense
-              </button>
+              )}
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* Expenses List — grouped by date (date modes) or flat (amount/category modes) */}
-      {(isLoading || items.length > 0 || isError) && (
-        <section>
-          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-            <h3 className="font-display text-headline-sm text-foreground">Recent Expenses</h3>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="sr-only">Sort expenses</span>
-                <select
-                  value={sortMode}
-                  onChange={(e) => setSortMode(e.target.value as SortMode)}
-                  className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-foreground font-label-md hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
-                  aria-label="Sort expenses"
+            <div className="flex items-center gap-2">
+              {items.length > 1 && (
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="sr-only">Sort expenses</span>
+                  <select
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value as SortMode)}
+                    className="h-11 rounded-lg border bg-card px-3 text-sm text-foreground hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10"
+                    aria-label="Sort expenses"
+                  >
+                    {SORT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {!addOpen && (
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(true)}
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:h-10"
                 >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span className="text-sm text-muted-foreground">
-                {items.length} {items.length === 1 ? "expense" : "expenses"}
-              </span>
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Add expense
+                </button>
+              )}
             </div>
           </div>
+
+          {addOpen && (
+            <div className="mb-4 rounded-xl border bg-card p-4 shadow-card sm:p-6">
+              <ExpenseForm
+                tripBaseCurrency={tripBaseCurrency}
+                isSubmitting={createMut.isPending}
+                onCancel={() => setAddOpen(false)}
+                onSubmit={async (input: CreateExpenseInput) => {
+                  await createMut.mutateAsync(input)
+                  setAddOpen(false)
+                }}
+              />
+            </div>
+          )}
 
           {isLoading && (
             <div className="space-y-3">
@@ -350,16 +338,16 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
 
           {isError && (
             <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
-              Failed to load expenses.
+              Couldn&apos;t load expenses. Check your connection and reload the page.
             </p>
           )}
 
-          {!isLoading && !isError && items.length === 0 && (
+          {!isLoading && !isError && items.length === 0 && !addOpen && (
             <EmptyState
               icon={Receipt}
               size="sm"
-              title="No expenses logged yet"
-              description="Add an expense to start tracking the trip budget."
+              title="No expenses yet"
+              description="Add what you spend on food, transport, and activities to track your budget."
               className="rounded-2xl border border-dashed border-border/50"
             />
           )}
@@ -416,8 +404,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
               </div>
             </div>
           )}
-        </section>
-      )}
+      </section>
 
       {/* Confirm Delete */}
       <ConfirmDialog

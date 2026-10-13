@@ -6,8 +6,7 @@ import { TripCard } from "./TripCard"
 import { OnboardingCard } from "./OnboardingCard"
 import { useAuth } from "@/features/auth/hooks"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-import Link from "next/link"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { Trip } from "../types"
 
 // W-HOME-01 — how far each arrow click scrolls the carousel (px).
@@ -19,17 +18,8 @@ function NoUpcomingTrips() {
     <div className="rounded-xl border bg-card p-6">
       <p className="text-base font-semibold text-foreground">No upcoming trips</p>
       <p className="mt-1 text-sm text-muted-foreground">
-        Your past trips are listed below.
+        Your past trips are listed below. Start a new one with New trip.
       </p>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Link
-          href="/trips/new"
-          className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Plan a trip
-        </Link>
-      </div>
     </div>
   )
 }
