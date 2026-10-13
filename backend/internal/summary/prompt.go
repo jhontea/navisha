@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strings"
+
+	"github.com/ahmadhafizh/navisha/backend/pkg/destination"
+	"github.com/ahmadhafizh/navisha/backend/pkg/money"
 )
 
 // hashSeed returns a uint32 hash for use in deterministic selection.
@@ -11,29 +14,6 @@ func hashSeed(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
-}
-
-// StyleVariant controls the tone and focus of the generated summary.
-// Phase 3E: reduces monotony by rotating through distinct styles.
-type StyleVariant string
-
-const (
-	StyleEksplorer StyleVariant = "eksplorer" // adventure-focused
-	StyleSantai    StyleVariant = "santai"    // relaxed, comfort-focused
-	StyleBudaya    StyleVariant = "budaya"    // culture and history
-	StyleKuliner   StyleVariant = "kuliner"   // food-focused
-	StyleFotogenik StyleVariant = "fotogenik" // photography and scenic spots
-)
-
-// AllStyleVariants lists all variants for deterministic rotation.
-var AllStyleVariants = []StyleVariant{StyleEksplorer, StyleSantai, StyleBudaya, StyleKuliner, StyleFotogenik}
-
-// StyleForTrip deterministically picks a style variant based on trip ID hash.
-func StyleForTrip(tripID string) StyleVariant {
-	h := fnv.New32a()
-	h.Write([]byte(tripID))
-	idx := int(h.Sum32()) % len(AllStyleVariants)
-	return AllStyleVariants[idx]
 }
 
 // TemperatureForTrip returns a temperature value (0.7–0.9) based on trip ID hash.
@@ -44,64 +24,41 @@ func TemperatureForTrip(tripID string) float64 {
 	return 0.7 + base
 }
 
-// emojiSet defines an alternate set of section header emojis to rotate through.
-type emojiSet struct {
-	overview      string
-	budget        string
-	accommodation string
-	tips          string
-}
-
-var emojiSets = []emojiSet{
-	{overview: "🗺️", budget: "💰", accommodation: "🏨", tips: "💡"},
-	{overview: "✈️", budget: "💵", accommodation: "🏠", tips: "🎯"},
-	{overview: "🌍", budget: "🪙", accommodation: "🏕️", tips: "✨"},
-}
-
-func emojiForTrip(tripID string) emojiSet {
-	h := fnv.New32a()
-	h.Write([]byte(tripID))
-	return emojiSets[int(h.Sum32())%len(emojiSets)]
-}
-
-// stylePrompt returns additional system instructions based on the style variant.
-func stylePrompt(v StyleVariant) string {
-	switch v {
-	case StyleEksplorer:
-		return `FOKUS: Adventure & eksplorasi. Tonjolkan hidden gems, aktivitas outdoor, hidden spots, dan pengalaman yang memacu adrenalin. Gunakan bahasa yang bersemangat dan inspiring.`
-	case StyleSantai:
-		return `FOKUS: Relaksasi & kenyamanan. Tonjolkan tempat santai, spa, café cozy, pemandangan tenang, dan pace yang slow. Gunakan bahasa yang calming dan chill.`
-	case StyleBudaya:
-		return `FOKUS: Budaya & sejarah lokal. Tonjolkan museum, pura/candi, kesenian tradisional, cerita sejarah, dan kearifan lokal. Gunakan bahasa yang insightful dan curious.`
-	case StyleKuliner:
-		return `FOKUS: Kuliner & makanan. Tonjolkan makanan khas, street food, restoran rekomendasi, food market, dan pengalaman gastronomi. Gunakan bahasa yang menggugah selera.`
-	case StyleFotogenik:
-		return `FOKUS: Spot foto Instagrammable. Tonjolkan tempat dengan pemandangan indah, golden hour spot, arsitektur unik, dan lokasi foto terbaik. Gunakan bahasa visual dan deskriptif.`
-	default:
-		return ""
-	}
-}
-
 // tipsPrompt formats the local tips for injection into the system prompt.
 func tipsPrompt(tips []string) string {
 	if len(tips) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString("\n\nTIPS LOKAL (sisipkan 1-2 yang paling relevan dengan trip ini):\n")
+	b.WriteString("\n\nTIPS LOKAL INDONESIA (boleh sisipkan 1 yang paling relevan, tulis ulang dengan gaya di atas):\n")
 	for _, t := range tips {
 		b.WriteString("- " + t + "\n")
 	}
 	return b.String()
 }
 
-const systemPromptBase = `Halo! Kamu asisten travel yang asik dan santai. Bantu user rangkum trip mereka dengan gaya ngobrol santai tapi tetap informatif.
-Tulis ringkasan perjalanan yang:
-- Ceritakan vibes & suasana trip ini secara singkat
-- Sebutkan aktivitas seru dan tempat yang bakal dikunjungi
-- Catat akomodasi & transportasi yang udah diatur
-- Kasih komentar soal budget (masih aman / pas / exceed) dengan nada ringan
-- Kasih 1-2 tips praktis yang beneran berguna
+const systemPromptBase = `Kamu membantu traveler memahami rencana trip mereka. Tulis ringkasan trip dalam Bahasa Indonesia.
+
+NADA & GAYA:
+- Hangat tapi ringkas: sapa dengan "kamu", kalimat pendek, langsung ke inti. Seperti teman yang teliti, bukan pembawa acara.
+- Tulis fakta dan saran yang bisa langsung dipakai. Tanpa basa-basi pembuka ("Wah", "Halo", "Siap-siap"), tanpa slang
+  ("cakep abis", "gokil", "vibes-nya"), tanpa "lo/gue".
+- DILARANG kata/frasa klise: "surga", "hidden gem", "permata tersembunyi", "wajib dikunjungi", "must-visit", "tak terlupakan",
+  "memukau", "menakjubkan", "petualangan seru", "full action".
+- Tanpa emoji. Tanda seru maksimal satu di seluruh ringkasan.
+- Panjang total 250–350 kata.
+
+STRUKTUR (pakai heading persis seperti ini, tanpa emoji):
+## Ringkasan
+2–3 kalimat: area yang dikunjungi, ritme trip (padat/santai), dan hal paling khas dari itinerary ini.
+## Budget
+Jika budget dan pengeluaran tercatat, tampilkan TABEL markdown (Budget | Terpakai | Sisa/Lebih) lalu 1 kalimat penilaian.
+Jika tidak, jelaskan singkat apa yang belum dicatat.
+## Booking
+Akomodasi dan transportasi yang sudah tercatat (bullet), atau saran jika kosong (lihat aturan fakta).
+## Saran
+2–4 bullet yang paling berguna: tips praktis khusus destinasi dan/atau rekomendasi untuk hari yang masih kosong.
+Hapus section ini jika tidak ada yang penting untuk disarankan.
 
 ATURAN FAKTA (WAJIB):
 - Bagian "DATA AVAILABILITY" dari user adalah sumber kebenaran. Jangan menebak data yang tidak tercatat.
@@ -112,49 +69,21 @@ ATURAN FAKTA (WAJIB):
 - Jika Expenses recorded = no, jangan menyimpulkan pengeluaran aktual adalah nol; katakan belum ada pengeluaran yang dicatat.
 - Jangan berhenti hanya dengan kalimat "belum ada data" jika akomodasi atau transportasi kosong; tujuan ringkasan adalah membantu user mengambil langkah berikutnya.
 - Semua rekomendasi harus diberi label jelas sebagai saran dan tidak boleh ditulis seolah sudah dipesan atau tercatat.
-
-FORMAT OUTPUT:
-Gunakan markdown yang rapi dan enak dibaca:
-- Pakai ## untuk section utama + EMOJI di depannya
-- Untuk data BUDGET, pakai TABEL markdown
-- Pakai **bold** buat highlight kata kunci & angka penting
-- Pakai bullet list (- ) buat rekomendasi atau tips
-- Pakai blockquote (>) buat highlight penting
-
-REKOMENDASI AKTIVITAS:
-Kalau ada hari yang masih kosong aktivitasnya, tambahin section rekomendasi aktivitas di akhir.
-- Kasih saran aktivitas yang nyambung sama destinasi (tempat wisata, kuliner, pengalaman khas).
-- Sebutin hari mana yang kosong, terus kasih ide buat ngisinya.
-- Kasih 3-6 rekomendasi dalam bullet list, singkat dan actionable.
-- Jelasin kalo ini cuma SARAN/IDE (bukan itinerary yang udah fix).
-Kalau semua hari udah penuh, SKIP aja section ini.
-
-PENTING: Tulis dalam Bahasa Indonesia yang santai dan natural, kayak ngobrol santai ke temen.
-Jangan kaku atau terlalu formal. Bikin user ngerasa dibantu, bukan digurui. Gunakan sapaan "kamu", "Saya", atau "anda" — HINDARI kata "lo", "gue", "elu", atau bahasa gaul berlebihan.
-JANGAN ngarang tempat atau aktivitas yang UDAH ADA di data trip (ringkasan harus faktual).
-Rekomendasi aktivitas BARU boleh banget selama relevan & ditandai sebagai saran.
-Kalau data minim, bilang aja apa adanya & saranin user buat nambah detail.`
+- Jangan mengarang tempat atau aktivitas yang tidak ada di data trip; rekomendasi baru harus ditandai sebagai saran.
+- Tulis angka uang persis seperti di data (jangan menambah desimal), dengan kode mata uangnya.
+- Tips harus sesuai destinasi trip ini (negara, kota, musim). Jangan memberi tips untuk negara lain.`
 
 // BuildPrompt returns the system and user messages for the LLM call.
 // Phase 3E: accepts style variant, emoji set, local tips, and trip context
 // for varied, non-monotonous output.
 func BuildPrompt(ctx TripContext) (system, user string) {
-	style := StyleForTrip(ctx.TripID)
-	emojis := emojiForTrip(ctx.TripID)
-	tips := pickTips(hashSeed(ctx.TripID), 2)
-
-	// System prompt: base + style + tips
+	// System prompt: base + local tips. The curated tip pool is about
+	// Indonesia, so it is only offered for Indonesian destinations.
 	var sb strings.Builder
 	sb.WriteString(systemPromptBase)
-	sb.WriteString("\n\n" + stylePrompt(style))
-	sb.WriteString(tipsPrompt(tips))
-
-	// Emoji instructions
-	sb.WriteString(fmt.Sprintf(
-		"\n\nGUNAKAN EMOJI BERIKUT UNTUK SECTION HEADER (hanya emoji ini, jangan yang lain):\n"+
-			"- Overview: %s\n- Budget: %s\n- Akomodasi & Transportasi: %s\n- Tips: %s",
-		emojis.overview, emojis.budget, emojis.accommodation, emojis.tips,
-	))
+	if destination.IsIndonesia(ctx.Destination) {
+		sb.WriteString(tipsPrompt(pickTips(hashSeed(ctx.TripID), 2)))
+	}
 
 	system = sb.String()
 
@@ -195,27 +124,27 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 		ub.WriteString("\n")
 	}
 	if ctx.Budget > 0 {
-		ub.WriteString(fmt.Sprintf("- Budget configured: yes (%.2f %s)\n", ctx.Budget, ctx.BaseCurrency))
+		ub.WriteString(fmt.Sprintf("- Budget configured: yes (%s)\n", money.Format(ctx.Budget, ctx.BaseCurrency)))
 	} else {
 		ub.WriteString("- Budget configured: no\n")
 	}
 	if ctx.TotalSpent > 0 || len(ctx.ExpenseByCategory) > 0 {
-		ub.WriteString(fmt.Sprintf("- Expenses recorded: yes (total %.2f %s)\n", ctx.TotalSpent, ctx.BaseCurrency))
+		ub.WriteString(fmt.Sprintf("- Expenses recorded: yes (total %s)\n", money.Format(ctx.TotalSpent, ctx.BaseCurrency)))
 	} else {
 		ub.WriteString("- Expenses recorded: no (do not describe this as actual spending of zero)\n")
 	}
 
 	if ctx.Budget > 0 {
-		ub.WriteString(fmt.Sprintf("Budget: %.2f %s\n", ctx.Budget, ctx.BaseCurrency))
+		ub.WriteString(fmt.Sprintf("Budget: %s\n", money.Format(ctx.Budget, ctx.BaseCurrency)))
 	}
 	if ctx.TotalSpent > 0 {
-		ub.WriteString(fmt.Sprintf("Total Spent: %.2f %s\n", ctx.TotalSpent, ctx.BaseCurrency))
+		ub.WriteString(fmt.Sprintf("Total Spent: %s\n", money.Format(ctx.TotalSpent, ctx.BaseCurrency)))
 		if ctx.Budget > 0 {
 			remaining := ctx.Budget - ctx.TotalSpent
 			if remaining >= 0 {
-				ub.WriteString(fmt.Sprintf("Remaining: %.2f %s\n", remaining, ctx.BaseCurrency))
+				ub.WriteString(fmt.Sprintf("Remaining: %s\n", money.Format(remaining, ctx.BaseCurrency)))
 			} else {
-				ub.WriteString(fmt.Sprintf("Over budget by: %.2f %s\n", -remaining, ctx.BaseCurrency))
+				ub.WriteString(fmt.Sprintf("Over budget by: %s\n", money.Format(-remaining, ctx.BaseCurrency)))
 			}
 		}
 	}
@@ -241,7 +170,7 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 	if len(ctx.ExpenseByCategory) > 0 {
 		ub.WriteString("\nExpense Breakdown:\n")
 		for _, cat := range ctx.ExpenseByCategory {
-			ub.WriteString(fmt.Sprintf("  - %s: %.2f %s\n", cat.Category, cat.Total, ctx.BaseCurrency))
+			ub.WriteString(fmt.Sprintf("  - %s: %s\n", cat.Category, money.Format(cat.Total, ctx.BaseCurrency)))
 		}
 	}
 

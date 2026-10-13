@@ -32,7 +32,7 @@ jwt:
 llm:
   provider: ""   # set to "deepseek" or "openrouter"
   # DeepSeek
-  deepseek_model: deepseek-v4-flash
+  deepseek_model: deepseek-flash
   deepseek_base_url: https://api.deepseek.com
   # OpenRouter (when provider is explicitly "openrouter")
   openrouter_model: openrouter/owl-alpha
