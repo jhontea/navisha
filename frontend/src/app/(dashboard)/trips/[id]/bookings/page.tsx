@@ -1,31 +1,9 @@
-"use client"
+import type { Metadata } from "next"
 
-import { useParams } from "next/navigation"
-import { useTrip } from "@/features/trip/hooks/useTrips"
-import { TransportationSection } from "@/features/transportation/components/TransportationSection"
-import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
+import { BookingsScreen } from "@/features/trip/screens/BookingsScreen"
 
-/** Bookings = Transport + Stays on one page (D3). */
-export default function TripBookingsPage() {
-  const { id } = useParams<{ id: string }>()
-  const { data: trip, isLoading } = useTrip(id)
+export const metadata: Metadata = { title: "Bookings" }
 
-  if (isLoading && !trip) {
-    return (
-      <main className="mx-auto w-full max-w-max-width space-y-3 px-margin-mobile py-6 md:px-margin-desktop">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
-        ))}
-      </main>
-    )
-  }
-
-  const baseCurrency = trip?.base_currency ?? "IDR"
-
-  return (
-    <main className="mx-auto grid w-full max-w-max-width grid-cols-[minmax(0,1fr)] items-start gap-10 px-margin-mobile pb-6 pt-6 md:px-margin-desktop md:pb-8 lg:grid-cols-2 lg:gap-8">
-      <TransportationSection tripId={id} tripBaseCurrency={baseCurrency} days={trip?.days} />
-      <AccommodationSection tripId={id} tripBaseCurrency={baseCurrency} days={trip?.days} />
-    </main>
-  )
+export default function Page() {
+  return <BookingsScreen />
 }

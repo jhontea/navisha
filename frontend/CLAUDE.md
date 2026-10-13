@@ -59,7 +59,7 @@ frontend/
 ## Conventions
 
 ### Components
-- Target: Server Components by default in `app/`. Today all dashboard pages are `"use client"`; migrating is tracked in docs/PLANNING_REFACTOR_REDESIGN.md (A3.3)
+- `app/**/page.tsx` and `layout.tsx` are Server Components: they export `metadata` (tab title) and render one client screen from `features/<feature>/screens/` (e.g. `BudgetScreen`, `TripShell`). Data stays in TanStack Query on the client because it needs the auth cookie. `share/[token]` fetches on the server and passes the trip to the client view.
 - Add `"use client"` only when using hooks, events, or browser APIs
 - Feature components in `features/<feature>/components/`
 - Primitive UI in `components/ui/` (coss ui — never modify generated files)

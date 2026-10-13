@@ -9,13 +9,21 @@ import { sharedTripUrl } from "../../lib/sharedTrip"
 import type { PublicItinerary } from "../../types"
 import { SharedTripView } from "./SharedTripView"
 
-/** Public, read-only view of a trip opened from a share link (loads on the client). */
-export function SharedTripPage({ token }: { token: string }) {
-  const [trip, setTrip] = useState<PublicItinerary | null>(null)
-  const [status, setStatus] = useState<"loading" | "ready" | "expired" | "missing">("loading")
+export type SharedTripResult =
+  | { status: "ready"; trip: PublicItinerary }
+  | { status: "expired" | "missing" }
+
+/**
+ * Public, read-only view of a trip opened from a share link. The route
+ * renders it with the trip already fetched on the server (`initial`); the
+ * client fetch is only a fallback when the server could not reach the API.
+ */
+export function SharedTripPage({ token, initial }: { token: string; initial?: SharedTripResult }) {
+  const [trip, setTrip] = useState<PublicItinerary | null>(initial?.status === "ready" ? initial.trip : null)
+  const [status, setStatus] = useState<"loading" | "ready" | "expired" | "missing">(initial?.status ?? "loading")
 
   useEffect(() => {
-    if (!token) return
+    if (!token || initial) return
     fetch(sharedTripUrl(token), {
       cache: "no-store",
       referrerPolicy: "no-referrer",
@@ -27,7 +35,7 @@ export function SharedTripPage({ token }: { token: string }) {
         setStatus("ready")
       })
       .catch(() => setStatus("missing"))
-  }, [token])
+  }, [token, initial])
 
   if (status === "loading") {
     return (
