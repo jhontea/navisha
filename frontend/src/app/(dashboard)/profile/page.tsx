@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { UserAvatar } from "@/components/UserAvatar"
 import {
   ArrowLeftRight,
   BadgeCheck,
@@ -62,22 +63,13 @@ export default function ProfilePage() {
             ) : (
               <>
                 <div className="relative mx-auto -mt-11 mb-4 w-fit rounded-full bg-background p-1 shadow-lg shadow-primary/15">
-                  {user?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={user.id}
-                      src={user.avatar_url}
-                      alt={user.name ?? "User avatar"}
-                      className="h-20 w-20 rounded-full object-cover ring-2 ring-primary/25"
-                    />
-                  ) : (
-                    <div
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-chromatic-aurora text-3xl font-bold text-white ring-2 ring-primary/25"
-                      aria-label={`Avatar for ${user?.name ?? "user"}`}
-                    >
-                      {user?.name?.charAt(0).toUpperCase() ?? "?"}
-                    </div>
-                  )}
+                  <UserAvatar
+                    key={user?.id}
+                    src={user?.avatar_url}
+                    name={user?.name}
+                    className="h-20 w-20 ring-2 ring-primary/25"
+                    textClassName="text-3xl"
+                  />
                   <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-chromatic-ocean text-white">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
