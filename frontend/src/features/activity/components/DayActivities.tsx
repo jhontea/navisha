@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import type { HTMLAttributes, Ref } from "react"
 import {
   DndContext,
   PointerSensor,
@@ -10,397 +9,27 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core"
-import {
-  SortableContext,
-  arrayMove,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useQueryClient } from "@tanstack/react-query"
-import {
-  ArrowRight,
-  Bus,
-  Car,
-  CheckSquare,
-  Copy,
-  Hotel,
-  Plane,
-  Plus,
-  Ship,
-  Sparkles,
-  Train,
-  TramFront,
-  Boxes,
-  LogIn,
-  LogOut,
-  AlertTriangle,
-  X,
-} from "lucide-react"
+import { AlertTriangle, Plus, Sparkles } from "lucide-react"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-import { toast } from "@/lib/toast"
-import {
-  useActivities,
   useCreateActivity,
   useDeleteActivity,
   useReorderActivities,
   useUpdateActivity,
 } from "../hooks/useActivities"
-import { activityApi } from "../api"
-import { useTransportations } from "@/features/transportation/hooks/useTransportations"
-import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
+import { useDayTimeline } from "../hooks/useDayTimeline"
+import { useActivitySelection } from "../hooks/useActivitySelection"
 import type { Activity, ActivityListResponse, CreateActivityInput } from "../types"
 import type { Day } from "@/features/trip/types"
-import type { Transportation } from "@/features/transportation/types"
-import type { Accommodation } from "@/features/accommodation/types"
-import { ActivityCard } from "./ActivityCard"
 import { ActivityForm } from "./ActivityForm"
-import { findActivityOverlaps } from "../lib/time"
 import { DayAIPlanner } from "./DayAIPlanner"
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type TimelineItem =
-  | { kind: "activity"; data: Activity }
-  | { kind: "transport"; data: Transportation }
-  | { kind: "accommodation"; data: Accommodation; event: "check_in" | "check_out" }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Extract "HH:MM" literally from an ISO datetime string — no timezone conversion.
- * DB stores "2026-05-10T06:30:00+00:00". User entered 06:30 and expects to see 06:30.
- * So we read T<HH>:<MM> directly from the string.
- */
-function extractTime(v: string | null | undefined): string | null {
-  if (!v) return null
-  const m = v.match(/T(\d{2}):(\d{2})/)
-  return m ? `${m[1]}:${m[2]}` : null
-}
-
-/**
- * Extract "YYYY-MM-DD" literally from a datetime string — no timezone conversion.
- * Reads the date portion before the T, so "2026-05-10T06:30:00+00:00" → "2026-05-10".
- */
-function extractDate(v: string | null | undefined): string | null {
-  if (!v) return null
-  const m = v.match(/^(\d{4}-\d{2}-\d{2})/)
-  return m ? m[1] : null
-}
-
-function toSortKey(v: string | null | undefined): string {
-  if (!v) return "99:99"
-  if (v.includes("T")) {
-    const t = extractTime(v)
-    if (t) return t
-  }
-  return v
-}
-
-function dateMatches(
-  datetimeStr: string | null | undefined,
-  date: string,
-): boolean {
-  if (!datetimeStr) return false
-  if (datetimeStr.length === 10) return datetimeStr === date
-  return extractDate(datetimeStr) === date
-}
-
-// ---------------------------------------------------------------------------
-// Transport icon map
-// ---------------------------------------------------------------------------
-
-const TRANSPORT_ICON: Record<string, typeof Plane> = {
-  flight: Plane,
-  bus: Bus,
-  train: Train,
-  ferry: TramFront,
-  ship: Ship,
-  car: Car,
-  other: Boxes,
-}
-
-// ---------------------------------------------------------------------------
-// Read-only timeline cards (transport & accommodation)
-// ---------------------------------------------------------------------------
-
-function TransportTimelineCard({ t }: { t: Transportation }) {
-  const Icon = TRANSPORT_ICON[t.type] ?? Boxes
-  const depTime = extractTime(t.departure_datetime)
-  const arrTime = extractTime(t.arrival_datetime)
-
-  return (
-    <div className="rounded-2xl border-l-4 border-l-primary border border-border/30 bg-primary/5 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-              Transport
-            </span>
-            <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold capitalize text-primary">
-              <Icon className="h-3 w-3" />
-              {t.type}
-            </span>
-            {depTime && (
-              <span className="text-xs text-muted-foreground">· {depTime}</span>
-            )}
-          </div>
-          {(t.from_location || t.to_location) && (
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <span>{t.from_location || "—"}</span>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span>{t.to_location || "—"}</span>
-            </div>
-          )}
-          {t.label && (
-            <p className="text-sm text-foreground/80">{t.label}</p>
-          )}
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            {t.operator && <span>{t.operator}</span>}
-            {t.reference_number && <span className="font-mono">#{t.reference_number}</span>}
-            {depTime && arrTime && <span>{depTime} → {arrTime}</span>}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AccommodationTimelineCard({
-  a,
-  event,
-}: {
-  a: Accommodation
-  event: "check_in" | "check_out"
-}) {
-  const isCheckin = event === "check_in"
-  const EventIcon = isCheckin ? LogIn : LogOut
-
-  return (
-    <div className="rounded-2xl border-l-4 border-l-chromatic-aurora border border-border/30 bg-chromatic-aurora/5 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-chromatic-aurora">
-              Stay
-            </span>
-            <span
-              className={cn(
-                "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
-                isCheckin
-                  ? "bg-chromatic-aurora/10 text-chromatic-aurora"
-                  : "bg-muted text-muted-foreground",
-              )}
-            >
-              <EventIcon className="h-3 w-3" />
-              {isCheckin ? "Check-in" : "Check-out"}
-            </span>
-          </div>
-          <h4 className="text-sm font-semibold text-foreground">{a.name}</h4>
-          {a.location_name && (
-            <p className="text-xs text-muted-foreground">{a.location_name}</p>
-          )}
-          {a.confirmation_number && (
-            <p className="text-xs font-mono text-muted-foreground">#{a.confirmation_number}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Timeline dot
-// ---------------------------------------------------------------------------
-
-function TimelineDot({
-  kind,
-  activityType,
-  transportType,
-  dragHandleProps,
-  dragHandleRef,
-}: {
-  kind: "activity" | "transport" | "accommodation"
-  activityType?: string
-  transportType?: string
-  accommodationEvent?: "check_in" | "check_out"
-  dragHandleProps?: HTMLAttributes<HTMLDivElement>
-  dragHandleRef?: Ref<HTMLDivElement>
-}) {
-  if (kind === "transport") {
-    const Icon = TRANSPORT_ICON[transportType ?? "other"] ?? Boxes
-    return (
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background bg-[#DBEAFE] text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-    )
-  }
-  if (kind === "accommodation") {
-    return (
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background bg-[#EDE9FE] text-[#7C3AED]">
-        <Hotel className="h-4 w-4" />
-      </div>
-    )
-  }
-  const bgMap: Record<string, string> = {
-    location: "bg-[#DBEAFE] text-primary",
-    note: "bg-chromatic-amber/10 text-chromatic-amber",
-    todo: "bg-muted text-muted-foreground",
-  }
-  const bg = bgMap[activityType ?? "location"] ?? bgMap.location
-  if (activityType === "note") {
-    return (
-      <div ref={dragHandleRef} aria-label="Drag to reorder" role={dragHandleProps ? "button" : undefined} tabIndex={dragHandleProps ? 0 : undefined} className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg, dragHandleProps && "touch-none cursor-grab active:cursor-grabbing")} {...dragHandleProps}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><polyline points="15 3 15 9 21 9"/></svg>
-      </div>
-    )
-  }
-  if (activityType === "todo") {
-    return (
-      <div ref={dragHandleRef} aria-label="Drag to reorder" role={dragHandleProps ? "button" : undefined} tabIndex={dragHandleProps ? 0 : undefined} className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg, dragHandleProps && "touch-none cursor-grab active:cursor-grabbing")} {...dragHandleProps}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
-      </div>
-    )
-  }
-  return (
-    <div ref={dragHandleRef} aria-label="Drag to reorder" role={dragHandleProps ? "button" : undefined} tabIndex={dragHandleProps ? 0 : undefined} className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-background", bg, dragHandleProps && "touch-none cursor-grab active:cursor-grabbing")} {...dragHandleProps}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Sortable activity row (drag-to-reorder)
-// ---------------------------------------------------------------------------
-
-interface SortableRowProps {
-  activity: Activity
-  isEditing: boolean
-  onEdit: () => void
-  onCancelEdit: () => void
-  onSave: (input: Parameters<typeof useCreateActivity>[0] extends string ? CreateActivityInput : CreateActivityInput) => Promise<void>
-  isSubmitting: boolean
-  onDelete: () => void
-  isDeleting: boolean
-  overlapTitles: string[]
-  selectMode: boolean
-  isSelected: boolean
-  onToggleSelect: () => void
-}
-
-function SortableActivityRow({
-  activity,
-  isEditing,
-  onEdit,
-  onCancelEdit,
-  onSave,
-  isSubmitting,
-  onDelete,
-  isDeleting,
-  overlapTitles,
-  selectMode,
-  isSelected,
-  onToggleSelect,
-}: SortableRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    setActivatorNodeRef,
-  } = useSortable({ id: activity.id, disabled: selectMode })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "relative flex gap-2 pl-10 sm:gap-3 sm:pl-12",
-        isDragging && "opacity-50 z-50",
-        selectMode && isSelected && "ring-2 ring-primary/40 rounded-2xl",
-      )}
-    >
-      {/* Timeline dot */}
-      <div className="absolute left-0 top-5 -translate-y-1/2">
-        <TimelineDot
-          kind="activity"
-          activityType={activity.type}
-          dragHandleProps={!selectMode ? { ...attributes, ...listeners } : undefined}
-          dragHandleRef={!selectMode ? setActivatorNodeRef : undefined}
-        />
-      </div>
-
-      <div className="flex flex-1 items-start gap-2 min-w-0">
-        {/* Drag handle — hidden in select mode (reorder disabled) */}
-        {/* Select checkbox — shown only in select mode */}
-        {selectMode && (
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={isSelected}
-            aria-label={isSelected ? `Deselect ${activity.title}` : `Select ${activity.title}`}
-            onClick={onToggleSelect}
-            className={cn(
-              "mt-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors",
-              isSelected
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background hover:border-primary/50",
-            )}
-          >
-            {isSelected && <CheckSquare className="h-4 w-4" />}
-          </button>
-        )}
-
-        <div className="flex-1">
-          {isEditing ? (
-            <div className="rounded-2xl border bg-card p-5 shadow-lg">
-              <ActivityForm
-                initial={activity}
-                lockType
-                onCancel={onCancelEdit}
-                isSubmitting={isSubmitting}
-                onSubmit={onSave}
-              />
-            </div>
-          ) : (
-            <ActivityCard
-              activity={activity}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              isDeleting={isDeleting}
-              overlapTitles={overlapTitles}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
+import { ActivitySelectToolbar } from "./timeline/ActivitySelectToolbar"
+import { SortableActivityRow } from "./timeline/SortableActivityRow"
+import { StayTimelineCard } from "./timeline/StayTimelineCard"
+import { TimelineDot } from "./timeline/TimelineDot"
+import { TransportTimelineCard } from "./timeline/TransportTimelineCard"
 
 interface Props {
   tripId: string
@@ -411,23 +40,20 @@ interface Props {
   days: Day[]
 }
 
+/**
+ * One day's timeline: read-only transport/stay items, then the day's
+ * activities (drag to reorder, select & copy to another day, edit inline),
+ * the AI planner and the add-activity form.
+ */
 export function DayActivities({ tripId, dayId, date, dayNumber, destination, days }: Props) {
   const qc = useQueryClient()
-  const { data: activitiesData, isLoading: loadingAct } = useActivities(dayId)
-  const { data: transData } = useTransportations(tripId)
-  const { data: accomData } = useAccommodations(tripId)
+  const { isLoading, activities, staticItems, overlapByActivity } = useDayTimeline(tripId, dayId, date)
+  const selection = useActivitySelection(dayId, days, activities)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Activity | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [reorderKey, setReorderKey] = useState(0)
-
-  // Multi-select mode (W-PLAN-09): toggle checkboxes on activities, then
-  // copy the selected ones to another day. Reorder is disabled while in
-  // select mode to avoid conflicting drag vs. checkbox interactions.
-  const [selectMode, setSelectMode] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [copying, setCopying] = useState(false)
 
   const createMut = useCreateActivity(dayId, tripId)
   const updateMut = useUpdateActivity(editingId ?? "", dayId, tripId)
@@ -438,7 +64,7 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   )
 
-  if (loadingAct) {
+  if (isLoading) {
     return (
       <div className="space-y-3 py-2">
         {[1, 2].map((i) => (
@@ -453,44 +79,6 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
       </div>
     )
   }
-
-  const activities = activitiesData?.items ?? []
-  const overlapByActivity = findActivityOverlaps(
-    activities.filter((activity) => activity.type === "location"),
-  )
-  const transportations = transData?.items ?? []
-  const accommodations = accomData?.items ?? []
-
-  // Build non-activity timeline items
-  const staticItems: TimelineItem[] = []
-  for (const t of transportations) {
-    if (dateMatches(t.departure_datetime, date)) {
-      staticItems.push({ kind: "transport", data: t })
-    }
-  }
-  for (const a of accommodations) {
-    if (dateMatches(a.check_in, date)) {
-      staticItems.push({ kind: "accommodation", data: a, event: "check_in" })
-    }
-    if (dateMatches(a.check_out, date)) {
-      staticItems.push({ kind: "accommodation", data: a, event: "check_out" })
-    }
-  }
-  staticItems.sort((a, b) => {
-    const ta =
-      a.kind === "transport"
-        ? toSortKey(a.data.departure_datetime)
-        : a.kind === "accommodation" && a.event === "check_in"
-          ? "14:00"
-          : "12:00"
-    const tb =
-      b.kind === "transport"
-        ? toSortKey(b.data.departure_datetime)
-        : b.kind === "accommodation" && b.event === "check_in"
-          ? "14:00"
-          : "12:00"
-    return ta.localeCompare(tb)
-  })
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e
@@ -519,140 +107,17 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
     })
   }
 
-  // --- Multi-select handlers (W-PLAN-09: Copy places to another day) ---
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const selectAll = () => setSelectedIds(new Set(activities.map((a) => a.id)))
-  const clearSelection = () => setSelectedIds(new Set())
-
-  const exitSelectMode = () => {
-    setSelectMode(false)
-    setSelectedIds(new Set())
-  }
-
-  // Copy selected activities to a target day. Each activity is duplicated via
-  // the existing create endpoint (no backend change). Payload is preserved
-  // verbatim; start/end times carry over so the copied slot keeps its time.
-  const copyToDay = async (targetDayId: string) => {
-    const target = days.find((d) => d.id === targetDayId)
-    if (!target) return
-    if (targetDayId === dayId) {
-      toast("Cannot copy to the same day.", "error")
-      return
-    }
-    const selected = activities.filter((a) => selectedIds.has(a.id))
-    if (selected.length === 0) return
-
-    setCopying(true)
-    let ok = 0
-    let fail = 0
-    for (const a of selected) {
-      try {
-        await activityApi.create(targetDayId, {
-          type: a.type,
-          title: a.title,
-          start_time: a.start_time || undefined,
-          end_time: a.end_time || undefined,
-          payload: a.payload ?? undefined,
-        })
-        ok++
-      } catch {
-        fail++
-      }
-    }
-    setCopying(false)
-
-    // Invalidate target day so the new copies show up.
-    qc.invalidateQueries({ queryKey: ["activities", "list", targetDayId], refetchType: 'active' })
-
-    if (fail === 0) {
-      toast(`Copied ${ok} ${ok === 1 ? "activity" : "activities"} to Day ${target.day_number}.`)
-    } else if (ok === 0) {
-      toast("Failed to copy activities. Please try again.", "error")
-    } else {
-      toast(`Copied ${ok}, ${fail} failed.`, "error")
-    }
-
-    exitSelectMode()
-  }
-
   const hasContent = activities.length > 0 || staticItems.length > 0
 
   return (
     <div className="space-y-3">
-      {/* Select-mode toolbar (W-PLAN-09: Copy places to another day) */}
       {activities.length > 0 && (
-        <div className="flex items-center justify-between gap-2">
-          {!selectMode ? (
-            <button
-              type="button"
-              onClick={() => setSelectMode(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <CheckSquare className="h-3.5 w-3.5" />
-              Select
-            </button>
-          ) : (
-            <div className="flex w-full flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-foreground">
-                {selectedIds.size} selected
-              </span>
-              <button
-                type="button"
-                onClick={selectedIds.size === activities.length ? clearSelection : selectAll}
-                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {selectedIds.size === activities.length ? "Clear" : "All"}
-              </button>
-              <div className="ml-auto flex items-center gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    disabled={selectedIds.size === 0 || copying}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    {copying ? "Copying…" : "Copy to…"}
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Copy to day</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {days
-                        .filter((d) => d.id !== dayId)
-                        .map((d) => (
-                          <DropdownMenuItem
-                            key={d.id}
-                            onClick={() => copyToDay(d.id)}
-                          >
-                            Day {d.day_number}
-                            <span className="ml-auto text-xs text-muted-foreground">
-                              {new Date(d.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </span>
-                          </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <button
-                  type="button"
-                  onClick={exitSelectMode}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  aria-label="Exit select mode"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <ActivitySelectToolbar
+          selection={selection}
+          activityCount={activities.length}
+          dayId={dayId}
+          days={days}
+        />
       )}
       {overlapByActivity.size > 0 && (
         <div
@@ -676,38 +141,30 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
           <div className="absolute left-[18px] top-5 h-[calc(100%-1.25rem)] w-px bg-border/50" />
 
           {/* Static transport/accommodation items */}
-          {staticItems.map((item) => {
-            if (item.kind === "transport") {
-              const t = item.data as Transportation
-              return (
-                <div key={`trans-${t.id}`} className="relative mb-3 flex gap-2 pl-10 sm:gap-3 sm:pl-12">
-                  <div className="absolute left-0 top-5 -translate-y-1/2">
-                    <TimelineDot kind="transport" transportType={t.type} />
-                  </div>
-                  <div className="flex-1">
-                    <TransportTimelineCard t={t} />
-                  </div>
+          {staticItems.map((item) =>
+            item.kind === "transport" ? (
+              <div key={`trans-${item.data.id}`} className="relative mb-3 flex gap-2 pl-10 sm:gap-3 sm:pl-12">
+                <div className="absolute left-0 top-5 -translate-y-1/2">
+                  <TimelineDot kind="transport" transportType={item.data.type} />
                 </div>
-              )
-            }
-            if (item.kind === "accommodation") {
-              const a = item.data as Accommodation
-              return (
-                <div
-                  key={`accom-${a.id}-${item.event}`}
-                  className="relative mb-3 flex gap-2 pl-10 sm:gap-3 sm:pl-12"
-                >
-                  <div className="absolute left-0 top-5 -translate-y-1/2">
-                    <TimelineDot kind="accommodation" />
-                  </div>
-                  <div className="flex-1">
-                    <AccommodationTimelineCard a={a} event={item.event} />
-                  </div>
+                <div className="flex-1">
+                  <TransportTimelineCard t={item.data} />
                 </div>
-              )
-            }
-            return null
-          })}
+              </div>
+            ) : (
+              <div
+                key={`accom-${item.data.id}-${item.event}`}
+                className="relative mb-3 flex gap-2 pl-10 sm:gap-3 sm:pl-12"
+              >
+                <div className="absolute left-0 top-5 -translate-y-1/2">
+                  <TimelineDot kind="accommodation" />
+                </div>
+                <div className="flex-1">
+                  <StayTimelineCard a={item.data} event={item.event} />
+                </div>
+              </div>
+            ),
+          )}
 
           {/* Sortable activity items */}
           {activities.length > 0 && (
@@ -745,9 +202,9 @@ export function DayActivities({ tripId, dayId, date, dayNumber, destination, day
                         confirmingDelete?.id === a.id
                       }
                       overlapTitles={overlapByActivity.get(a.id) ?? []}
-                      selectMode={selectMode}
-                      isSelected={selectedIds.has(a.id)}
-                      onToggleSelect={() => toggleSelect(a.id)}
+                      selectMode={selection.selectMode}
+                      isSelected={selection.selectedIds.has(a.id)}
+                      onToggleSelect={() => selection.toggleSelect(a.id)}
                     />
                   ))}
                 </div>
