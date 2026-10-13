@@ -1,47 +1,44 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
 import { Plane, CalendarCheck, Globe, Award, Trophy, Gem, Medal } from "lucide-react"
 import { useTrips } from "../hooks/useTrips"
 import { tripStatus } from "../lib/status"
 import type { Trip } from "../types"
 
-/** Animated number counter that counts up on mount.
- *  Uses requestAnimationFrame (aligned to display refresh) instead of
- *  setInterval — smoother animation and lower CPU overhead, especially
- *  when multiple counters mount together on the dashboard. */
+/** Number that counts up on mount. The real value is rendered from the
+ *  start; the count-up (requestAnimationFrame) is only an enhancement and is
+ *  skipped when it can't run (hidden tab pauses rAF) or the user prefers
+ *  reduced motion, so the number never sticks at 0. */
 function AnimatedCount({ to, duration = 800 }: { to: number; duration?: number }) {
-  const elementRef = useRef<HTMLSpanElement>(null)
-  const rafRef = useRef<number | null>(null)
+  const [display, setDisplay] = useState(to)
 
   useEffect(() => {
-    const element = elementRef.current
-    if (!element) return
-    if (to === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      element.textContent = String(to)
+    if (
+      to === 0 ||
+      document.hidden ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setDisplay(to)
       return
     }
 
+    let raf = 0
     let startedAt: number | null = null
-
     const step = (now: number) => {
       if (startedAt === null) startedAt = now
-      const elapsed = now - startedAt
-      const progress = Math.min(elapsed / duration, 1)
-      element.textContent = String(Math.floor(progress * to))
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(step)
-      } else {
-        element.textContent = String(to)
-      }
+      const progress = Math.min((now - startedAt) / duration, 1)
+      setDisplay(progress < 1 ? Math.floor(progress * to) : to)
+      if (progress < 1) raf = requestAnimationFrame(step)
     }
-    rafRef.current = requestAnimationFrame(step)
+    raf = requestAnimationFrame(step)
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      cancelAnimationFrame(raf)
+      setDisplay(to)
     }
   }, [to, duration])
 
-  return <span ref={elementRef} className="tabular-nums">0</span>
+  return <span className="tabular-nums">{display}</span>
 }
 
 export function StatsSection({

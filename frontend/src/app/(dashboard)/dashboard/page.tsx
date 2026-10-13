@@ -75,6 +75,7 @@ export default function DashboardPage() {
           enabled={legacyQueriesEnabled}
           loading={dashboardTrips.isPending}
           fallbackData={dashboardTrips.data?.upcoming}
+          hasAnyTrips={(dashboardTrips.data?.trips.items.length ?? 0) > 0}
         />
       </section>
 

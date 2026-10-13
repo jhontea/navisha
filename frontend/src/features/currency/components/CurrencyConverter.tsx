@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/select"
 import { useConvert, useSupportedCurrencies } from "../hooks/useCurrency"
 import { MaterialIcon } from "@/components/MaterialIcon"
-import { getCurrencyFlag, getCurrencyLabel } from "@/lib/currency"
+import { getCurrencyLabel } from "@/lib/currency"
+import { CurrencyBadge } from "./CurrencyBadge"
 import { cn } from "@/lib/utils"
 import { useRecentConversionsStore } from "../store"
 
@@ -91,9 +92,7 @@ export function CurrencyConverter() {
             <Select value={from} onValueChange={(v) => v && setFrom(v)}>
               <SelectTrigger className="w-auto max-w-full min-w-0 bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
-                    {getCurrencyFlag(from)}
-                  </span>
+                  <CurrencyBadge code={from} />
                   <span className="truncate">
                     {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
                   </span>
@@ -102,7 +101,7 @@ export function CurrencyConverter() {
               <SelectContent>
                 {options.map((o) => (
                   <SelectItem key={o.code} value={o.code}>
-                    <span className="mr-2">{getCurrencyFlag(o.code)}</span>
+                    <CurrencyBadge code={o.code} className="mr-2 h-6 bg-muted" />
                     {getCurrencyLabel(o.code, o.name)}
                   </SelectItem>
                 ))}
@@ -142,9 +141,7 @@ export function CurrencyConverter() {
             <Select value={to} onValueChange={(v) => v && setTo(v)}>
               <SelectTrigger className="w-auto max-w-full min-w-0 bg-muted border-none hover:bg-muted/80 transition-colors font-headline-sm text-headline-sm text-foreground px-4 py-2 rounded-lg">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
-                    {getCurrencyFlag(to)}
-                  </span>
+                  <CurrencyBadge code={to} />
                   <span className="truncate">
                     {getCurrencyLabel(to, options.find(o => o.code === to)?.name)}
                   </span>
@@ -153,7 +150,7 @@ export function CurrencyConverter() {
               <SelectContent>
                 {options.map((o) => (
                   <SelectItem key={o.code} value={o.code}>
-                    <span className="mr-2">{getCurrencyFlag(o.code)}</span>
+                    <CurrencyBadge code={o.code} className="mr-2 h-6 bg-muted" />
                     {getCurrencyLabel(o.code, o.name)}
                   </SelectItem>
                 ))}
@@ -289,12 +286,12 @@ function RecentConversions({
                   <span className="tabular-nums">
                     {r.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                   </span>{" "}
-                  {getCurrencyFlag(r.from)} {r.from}
+                  {r.from}
                   <span className="mx-1.5 text-muted-foreground">→</span>
                   <span className="tabular-nums text-primary">
                     {r.convertedAmount.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                   </span>{" "}
-                  {getCurrencyFlag(r.to)} {r.to}
+                  {r.to}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   1 {r.from} ={" "}

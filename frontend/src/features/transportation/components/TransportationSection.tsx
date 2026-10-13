@@ -39,20 +39,32 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
   const items = data?.items ?? []
 
   return (
-    <div className="space-y-10">
-      {/* Add Transportation Section */}
+    <div>
       <section>
-        <div className="mb-6">
-          <h3 className="font-display text-headline-sm text-foreground mb-1">
-            Add Transportation
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Log your flights, trains, and transfers to keep your itinerary organized.
-          </p>
+        {/* List first; adding is a compact action next to the heading. */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-display text-xl font-semibold text-foreground">Transport</h3>
+            {!isLoading && !isError && items.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {items.length} {items.length === 1 ? "entry" : "entries"}
+              </p>
+            )}
+          </div>
+          {!addOpen && (
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add transport
+            </button>
+          )}
         </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl shadow-sm p-8">
-          {addOpen ? (
+        {addOpen && (
+          <div className="mb-4 rounded-xl border bg-card p-4 shadow-card sm:p-6">
             <TransportationForm
               tripBaseCurrency={tripBaseCurrency}
               withCost
@@ -63,45 +75,8 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
                 setAddOpen(false)
               }}
             />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-md shadow-primary/20">
-                <Plane className="h-7 w-7" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Log a transportation
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Add flights, trains, buses, or any other transport
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-6 py-2.5 font-semibold text-white shadow-md shadow-primary/25 transition-all hover:shadow-lg hover:shadow-primary/35 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <Plus className="h-4 w-4" />
-                Add Transport
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Upcoming Travel List */}
-      {(isLoading || items.length > 0 || isError) && (
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-display text-headline-sm text-foreground">
-              Upcoming Travel
-            </h3>
-            {!isLoading && (
-              <span className="text-sm text-muted-foreground">
-                {items.length} {items.length === 1 ? "entry" : "entries"}
-              </span>
-            )}
           </div>
+        )}
 
           {isLoading && (
             <div className="space-y-3">
@@ -128,17 +103,17 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
 
           {isError && (
             <div role="alert" className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
-              <p className="text-sm text-destructive font-medium">Failed to load transportation entries.</p>
-              <p className="text-xs text-muted-foreground mt-1">Check your connection and try again.</p>
+              <p className="text-sm text-destructive font-medium">Couldn&apos;t load transport.</p>
+              <p className="text-xs text-muted-foreground mt-1">Check your connection and reload the page.</p>
             </div>
           )}
 
-          {!isLoading && !isError && items.length === 0 && (
+          {!isLoading && !isError && items.length === 0 && !addOpen && (
             <EmptyState
               icon={Plane}
               size="sm"
-              title="No transportation logged yet"
-              description="Add a flight, train, bus, or transfer to keep the trip organized."
+              title="No transport yet"
+              description="Add flights, trains, buses, or transfers to see them in your itinerary."
               className="rounded-2xl border border-dashed border-border/50"
             />
           )}
@@ -175,8 +150,7 @@ export function TransportationSection({ tripId, tripBaseCurrency }: Props) {
               )
             })}
           </div>
-        </section>
-      )}
+      </section>
 
       <ConfirmDialog
         open={!!confirmingDelete}

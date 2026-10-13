@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { UserAvatar } from "@/components/UserAvatar"
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -202,29 +203,20 @@ export function NavBar() {
                   </span>
                   <Skeleton variant="text" className="hidden h-4 w-12 lg:block xl:hidden" />
                 </>
-              ) : user?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={user.id}
-                  src={user.avatar_url}
-                  alt={user.name ?? "User avatar"}
+              ) : (
+                <UserAvatar
+                  key={user?.id}
+                  src={user?.avatar_url}
+                  name={user?.name}
+                  decorative
                   className={cn(
-                    "h-7 w-7 rounded-full object-cover border-2 shadow-sm transition-all",
-                    pathname === "/profile"
-                      ? "border-primary/60 shadow-primary/20"
-                      : "border-white/40",
+                    "h-7 w-7 border-2",
+                    pathname === "/profile" ? "border-primary/60" : "border-transparent",
                   )}
                 />
-              ) : (
-                <div
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-chromatic-aurora text-xs font-bold text-white shadow-sm"
-                  aria-hidden="true"
-                >
-                  {user?.name?.charAt(0).toUpperCase() ?? "?"}
-                </div>
               )}
               <span className="hidden xl:inline text-sm leading-tight">
-                <span className="text-[11px] text-muted-foreground block leading-none">Hi,</span>
+                <span className="text-xs text-muted-foreground block leading-none">Hi,</span>
                 <span className="font-semibold">{user?.name?.split(" ")[0] ?? "Profile"}</span>
               </span>
               <span className="hidden lg:inline xl:hidden text-sm font-medium">
@@ -297,14 +289,13 @@ export function NavBar() {
                   {item.href === "/profile" && isLoading ? (
                     <Skeleton variant="avatar" className="h-5 w-5" />
                   ) : item.href === "/profile" && user?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <UserAvatar
                       key={user.id}
                       src={user.avatar_url}
-                      alt=""
-                      aria-hidden="true"
+                      name={user.name}
+                      decorative
                       className={cn(
-                        "h-5 w-5 rounded-full object-cover",
+                        "h-5 w-5",
                         isActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                       )}
                     />
