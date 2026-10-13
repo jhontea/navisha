@@ -148,7 +148,7 @@ export function StatsSection({
           </p>
           <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-chromatic-aurora via-chromatic-sunset to-chromatic-ocean bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000 shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+              className="h-full rounded-full bg-primary bg-[length:200%_200%] animate-gradient-shift transition-all duration-1000 shadow-[0_0_8px_rgba(168,85,247,0.4)]"
               style={{ width: `${progressPct}%` }}
             />
           </div>

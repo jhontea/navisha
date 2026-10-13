@@ -58,7 +58,7 @@ export function HeroSection() {
       >
         <Link
           href="/login"
-          className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[200px] justify-center"
+          className="group flex items-center gap-3 rounded-2xl bg-primary px-8 py-4 text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[200px] justify-center"
         >
           {/* Google G icon */}
           <GoogleIcon className="h-5 w-5 shrink-0" />
@@ -102,7 +102,7 @@ export function HeroSection() {
               <p className="text-xs text-muted-foreground mb-0.5">Good morning, Alex 👋</p>
               <h2 className="text-lg font-bold text-foreground">Your Adventures</h2>
             </div>
-            <div className="h-8 rounded-xl bg-gradient-to-r from-primary to-chromatic-aurora flex items-center justify-center gap-1.5 px-3">
+            <div className="h-8 rounded-xl bg-primary flex items-center justify-center gap-1.5 px-3">
               <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2L9.5 9.5H2L7.5 14L5.5 21L12 17L18.5 21L16.5 14L22 9.5H14.5L12 2Z"/>
               </svg>
@@ -112,7 +112,7 @@ export function HeroSection() {
 
           {/* Mock trip cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/80 to-chromatic-ocean/80 h-32 p-4 flex flex-col justify-between">
+            <div className="relative overflow-hidden rounded-2xl bg-primary h-32 p-4 flex flex-col justify-between">
               <div className="flex justify-between items-start">
                 <span className="text-white text-sm font-semibold">Tokyo, Japan 🇯🇵</span>
                 <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] text-white font-semibold backdrop-blur-sm">Active</span>
@@ -125,7 +125,7 @@ export function HeroSection() {
                 <p className="text-white/60 text-[10px] mt-1">Day 9 of 15</p>
               </div>
             </div>
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-chromatic-aurora/30 to-chromatic-sky/30 h-32 p-4 flex flex-col justify-between border border-border/30">
+            <div className="relative overflow-hidden rounded-2xl bg-primary/5 h-32 p-4 flex flex-col justify-between border border-border/30">
               <div className="flex justify-between items-start">
                 <span className="text-foreground text-sm font-semibold">Paris, France 🇫🇷</span>
                 <span className="rounded-full bg-primary/12 border border-primary/20 px-2.5 py-0.5 text-[10px] text-primary font-semibold">Upcoming</span>

@@ -24,7 +24,7 @@ export function OnboardingCard({ userName }: { userName?: string }) {
         <div className="flex flex-col sm:flex-row gap-4">
           <Link
             href="/trips/generate"
-            className="group flex items-center gap-3 rounded-xl bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-[0.98]"
+            className="group flex items-center gap-3 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
           >
             <Sparkles className="h-5 w-5" />
             Generate with AI

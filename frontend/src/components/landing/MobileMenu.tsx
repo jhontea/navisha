@@ -65,7 +65,7 @@ export function MobileMenu() {
             href="/login"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-chromatic-aurora px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Start Planning
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

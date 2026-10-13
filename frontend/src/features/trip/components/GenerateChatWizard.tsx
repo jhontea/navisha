@@ -178,7 +178,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       {/* Progress bar */}
       <div className="h-1 bg-border/30">
         <div
-          className="h-full bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean transition-all duration-500"
+          className="h-full bg-primary transition-all duration-500"
           style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }}
         />
       </div>
@@ -192,14 +192,14 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
             style={{ animation: "fadeSlide 0.3s ease-out" }}
           >
             {m.from === "bot" && (
-              <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/20">
+              <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm">
                 <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               </div>
             )}
             <div
               className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 m.from === "user"
-                  ? "bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean text-white rounded-br-sm shadow-sm shadow-primary/20"
+                  ? "bg-primary text-white rounded-br-sm shadow-sm"
                   : "bg-muted/60 text-foreground rounded-bl-sm border border-border/30"
               }`}
             >
@@ -400,7 +400,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
 }
 
 const sendBtn =
-  "inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:shadow-md hover:shadow-primary/35 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-45 disabled:shadow-none"
+  "inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-45 disabled:shadow-none"
 const ghostBtn =
   "rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 

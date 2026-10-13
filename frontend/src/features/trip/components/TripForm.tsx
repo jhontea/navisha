@@ -260,7 +260,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 : "border-border/60 bg-background hover:border-primary/25 hover:bg-muted/30"
             }`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/20">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
               <Sparkles className="h-5 w-5" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
@@ -296,7 +296,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               <button
                 type="button"
                 onClick={continueWithAI}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
                 Continue with AI

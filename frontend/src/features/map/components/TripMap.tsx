@@ -140,7 +140,7 @@ export function TripMap({ tripId, days }: Props) {
               className={cn(
                 "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
                 activeDay === null
-                  ? "bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/25"
+                  ? "bg-primary text-white shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-muted/80",
               )}
             >
@@ -265,7 +265,7 @@ export function TripMap({ tripId, days }: Props) {
             <button
               type="button"
               onClick={handleOpenInMaps}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-primary/20 transition-all hover:shadow-md hover:shadow-primary/30"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Open in Google Maps
@@ -308,7 +308,7 @@ export function TripMap({ tripId, days }: Props) {
           <button
             type="button"
             onClick={handleOpenInMaps}
-            className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/35 md:hidden"
+            className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition-all hover:shadow-xl md:hidden"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             Open in Google Maps

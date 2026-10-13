@@ -184,7 +184,7 @@ export default function TripsPage() {
           action={
             <Link
               href="/trips/new"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-md hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               Create My First Trip
             </Link>

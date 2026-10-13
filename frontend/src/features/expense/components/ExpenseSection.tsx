@@ -280,7 +280,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-chromatic-sunset via-chromatic-aurora to-chromatic-sky text-white shadow-md shadow-chromatic-sunset/20">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-white shadow-md">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
               </div>
               <div>
@@ -292,7 +292,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-chromatic-sunset via-chromatic-aurora to-chromatic-sky px-6 py-2.5 font-label-md text-white shadow-md shadow-chromatic-sunset/20 transition-all hover:shadow-lg hover:shadow-chromatic-sunset/30 active:scale-95"
+                className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 font-label-md text-white shadow-md transition-all hover:shadow-lg active:scale-95"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" x2="12" y1="5" y2="19" />

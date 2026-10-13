@@ -65,7 +65,7 @@ export function RouteProgress() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[1000] h-0.5 overflow-hidden bg-transparent">
       <div
-        className={`h-full bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean shadow-[0_0_12px_hsl(var(--primary)/0.45)] ${
+        className={`h-full bg-primary ${
           settling ? "w-full duration-300 ease-out" : "w-2/3 duration-[900ms] ease-out"
         } transition-[width]`}
       />

@@ -92,7 +92,7 @@ export default function DashboardPage() {
             href="/trips/generate"
             className="group glass flex items-center gap-3 rounded-2xl p-4 transition-all duration-300 hover:shadow-chromatic hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-[hsl(250,70%,55%)] to-[hsl(200,90%,60%)] text-white shadow-sm shadow-primary/20" aria-hidden="true">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm" aria-hidden="true">
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -106,7 +106,7 @@ export default function DashboardPage() {
             href="/trips/new"
             className="group glass flex items-center gap-3 rounded-2xl p-4 transition-all duration-300 hover:shadow-chromatic hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(185,80%,40%)] to-[hsl(200,80%,50%)] text-white shadow-sm shadow-[hsl(185,80%,40%)]/20" aria-hidden="true">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm" aria-hidden="true">
               <Compass className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -120,7 +120,7 @@ export default function DashboardPage() {
             href="/currency"
             className="group glass flex items-center gap-3 rounded-2xl p-4 transition-all duration-300 hover:shadow-chromatic hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-chromatic-mint to-chromatic-ocean text-white shadow-sm shadow-chromatic-mint/20" aria-hidden="true">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm" aria-hidden="true">
               <ArrowLeftRight className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">

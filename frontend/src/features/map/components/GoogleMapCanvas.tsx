@@ -226,7 +226,7 @@ function Markers({
             <button
               type="button"
               onClick={() => onOpenInMaps(points[openIndex])}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-2.5 py-1.5 text-xs font-semibold text-white"
+              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-white"
             >
               <MapPin className="h-3.5 w-3.5" />
               Open in Google Maps

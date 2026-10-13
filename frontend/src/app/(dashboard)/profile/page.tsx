@@ -46,7 +46,7 @@ export default function ProfilePage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="glass-lg overflow-hidden rounded-3xl">
-          <div className="relative h-24 overflow-hidden bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean" aria-hidden="true">
+          <div className="relative h-24 overflow-hidden bg-primary" aria-hidden="true">
             <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full border border-white/20 bg-white/10" />
             <div className="absolute left-8 top-12 h-16 w-16 rounded-full border border-white/15 bg-white/5" />
             <div className="absolute right-20 top-8 h-2 w-2 rounded-full bg-white/70" />
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                 href="/currency"
                 className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/20">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">

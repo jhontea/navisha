@@ -135,7 +135,7 @@ export default function SharedTripPage({
             aria-label="Navisha home"
             className="flex items-center gap-2.5"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chromatic-aurora shadow-sm">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary shadow-sm">
               <Compass className="h-4 w-4 text-white" aria-hidden="true" />
             </span>
             <span className="text-gradient-sunset text-[15px] font-bold tracking-tight">
@@ -251,7 +251,7 @@ function SectionTab({
       onClick={onClick}
       className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition sm:text-sm ${
         active
-          ? "bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-sm shadow-primary/25"
+          ? "bg-primary text-white shadow-sm"
           : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
       }`}
     >

@@ -122,7 +122,7 @@ export function TopBar({
           aria-hidden="true"
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary via-[hsl(250,70%,55%)] to-[hsl(200,90%,60%)] transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+            className="h-full rounded-full bg-primary transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
           />
         </div>
