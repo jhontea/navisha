@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { ChevronDown, Pencil, Receipt, Trash2, X } from "lucide-react"
+import { ArrowLeftRight, ChevronDown, Pencil, Receipt, Trash2, X } from "lucide-react"
+import Link from "next/link"
 import { EmptyState } from "@/components/EmptyState"
 import { cn, formatCurrency } from "@/lib/utils"
 import {
@@ -238,6 +239,13 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
           <div>
             <h3 className="font-display text-headline-md text-foreground mb-1">Budget Overview</h3>
             <p className="text-muted-foreground font-body-md">Keep track of your expenses in real-time.</p>
+            <Link
+              href="/currency"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+              Currency converter
+            </Link>
           </div>
           {!tripBudget && onEditBudget && (
             <button
