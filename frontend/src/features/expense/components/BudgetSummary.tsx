@@ -1,270 +1,264 @@
 "use client"
 
-import { cn, formatCurrency } from "@/lib/utils"
-import { useExpenseSummary } from "../hooks/useExpenses"
-import { Skeleton } from "@/components/ui/skeleton"
-import { CATEGORY_COLORS, categoryRank } from "../categoryColors"
+import { AlertTriangle, Pencil, Plus } from "lucide-react"
 
-const CATEGORY_CONFIG = Object.fromEntries(
-  Object.entries(CATEGORY_COLORS).map(([k, v]) => [k, { bar: v.bar, dot: v.bar, label: v.label }])
-)
-
-const CIRCUMFERENCE = 2 * Math.PI * 58 // r=58
+import { MoneyText } from "@/components/MoneyText"
+import { Button } from "@/components/ui/button"
+import { formatMoney } from "@/lib/money"
+import { cn } from "@/lib/utils"
+import type { Day } from "@/features/trip/types"
+import { getCategoryColor } from "../categoryColors"
+import { useExpenses, useExpenseSummary } from "../hooks/useExpenses"
+import {
+  budgetStatus,
+  buildCategoryRows,
+  buildDailyTotals,
+  categoryScale,
+  type CategoryRow,
+  type DailyTotals,
+} from "../lib/budget"
 
 interface Props {
   tripId: string
-  tripBudget?: number
+  budget?: number
+  budgetCategories?: Record<string, number>
+  days: Day[]
+  onEditBudget: () => void
 }
 
-export function BudgetSummary({ tripId, tripBudget }: Props) {
-  const { data, isLoading, isError } = useExpenseSummary(tripId)
+const CARD = "rounded-xl border bg-card p-4 sm:p-5"
 
-  if (isLoading) {
+/** Budget overview: spent vs budget, spending by category and by day. */
+export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBudget }: Props) {
+  const summary = useExpenseSummary(tripId)
+  const expenses = useExpenses(tripId)
+
+  if (summary.isLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 h-48 rounded-xl"><Skeleton variant="glass" className="h-full w-full" /></div>
-        <div className="h-48 rounded-xl"><Skeleton variant="glass" className="h-full w-full" /></div>
+      <div className="space-y-4" aria-label="Loading budget">
+        <div className="h-36 animate-pulse rounded-xl bg-muted" />
+        <div className="h-48 animate-pulse rounded-xl bg-muted" />
       </div>
     )
   }
 
-  if (isError || !data) {
+  if (summary.isError || !summary.data) {
     return (
-      <p className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
-        Failed to load budget summary.
+      <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+        Couldn&apos;t load the budget. Check your connection and reload the page.
       </p>
     )
   }
 
-  const total = data.total_base
-  const byCategory = [...data.by_category].sort(
-    (a, b) => categoryRank(a.category) - categoryRank(b.category),
-  )
-  const usedPct = tripBudget && tripBudget > 0 ? (total / tripBudget) * 100 : null
-  // stroke-dashoffset = CIRCUMFERENCE * (1 - pct/100)
-  const dashOffset =
-    usedPct !== null
-      ? CIRCUMFERENCE * (1 - Math.min(usedPct, 100) / 100)
-      : CIRCUMFERENCE * 0.59 // fallback visual
-
-  // If no expenses but budget IS set, still show the budget ring so the user
-  // can see their budget at a glance even before adding expenses.
-  if (data.by_category.length === 0) {
-    return (
-      <div className="glass rounded-xl p-6 sm:p-8 mb-8">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          {/* Budget ring — 0% used */}
-          <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 128 128">
-              <circle className="text-muted" cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="8" />
-              <circle
-                className="text-chromatic-mint"
-                cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="8"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={0}
-                strokeLinecap="round"
-                style={{ transition: "stroke-dashoffset 1s ease-out" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-display text-2xl text-chromatic-mint">0%</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Used</span>
-            </div>
-          </div>
-          {/* Budget stats */}
-          <div className="flex-1 text-center sm:text-left">
-            <p className="text-sm text-muted-foreground mb-1">No expenses yet</p>
-            {tripBudget && tripBudget > 0 ? (
-              <>
-                <p className="font-display text-2xl sm:text-3xl text-foreground mb-1">
-                  {formatCurrency(tripBudget, data.base_currency)}
-                </p>
-                <p className="text-sm text-chromatic-mint font-medium">
-                  {formatCurrency(tripBudget, data.base_currency)} available
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Set a budget to track your spending</p>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">Add an expense below to see the breakdown.</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const { total_base: spent, base_currency: currency, by_category } = summary.data
+  const status = budgetStatus(spent, budget)
+  const rows = buildCategoryRows(by_category, budgetCategories)
+  const daily = buildDailyTotals(expenses.data?.items ?? [], days)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      {/* Category Distribution Bar Card */}
-      <div className="lg:col-span-2 glass rounded-xl p-4 sm:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-label-md text-foreground">Category Distribution</h4>
-          <span className="text-label-sm bg-muted px-2 py-1 rounded text-muted-foreground">
-            {data.by_category.length} categor{data.by_category.length === 1 ? "y" : "ies"}
-          </span>
-        </div>
+    <div className="space-y-4">
+      <SpentCard status={status} currency={currency} onEditBudget={onEditBudget} />
+      {rows.length > 0 && <CategoryCard rows={rows} currency={currency} />}
+      {days.length > 0 && daily.max + daily.outside > 0 && <DailyCard daily={daily} currency={currency} />}
+    </div>
+  )
+}
 
-        {/* Stacked Bar — fixed category order (palette is validated for
-            that order) with a 2px surface gap between segments. */}
-        <div className="h-8 w-full flex gap-0.5 rounded-full overflow-hidden mb-4 bg-card">
-          {byCategory.map((c) => {
-            const pct = total > 0 ? (c.total / total) * 100 : 0
-            const cfg = CATEGORY_CONFIG[c.category] ?? CATEGORY_CONFIG.other
-            return (
-              <div
-                key={c.category}
-                className={cn("h-full", cfg.bar)}
-                style={{ width: `${pct}%` }}
-                title={`${cfg.label}: ${pct.toFixed(1)}%`}
-              />
-            )
-          })}
-        </div>
+function SpentCard({
+  status,
+  currency,
+  onEditBudget,
+}: {
+  status: ReturnType<typeof budgetStatus>
+  currency: string
+  onEditBudget: () => void
+}) {
+  const { spent, budget, remaining, ratio, over } = status
+  const near = ratio !== null && !over && ratio >= 0.9
 
-        {/* Legend — flex-wrap so items don't get crammed on small screens */}
-        <div className="flex flex-wrap gap-x-4 gap-y-2.5">
-          {byCategory.map((c) => {
-            const cfg = CATEGORY_CONFIG[c.category] ?? CATEGORY_CONFIG.other
-            const pct = total > 0 ? (c.total / total) * 100 : 0
-            return (
-              <div key={c.category} className="flex items-center gap-2 min-w-0">
-                <span
-                  className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0 border border-border/40", cfg.dot)}
-                />
-                <span className="text-label-sm text-muted-foreground truncate">
-                  {cfg.label}{" "}
-                  <span className="text-muted-foreground/70">
-                    ({pct.toFixed(0)}%)
-                  </span>
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Budget Health — on mobile show as horizontal row, on lg show as ring card */}
-      <div className="glass rounded-xl p-4 sm:p-6">
-        {/* Mobile: horizontal layout */}
-        <div className="flex items-center gap-4 lg:hidden">
-          {/* Mini ring */}
-          <div className="relative w-16 h-16 flex-shrink-0">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 128 128">
-              <circle className="text-muted" cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="10" />
-              <circle
-                className={cn(usedPct !== null && usedPct > 100 ? "text-destructive" : "text-primary")}
-                cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="10"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={dashOffset}
-                strokeLinecap="round"
-                style={{ transition: "stroke-dashoffset 1s ease-out" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={cn(
-                "text-[11px] font-bold leading-tight",
-                usedPct !== null && usedPct > 100 ? "text-destructive" : "text-foreground"
-              )}>
-                {usedPct !== null ? `${Math.round(usedPct)}%` : "—"}
-              </span>
-            </div>
-          </div>
-          {/* Stats */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="font-label-md text-foreground">{formatCurrency(total, data.base_currency)}</span>
-              <span className="text-label-sm text-muted-foreground">spent</span>
-            </div>
-            {tripBudget ? (
-              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-                <span className="text-xs text-muted-foreground">
-                  Budget: <span className="text-foreground font-medium">{formatCurrency(tripBudget, data.base_currency)}</span>
-                </span>
-                <span className={cn(
-                  "text-xs font-medium",
-                  tripBudget - total < 0 ? "text-destructive" : "text-chromatic-mint"
-                )}>
-                  {tripBudget - total < 0 ? "Over " : "Left: "}
-                  {formatCurrency(Math.abs(tripBudget - total), data.base_currency)}
-                </span>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {data.by_category.length} categor{data.by_category.length === 1 ? "y" : "ies"} tracked
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Desktop: centered ring + stats */}
-        <div className="hidden lg:flex flex-col items-center text-center">
-          <div className="relative w-32 h-32 mb-4">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 128 128">
-              <circle className="text-muted" cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="8" />
-              <circle
-                className={cn(usedPct !== null && usedPct > 100 ? "text-destructive" : "text-primary")}
-                cx="64" cy="64" r="58" fill="transparent" stroke="currentColor" strokeWidth="8"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={dashOffset}
-                strokeLinecap="round"
-                style={{ transition: "stroke-dashoffset 1s ease-out" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={cn(
-                "font-display text-headline-sm",
-                usedPct !== null && usedPct > 100 ? "text-destructive" : "text-foreground"
-              )}>
-                {usedPct !== null ? `${Math.round(usedPct)}%` : "—"}
-              </span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                {usedPct !== null ? "Used" : "Spent"}
-              </span>
-            </div>
-          </div>
-
-          <p
-            className="font-label-md text-foreground mb-0.5 cursor-default"
-            title={`${data.base_currency} ${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          >
-            {formatCurrency(total, data.base_currency)}
+  return (
+    <section className={CARD} aria-labelledby="budget-spent-heading">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 id="budget-spent-heading" className="text-sm font-medium text-muted-foreground">
+            Spent
+          </h3>
+          <p className="mt-0.5 text-2xl font-semibold text-foreground">
+            <MoneyText amount={spent} currency={currency} />
           </p>
-          <p className="text-label-sm text-muted-foreground mb-1">Total spent</p>
-
-          {tripBudget ? (
-            <>
-              <div className="w-full border-t border-border/30 my-3" />
-              <div className="w-full space-y-1.5 text-left">
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-label-sm text-muted-foreground flex-shrink-0">Budget</span>
-                  <span
-                    className="font-label-md text-foreground text-right truncate cursor-default"
-                    title={`${data.base_currency} ${tripBudget.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-                  >
-                    {formatCurrency(tripBudget, data.base_currency)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-label-sm text-muted-foreground flex-shrink-0">Remaining</span>
-                  <span
-                    className={cn(
-                      "font-label-md text-right truncate cursor-default",
-                      tripBudget - total < 0 ? "text-destructive" : "text-chromatic-mint"
-                    )}
-                    title={`${data.base_currency} ${Math.abs(tripBudget - total).toLocaleString(undefined, { maximumFractionDigits: 2 })}${tripBudget - total < 0 ? " over budget" : " remaining"}`}
-                  >
-                    {tripBudget - total < 0 ? "-" : ""}{formatCurrency(Math.abs(tripBudget - total), data.base_currency)}
-                  </span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <p className="text-label-sm text-muted-foreground">
-              {data.by_category.length} categor{data.by_category.length === 1 ? "y" : "ies"} tracked
+          {budget !== null && (
+            <p className="text-sm text-muted-foreground">
+              of <MoneyText amount={budget} currency={currency} /> budget
             </p>
           )}
         </div>
+        <Button variant="outline" size="sm" onClick={onEditBudget}>
+          {budget !== null ? <Pencil aria-hidden="true" /> : <Plus aria-hidden="true" />}
+          {budget !== null ? "Edit budget" : "Set budget"}
+        </Button>
       </div>
-    </div>
+
+      {ratio !== null && remaining !== null ? (
+        <>
+          <div
+            className="mt-4 h-2.5 overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-label="Budget used"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(Math.min(ratio, 1) * 100)}
+          >
+            <div
+              className={cn("h-full rounded-full", over ? "bg-destructive" : near ? "bg-warning" : "bg-primary")}
+              style={{ width: `${Math.min(ratio, 1) * 100}%` }}
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
+            <span className="text-muted-foreground tabular-nums">{Math.round(ratio * 100)}% used</span>
+            {over ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden="true" />
+                Over by <MoneyText amount={-remaining} currency={currency} />
+              </span>
+            ) : (
+              <span className="font-medium text-foreground">
+                <MoneyText amount={remaining} currency={currency} /> left
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <p className="mt-3 text-sm text-muted-foreground">Set a budget to see how much you have left.</p>
+      )}
+    </section>
+  )
+}
+
+function CategoryCard({ rows, currency }: { rows: CategoryRow[]; currency: string }) {
+  const scale = categoryScale(rows)
+  const hasPlan = rows.some((r) => r.planned !== null)
+
+  return (
+    <section className={CARD} aria-labelledby="budget-category-heading">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h3 id="budget-category-heading" className="text-base font-semibold text-foreground">
+          By category
+        </h3>
+        {hasPlan && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="h-3 w-0.5 rounded-full bg-foreground" aria-hidden="true" />
+            Planned
+          </span>
+        )}
+      </div>
+      <ul className="space-y-3">
+        {rows.map((row) => {
+          const cfg = getCategoryColor(row.category)
+          const spentPct = scale > 0 ? (row.spent / scale) * 100 : 0
+          const plannedPct = row.planned !== null && scale > 0 ? (row.planned / scale) * 100 : null
+          return (
+            <li key={row.category}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="inline-flex min-w-0 items-center gap-2 text-foreground">
+                  <cfg.Icon className={cn("h-4 w-4 shrink-0", cfg.text)} aria-hidden="true" />
+                  <span className="truncate">{cfg.label}</span>
+                  {row.over && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                      Over
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0 text-right tabular-nums">
+                  <span className="font-medium text-foreground">{formatMoney(row.spent, currency)}</span>
+                  {row.planned !== null && (
+                    <span className="text-muted-foreground"> / {formatMoney(row.planned, currency)}</span>
+                  )}
+                </span>
+              </div>
+              <div className="relative mt-1.5 h-2 rounded-full bg-muted">
+                {row.spent > 0 && (
+                  <div
+                    className={cn("h-full rounded-full", cfg.bar)}
+                    style={{ width: `${Math.max(spentPct, 1)}%` }}
+                  />
+                )}
+                {plannedPct !== null && (
+                  <div
+                    className="absolute -top-0.5 h-3 w-0.5 -translate-x-1/2 rounded-full bg-foreground ring-2 ring-card"
+                    style={{ left: `${plannedPct}%` }}
+                    aria-hidden="true"
+                  />
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+function DailyCard({ daily, currency }: { daily: DailyTotals; currency: string }) {
+  const peak = daily.days.reduce<DailyTotals["days"][number] | null>(
+    (best, d) => (d.total > 0 && (!best || d.total > best.total) ? d : best),
+    null,
+  )
+  // Label every day on short trips; thin the labels out on long ones.
+  const labelEvery = daily.days.length <= 10 ? 1 : Math.ceil(daily.days.length / 7)
+
+  return (
+    <section className={CARD} aria-labelledby="budget-daily-heading">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h3 id="budget-daily-heading" className="text-base font-semibold text-foreground">
+          By day
+        </h3>
+        {peak && (
+          <p className="text-xs text-muted-foreground">
+            Highest: Day {peak.dayNumber} · <MoneyText amount={peak.total} currency={currency} />
+          </p>
+        )}
+      </div>
+
+      {daily.max > 0 && (
+        <ol className="flex h-28 items-end gap-1" aria-label="Spending per day">
+          {daily.days.map((d, i) => {
+            const pct = (d.total / daily.max) * 100
+            const label = `Day ${d.dayNumber}: ${formatMoney(d.total, currency)}`
+            return (
+              <li
+                key={d.date}
+                tabIndex={0}
+                aria-label={label}
+                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs text-foreground shadow-overlay group-hover:block group-focus-visible:block"
+                >
+                  {label}
+                </span>
+                <span className="flex min-h-0 w-full flex-1 items-end justify-center" aria-hidden="true">
+                  <span
+                    className={cn("w-full max-w-8 rounded-t", d.total > 0 ? "bg-primary" : "bg-muted")}
+                    style={{ height: d.total > 0 ? `max(${pct}%, 3px)` : "3px" }}
+                  />
+                </span>
+                <span className="h-4 text-xs leading-4 text-muted-foreground tabular-nums" aria-hidden="true">
+                  {i % labelEvery === 0 ? d.dayNumber : ""}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
+      {daily.outside > 0 && (
+        <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">
+          Before or after the trip:{" "}
+          <MoneyText amount={daily.outside} currency={currency} className="font-medium text-foreground" />
+        </p>
+      )}
+    </section>
   )
 }

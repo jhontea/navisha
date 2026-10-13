@@ -1,52 +1,47 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import dynamic from "next/dynamic"
-import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { ArrowLeftRight, ChevronDown, Pencil, Plus, Receipt, Trash2, X } from "lucide-react"
-import Link from "next/link"
-import { EmptyState } from "@/components/EmptyState"
-import { cn, formatCurrency } from "@/lib/utils"
-import {
-  useCreateExpense,
-  useDeleteExpense,
-  useExpenses,
-  useUpdateExpense,
-} from "../hooks/useExpenses"
-import type { CreateExpenseInput, Expense } from "../types"
-import { BudgetSummary } from "./BudgetSummary"
-import { toast } from "@/lib/toast"
+import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 
-import { CATEGORY_COLORS } from "../categoryColors"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { EmptyState } from "@/components/EmptyState"
+import { MoneyText } from "@/components/MoneyText"
+import { ResponsiveSheet } from "@/components/ResponsiveSheet"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
+import { categoryRank, getCategoryColor } from "../categoryColors"
+import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } from "../hooks/useExpenses"
+import type { CreateExpenseInput, Expense } from "../types"
 
 const ExpenseForm = dynamic(
   () => import("./ExpenseForm").then((module) => module.ExpenseForm),
   { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> },
 )
 
-const CATEGORY_CONFIG = CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS[string]>
-
-// W-BUD-06 — Sort modes for the expenses list.
 // date-* keep the per-date grouping; amount-* / category-* flatten into a single list.
 type SortMode = "date-desc" | "date-asc" | "amount-desc" | "amount-asc" | "category-asc"
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
-  { value: "date-desc", label: "Date (newest)" },
-  { value: "date-asc", label: "Date (oldest)" },
-  { value: "amount-desc", label: "Amount (high → low)" },
-  { value: "amount-asc", label: "Amount (low → high)" },
-  { value: "category-asc", label: "Category (A → Z)" },
+  { value: "date-desc", label: "Newest first" },
+  { value: "date-asc", label: "Oldest first" },
+  { value: "amount-desc", label: "Highest amount" },
+  { value: "amount-asc", label: "Lowest amount" },
+  { value: "category-asc", label: "Category" },
 ]
 
-const DEFAULT_SORT: SortMode = "date-desc"
+const MENU_ITEM = "min-h-10 px-3 text-sm"
 
-function formatExpenseDate(dateStr: string): string {
+function formatShortDate(dateStr: string): string {
   if (!dateStr) return ""
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })
 }
 
 function formatGroupDate(dateStr: string): string {
@@ -60,361 +55,273 @@ function formatGroupDate(dateStr: string): string {
   yesterday.setDate(today.getDate() - 1)
   if (d.getTime() === today.getTime()) return "Today"
   if (d.getTime() === yesterday.getTime()) return "Yesterday"
-  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })
 }
 
 interface Props {
   tripId: string
   tripBaseCurrency: string
-  tripBudget?: number
-  onEditBudget?: () => void
 }
 
-export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBudget }: Props) {
+/** Expense list with category filter and sort; add and edit open in a sheet. */
+export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
   const { data, isLoading, isError } = useExpenses(tripId)
-  const [addOpen, setAddOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; expense: Expense } | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<Expense | null>(null)
-  // Track which date groups are collapsed; all expanded by default
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
-  // W-BUD-06 — sort mode for the expenses list. Defaults to current behaviour (newest first).
-  const [sortMode, setSortMode] = useState<SortMode>(DEFAULT_SORT)
+  const [sortMode, setSortMode] = useState<SortMode>("date-desc")
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
 
-  // ponytail: scroll the Add Expense card into view when it opens, so the form is reachable on mobile
-  const addCardRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (addOpen && addCardRef.current) {
-      addCardRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+  const createMut = useCreateExpense(tripId)
+  const updateMut = useUpdateExpense(sheet?.mode === "edit" ? sheet.expense.id : "", tripId)
+  const deleteMut = useDeleteExpense(tripId)
+
+  const allItems = data?.items ?? []
+  const presentCategories = Array.from(new Set(allItems.map((e) => e.category as string))).sort(
+    (a, b) => categoryRank(a) - categoryRank(b),
+  )
+  const activeFilter = categoryFilter && presentCategories.includes(categoryFilter) ? categoryFilter : null
+  const items = activeFilter ? allItems.filter((e) => e.category === activeFilter) : allItems
+  const isDateSort = sortMode === "date-desc" || sortMode === "date-asc"
+
+  const grouped: { date: string; expenses: Expense[] }[] = []
+  if (isDateSort) {
+    for (const e of items) {
+      const group = grouped.find((g) => g.date === e.expense_date)
+      if (group) group.expenses.push(e)
+      else grouped.push({ date: e.expense_date, expenses: [e] })
     }
-  }, [addOpen])
+    grouped.sort((a, b) => (sortMode === "date-asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)))
+  }
 
-  function toggleGroup(date: string) {
+  // converted_amount is normalised to the base currency, so amounts compare across currencies.
+  const flatSorted = isDateSort
+    ? []
+    : [...items].sort((a, b) => {
+        if (sortMode === "amount-desc") return b.converted_amount - a.converted_amount
+        if (sortMode === "amount-asc") return a.converted_amount - b.converted_amount
+        return categoryRank(a.category) - categoryRank(b.category) || a.title.localeCompare(b.title)
+      })
+
+  const toggleGroup = (date: string) =>
     setCollapsedGroups((prev) => {
       const next = new Set(prev)
       if (next.has(date)) next.delete(date)
       else next.add(date)
       return next
     })
-  }
 
-  const createMut = useCreateExpense(tripId)
-  const updateMut = useUpdateExpense(editingId ?? "", tripId)
-  const deleteMut = useDeleteExpense(tripId)
-
-  const items = data?.items ?? []
-
-  // W-BUD-06 — date modes keep the per-date grouping; amount/category modes flatten.
-  const isDateSort = sortMode === "date-desc" || sortMode === "date-asc"
-
-  // Group expenses by expense_date (always set, defaults to today at create time)
-  const grouped: { date: string; expenses: Expense[] }[] = []
-  for (const e of items) {
-    const dateKey = e.expense_date
-    const group = grouped.find((g) => g.date === dateKey)
-    if (group) {
-      group.expenses.push(e)
-    } else {
-      grouped.push({ date: dateKey, expenses: [e] })
-    }
-  }
-  // Sort date groups newest or oldest first depending on mode
-  grouped.sort((a, b) =>
-    sortMode === "date-asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date),
-  )
-
-  // Flat list for amount / category sorts (converted_amount is normalised to base currency)
-  const flatSorted: Expense[] = isDateSort
-    ? []
-    : [...items].sort((a, b) => {
-        if (sortMode === "amount-desc") return b.converted_amount - a.converted_amount
-        if (sortMode === "amount-asc") return a.converted_amount - b.converted_amount
-        // category-asc — compare by category label, fallback to title
-        const labelA = CATEGORY_CONFIG[a.category]?.label ?? a.category
-        const labelB = CATEGORY_CONFIG[b.category]?.label ?? b.category
-        return labelA.localeCompare(labelB) || a.title.localeCompare(b.title)
-      })
-
-  // W-BUD-06 — shared expense row renderer so grouped and flat lists stay in sync.
-  function renderExpenseRow(e: Expense) {
-    const isEditing = editingId === e.id
-    const cfg = CATEGORY_CONFIG[e.category] ?? CATEGORY_CONFIG.other
+  function renderRow(e: Expense) {
+    const cfg = getCategoryColor(e.category)
     const sameCurrency = e.currency === e.base_currency
-
-    if (isEditing) {
-      return (
-        <div key={e.id} className="p-6 bg-accent/20">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-label-md text-foreground">Edit expense</h4>
-            <button
-              type="button"
-              onClick={() => setEditingId(null)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <ExpenseForm
-            initial={e}
-            tripBaseCurrency={tripBaseCurrency}
-            isSubmitting={updateMut.isPending}
-            onCancel={() => setEditingId(null)}
-            onSubmit={async (input) => {
-              await updateMut.mutateAsync(input)
-              setEditingId(null)
-            }}
-          />
-        </div>
-      )
-    }
+    const meta = [cfg.label, !isDateSort ? formatShortDate(e.expense_date) : null, e.note || null]
+      .filter(Boolean)
+      .join(" · ")
 
     return (
-      <div
-        key={e.id}
-        className="group flex items-center justify-between gap-2 p-3 transition-colors hover:bg-accent/30 sm:p-4"
-      >
-        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-          <div
-            className={cn(
-              "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 sm:rounded-xl",
-              cfg.bg, cfg.text,
-            )}
-          >
-            <cfg.Icon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <h5 className="truncate font-label-md text-foreground">{e.title}</h5>
-            <p className="mt-0.5 truncate text-label-sm text-muted-foreground">
-              {cfg.label}
-              {!isDateSort && (
-                <span className="ml-1 text-muted-foreground/70">· {formatExpenseDate(e.expense_date)}</span>
-              )}
-              {e.note && (
-                <span className="ml-1 text-muted-foreground/70">· {e.note}</span>
-              )}
-            </p>
-          </div>
+      <li key={e.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
+        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", cfg.bg)}>
+          <cfg.Icon className={cn("h-4 w-4", cfg.text)} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{e.title}</p>
+          <p className="truncate text-xs text-muted-foreground">{meta}</p>
         </div>
-
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <div className="mr-1 text-right sm:mr-2">
-            <p className="font-display text-sm font-semibold text-foreground sm:text-headline-sm">
-              {formatCurrency(e.amount, e.currency)}
-            </p>
-            {!sameCurrency && (
-              <p className="text-[10px] text-muted-foreground font-medium">
-                ≈ {formatCurrency(e.converted_amount, e.base_currency)}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            aria-label="Edit expense"
-            onClick={() => setEditingId(e.id)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Delete expense"
-            disabled={deleteMut.isPending && deleteMut.variables === e.id}
-            onClick={() => setConfirmingDelete(e)}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
-              "text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50",
-            )}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+        <div className="shrink-0 text-right">
+          <MoneyText amount={e.amount} currency={e.currency} className="block text-sm font-semibold text-foreground" />
+          {!sameCurrency && (
+            <span className="block text-xs text-muted-foreground">
+              ≈ <MoneyText amount={e.converted_amount} currency={e.base_currency} />
+            </span>
+          )}
         </div>
-      </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Actions for ${e.title}`}
+            className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "-mr-1 shrink-0 text-muted-foreground" })}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "edit", expense: e })}>
+              <Pencil aria-hidden="true" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className={MENU_ITEM}
+              variant="destructive"
+              disabled={deleteMut.isPending && deleteMut.variables === e.id}
+              onClick={() => setConfirmingDelete(e)}
+            >
+              <Trash2 aria-hidden="true" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </li>
     )
   }
 
   return (
-    <div className="space-y-10">
-      {/* Budget Overview */}
-      <section>
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h3 className="font-display text-headline-md text-foreground mb-1">Budget Overview</h3>
-            <p className="text-muted-foreground font-body-md">Keep track of your expenses in real-time.</p>
-            <Link
-              href="/currency"
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
-              Currency converter
-            </Link>
-          </div>
-          {!tripBudget && onEditBudget && (
-            <button
-              type="button"
-              onClick={onEditBudget}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-label-md hover:border-primary hover:text-primary transition-colors flex-shrink-0"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-              Set Budget
-            </button>
-          )}
-          {tripBudget && onEditBudget && (
-            <button
-              type="button"
-              onClick={onEditBudget}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-label-md hover:border-primary hover:text-primary transition-colors flex-shrink-0"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Edit Budget
-            </button>
-          )}
-        </div>
-        <BudgetSummary tripId={tripId} tripBudget={tripBudget} />
-      </section>
-
-      {/* Expenses — list first; adding is a compact action next to the
-          heading (same pattern as Bookings). */}
-      <section ref={addCardRef}>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="font-display text-xl font-semibold text-foreground">Expenses</h3>
-              {!isLoading && !isError && items.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {items.length} {items.length === 1 ? "expense" : "expenses"}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {items.length > 1 && (
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="sr-only">Sort expenses</span>
-                  <select
-                    value={sortMode}
-                    onChange={(e) => setSortMode(e.target.value as SortMode)}
-                    className="h-11 rounded-lg border bg-card px-3 text-sm text-foreground hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10"
-                    aria-label="Sort expenses"
-                  >
-                    {SORT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {!addOpen && (
-                <button
-                  type="button"
-                  onClick={() => setAddOpen(true)}
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:h-10"
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Add expense
-                </button>
-              )}
-            </div>
-          </div>
-
-          {addOpen && (
-            <div className="mb-4 rounded-xl border bg-card p-4 shadow-card sm:p-6">
-              <ExpenseForm
-                tripBaseCurrency={tripBaseCurrency}
-                isSubmitting={createMut.isPending}
-                onCancel={() => setAddOpen(false)}
-                onSubmit={async (input: CreateExpenseInput) => {
-                  await createMut.mutateAsync(input)
-                  setAddOpen(false)
-                }}
-              />
-            </div>
-          )}
-
-          {isLoading && (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 glass" />
-              ))}
-            </div>
-          )}
-
-          {isError && (
-            <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
-              Couldn&apos;t load expenses. Check your connection and reload the page.
+    <section aria-labelledby="expenses-heading">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="expenses-heading" className="text-lg font-semibold text-foreground">
+            Expenses
+          </h2>
+          {allItems.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {allItems.length} {allItems.length === 1 ? "expense" : "expenses"}
             </p>
           )}
-
-          {!isLoading && !isError && items.length === 0 && !addOpen && (
-            <EmptyState
-              icon={Receipt}
-              size="sm"
-              title="No expenses yet"
-              description="Add what you spend on food, transport, and activities to track your budget."
-              className="rounded-2xl border border-dashed border-border/50"
-            />
+        </div>
+        <div className="flex items-center gap-2">
+          {allItems.length > 1 && (
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              aria-label="Sort expenses"
+              className="h-11 rounded-lg border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           )}
+          <Button onClick={() => setSheet({ mode: "add" })}>
+            <Plus aria-hidden="true" />
+            Add expense
+          </Button>
+        </div>
+      </div>
 
-          {!isLoading && !isError && isDateSort && grouped.length > 0 && (
-            <div className="space-y-6">
-              {grouped.map((group) => {
-                const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
-                const baseCurrency = group.expenses[0]?.base_currency ?? tripBaseCurrency
+      {presentCategories.length > 1 && (
+        <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible" role="group" aria-label="Filter by category">
+          {[null, ...presentCategories].map((category) => {
+            const pressed = activeFilter === category
+            const label = category ? getCategoryColor(category).label : "All"
+            return (
+              <button
+                key={category ?? "all"}
+                type="button"
+                aria-pressed={pressed}
+                onClick={() => setCategoryFilter(category)}
+                className={cn(
+                  "h-9 shrink-0 rounded-full border px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  pressed
+                    ? "border-foreground bg-foreground text-background"
+                    : "bg-card text-foreground hover:bg-muted",
+                )}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
-                const isCollapsed = collapsedGroups.has(group.date)
+      {isLoading && (
+        <div className="space-y-2" aria-label="Loading expenses">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+          ))}
+        </div>
+      )}
 
-                return (
-                  <div key={group.date}>
-                    {/* Date group header — click to collapse/expand */}
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(group.date)}
-                      aria-expanded={!isCollapsed}
-                      className="w-full flex items-center justify-between mb-3 group/header rounded-lg px-1 py-0.5 -mx-1 hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ChevronDown
-                          className={cn(
-                            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
-                            isCollapsed && "-rotate-90",
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span className="font-label-md text-foreground">{formatGroupDate(group.date)}</span>
-                        <span className="text-label-sm text-muted-foreground">· {formatExpenseDate(group.date)}</span>
-                      </div>
-                      <span className="text-label-sm text-muted-foreground font-medium">
-                        {formatCurrency(groupTotal, baseCurrency)}
-                      </span>
-                    </button>
+      {isError && (
+        <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+          Couldn&apos;t load expenses. Check your connection and reload the page.
+        </p>
+      )}
 
-                    <div className={cn("glass overflow-hidden rounded-xl transition-all duration-200", isCollapsed && "hidden")}>
-                      <div className="divide-y divide-border/30">
-                        {group.expenses.map((e) => renderExpenseRow(e))}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+      {!isLoading && !isError && allItems.length === 0 && (
+        <EmptyState
+          icon={Receipt}
+          size="sm"
+          title="No expenses yet"
+          description="Add what you spend on food, transport and activities to track your budget."
+          className="rounded-xl border border-dashed"
+        />
+      )}
 
-          {/* W-BUD-06 — flat list for amount / category sorts (no date grouping) */}
-          {!isLoading && !isError && !isDateSort && flatSorted.length > 0 && (
-            <div className="glass overflow-hidden rounded-xl">
-              <div className="divide-y divide-border/30">
-                {flatSorted.map((e) => renderExpenseRow(e))}
+      {!isLoading && !isError && isDateSort && grouped.length > 0 && (
+        <div className="space-y-4">
+          {grouped.map((group) => {
+            const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
+            const baseCurrency = group.expenses[0]?.base_currency ?? tripBaseCurrency
+            const isCollapsed = collapsedGroups.has(group.date)
+            return (
+              <div key={group.date}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.date)}
+                  aria-expanded={!isCollapsed}
+                  className="-mx-1 mb-1 flex min-h-11 w-[calc(100%+0.5rem)] items-center justify-between gap-3 rounded-lg px-1 text-sm hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="flex items-center gap-2 font-medium text-foreground">
+                    <ChevronDown
+                      className={cn("h-4 w-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")}
+                      aria-hidden="true"
+                    />
+                    {formatGroupDate(group.date)}
+                  </span>
+                  <MoneyText amount={groupTotal} currency={baseCurrency} className="text-muted-foreground" />
+                </button>
+                {!isCollapsed && (
+                  <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+                    {group.expenses.map(renderRow)}
+                  </ul>
+                )}
               </div>
-            </div>
-          )}
-      </section>
+            )
+          })}
+        </div>
+      )}
 
-      {/* Confirm Delete */}
+      {!isLoading && !isError && !isDateSort && flatSorted.length > 0 && (
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">{flatSorted.map(renderRow)}</ul>
+      )}
+
+      <ResponsiveSheet
+        open={sheet !== null}
+        onOpenChange={(open) => !open && setSheet(null)}
+        title={sheet?.mode === "edit" ? "Edit expense" : "Add expense"}
+      >
+        {sheet?.mode === "add" && (
+          <ExpenseForm
+            tripBaseCurrency={tripBaseCurrency}
+            isSubmitting={createMut.isPending}
+            onCancel={() => setSheet(null)}
+            onSubmit={async (input: CreateExpenseInput) => {
+              await createMut.mutateAsync(input)
+              setSheet(null)
+            }}
+          />
+        )}
+        {sheet?.mode === "edit" && (
+          <ExpenseForm
+            initial={sheet.expense}
+            tripBaseCurrency={tripBaseCurrency}
+            isSubmitting={updateMut.isPending}
+            onCancel={() => setSheet(null)}
+            onSubmit={async (input) => {
+              await updateMut.mutateAsync(input)
+              setSheet(null)
+            }}
+          />
+        )}
+      </ResponsiveSheet>
+
       <ConfirmDialog
         open={!!confirmingDelete}
         onOpenChange={(open) => {
           if (!open && !deleteMut.isPending) setConfirmingDelete(null)
         }}
         title={`Delete "${confirmingDelete?.title ?? ""}"?`}
-        description="This expense will be permanently removed from the trip's budget."
-        confirmLabel="Delete"
+        description="This expense will be removed from the trip's budget."
+        confirmLabel="Delete expense"
         destructive
         isPending={deleteMut.isPending}
         closeOnConfirm={false}
@@ -432,6 +339,6 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripBudget, onEditBud
           }
         }}
       />
-    </div>
+    </section>
   )
 }

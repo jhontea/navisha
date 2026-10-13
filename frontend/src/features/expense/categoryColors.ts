@@ -3,7 +3,7 @@ import type { ElementType } from "react"
 
 /**
  * Canonical category color map — single source of truth.
- * Used by ExpenseCard, ExpenseSection, ExpenseForm, BudgetSummary.
+ * Used by ExpenseSection, ExpenseForm, BudgetForm, BudgetSummary.
  *
  * Colors come from the --cat-* tokens (docs/DESIGN_SYSTEM.md). `text` tints
  * icons only; labels and values use text tokens (text-foreground /
