@@ -121,17 +121,17 @@ function PlanningHealth({
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${checklistPercent}%` }} />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             {checklistItems.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-muted/60"
+                className="-mx-2 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm transition-colors hover:bg-muted/60"
               >
                 {item.done ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-chromatic-mint" aria-hidden="true" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
                 ) : (
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-chromatic-amber" aria-hidden="true" />
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
                 )}
                 <span className={cn(item.done ? "text-muted-foreground" : "font-medium text-foreground")}>
                   {item.label}
@@ -215,9 +215,9 @@ function PlanningHealth({
             </Link>
           )}
 
-          <Link href={`/trips/${tripId}/budget`} className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+          <Link href={`/trips/${tripId}/budget`} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary hover:underline">
             View budget details
-            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -271,7 +271,7 @@ function NeedsAttention({
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {items.map((item) => (
             <Link key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl border border-chromatic-amber/20 bg-chromatic-amber/5 px-4 py-3 text-sm transition-colors hover:bg-chromatic-amber/10">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-chromatic-amber" aria-hidden="true" />
+              <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
               <span className="flex-1">{item.label}</span>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             </Link>
@@ -287,9 +287,6 @@ function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; act
     <section className="mb-8" aria-labelledby="next-up-heading">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 id="next-up-heading" className="text-lg font-bold text-foreground">Next up</h3>
-        <Link href={`/trips/${tripId}`} className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-          View itinerary <ChevronRight className="h-3 w-3" aria-hidden="true" />
-        </Link>
       </div>
       {day ? (
         <Link href={`/trips/${tripId}#day-${day.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10">

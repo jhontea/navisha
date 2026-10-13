@@ -146,7 +146,7 @@ export default function ProfilePage() {
                   <span className="block text-sm font-semibold text-foreground">Account security</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">Authentication is managed securely through Google.</span>
                 </span>
-                <span className="rounded-full bg-chromatic-ocean/10 px-2.5 py-1 text-[11px] font-semibold text-chromatic-ocean">
+                <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
                   Connected
                 </span>
               </div>

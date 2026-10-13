@@ -1,67 +1,42 @@
-"use client"
+import type { Metadata } from "next"
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Link2 } from "lucide-react"
-
-import { buttonVariants } from "@/components/ui/button"
-import { SharedTripView } from "@/features/trip/components/share/SharedTripView"
+import { SharedTripPage } from "@/features/trip/components/share/SharedTripPage"
+import { sharedTripPreview, sharedTripUrl } from "@/features/trip/lib/sharedTrip"
 import type { PublicItinerary } from "@/features/trip/types"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v1"
+type Props = { params: { token: string } }
 
-/** Public, read-only view of a trip opened from a share link. */
-export default function SharedTripPage({ params }: { params: { token: string } }) {
-  const token = params.token
-  const [trip, setTrip] = useState<PublicItinerary | null>(null)
-  const [status, setStatus] = useState<"loading" | "ready" | "expired" | "missing">("loading")
-
-  useEffect(() => {
-    if (!token) return
-    fetch(`${API_BASE}/shared-trips/${encodeURIComponent(token)}`, {
-      cache: "no-store",
-      referrerPolicy: "no-referrer",
-    })
-      .then(async (response) => {
-        if (response.status === 410) return setStatus("expired")
-        if (!response.ok) return setStatus("missing")
-        setTrip(await response.json())
-        setStatus("ready")
-      })
-      .catch(() => setStatus("missing"))
-  }, [token])
-
-  if (status === "loading") {
-    return (
-      <main className="mx-auto max-w-max-width px-margin-mobile pt-16 md:px-margin-desktop" aria-label="Loading trip" aria-busy="true">
-        <div className="h-56 animate-pulse rounded-xl bg-muted" />
-        <div className="mt-6 space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-      </main>
-    )
+/**
+ * Link preview for chat apps (WhatsApp, Slack, …): title, dates and cover.
+ * Share links are private, so the page is never indexed.
+ */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const robots = { index: false, follow: false }
+  let trip: PublicItinerary | null = null
+  try {
+    const response = await fetch(sharedTripUrl(params.token), { next: { revalidate: 300 } })
+    if (response.ok) trip = await response.json()
+  } catch {
+    // Network errors fall back to the generic preview below.
   }
+  if (!trip) return { title: "Shared trip", robots }
 
-  if (status !== "ready" || !trip) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <div className="max-w-sm text-center">
-          <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-            <Link2 className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-          </span>
-          <h1 className="text-xl font-semibold text-foreground">
-            {status === "expired" ? "This link has expired" : "This trip isn't available"}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">Ask the trip owner to send you a new share link.</p>
-          <Link href="/" className={buttonVariants({ variant: "outline", className: "mt-5" })}>
-            Go to Navisha
-          </Link>
-        </div>
-      </main>
-    )
+  const { title, description, image } = sharedTripPreview(trip)
+  return {
+    title,
+    description,
+    robots,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: "Navisha",
+      ...(image ? { images: [{ url: image, width: 1200 }] } : {}),
+    },
+    twitter: { card: image ? "summary_large_image" : "summary", title, description },
   }
+}
 
-  return <SharedTripView trip={trip} />
+export default function SharedTripRoute({ params }: Props) {
+  return <SharedTripPage token={params.token} />
 }
