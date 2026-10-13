@@ -297,3 +297,35 @@ func TestSameSet(t *testing.T) {
 		})
 	}
 }
+
+// ---------- ListByTrip ----------
+
+// A1.2: ownership must be enforced for the whole trip, not just the first
+// day. The usecase hands both userID and tripID to the repository, whose
+// query filters on trips.user_id.
+func TestUsecase_ListByTrip_PassesOwnerToRepo(t *testing.T) {
+	repo := newMockRepo()
+	repo.listByDayIDsResult = map[string][]Activity{"d1": {{ID: "a1", DayID: "d1"}}}
+	u := NewUsecase(repo)
+
+	got, err := u.ListByTrip(context.Background(), "user-1", "trip-1")
+	if err != nil {
+		t.Fatalf("ListByTrip: %v", err)
+	}
+	if len(repo.listByTripCalls) != 1 || repo.listByTripCalls[0] != "user-1/trip-1" {
+		t.Errorf("repo calls = %v, want [user-1/trip-1]", repo.listByTripCalls)
+	}
+	if len(got["d1"]) != 1 {
+		t.Errorf("got %v, want one activity for d1", got)
+	}
+}
+
+func TestUsecase_ListByTrip_RepoError(t *testing.T) {
+	repo := newMockRepo()
+	repo.listByDayIDsErr = errors.New("db down")
+	u := NewUsecase(repo)
+
+	if _, err := u.ListByTrip(context.Background(), "user-1", "trip-1"); err == nil {
+		t.Fatal("want error")
+	}
+}

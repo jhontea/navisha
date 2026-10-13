@@ -31,6 +31,7 @@ type mockRepo struct {
 
 	listByDayIDsResult map[string][]Activity
 	listByDayIDsErr    error
+	listByTripCalls    []string
 	batchUpdateErr     error
 	batchInsertErr     error
 	batchInserted      []Activity
@@ -142,19 +143,15 @@ func (m *mockRepo) ListIDsByDay(_ context.Context, dayID string) ([]string, erro
 	return m.dayIDs[dayID], nil
 }
 
-func (m *mockRepo) ListByDayIDs(_ context.Context, dayIDs []string) (map[string][]Activity, error) {
+func (m *mockRepo) ListByTrip(_ context.Context, userID, tripID string) (map[string][]Activity, error) {
+	m.listByTripCalls = append(m.listByTripCalls, userID+"/"+tripID)
 	if m.listByDayIDsErr != nil {
 		return nil, m.listByDayIDsErr
 	}
 	if m.listByDayIDsResult != nil {
 		return m.listByDayIDsResult, nil
 	}
-	// Default: return empty slices for all requested days.
-	out := make(map[string][]Activity, len(dayIDs))
-	for _, did := range dayIDs {
-		out[did] = []Activity{}
-	}
-	return out, nil
+	return map[string][]Activity{}, nil
 }
 
 func (m *mockRepo) BatchUpdateOrderTx(_ context.Context, _ pgx.Tx, orderMap map[string]int) error {

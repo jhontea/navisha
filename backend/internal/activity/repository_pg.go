@@ -260,38 +260,36 @@ func (r *postgresRepository) ListIDsByDay(ctx context.Context, dayID string) ([]
 	return out, nil
 }
 
-// ListByDayIDs fetches activities for multiple days in a single query.
-// Returns a map of dayID → activities. Days with no activities get an empty slice.
-// Phase 3D: Eliminates N+1 queries when loading trip context.
-func (r *postgresRepository) ListByDayIDs(ctx context.Context, dayIDs []string) (map[string][]Activity, error) {
-	if len(dayIDs) == 0 {
-		return make(map[string][]Activity), nil
-	}
-
+// ListByTrip fetches every activity of a trip in a single query, grouped by
+// day ID. The JOIN on trips.user_id makes ownership part of the query, so a
+// caller can never read another user's activities.
+func (r *postgresRepository) ListByTrip(ctx context.Context, userID, tripID string) (map[string][]Activity, error) {
 	rows, err := r.db.Query(ctx,
-		`SELECT id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at
-		 FROM activities
-		 WHERE day_id = ANY($1)
-		 ORDER BY day_id, order_index ASC, created_at ASC`, dayIDs)
+		`SELECT a.id, a.day_id, a.type, a.title, a.start_time, a.end_time,
+		        a.order_index, a.payload, a.created_at, a.updated_at
+		 FROM activities a
+		 JOIN days d ON d.id = a.day_id
+		 JOIN trips t ON t.id = d.trip_id
+		 WHERE d.trip_id = $1 AND t.user_id = $2
+		 ORDER BY a.day_id, a.order_index ASC, a.created_at ASC`, tripID, userID)
 	if err != nil {
-		return nil, fmt.Errorf("activity.ListByDayIDs: %w", err)
+		return nil, fmt.Errorf("activity.ListByTrip: %w", err)
 	}
 	defer rows.Close()
 
-	out := make(map[string][]Activity, len(dayIDs))
-	// Pre-initialize all dayIDs so callers always get a slice (even empty).
-	for _, did := range dayIDs {
-		out[did] = []Activity{}
-	}
+	out := make(map[string][]Activity)
 	for rows.Next() {
 		var a Activity
 		var typ string
 		if err := rows.Scan(&a.ID, &a.DayID, &typ, &a.Title, &a.StartTime, &a.EndTime,
 			&a.OrderIndex, &a.Payload, &a.CreatedAt, &a.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("activity.ListByDayIDs scan: %w", err)
+			return nil, fmt.Errorf("activity.ListByTrip scan: %w", err)
 		}
 		a.Type = Type(typ)
 		out[a.DayID] = append(out[a.DayID], a)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("activity.ListByTrip rows: %w", err)
 	}
 	return out, nil
 }

@@ -27,8 +27,10 @@ type Repository interface {
 	FindActivityOwner(ctx context.Context, activityID string) (userID, dayID string, err error)
 
 	ListByDay(ctx context.Context, dayID string) ([]Activity, error)
-	// ListByDayIDs fetches activities for multiple days in a single query (Phase 3D: N+1 fix).
-	ListByDayIDs(ctx context.Context, dayIDs []string) (map[string][]Activity, error)
+	// ListByTrip fetches all activities of a trip in one query, grouped by
+	// day ID. Ownership is enforced in SQL: a trip not owned by userID yields
+	// an empty map, never another user's rows.
+	ListByTrip(ctx context.Context, userID, tripID string) (map[string][]Activity, error)
 	FindByID(ctx context.Context, id string) (*Activity, error)
 	Insert(ctx context.Context, a *Activity) (*Activity, error)
 	CountOwnedDaysTx(ctx context.Context, tx pgx.Tx, userID string, dayIDs []string) (int, error)

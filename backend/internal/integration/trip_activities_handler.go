@@ -42,7 +42,7 @@ func (h *TripActivitiesHandler) List(c echo.Context) error {
 	for i, day := range days {
 		dayIDs[i] = day.ID
 	}
-	byDay, err := h.activities.ListByDayIDs(c.Request().Context(), userID, dayIDs)
+	byDay, err := h.activities.ListByTrip(c.Request().Context(), userID, tripID)
 	if err != nil {
 		return mapTripActivitiesError(err)
 	}
