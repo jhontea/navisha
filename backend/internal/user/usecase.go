@@ -106,6 +106,26 @@ func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens,
 	return usr, tokens, nil
 }
 
+// TestLogin signs in a fixed test user without Google. It exists only for the
+// end-to-end suite: the route is registered when APP_ENV=test and
+// E2E_AUTH=true (config.Validate rejects E2E_AUTH anywhere else).
+func (u *Usecase) TestLogin(ctx context.Context, email, name string) (*User, *Tokens, error) {
+	usr, err := u.repo.Upsert(ctx, &User{
+		GoogleID:      "e2e:" + strings.ToLower(email),
+		Email:         email,
+		Name:          name,
+		EmailVerified: true,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("user.TestLogin: upsert: %w", err)
+	}
+	tokens, err := u.issueTokens(ctx, usr.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	return usr, tokens, nil
+}
+
 // Me returns the user by ID (called by the /auth/me endpoint).
 func (u *Usecase) Me(ctx context.Context, id string) (*User, error) {
 	usr, err := u.repo.FindByID(ctx, id)

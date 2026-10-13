@@ -1,10 +1,12 @@
 package user
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
@@ -31,6 +33,35 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	auth.POST("/logout", h.Logout, authMiddleware)
 	auth.POST("/refresh", h.Refresh)
 	auth.GET("/me", h.Me, authMiddleware)
+}
+
+// TestLoginer is implemented by *Usecase; kept out of UsecaseInterface so the
+// production handler contract does not include a test-only capability.
+type TestLoginer interface {
+	TestLogin(ctx context.Context, email, name string) (*User, *Tokens, error)
+}
+
+// RegisterTestLogin adds POST /auth/test-login for the end-to-end suite.
+// cmd/server only calls it when APP_ENV=test and E2E_AUTH=true.
+func (h *Handler) RegisterTestLogin(g *echo.Group, uc TestLoginer) {
+	g.POST("/auth/test-login", func(c echo.Context) error {
+		var body struct {
+			Email string `json:"email"`
+			Name  string `json:"name"`
+		}
+		if err := c.Bind(&body); err != nil || !strings.HasSuffix(strings.ToLower(body.Email), "@e2e.test") {
+			return echo.NewHTTPError(http.StatusBadRequest, "email must end with @e2e.test")
+		}
+		if body.Name == "" {
+			body.Name = "E2E Tester"
+		}
+		usr, tokens, err := uc.TestLogin(c.Request().Context(), body.Email, body.Name)
+		if err != nil {
+			return err
+		}
+		h.setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken)
+		return c.JSON(http.StatusOK, usr)
+	}, middleware.NoCache())
 }
 
 // GoogleRedirect generates a random CSRF state, stores it in a short-lived cookie,
