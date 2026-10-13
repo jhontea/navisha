@@ -1,12 +1,13 @@
 # Backend — Claude Context
 
 ## Stack
-Go, Echo framework, PostgreSQL 16, Redis 7, JWT (httpOnly cookie), Google OAuth, Viper (config), DeepSeek/OpenRouter LLM
+Go 1.25, Echo framework, PostgreSQL 16+, Redis 7+, JWT (httpOnly cookie), Google OAuth, Viper (config), DeepSeek/OpenRouter LLM
 
 ## Project Structure
 ```
 backend/
 ├── cmd/server/           # main.go — wire dependencies, start server
+├── cmd/migrate/          # standalone migration CLI (`-status` lists pending)
 ├── internal/
 │   ├── accommodation/    # domain: accommodation CRUD + linked expense
 │   ├── activity/         # domain: polymorphic activities (location | note | todo)
@@ -15,17 +16,22 @@ backend/
 │   ├── currency/         # domain: rates / convert / supported; Redis-cached CurrencyFreaks USD map
 │   ├── expense/          # domain: CRUD + summary, auto-convert via currency.Usecase (Converter interface)
 │   ├── integration/      # cross-domain data assembly adapters (summary aggregator, autogen creator)
-│   ├── middleware/       # JWT auth, CORS — cross-cutting, not domain-specific
+│   ├── location/         # Geoapify autocomplete proxy + Google Maps link helpers
+│   ├── middleware/       # JWT auth, CORS, rate limit, timeout, body limit — cross-cutting
+│   ├── migrate/          # SQL migration runner (runs on every server start)
+│   ├── quota/            # shared daily AI quota per user (app_settings.autogen_daily_quota)
 │   ├── summary/          # domain: AI trip summary generation (LLM → markdown → cache)
 │   ├── transportation/   # domain: transportation CRUD + linked expense
 │   ├── trip/             # domain: trip + day CRUD, date regeneration, budget PATCH semantics
+│   ├── tripshare/        # domain: public read-only share links
 │   └── user/             # domain: Google OAuth login, JWT refresh, logout, email whitelist
 ├── pkg/
 │   ├── currency/         # CurrencyFreaks API HTTP client
 │   ├── jwt/              # token generation/validation
 │   ├── llm/              # Multi-provider LLM client (DeepSeek + OpenRouter, OpenAI-compatible)
-│   └── oauth/            # Google OAuth helpers (OAuth2 config, user info fetch)
-├── migrations/           # numbered SQL files (001_init.sql through 010_drop_calendar_tables.sql)
+│   ├── oauth/            # Google OAuth helpers (OAuth2 config, user info fetch)
+│   └── sanitize/         # strip HTML from user-provided text
+├── migrations/           # numbered SQL files (001_init.sql through 020_harden_auth_sessions.sql)
 ├── config/               # typed config struct + Viper loader
 ├── config.yaml           # base config (non-secret, git-tracked)
 └── .env                  # secrets (not committed — see .env.example)
@@ -56,7 +62,7 @@ Cross-domain shared errors live in `apperr/`. Cross-domain references use string
 ### DB
 - `pgx` driver with `pgxpool` for connection pooling
 - Raw SQL — no ORM
-- Migrations run on startup via `AUTO_MIGRATE=true` in env
+- Migrations run on **every** server start (no flag). A local `.env` pointing at the production DB will migrate production.
 
 ### Activity Payload
 - `payload` column is JSONB in DB
@@ -80,15 +86,13 @@ currency:
   supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
   cache_ttl: 3600
 jwt:
-  access_ttl: 900      # 15 minutes
+  access_ttl: 10800    # 3 hours
   refresh_ttl: 604800  # 7 days
 llm:
   provider: ""          # deepseek or openrouter
-  deepseek:
-    model: deepseek-v4-flash
-  openrouter:
-    model: google/gemini-2.0-flash-001
-    timeout_seconds: 300
+  deepseek_model: deepseek-v4-flash
+  openrouter_model: openrouter/owl-alpha
+  timeout_seconds: 300
 ```
 
 **.env** — secrets, never committed:
@@ -102,7 +106,12 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URL=http://localhost:8090/api/v1/auth/google/callback
 FRONTEND_URL=http://localhost:3000
 CURRENCYFREAKS_API_KEY=
+SHARE_LINK_SECRET=      # must differ from the JWT secrets
+GEOAPIFY_API_KEY=
+DEEPSEEK_API_KEY=       # or OPENROUTER_API_KEY
 ```
+
+See `.env.example` for the full list.
 
 **Priority**: env vars override config.yaml (Viper handles this automatically).
 
@@ -120,3 +129,7 @@ Domains communicate via **local interfaces** (not cross-imports):
 - `expense.LinkedExpenseCreator` interface → satisfied by `*expense.Usecase` — atomic expense creation inside transport/accommodation tx
 - `summary.DataProvider` / `autogen.TripCreator` interfaces → satisfied by `*integration.Adapter` — cross-domain data assembly
 - `trip.Handler.SetOnDelete(fn)` — fire-and-forget delete hook (generic, reusable)
+
+## Checks
+- `go build ./... && go vet ./... && go test ./...`
+- `golangci-lint run ./...` (config in `.golangci.yml`). CI fails only on **new** findings; existing ones are a baseline to clean up during the R2 refactor.

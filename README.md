@@ -26,7 +26,7 @@
 
 ### Budget
 - **Expense tracker** — Log expenses per trip with categories (food, transport, stay, activity, shopping, souvenir)
-- **Multi-currency** — Automatic conversion via CurrencyFreaks API (IDR, USD, JPY, SGD, KRW, EUR, GBP, AUD, MYR, THB, CNY, VND)
+- **Multi-currency** — Automatic conversion via CurrencyFreaks API (IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND)
 - **Budget ring** — Visual budget health with percentage ring and category distribution bar
 - **Currency converter** — Standalone quick converter tool
 
@@ -42,13 +42,13 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Go 1.22+, Echo v4, pgx v5 (PostgreSQL 16), Redis 7 |
+| Backend | Go 1.25+, Echo v4, pgx v5 (PostgreSQL 16), Redis 7 |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI) |
 | AI / LLM | DeepSeek V4, OpenRouter (multi-provider fallback) |
 | Maps | MapLibre GL JS + OpenStreetMap, optional Google Maps JS API |
 | Currency | CurrencyFreaks API |
 | Auth | Google OAuth 2.0 + JWT (httpOnly cookie) |
-| Infra (dev) | Docker Compose (PostgreSQL + Redis) |
+| Infra (dev) | Docker Compose or native PostgreSQL + Redis |
 | CI/CD | GitHub Actions → VPS via SSH |
 
 ---
@@ -65,88 +65,89 @@
 
 ### Prerequisites
 
-- Go 1.22+
-- Node.js 20+
-- Docker & Docker Compose
-- Google OAuth credentials
+- Go 1.25+
+- Node.js 22+
+- PostgreSQL 16+ and Redis 7+ (via Docker, or installed natively)
+- Google OAuth credentials (login is Google-only)
 - Geoapify API key for the default location autocomplete provider
-- Optional Google Cloud project with Maps JS API when Google mode is enabled
+- Optional: Google Cloud project with Maps JS API when Google mode is enabled
 
-### 1. Clone the repo
+### 1. Start PostgreSQL + Redis
 
-```bash
-git clone https://github.com/yourusername/navisha.git
-cd navisha
-```
-
-### 2. Start infrastructure
+**Option A: Docker**
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-This starts:
-- `postgres-navisha` on port 5432
-- `redis-navisha` on port 6379
+This starts Postgres on `localhost:5439` (user/password/db: `navisha`) and
+Redis on `localhost:6389`, matching `backend/.env.example`.
 
-### 3. Configure backend
+**Option B: native install (no Docker)**
+
+Use a local PostgreSQL and Redis (on Windows, e.g. the
+[redis-windows](https://github.com/redis-windows/redis-windows) build).
+Create the database, then point `DATABASE_URL` / `REDIS_URL` at them:
 
 ```bash
-cd backend
-cp .env.example .env
-# Fill in your secrets in .env
+psql -U postgres -c "CREATE USER navisha WITH PASSWORD 'navisha';" -c "CREATE DATABASE navisha OWNER navisha;"
 ```
 
-Key env vars to set:
-```
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-JWT_SECRET=
-JWT_REFRESH_SECRET=
-GEOAPIFY_API_KEY=
-```
+> **The server runs all pending migrations on every start.** Never point a
+> local `.env` at the production database unless you mean to. Prefer a
+> separate database (or a Neon branch) for development.
 
-Non-secret config lives in `backend/config.yaml` — edit as needed.
-
-### 4. Run the backend
+### 2. Configure and run the backend
 
 ```bash
 cd backend
-go run ./cmd/server
-# Server starts on http://localhost:8090
+cp .env.example .env   # fill in secrets
+go run ./cmd/server    # http://localhost:8090, health check at /health
 ```
 
-### 5. Configure frontend
+Key env vars: `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`,
+`SHARE_LINK_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+`GEOAPIFY_API_KEY`, `CURRENCYFREAKS_API_KEY`, and an LLM key
+(`DEEPSEEK_API_KEY` or `OPENROUTER_API_KEY`). Register
+`http://localhost:8090/api/v1/auth/google/callback` as an OAuth redirect URI.
+
+Non-secret config lives in `backend/config.yaml`; env vars override it.
+
+Check migration status without starting the server:
+
+```bash
+go run ./cmd/migrate -status
+```
+
+### 3. Configure and run the frontend
 
 ```bash
 cd frontend
 cp .env.example .env.local
-# Default: Geoapify autocomplete, MapLibre + an OSM-based CARTO basemap
-# To restore Google: set NEXT_PUBLIC_LOCATION_PROVIDER=google,
-# NEXT_PUBLIC_MAP_PROVIDER=google, and NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-```
-
-Location and map providers are independent. Geoapify requests are proxied by
-the Go backend so its key stays private. Map view defaults to `maplibre`; set
-`NEXT_PUBLIC_MAP_PROVIDER=google` to restore Google or `disabled` to turn the
-map off. Google scripts are loaded only in Google mode. Changing a
-`NEXT_PUBLIC_*` value requires restarting/rebuilding the frontend.
-
-The default CARTO basemap uses OpenStreetMap data. For production traffic,
-review the provider terms or configure `NEXT_PUBLIC_MAP_TILE_URL` and
-`NEXT_PUBLIC_MAP_ATTRIBUTION` for another tile provider whose capacity and
-terms fit the deployment. The default same-origin tile route avoids browser
-cross-origin restrictions; its upstream can be changed with
-`MAP_TILE_UPSTREAM_URL`.
-
-### 6. Run the frontend
-
-```bash
-cd frontend
 npm install
-npm run dev
-# App starts on http://localhost:3000
+npm run dev            # http://localhost:3000
 ```
+
+Defaults: Geoapify autocomplete (proxied by the backend so its key stays
+private) and MapLibre with an OpenFreeMap/OSM basemap. Set
+`NEXT_PUBLIC_MAP_PROVIDER=google` (plus `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`) to
+use Google, or `disabled` to turn the map off. Changing a `NEXT_PUBLIC_*`
+value requires restarting the dev server.
+
+For production traffic, review the tile provider's terms or configure
+`NEXT_PUBLIC_MAP_TILE_URL` / `NEXT_PUBLIC_MAP_ATTRIBUTION` (and
+`MAP_TILE_UPSTREAM_URL` for the same-origin tile proxy).
+
+### 4. Checks
+
+| | Command |
+|---|---|
+| Backend tests | `cd backend && go test ./...` |
+| Backend lint | `cd backend && golangci-lint run ./...` |
+| Frontend lint / types / tests | `cd frontend && npm run lint && npm run typecheck && npm test` |
+
+The same checks run in CI on every pull request (`.github/workflows/ci.yml`).
+Merging to `main` deploys to production (`.github/workflows/deploy.yml`).
 
 ---
 
@@ -167,7 +168,8 @@ navisha/
 │   ├── src/components/   # Shared UI components
 │   └── src/lib/          # Utilities, API client, categories
 ├── deploy/               # Nginx config for production
-├── docker-compose.yml    # Dev infrastructure (PostgreSQL + Redis)
+├── docker-compose.dev.yml  # Dev infrastructure (PostgreSQL + Redis)
+├── docker-compose.yml    # Full stack in containers
 └── docker-compose.prod.yml
 ```
 
@@ -177,23 +179,11 @@ navisha/
 - [Terms of Service](https://navisha.app/terms)
 - [Contact](https://navisha.app/contact)
 
-## License
-
-MIT © 2025–2026 Navisha
-
----
-
 ## Roadmap
 
-- [x] Project planning & architecture design
-- [x] Backend: Project scaffold (domain structure, config, DB/Redis, server)
-- [x] Backend: Auth (Google OAuth + JWT, tested end-to-end)
-- [ ] Backend: Trip, Itinerary, Budget APIs
-- [ ] Frontend: Auth flow
-- [ ] Frontend: Trip dashboard & itinerary builder
-- [ ] Frontend: Map view
-- [ ] Frontend: Budget tracker
-- [ ] Frontend: Currency converter
+Core features (trips, itinerary, map, transport, stay, budget, currency
+converter, AI generation and summary, share links) are shipped. Current work
+is tracked in [docs/PLANNING_REFACTOR_REDESIGN.md](docs/PLANNING_REFACTOR_REDESIGN.md).
 
 ---
 
@@ -210,4 +200,4 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 
 ## License
 
-[MIT](LICENSE)
+MIT © 2025–2026 Navisha
