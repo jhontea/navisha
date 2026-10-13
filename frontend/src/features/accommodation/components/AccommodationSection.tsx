@@ -39,20 +39,32 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
   const items = data?.items ?? []
 
   return (
-    <div className="space-y-10">
-      {/* Add Stay Section */}
+    <div>
       <section>
-        <div className="mb-6">
-          <h3 className="font-display text-headline-sm text-foreground mb-1">
-            Add Accommodation
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Log your hotels, hostels, and apartments to keep everything organized.
-          </p>
+        {/* List first; adding is a compact action next to the heading. */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-display text-xl font-semibold text-foreground">Stays</h3>
+            {!isLoading && !isError && items.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {items.length} {items.length === 1 ? "stay" : "stays"}
+              </p>
+            )}
+          </div>
+          {!addOpen && (
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add stay
+            </button>
+          )}
         </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl shadow-sm p-8">
-          {addOpen ? (
+        {addOpen && (
+          <div className="mb-4 rounded-xl border bg-card p-4 shadow-card sm:p-6">
             <AccommodationForm
               tripBaseCurrency={tripBaseCurrency}
               withCost
@@ -63,45 +75,8 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
                 setAddOpen(false)
               }}
             />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-chromatic-aurora to-chromatic-ocean text-white shadow-md shadow-primary/20">
-                <Hotel className="h-7 w-7" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Log a stay
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Add hotels, hostels, apartments, or any other accommodation
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAddOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary via-chromatic-aurora to-chromatic-ocean px-6 py-2.5 font-semibold text-white shadow-md shadow-primary/25 transition-all hover:shadow-lg hover:shadow-primary/35 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <Plus className="h-4 w-4" />
-                Add Stay
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Planned Stays List */}
-      {(isLoading || items.length > 0 || isError) && (
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-display text-headline-sm text-foreground">
-              Planned Stays
-            </h3>
-            {!isLoading && (
-              <span className="text-sm text-muted-foreground">
-                {items.length} {items.length === 1 ? "stay" : "stays"}
-              </span>
-            )}
           </div>
+        )}
 
           {isLoading && (
             <div className="space-y-3">
@@ -124,17 +99,17 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
 
           {isError && (
             <div role="alert" className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/5 p-8 text-center">
-              <p className="text-sm text-destructive font-medium">Failed to load stays.</p>
-              <p className="text-xs text-muted-foreground mt-1">Check your connection and try again.</p>
+              <p className="text-sm text-destructive font-medium">Couldn&apos;t load stays.</p>
+              <p className="text-xs text-muted-foreground mt-1">Check your connection and reload the page.</p>
             </div>
           )}
 
-          {!isLoading && !isError && items.length === 0 && (
+          {!isLoading && !isError && items.length === 0 && !addOpen && (
             <EmptyState
               icon={Hotel}
               size="sm"
-              title="No stays logged yet"
-              description="Add a hotel, hostel, or apartment to keep accommodation details organized."
+              title="No stays yet"
+              description="Add where you're sleeping each night: hotels, hostels, or apartments."
               className="rounded-2xl border border-dashed border-border/50"
             />
           )}
@@ -170,8 +145,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency }: Props) {
               )
             })}
           </div>
-        </section>
-      )}
+      </section>
 
       <ConfirmDialog
         open={!!confirmingDelete}
