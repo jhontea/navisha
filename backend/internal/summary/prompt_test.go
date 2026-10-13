@@ -3,6 +3,7 @@ package summary
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // The curated tip pool is Indonesian (QRIS, Gojek, Alfamart...); a trip
@@ -45,14 +46,41 @@ func TestBuildPrompt_FormatsMoneyPerCurrency(t *testing.T) {
 	}
 }
 
-func TestBuildPrompt_ConciseVoiceWithoutEmoji(t *testing.T) {
+func TestBuildPrompt_StorytellingVoice(t *testing.T) {
 	system, _ := BuildPrompt(*newTripContext())
-	for _, want := range []string{"## Ringkasan", "## Budget", "## Booking", "250–350 kata", "Tanpa emoji", "cakep abis"} {
+	for _, want := range []string{"Bercerita, bukan melapor", "## Gambaran besar", "## Sorotan per hari", "## Budget", "## Yang perlu disiapkan", "300–450 kata", "SATU emoji yang relevan", "cakep abis", "hidden gem"} {
 		if !strings.Contains(system, want) {
 			t.Errorf("system prompt missing %q", want)
 		}
 	}
 	if strings.Contains(system, "GUNAKAN EMOJI") {
 		t.Error("system prompt still asks for emoji section headers")
+	}
+}
+
+func TestTripStatus(t *testing.T) {
+	ctx := *newTripContext()
+	ctx.StartDate = time.Date(2026, 5, 10, 0, 0, 0, 0, time.UTC)
+	ctx.EndDate = time.Date(2026, 5, 19, 0, 0, 0, 0, time.UTC)
+	ctx.TotalDays = 10
+	cases := map[string]time.Time{
+		"upcoming (starts in 9 days)":        time.Date(2026, 5, 1, 15, 0, 0, 0, time.UTC),
+		"in progress (today is day 3 of 10)": time.Date(2026, 5, 12, 8, 0, 0, 0, time.UTC),
+		"completed":                          time.Date(2026, 10, 13, 0, 0, 0, 0, time.UTC),
+	}
+	for want, today := range cases {
+		if got := tripStatus(ctx, today); got != want {
+			t.Errorf("tripStatus(%s) = %q, want %q", today.Format("2006-01-02"), got, want)
+		}
+	}
+}
+
+func TestBuildPrompt_TransportTimesAreNotShifted(t *testing.T) {
+	ctx := *newTripContext()
+	dep := time.Date(2026, 5, 10, 6, 30, 0, 0, time.UTC).In(time.FixedZone("WIB", 7*3600))
+	ctx.Transportations = []TransportationContext{{Type: "flight", FromLocation: "CGK", ToLocation: "NRT", DepartureDatetime: &dep}}
+	_, user := BuildPrompt(ctx)
+	if !strings.Contains(user, "departs 2026-05-10 06:30") {
+		t.Errorf("departure time shifted by the time zone\n---\n%s", user)
 	}
 }
