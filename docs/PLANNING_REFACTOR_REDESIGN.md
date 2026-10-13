@@ -253,11 +253,18 @@ Buat `docs/COPY_GUIDE.md` berisi:
 
 ---
 
-## D. Keputusan yang perlu dari Ahmad
+## D. Keputusan (diputuskan 2026-10-13)
 
-1. **A1.1:** expense dikonversi ulang saat base currency berubah, atau konversi on-the-fly di Summary?
-2. **Bahasa UI:** tetap English, Indonesia, atau dua-duanya (i18n)?
-3. **Navigasi:** gabung Dashboard dan My Trips? Gabung Transport dan Stay menjadi Bookings? Currency turun dari bottom nav?
-4. **Map:** MapLibre sebagai satu-satunya default, Google hanya opsional?
-5. **Urutan kerja:** refactor dulu (R0–R3) lalu redesign, atau jalan paralel dengan R4 digabung D2? *(Rekomendasi: R0 → R1 → D0/D1 → R4+D2 → sisanya paralel.)*
-6. **Arah visual:** apakah ada referensi app yang disukai (misalnya Wanderlog, TripIt, Notion) untuk dijadikan acuan mood sebelum D1?
+| # | Topik | Keputusan |
+|---|---|---|
+| 1 | **A1.1** | **Konversi ulang** semua expense trip dalam satu transaksi saat base currency berubah. |
+| 2 | **Bahasa UI** | **Tetap English.** Fokus pada konsistensi istilah (glosarium di `COPY_GUIDE.md`), tanpa i18n. C5 ditunda. |
+| 3 | **Navigasi** | Semua usulan B3 disetujui: gabung Dashboard + My Trips menjadi **Trips**, Transport + Stay menjadi **Bookings**, **Currency** turun dari bottom nav (masuk Tools dan diakses dari Budget), **Map** menjadi tab sendiri (split view di desktop). |
+| 4 | **Overview** | Tab Overview dihapus, diganti **header ringkas** + checklist di atas Itinerary. Tab trip: Itinerary · Map · Bookings · Budget · Summary. |
+| 5 | **Map** | **MapLibre (OpenFreeMap) default**, Google Maps tetap opsional dengan perawatan minimal. |
+| 6 | **Urutan kerja** | **R0 → R1 → D0/D1 → R4+D2**, sisanya paralel. |
+| 7 | **Arah visual** | Acuan mood: **Wanderlog**. Travel-centric, peta dominan, split view list + peta, warna cerah tapi bersih. |
+
+Catatan:
+- C11 (rapikan `WORKLOG.md`) sudah selesai: file dihapus di commit "remove unused docs".
+- Untuk dev lokal, backend memakai **database Neon production** dan migrasi jalan otomatis saat server start. Sebelum R1 (fix A1.1, kemungkinan menambah migrasi atau mengubah data), siapkan **Neon branch** terpisah untuk dev.
