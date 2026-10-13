@@ -3,80 +3,57 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
+import { CalendarDays, FileText, Map, Ticket, Wallet, type LucideIcon } from "lucide-react"
+
 import { cn } from "@/lib/utils"
-import { Calendar, Map, DollarSign, Bus, Hotel } from "lucide-react"
 import { accommodationApi } from "@/features/accommodation/api"
 import { expenseApi } from "@/features/expense/api"
 import { transportationApi } from "@/features/transportation/api"
 import { tripApi } from "@/features/trip/api"
-import { tripOverviewApi, tripOverviewKey } from "@/features/trip/overview"
 
-interface TripTabBarProps {
-  tripId: string
-}
+type Tab = { label: string; segment: string; icon: LucideIcon }
 
-const TABS = [
-  { label: "Overview",  href: "overview",   icon: Map,         key: "overview"   },
-  { label: "Itinerary", href: "",            icon: Calendar,    key: "itinerary"  },
-  { label: "Transport", href: "transport",   icon: Bus,         key: "transport"  },
-  { label: "Stay",      href: "stay",        icon: Hotel,       key: "stay"       },
-  { label: "Budget",    href: "budget",      icon: DollarSign,  key: "budget"     },
-] as const
+// D3 trip sections. Overview lives as a panel above the Itinerary;
+// Transport + Stay are Bookings.
+const TABS: Tab[] = [
+  { label: "Itinerary", segment: "", icon: CalendarDays },
+  { label: "Map", segment: "map", icon: Map },
+  { label: "Bookings", segment: "bookings", icon: Ticket },
+  { label: "Budget", segment: "budget", icon: Wallet },
+  { label: "Summary", segment: "summary", icon: FileText },
+]
 
 /**
- * Tab bar for trip detail sub-pages.
- * Iter 46 — sticky below TopBar (top offset matches TopBar height)
- * Iter 47 — active: gradient underline pill, not just color
- * Iter 48 — icons on all tabs (not just mobile)
- * Iter 49 — scrollable on mobile with snap
- * Iter 50 — hide label on xs, show on sm+
- * Iter 51 — mobile: stacked icon+label, larger icons, full-width even spacing (scroll fallback)
- * Iter 52 — active state: fixed-width underline indicator + constant icon stroke; equal-width tabs on mobile
+ * Trip section tabs. On phones this is the bottom bar and replaces the global
+ * nav (one navigation bar at a time); from md up it is a sticky tab row under
+ * the top bar.
  */
-export function TripTabBar({ tripId }: TripTabBarProps) {
+export function TripTabBar({ tripId }: { tripId: string }) {
   const pathname = usePathname()
   const queryClient = useQueryClient()
 
-  function tabHref(tab: (typeof TABS)[number]) {
-    return tab.href ? `/trips/${tripId}/${tab.href}` : `/trips/${tripId}`
-  }
+  const href = (tab: Tab) => (tab.segment ? `/trips/${tripId}/${tab.segment}` : `/trips/${tripId}`)
+  const isActive = (tab: Tab) =>
+    tab.segment ? pathname.startsWith(`/trips/${tripId}/${tab.segment}`) : pathname === `/trips/${tripId}`
 
-  function prefetchTab(tab: (typeof TABS)[number]) {
-    if (!tripId) return
-
-    if (tab.key === "overview") {
-      void queryClient.prefetchQuery({
-        queryKey: tripOverviewKey(tripId),
-        queryFn: () => tripOverviewApi.get(tripId),
-        staleTime: 5 * 60 * 1000,
-      })
-      return
-    }
-
+  function prefetch(tab: Tab) {
     void queryClient.prefetchQuery({
       queryKey: ["trips", "detail", tripId],
       queryFn: () => tripApi.get(tripId),
     })
-
-    if (tab.key === "transport") {
+    if (tab.segment === "bookings") {
       void queryClient.prefetchQuery({
         queryKey: ["transportations", "list", tripId],
         queryFn: () => transportationApi.list(tripId),
         staleTime: 5 * 60 * 1000,
       })
-      return
-    }
-
-    if (tab.key === "stay") {
       void queryClient.prefetchQuery({
         queryKey: ["accommodations", "list", tripId],
         queryFn: () => accommodationApi.list(tripId),
         staleTime: 5 * 60 * 1000,
       })
-      return
     }
-
-    if (tab.key === "budget") {
+    if (tab.segment === "budget") {
       void queryClient.prefetchQuery({
         queryKey: ["expenses", "list", tripId],
         queryFn: () => expenseApi.list(tripId),
@@ -90,62 +67,68 @@ export function TripTabBar({ tripId }: TripTabBarProps) {
   }
 
   return (
-    <nav
-      className="sticky z-30 top-0 mt-3 md:mt-4 md:top-[calc(3.5rem+1px)] w-full"
-      aria-label="Trip sections"
-    >
-      <div
-        className="no-scrollbar flex items-center justify-between gap-1 overflow-x-auto px-margin-mobile md:px-margin-desktop py-1 w-full max-w-max-width mx-auto border-b border-border/30 bg-background/90 backdrop-blur-xl md:justify-center"
-        role="tablist"
+    <>
+      {/* md+: sticky tab row */}
+      <nav
+        className="sticky top-14 z-30 hidden border-b bg-background/95 backdrop-blur md:block"
+        aria-label="Trip sections"
       >
-        {TABS.map((tab) => {
-          const href = tabHref(tab)
-          const isActive = tab.href === ""
-            ? pathname === `/trips/${tripId}`
-            : pathname.startsWith(`/trips/${tripId}/${tab.href}`)
+        <ul className="mx-auto flex w-full max-w-max-width gap-1 px-margin-desktop">
+          {TABS.map((tab) => {
+            const active = isActive(tab)
+            return (
+              <li key={tab.label}>
+                <Link
+                  href={href(tab)}
+                  prefetch={false}
+                  onMouseEnter={() => prefetch(tab)}
+                  onFocus={() => prefetch(tab)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "relative flex h-12 items-center gap-2 px-3 text-sm font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <tab.icon className="h-4 w-4" aria-hidden="true" />
+                  {tab.label}
+                  {active && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary" aria-hidden="true" />}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
 
-          return (
-            <Link
-              key={tab.href}
-              href={href}
-              prefetch={false}
-              onMouseEnter={() => prefetchTab(tab)}
-              onFocus={() => prefetchTab(tab)}
-              role="tab"
-              aria-current={isActive ? "page" : undefined}
-              aria-label={tab.label}
-              className={cn(
-                "relative flex min-w-0 flex-1 snap-start flex-col items-center justify-center gap-1 rounded-full px-1 pt-2 pb-3 text-sm font-medium transition-all duration-200",
-                "md:flex-none md:flex-row md:gap-1.5 md:px-4 md:py-2.5",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
-              )}
-            >
-              <tab.icon
-                className={cn(
-                  "h-5 w-5 md:h-4 md:w-4 shrink-0 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground",
-                )}
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-              <span className="max-w-full truncate text-[10px] font-medium leading-none md:text-sm">
-                {tab.label}
-              </span>
-              {/* Iter 52 — fixed-width active indicator (same width on every tab) */}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute inset-x-0 bottom-1 mx-auto h-[3px] w-6 rounded-full bg-primary transition-opacity duration-200",
-                  isActive ? "opacity-100" : "opacity-0",
-                )}
-              />
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+      {/* Phones: bottom bar, replaces the global nav inside a trip */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        aria-label="Trip sections"
+      >
+        <ul className="flex items-stretch">
+          {TABS.map((tab) => {
+            const active = isActive(tab)
+            return (
+              <li key={tab.label} className="flex-1">
+                <Link
+                  href={href(tab)}
+                  prefetch={false}
+                  onTouchStart={() => prefetch(tab)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-xs font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                    active ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  <tab.icon className="h-6 w-6" strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
+                  <span className="leading-none">{tab.label}</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
+    </>
   )
 }

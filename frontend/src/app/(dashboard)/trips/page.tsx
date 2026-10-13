@@ -104,9 +104,11 @@ export default function TripsPage() {
           </p>
           <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">Trips</h1>
         </div>
-        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-          <TripCTAs />
-        </div>
+        {(isLoading || allTrips.length > 0) && (
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            <TripCTAs />
+          </div>
+        )}
       </header>
 
       {/* ── Upcoming (onboarding when the user has no trips yet) ── */}

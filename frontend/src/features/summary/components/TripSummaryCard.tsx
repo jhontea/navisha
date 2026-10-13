@@ -21,7 +21,7 @@ import type { TripSummary } from "../types"
 
 const summaryActionButtonClassName = cn(
   primaryTripActionButtonClassName,
-  "flex-none rounded-2xl px-5 py-2 text-sm shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30 sm:flex-none",
+  "flex-none rounded-2xl px-5 py-2 text-sm shadow-sm sm:flex-none",
 )
 
 // Custom component mapping for rich rendering

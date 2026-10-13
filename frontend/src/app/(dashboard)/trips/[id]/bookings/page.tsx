@@ -1,0 +1,31 @@
+"use client"
+
+import { useParams } from "next/navigation"
+import { useTrip } from "@/features/trip/hooks/useTrips"
+import { TransportationSection } from "@/features/transportation/components/TransportationSection"
+import { AccommodationSection } from "@/features/accommodation/components/AccommodationSection"
+
+/** Bookings = Transport + Stays on one page (D3). */
+export default function TripBookingsPage() {
+  const { id } = useParams<{ id: string }>()
+  const { data: trip, isLoading } = useTrip(id)
+
+  if (isLoading && !trip) {
+    return (
+      <main className="mx-auto w-full max-w-max-width space-y-3 px-margin-mobile py-6 md:px-margin-desktop">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+        ))}
+      </main>
+    )
+  }
+
+  const baseCurrency = trip?.base_currency ?? "IDR"
+
+  return (
+    <main className="mx-auto w-full max-w-max-width space-y-10 px-margin-mobile pb-6 pt-6 md:px-margin-desktop md:pb-8">
+      <TransportationSection tripId={id} tripBaseCurrency={baseCurrency} />
+      <AccommodationSection tripId={id} tripBaseCurrency={baseCurrency} />
+    </main>
+  )
+}

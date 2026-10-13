@@ -1,50 +1,25 @@
 "use client"
 
-import { useState } from "react"
-import dynamic from "next/dynamic"
 import { useParams } from "next/navigation"
-import {
-  List,
-  Map,
-} from "lucide-react"
+import { ChevronDown, List } from "lucide-react"
 import { EmptyState } from "@/components/EmptyState"
 import { useTrip } from "@/features/trip/hooks/useTrips"
 import { DayPanel } from "@/features/activity/components/DayPanel"
-import { cn } from "@/lib/utils"
-
-// Lazy-load the heavy Google Maps component (Loop 6: bundle optimization).
-const TripMap = dynamic(
-  () => import("@/features/map/components/TripMap").then((m) => ({ default: m.TripMap })),
-  {
-    loading: () => (
-      <div className="flex h-64 items-center justify-center rounded-xl bg-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-muted-foreground" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-      </div>
-    ),
-    ssr: false,
-  }
-)
-
-type ViewMode = "list" | "map"
+import { TripOverview } from "@/features/trip/components/TripOverview"
 
 export default function TripDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
 
   const { data: trip, isLoading, isError } = useTrip(id)
-  const [viewMode, setViewMode] = useState<ViewMode>("list")
-
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 px-4 py-6 md:px-10 md:py-8 animate-fade-in-up">
-        <div className="h-48 w-full animate-pulse rounded-2xl bg-muted" />
-        <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
-        <div className="mt-2 space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
-          ))}
-        </div>
+      <div className="mx-auto flex w-full max-w-max-width flex-col gap-3 px-margin-mobile py-6 md:px-margin-desktop">
+        <div className="h-12 w-full animate-pulse rounded-xl bg-muted" />
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+        ))}
       </div>
     )
   }
@@ -60,79 +35,48 @@ export default function TripDetailPage() {
   }
 
   return (
-    <main className="flex flex-col pb-4">
-      {/* View mode toggle — always in same position */}
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile pt-6 md:px-margin-desktop">
-        <div role="group" aria-label="View mode" className="mb-5 flex w-full gap-1 rounded-2xl border border-border/40 bg-muted/30 p-1">
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
-              viewMode === "list"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-            )}
-            aria-pressed={viewMode === "list"}
-          >
-            <List className="h-4 w-4" aria-hidden="true" />
-            List
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("map")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200",
-              viewMode === "map"
-                ? "bg-primary text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-            )}
-            aria-pressed={viewMode === "map"}
-          >
-            <Map className="h-4 w-4" aria-hidden="true" />
-            Map
-          </button>
+    <main className="mx-auto flex w-full max-w-max-width flex-col px-margin-mobile pb-6 pt-4 md:px-margin-desktop md:pb-8">
+      {/* Trip overview (the former Overview tab), collapsed by default so the
+          itinerary stays the main content. */}
+      <details className="group mb-4 rounded-xl border bg-card">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+          Trip overview
+          <ChevronDown
+            className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"
+            aria-hidden="true"
+          />
+        </summary>
+        <div className="border-t px-4 pb-2">
+          <TripOverview tripId={id} />
         </div>
-      </div>
+      </details>
 
-      {/* Main content */}
-      {viewMode === "map" ? (
-        <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 md:px-margin-desktop md:pb-8">
-          <div className="animate-fade-in-up">
-            <TripMap tripId={id} days={trip.days} />
-          </div>
-        </div>
+      {trip.days.length === 0 ? (
+        <EmptyState
+          icon={List}
+          size="sm"
+          title="No days yet"
+          description="Generate your itinerary to see daily plans here."
+          className="rounded-xl border border-dashed"
+        />
       ) : (
-        <div className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 md:px-margin-desktop md:pb-8">
-          {trip.days.length === 0 ? (
-            <EmptyState
-              icon={List}
-              size="sm"
-              title="No days yet"
-              description="Generate your itinerary to see daily plans here."
-              className="rounded-2xl border border-dashed border-border/50"
+        <div className="flex flex-col gap-3">
+          {trip.days.map((d, idx) => (
+            <DayPanel
+              key={d.id}
+              tripId={id}
+              dayId={d.id}
+              dayNumber={d.day_number}
+              date={d.date}
+              title={d.title ?? ""}
+              notes={d.notes ?? ""}
+              destination={trip.description}
+              defaultExpanded={idx === 0}
+              days={trip.days}
             />
-          ) : (
-            <div className="flex flex-col gap-3 animate-fade-in-up">
-              {trip.days.map((d, idx) => (
-                <DayPanel
-                  key={d.id}
-                  tripId={id}
-                  dayId={d.id}
-                  dayNumber={d.day_number}
-                  date={d.date}
-                  title={d.title ?? ""}
-                  notes={d.notes ?? ""}
-                  destination={trip.description}
-                  defaultExpanded={idx === 0}
-                  days={trip.days}
-                />
-              ))}
-            </div>
-          )}
+          ))}
         </div>
       )}
-
     </main>
   )
 }
