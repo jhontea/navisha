@@ -1,11 +1,11 @@
-import type { Accommodation } from "@/features/accommodation/types"
+import type { TimelineStay } from "../../lib/timeline"
 
 /** Read-only stay check-in / check-out entry on a day's timeline (edited in Bookings). */
 export function StayTimelineCard({
   a,
   event,
 }: {
-  a: Accommodation
+  a: TimelineStay
   event: "check_in" | "check_out"
 }) {
   const meta = [a.location_name, a.confirmation_number && `#${a.confirmation_number}`].filter(Boolean).join(" · ")

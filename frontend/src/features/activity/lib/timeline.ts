@@ -2,10 +2,22 @@ import type { Transportation } from "@/features/transportation/types"
 import type { Accommodation } from "@/features/accommodation/types"
 import type { Activity } from "../types"
 
+/**
+ * The transport and stay fields the timeline needs. Full API records satisfy
+ * these, and so do the trimmed records on a public shared trip.
+ */
+export type TimelineTransport = Pick<
+  Transportation,
+  "id" | "label" | "operator" | "from_location" | "to_location" | "departure_datetime" | "arrival_datetime"
+> & { type: string; reference_number?: string }
+export type TimelineStay = Pick<Accommodation, "id" | "name" | "location_name" | "check_in" | "check_out"> & {
+  confirmation_number?: string
+}
+
 /** Read-only items shown on a day's timeline next to its activities. */
-export type StaticTimelineItem =
-  | { kind: "transport"; data: Transportation }
-  | { kind: "accommodation"; data: Accommodation; event: "check_in" | "check_out" }
+export type StaticTimelineItem<T extends TimelineTransport = Transportation, S extends TimelineStay = Accommodation> =
+  | { kind: "transport"; data: T }
+  | { kind: "accommodation"; data: S; event: "check_in" | "check_out" }
 
 // Stays have dates but no times; place them at typical hotel times.
 const CHECK_IN_TIME = "14:00"
@@ -49,7 +61,7 @@ export function dateMatches(datetimeStr: string | null | undefined, date: string
   return extractDate(datetimeStr) === date
 }
 
-function staticSortKey(item: StaticTimelineItem): string {
+function staticSortKey(item: StaticTimelineItem<TimelineTransport, TimelineStay>): string {
   if (item.kind === "transport") return toSortKey(item.data.departure_datetime)
   return item.event === "check_in" ? CHECK_IN_TIME : CHECK_OUT_TIME
 }
@@ -58,12 +70,12 @@ function staticSortKey(item: StaticTimelineItem): string {
  * Transport departing on `date` plus stay check-ins/check-outs on `date`,
  * ordered by time (check-in 14:00, check-out 12:00).
  */
-export function buildStaticItems(
-  transportations: Transportation[],
-  accommodations: Accommodation[],
+export function buildStaticItems<T extends TimelineTransport, S extends TimelineStay>(
+  transportations: T[],
+  accommodations: S[],
   date: string,
-): StaticTimelineItem[] {
-  const items: StaticTimelineItem[] = []
+): StaticTimelineItem<T, S>[] {
+  const items: StaticTimelineItem<T, S>[] = []
   for (const t of transportations) {
     if (dateMatches(t.departure_datetime, date)) items.push({ kind: "transport", data: t })
   }
@@ -75,9 +87,11 @@ export function buildStaticItems(
 }
 
 /** One row of a day's timeline, in display order. */
-export type TimelineEntry =
-  | { kind: "activity"; activity: Activity }
-  | StaticTimelineItem
+export type TimelineEntry<
+  A = Activity,
+  T extends TimelineTransport = Transportation,
+  S extends TimelineStay = Accommodation,
+> = { kind: "activity"; activity: A } | StaticTimelineItem<T, S>
 
 /**
  * Merge read-only transport/stay items into the day's activities by time.
@@ -87,8 +101,12 @@ export type TimelineEntry =
  * activities without a start time are skipped when looking for that spot.
  * Static items with no later activity go at the end.
  */
-export function interleaveTimeline(activities: Activity[], staticItems: StaticTimelineItem[]): TimelineEntry[] {
-  const entries: TimelineEntry[] = []
+export function interleaveTimeline<
+  A extends { id: string; start_time?: string | null },
+  T extends TimelineTransport = Transportation,
+  S extends TimelineStay = Accommodation,
+>(activities: A[], staticItems: StaticTimelineItem<T, S>[]): TimelineEntry<A, T, S>[] {
+  const entries: TimelineEntry<A, T, S>[] = []
   const pending = [...staticItems] // already sorted by time
   for (const activity of activities) {
     const start = activity.start_time?.slice(0, 5)
