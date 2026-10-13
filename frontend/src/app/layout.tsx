@@ -25,11 +25,11 @@ export const metadata: Metadata = {
     template: "%s | Navisha",
   },
   description:
-    "Plan your journey, build day-by-day itineraries, track your budget, and explore the world with AI-powered trip planning.",
+    "Plan each day, see it on a map, and track spending in your currency. Build day-by-day itineraries with flights and hotels, or let AI draft a trip for you to review.",
   keywords: ["travel", "itinerary", "trip planner", "budget tracker", "AI travel"],
   openGraph: {
     title: "Navisha — Travel Planner",
-    description: "Plan your journey. Own your adventure.",
+    description: "Plan each day, see it on a map, and track spending in your currency.",
     type: "website",
   },
 }

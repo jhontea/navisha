@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Menu, X } from "lucide-react"
+import { Menu, X } from "lucide-react"
+
+import { buttonVariants } from "@/components/ui/button"
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false)
@@ -26,7 +28,7 @@ export function MobileMenu() {
     <>
       <button
         type="button"
-        className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-lg text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         aria-controls="mobile-menu"
@@ -42,14 +44,14 @@ export function MobileMenu() {
       {open && <div
         id="mobile-menu"
         role="menu"
-        className="absolute left-0 right-0 top-16 z-50 overflow-hidden animate-fade-in sm:hidden"
+        className="absolute left-0 right-0 top-16 z-50 sm:hidden"
       >
-        <div className="flex flex-col gap-1 border-t border-border/20 bg-white/98 px-4 py-3 shadow-lg backdrop-blur-2xl">
+        <div className="flex flex-col gap-1 border-b bg-background px-4 py-3 shadow-overlay">
           <a
             href="#features"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="rounded-xl px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Features
           </a>
@@ -57,7 +59,7 @@ export function MobileMenu() {
             href="#how-it-works"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="rounded-xl px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             How it works
           </a>
@@ -65,10 +67,9 @@ export function MobileMenu() {
             href="/login"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className={buttonVariants({ className: "mt-1 w-full" })}
           >
-            Start Planning
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            Sign in
           </Link>
         </div>
       </div>}

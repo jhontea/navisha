@@ -1,48 +1,34 @@
 import type { LucideIcon } from "lucide-react"
+import type { ReactNode } from "react"
 
-type FeatureCardProps = {
-  Icon: LucideIcon
-  title: string
-  description: string
-  visual?: React.ReactNode
-  className?: string
-  accent?: "primary" | "ocean" | "aurora"
-}
+import { cn } from "@/lib/utils"
 
-const accentMap = {
-  primary: "bg-primary/10 text-primary",
-  ocean: "bg-chromatic-ocean/10 text-chromatic-ocean",
-  aurora: "bg-chromatic-aurora/10 text-chromatic-aurora",
-}
-
+/** One feature on the landing page: icon, title, one sentence, optional UI sample. */
 export function FeatureCard({
   Icon,
   title,
   description,
   visual,
-  className = "",
-  accent = "primary",
-}: FeatureCardProps) {
+  className,
+}: {
+  Icon: LucideIcon
+  title: string
+  description: string
+  visual?: ReactNode
+  className?: string
+}) {
   return (
-    <div
-      className={`glass group relative overflow-hidden rounded-3xl p-6 transition-all duration-500 hover:shadow-chromatic hover:-translate-y-1.5 focus-within:ring-2 focus-within:ring-primary/30 md:p-8 ${className}`}
-    >
-      {/* Subtle hover glow */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-3xl bg-gradient-to-br from-white/8 to-transparent" aria-hidden="true" />
-
-      <div className="relative z-10">
-        {/* Icon */}
-        <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 md:mb-6 ${accentMap[accent]}`}>
-          <Icon className="h-6 w-6" aria-hidden="true" />
-        </div>
-
-        <h3 className="font-heading text-headline-sm text-foreground mb-3">{title}</h3>
-        <p className="text-body-md text-muted-foreground leading-relaxed">{description}</p>
-      </div>
-
+    <article className={cn("flex flex-col rounded-xl border bg-card p-5 md:p-6", className)}>
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
       {visual && (
-        <div className="relative z-10 mt-5 md:mt-6">{visual}</div>
+        <div className="mt-5 rounded-lg border bg-background p-3" aria-hidden="true">
+          {visual}
+        </div>
       )}
-    </div>
+    </article>
   )
 }
