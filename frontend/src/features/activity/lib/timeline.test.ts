@@ -116,3 +116,26 @@ describe("interleaveTimeline", () => {
     expect(order(interleaveTimeline([], statics))).toEqual(["T:night"])
   })
 })
+
+describe("timeline with public shared-trip records", () => {
+  it("accepts trimmed transport/stay records and plain activities", () => {
+    const statics = buildStaticItems(
+      [{ id: "t1", type: "flight", label: "NH 836", operator: "ANA", from_location: "CGK", to_location: "NRT", departure_datetime: "2026-05-10T06:30:00", arrival_datetime: null }],
+      [{ id: "s1", name: "Via Inn", location_name: "Umeda", check_in: "2026-05-10", check_out: "2026-05-14" }],
+      "2026-05-10",
+    )
+    const entries = interleaveTimeline(
+      [
+        { id: "home", start_time: "00:30" },
+        { id: "museum", start_time: "15:00" },
+      ],
+      statics,
+    )
+    expect(entries.map((e) => (e.kind === "activity" ? e.activity.id : `${e.kind}:${e.data.id}`))).toEqual([
+      "home",
+      "transport:t1",
+      "accommodation:s1",
+      "museum",
+    ])
+  })
+})
