@@ -73,3 +73,16 @@ Dicatat agar tidak hilang. Dikerjakan saat halaman terkait di-redesign (D4) atau
 2. **D2 (komponen):** Button/IconButton dengan target ≥ 44px, MoneyText (format per mata uang, tanpa sen untuk IDR/JPY/KRW/VND), StatTile netral, EmptyState yang tidak menutupi daftar.
 3. **D3 (navigasi):** tab trip menggantikan bottom nav di dalam trip; header trip ringkas.
 4. **D4 (halaman):** Itinerary split view → Budget → Trips home → Bookings → Share → Landing, sambil membereskan F1–F7.
+
+## 5. Setelah D1
+
+Diukur ulang dengan skrip yang sama (390px), setelah token D1 dan penetralan utilitas lama:
+
+| Halaman | Teks < 12px | Blur | Gradient di teks |
+|---|---|---|---|
+| Landing | 39 → **0** | 11 → 4 | 3 → **0** |
+| Itinerary | 19 → **0** | 18 → 8 | 0 |
+| Budget | 85 → **0** | 23 → 8 | 0 |
+
+Sisa blur berasal dari class `backdrop-blur` Tailwind (sebagian di bar sticky) dan sisa gradient dari tombol; keduanya ditangani di D2 (komponen Button).
+Chart kategori Budget: Food dan Gift sebelumnya berwarna sama (token `chromatic-amber` dan `chromatic-mint` sama-sama teal); sekarang 7 warna berbeda dalam urutan tetap.
