@@ -1,5 +1,6 @@
 import type { Transportation } from "@/features/transportation/types"
 import type { Accommodation } from "@/features/accommodation/types"
+import type { Activity } from "../types"
 
 /** Read-only items shown on a day's timeline next to its activities. */
 export type StaticTimelineItem =
@@ -71,4 +72,33 @@ export function buildStaticItems(
     if (dateMatches(a.check_out, date)) items.push({ kind: "accommodation", data: a, event: "check_out" })
   }
   return items.sort((a, b) => staticSortKey(a).localeCompare(staticSortKey(b)))
+}
+
+/** One row of a day's timeline, in display order. */
+export type TimelineEntry =
+  | { kind: "activity"; activity: Activity }
+  | StaticTimelineItem
+
+/**
+ * Merge read-only transport/stay items into the day's activities by time.
+ *
+ * Activities keep their saved (drag-and-drop) order. Each static item is
+ * placed right before the first activity that starts later than it;
+ * activities without a start time are skipped when looking for that spot.
+ * Static items with no later activity go at the end.
+ */
+export function interleaveTimeline(activities: Activity[], staticItems: StaticTimelineItem[]): TimelineEntry[] {
+  const entries: TimelineEntry[] = []
+  const pending = [...staticItems] // already sorted by time
+  for (const activity of activities) {
+    const start = activity.start_time?.slice(0, 5)
+    if (start) {
+      while (pending.length > 0 && staticSortKey(pending[0]) <= start) {
+        entries.push(pending.shift()!)
+      }
+    }
+    entries.push({ kind: "activity", activity })
+  }
+  entries.push(...pending)
+  return entries
 }

@@ -8,12 +8,17 @@ import type { Activity } from "../types"
 
 /**
  * Multi-select on a day's activities (W-PLAN-09) and copying the selection
- * to another day. Reorder is disabled by the caller while select mode is on
- * to avoid conflicting drag vs. checkbox interactions.
+ * to another day. Select mode is controlled by the caller (the day header
+ * menu turns it on); reorder is disabled while it is on.
  */
-export function useActivitySelection(dayId: string, days: Day[], activities: Activity[]) {
+export function useActivitySelection(
+  dayId: string,
+  days: Day[],
+  activities: Activity[],
+  selectMode: boolean,
+  setSelectMode: (on: boolean) => void,
+) {
   const qc = useQueryClient()
-  const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [copying, setCopying] = useState(false)
 
@@ -82,7 +87,6 @@ export function useActivitySelection(dayId: string, days: Day[], activities: Act
 
   return {
     selectMode,
-    startSelectMode: () => setSelectMode(true),
     selectedIds,
     copying,
     toggleSelect,

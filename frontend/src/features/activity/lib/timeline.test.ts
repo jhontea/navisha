@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { Accommodation } from "@/features/accommodation/types"
 import type { Transportation } from "@/features/transportation/types"
-import { buildStaticItems, dateMatches, extractDate, extractTime, toSortKey } from "./timeline"
+import { buildStaticItems, dateMatches, extractDate, extractTime, interleaveTimeline, toSortKey } from "./timeline"
 
 const transport = (id: string, departure: string) =>
   ({ id, type: "flight", departure_datetime: departure }) as unknown as Transportation
@@ -72,5 +72,47 @@ describe("buildStaticItems", () => {
 
   it("returns nothing for an empty day", () => {
     expect(buildStaticItems([], [], "2026-05-10")).toEqual([])
+  })
+})
+
+describe("interleaveTimeline", () => {
+  const act = (id: string, start?: string) =>
+    ({ id, type: "location", title: id, start_time: start }) as unknown as import("../types").Activity
+  const order = (entries: ReturnType<typeof interleaveTimeline>) =>
+    entries.map((e) => (e.kind === "activity" ? e.activity.id : e.kind === "transport" ? `T:${e.data.id}` : `S:${e.data.id}:${e.event}`))
+
+  // The audit case: "Berangkat dari rumah" at 00:30 must come before an
+  // 06:30 flight, and an 18:00 flight after the afternoon activities.
+  it("places transport and stays between activities by time", () => {
+    const statics = buildStaticItems(
+      [transport("NH836", "2026-05-10T06:30:00+00:00"), transport("NH2177", "2026-05-10T18:00:00+00:00")],
+      [stay("hotel", "2026-05-10", "2026-05-14")],
+      "2026-05-10",
+    )
+    const entries = interleaveTimeline(
+      [act("leave-home", "00:30"), act("lunch", "12:00"), act("museum", "15:00"), act("dinner", "20:00")],
+      statics,
+    )
+    expect(order(entries)).toEqual([
+      "leave-home",
+      "T:NH836",
+      "lunch",
+      "S:hotel:check_in", // 14:00
+      "museum",
+      "T:NH2177",
+      "dinner",
+    ])
+  })
+
+  it("keeps the saved activity order and skips untimed activities when placing", () => {
+    const statics = buildStaticItems([transport("bus", "2026-05-10T10:00:00+00:00")], [], "2026-05-10")
+    const entries = interleaveTimeline([act("note"), act("late", "11:00"), act("early", "09:00")], statics)
+    expect(order(entries)).toEqual(["note", "T:bus", "late", "early"])
+  })
+
+  it("appends static items with no later activity", () => {
+    const statics = buildStaticItems([transport("night", "2026-05-10T23:00:00+00:00")], [], "2026-05-10")
+    expect(order(interleaveTimeline([act("a", "09:00")], statics))).toEqual(["a", "T:night"])
+    expect(order(interleaveTimeline([], statics))).toEqual(["T:night"])
   })
 })

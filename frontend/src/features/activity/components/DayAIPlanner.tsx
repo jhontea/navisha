@@ -22,6 +22,10 @@ interface Props {
   dayNumber: number
   destination?: string
   existingCount: number
+  /** Start expanded (e.g. when shown inside a sheet). */
+  defaultOpen?: boolean
+  /** Called whenever the planner closes itself (cancel or after applying). */
+  onClose?: () => void
 }
 
 const DAY_GENERATION_MESSAGES = [
@@ -57,9 +61,15 @@ export function DayAIPlanner({
   dayNumber,
   destination = "",
   existingCount,
+  defaultOpen = false,
+  onClose,
 }: Props) {
   const qc = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(defaultOpen)
+  const setOpen = (next: boolean) => {
+    setOpenState(next)
+    if (!next) onClose?.()
+  }
   const [instruction, setInstruction] = useState("")
   const [selectedIntents, setSelectedIntents] = useState<Set<string>>(new Set())
   const [preview, setPreview] = useState<DayPreview | null>(null)
