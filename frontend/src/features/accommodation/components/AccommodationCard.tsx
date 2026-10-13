@@ -12,7 +12,6 @@ interface Props {
   days?: { date: string; day_number: number }[]
   onEdit: () => void
   onDelete: () => void
-  isDeleting: boolean
 }
 
 const TYPE_ICON: Record<string, ComponentType<{ className?: string }>> = {
@@ -28,7 +27,6 @@ export const AccommodationCard = memo(function AccommodationCard({
   days = [],
   onEdit,
   onDelete,
-  isDeleting,
 }: Props) {
   const type = a.accommodation_type?.toLowerCase() ?? "other"
   const nights = nightsBetween(a.check_in, a.check_out)
@@ -56,7 +54,6 @@ export const AccommodationCard = memo(function AccommodationCard({
       actionsLabel={`Actions for ${a.name}`}
       onEdit={onEdit}
       onDelete={onDelete}
-      isDeleting={isDeleting}
     >
       {a.location_name && (
         <p className="mt-1.5 flex items-start gap-1.5 text-sm text-muted-foreground">

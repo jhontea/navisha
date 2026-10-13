@@ -12,7 +12,6 @@ interface SortableActivityRowProps {
   activity: Activity
   onEdit: () => void
   onDelete: () => void
-  isDeleting: boolean
   overlapTitles: string[]
   selectMode: boolean
   isSelected: boolean
@@ -30,7 +29,6 @@ export function SortableActivityRow({
   activity,
   onEdit,
   onDelete,
-  isDeleting,
   overlapTitles,
   selectMode,
   isSelected,
@@ -80,7 +78,6 @@ export function SortableActivityRow({
           activity={activity}
           onEdit={onEdit}
           onDelete={onDelete}
-          isDeleting={isDeleting}
           overlapTitles={overlapTitles}
           selected={isFocused || (selectMode && isSelected)}
           onSelect={selectMode ? onToggleSelect : onFocus}

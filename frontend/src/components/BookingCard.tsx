@@ -26,7 +26,6 @@ export function BookingCard({
   actionsLabel,
   onEdit,
   onDelete,
-  isDeleting,
   children,
 }: {
   icon: ComponentType<{ className?: string }>
@@ -37,7 +36,6 @@ export function BookingCard({
   actionsLabel: string
   onEdit: () => void
   onDelete: () => void
-  isDeleting: boolean
   children?: ReactNode
 }) {
   return (
@@ -64,7 +62,7 @@ export function BookingCard({
                 <Pencil aria-hidden="true" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} variant="destructive" disabled={isDeleting} onClick={onDelete}>
+              <DropdownMenuItem className={MENU_ITEM} variant="destructive" onClick={onDelete}>
                 <Trash2 aria-hidden="true" />
                 Delete
               </DropdownMenuItem>

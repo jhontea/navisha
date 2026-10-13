@@ -422,6 +422,31 @@ html {
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
+.navisha-toast-with-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 0.375rem;
+  pointer-events: auto;
+}
+
+.navisha-toast-action {
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
+  border-radius: 0.625rem;
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.navisha-toast-action:hover {
+  background: hsl(var(--primary) / 0.1);
+}
+
+.navisha-toast-action:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 .navisha-toast-info {
   border-color: hsl(var(--primary) / 0.35);
   background: hsl(var(--card) / 0.88);
