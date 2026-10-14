@@ -79,6 +79,9 @@ export function MapLibreCanvas({
     if (!containerRef.current || (displayableByDay.length === 0 && displayableStays.length === 0)) return
 
     setMapError(false)
+    // Drop the previous view's route lines until the new map has projected
+    // its own (switching days otherwise leaves a stale line until a pan).
+    setRouteOverlay((prev) => ({ ...prev, routes: [] }))
     const allPoints = displayableByDay.flatMap((day) => day.points)
     // Everything the view should fit: places and stays.
     const allCoords = [...allPoints, ...displayableStays].map((p) => [p.lng, p.lat] as [number, number])
