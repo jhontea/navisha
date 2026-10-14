@@ -1,14 +1,15 @@
 import { CalendarDays, LogIn, Map, Sparkles, Wallet, type LucideIcon } from "lucide-react"
 
 import { FeatureCard } from "@/components/landing/FeatureCard"
+import { BudgetMeter } from "@/features/expense/components/BudgetMeter"
 import { TimelineIcon } from "@/features/activity/components/timeline/TimelineIcon"
 import { TimelineRow } from "@/features/activity/components/timeline/TimelineRow"
 
 // Sample content only; it mirrors the app's own timeline and budget UI.
 const itineraryVisual = (
   <div>
-    <p className="mb-2 px-1 text-sm font-semibold text-foreground">
-      Day 1 <span className="font-normal text-muted-foreground">· Sun, 10 May</span>
+    <p className="mb-2 px-1 font-display text-base font-extrabold text-foreground">
+      Day 1 <span className="text-muted-foreground">· Sun, 10 May</span>
     </p>
     <TimelineRow time="06:30" icon={<TimelineIcon kind="transport" transportType="flight" />}>
       <SampleCard title="Flight · NH 836" meta="Jakarta → Tokyo Narita" />
@@ -26,7 +27,7 @@ const mapVisual = (
   <ol className="space-y-2">
     {["Senso-ji", "Ueno Park", "Ameyoko"].map((place, i) => (
       <li key={place} className="flex items-center gap-3 text-sm text-foreground">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground ring-2 ring-card">
           {i + 1}
         </span>
         {place}
@@ -41,17 +42,20 @@ const budgetVisual = (
       <span className="text-muted-foreground">Spent</span>
       <span className="font-semibold text-foreground tabular-nums">¥ 84,000 of ¥ 120,000</span>
     </div>
-    <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-      <div className="h-full w-[70%] rounded-full bg-primary" />
-    </div>
+    <BudgetMeter
+      className="mt-2"
+      label="Sample budget"
+      budget={120000}
+      byCategory={{ accommodation: 42000, transport: 18000, food: 16000, souvenir: 8000 }}
+    />
     <p className="mt-2 text-xs text-muted-foreground tabular-nums">¥ 36,000 left · ≈ Rp 3,960,000</p>
   </div>
 )
 
 function SampleCard({ title, meta }: { title: string; meta: string }) {
   return (
-    <div className="rounded-lg border bg-card px-3 py-2">
-      <p className="text-sm font-semibold text-foreground">{title}</p>
+    <div className="rounded-xl border bg-card px-3 py-2">
+      <p className="font-display text-sm font-extrabold text-foreground">{title}</p>
       <p className="text-xs text-muted-foreground">{meta}</p>
     </div>
   )
@@ -79,8 +83,8 @@ export function FeatureGrid() {
         aria-labelledby="features-heading"
         className="mx-auto max-w-max-width scroll-mt-20 px-margin-mobile py-16 md:px-margin-desktop"
       >
-        <h2 id="features-heading" className="text-center text-3xl font-semibold text-foreground">
-          What you can do
+        <h2 id="features-heading" className="text-center font-display text-3xl font-extrabold text-foreground md:text-4xl">
+          What you can do <span className="text-muted-foreground">in one place</span>
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-center text-muted-foreground">
           The parts of a trip that usually live in five different apps, in one place.
@@ -118,17 +122,17 @@ export function FeatureGrid() {
         aria-labelledby="how-heading"
         className="mx-auto max-w-max-width scroll-mt-20 px-margin-mobile pb-16 md:px-margin-desktop"
       >
-        <h2 id="how-heading" className="text-center text-3xl font-semibold text-foreground">
+        <h2 id="how-heading" className="text-center font-display text-3xl font-extrabold text-foreground md:text-4xl">
           How it works
         </h2>
         <ol className="mt-10 grid gap-6 md:grid-cols-3">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="flex gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+            <li key={step.title} className="flex gap-4 rounded-2xl border bg-card p-5 shadow-card">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-soft font-display text-lg font-extrabold text-primary-soft-foreground">
                 {i + 1}
               </span>
               <div>
-                <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
+                <h3 className="font-display text-lg font-extrabold text-foreground">{step.title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
             </li>

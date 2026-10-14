@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Compass } from "lucide-react"
+import { BrandLogo } from "@/components/BrandLogo"
 
 export function Footer() {
   return (
@@ -8,11 +8,8 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           {/* Brand column */}
           <div className="flex flex-col gap-4">
-            <Link href="/" className="flex min-h-11 w-fit items-center gap-2" aria-label="Navisha home">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Compass className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
-              </span>
-              <span className="text-base font-semibold text-foreground">Navisha</span>
+            <Link href="/" className="flex min-h-11 w-fit items-center rounded-full" aria-label="Navisha home">
+              <BrandLogo />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               Plan each day, see it on a map, and track spending in your currency.

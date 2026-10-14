@@ -1,7 +1,7 @@
 # Planning — Redesign V2 (visual berkarakter)
 
 > **Tanggal:** 2026-10-14
-> **Status:** V0 selesai. Arah dipilih: **Soft** (lihat [DESIGN.md](DESIGN.md)). Menunggu persetujuan V1.
+> **Status:** V0–V4 selesai (PR #49–#57, bertumpuk; merge berurutan). Berikutnya: V5 (backend pendukung) dan V6 (QA).
 > **Konteks:** Redesign pertama ([PLANNING_REFACTOR_REDESIGN.md](PLANNING_REFACTOR_REDESIGN.md) bagian B) membuat UI konsisten dan bersih, tapi sengaja netral (Inter saja, biru solid, latar polos). Hasilnya rapi namun generik. V2 memberi Navisha **identitas visual**.
 
 ## Tujuan
@@ -46,10 +46,10 @@ Pelajaran: user lebih suka **evolusi** daripada identitas baru yang drastis. Yan
 | Fase | Isi | Hasil |
 |---|---|---|
 | V0 ✅ | Riset, baseline, 4 ronde mockup, DESIGN.md, prompt cover | Arah Soft |
-| V1 | Fondasi: token light/dark §2, Nunito + Nunito Sans, radius §4.1, shadow, toggle tema (**bawaan light**, dark opsional; cookie, tanpa kedip), `/dev/ui` | Token + katalog |
-| V2 | Primitive dan komponen inti §5: Button pill, TabPills, Chip, Card, DateCircles, TimePills, BoardingPass, FactBox, CoverButton, BottomSheet, BudgetMeter | `/dev/ui` |
-| V3 | Shell: top bar desktop, FloatingNav mobile (global vs trip), TripCover + hero dengan tab menempel, fallback cover, theme toggle | |
-| V4 | Halaman: Trip Itinerary (split + peta) → Peta mobile (sheet) → Beranda/Trips → Bookings (BoardingPass) → Budget → Ringkasan → Share → Landing + Login | 1 PR per halaman |
+| V1 ✅ #49 | Fondasi: token light/dark §2, Nunito + Nunito Sans, radius §4.1, shadow, toggle tema (**bawaan light**, dark opsional; cookie, tanpa kedip), `/dev/ui` | Token + katalog |
+| V2 ✅ #50 | Primitive dan komponen inti §5: Button pill, TabPills, Chip, Card, DateCircles, TimePills, BoardingPass, FactBox, CoverButton, BottomSheet, BudgetMeter | `/dev/ui` |
+| V3 ✅ #51 | Shell: top bar desktop, FloatingNav mobile (global vs trip), TripCover + hero dengan tab menempel, fallback cover, theme toggle | |
+| V4 ✅ #52–#57 | Halaman: Trip Itinerary (split + peta) → Peta mobile (sheet) → Beranda/Trips → Bookings (BoardingPass) → Budget → Ringkasan → Share → Landing + Login | 1 PR per halaman |
 | V5 | Backend pendukung: cover default di resolver, field tiket (kursi/gate/terminal/kode booking), status kesiapan per hari, foto tempat (opsional, ada biaya) | Migrasi dikoordinasikan (DB lokal = prod) |
 | V6 | QA: visual regression vs `design-audit/v2-baseline`, axe light & dark, device asli | |
 

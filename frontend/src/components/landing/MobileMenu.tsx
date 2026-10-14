@@ -28,7 +28,7 @@ export function MobileMenu() {
     <>
       <button
         type="button"
-        className="flex h-11 w-11 items-center justify-center rounded-lg text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-full text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         aria-controls="mobile-menu"
@@ -46,12 +46,12 @@ export function MobileMenu() {
         role="menu"
         className="absolute left-0 right-0 top-16 z-50 sm:hidden"
       >
-        <div className="flex flex-col gap-1 border-b bg-background px-4 py-3 shadow-overlay">
+        <div className="mx-3 flex flex-col gap-1 rounded-2xl border bg-popover p-2 shadow-overlay">
           <a
             href="#features"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-11 items-center rounded-xl px-3 text-sm font-bold text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Features
           </a>
@@ -59,7 +59,7 @@ export function MobileMenu() {
             href="#how-it-works"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-11 items-center rounded-xl px-3 text-sm font-bold text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             How it works
           </a>
