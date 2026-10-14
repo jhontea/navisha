@@ -169,6 +169,9 @@ export function MapLibreCanvas({
             alignItems: "center",
             gap: "4px",
             pointerEvents: "none",
+            // Above the route overlay (z-index 1): the pin, not its children,
+            // is the stacking context MapLibre positions with a transform.
+            zIndex: "2",
           })
           if (labelled) {
             const label = document.createElement("span")
@@ -328,7 +331,7 @@ export function MapLibreCanvas({
           ? `0 0 0 4px ${PRIMARY}59, 0 4px 12px rgb(35 50 77 / 0.35)`
           : "0 2px 8px rgb(35 50 77 / 0.3)"
         // Raise the whole pin (label included) above its neighbours.
-        if (el.parentElement) el.parentElement.style.zIndex = isSelected ? "10" : ""
+        if (el.parentElement) el.parentElement.style.zIndex = isSelected ? "10" : "2"
       })
     }, [selectedActivityId, displayableByDay])
 
