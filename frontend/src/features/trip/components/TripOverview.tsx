@@ -88,7 +88,7 @@ export function TripOverview({ tripId }: { tripId: string }) {
       {nextDay && (
         <Link
           href={`/trips/${tripId}#day-${nextDay.id}`}
-          className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50"
+          className="flex items-center justify-between gap-4 rounded-2xl border bg-card p-4 transition-colors hover:bg-muted/50"
         >
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">

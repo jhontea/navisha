@@ -227,7 +227,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
       )}
 
       {isError && (
-        <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+        <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
           Couldn&apos;t load expenses. Check your connection and reload the page.
         </p>
       )}
@@ -238,7 +238,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
           size="sm"
           title="No expenses yet"
           description="Add what you spend on food, transport and activities to track your budget."
-          className="rounded-xl border border-dashed"
+          className="rounded-2xl border-2 border-dashed bg-card/60"
         />
       )}
 

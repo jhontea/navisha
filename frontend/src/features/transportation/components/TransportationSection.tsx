@@ -73,7 +73,7 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
       )}
 
       {isError && (
-        <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+        <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
           Couldn&apos;t load transport. Check your connection and reload the page.
         </p>
       )}
@@ -84,7 +84,7 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
           size="sm"
           title="No transport yet"
           description="Add flights, trains, buses or transfers to see them in your itinerary."
-          className="rounded-xl border border-dashed"
+          className="rounded-2xl border-2 border-dashed bg-card/60"
         />
       )}
 

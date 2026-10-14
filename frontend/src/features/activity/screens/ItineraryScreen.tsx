@@ -121,7 +121,7 @@ export function ItineraryScreen() {
               size="sm"
               title="No days yet"
               description="Set the trip dates to get one day per date."
-              className="rounded-2xl border border-dashed"
+              className="rounded-2xl border-2 border-dashed bg-card/60"
             />
           ) : (
             <DayView tripId={id} days={trip.days} destination={trip.description} />

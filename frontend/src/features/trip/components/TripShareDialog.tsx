@@ -70,7 +70,7 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
           <div className="space-y-4">
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
               <div className="mb-2 flex items-center gap-2 text-sm font-medium"><ShieldCheck className="h-4 w-4 text-primary" /> Active read-only link</div>
-              <div className="flex gap-2"><Input readOnly value={url} aria-label="Share link" className="h-auto min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs" /><Button onClick={copy} className="rounded-full">{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy"}</Button></div>
+              <div className="flex gap-2"><Input readOnly value={url} aria-label="Share link" className="min-w-0 flex-1 text-sm" /><Button onClick={copy} className="rounded-full">{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy"}</Button></div>
               <p className="mt-2 text-xs text-muted-foreground">Expires {new Date(link.expires_at).toLocaleString()}</p>
             </div>
             <p className="text-xs text-muted-foreground">Creating another link will immediately disable this one.</p>

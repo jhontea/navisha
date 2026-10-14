@@ -80,7 +80,7 @@ export function TripsScreen() {
           </div>
         </div>
       ) : isError ? (
-        <div role="alert" className="rounded-xl border border-dashed p-6 text-center">
+        <div role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center">
           <p className="text-sm font-medium text-destructive">Couldn&apos;t load your trips.</p>
           <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>

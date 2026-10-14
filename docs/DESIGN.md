@@ -182,6 +182,9 @@ Desktop                                         Mobile (di dalam trip)
 | **Button** | Pill tinggi 44 (mobile) / 36–40 (desktop). Varian: `default` (biru solid), `soft` (tint biru), `secondary` (`muted`), `outline`, `ghost`, `destructive`, `danger`, `cover` (putih di atas cover). |
 | **NextTripCard** (beranda) | Cover 230px radius 28, chip hitung mundur di kanan atas, kartu putih mengambang di bawah (judul, tanggal, chip status). |
 | **TripCard** (grid/list) | Kartu putih padding 6, cover radius 17, judul 13 bold, tanggal 11.5. |
+| **Field** (Input, Select, Textarea, NativeSelect) | Tinggi **44px**, `rounded-xl`, border `--input`, latar `card`, teks 16px (mencegah zoom iOS). Label tebal (`text-sm font-bold`). Grup ikon + input: border hanya di pembungkus, input di dalamnya tanpa border. |
+| **Overlay** (Dialog, sheet, dropdown, Select) | Scrim `black/40` + blur 2px. Dialog/sheet `rounded-3xl` + `shadow-overlay`, judul Nunito. Dropdown dan Select `rounded-2xl` dengan item `rounded-xl` yang ber-tint saat disorot. |
+| **Empty / error state** | Kosong: `rounded-2xl`, border putus-putus 2px, ikon dalam lingkaran tint biru, judul Nunito. Error: kotak `destructive-bg` tanpa border. |
 | **BudgetMeter** | Bar 8px bulat dengan celah 2px antar segmen kategori. Caption `97% terpakai · sisa Rp 133.000`. |
 
 Ikon: Lucide stroke 2, ukuran 16 / 18 / 20. Ilustrasi hanya untuk cover dan empty state, dengan gaya yang sama seperti cover.

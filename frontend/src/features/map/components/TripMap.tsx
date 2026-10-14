@@ -37,7 +37,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
 
   if (!MAP_ENABLED) {
     return (
-      <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+      <p className="rounded-2xl border-2 border-dashed bg-card/60 p-6 text-sm text-muted-foreground">
         The map is turned off for this deployment.
       </p>
     )
@@ -47,7 +47,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
 
   if (isError) {
     return (
-      <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+      <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
         Couldn&apos;t load the places for this map. Reload the page to try again.
       </p>
     )
@@ -62,7 +62,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
 
   if (daysWithPlaces.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center">
+      <div className="flex flex-col items-center rounded-2xl border-2 border-dashed bg-card/60 px-6 py-12 text-center">
         <MapPin className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
         <p className="mt-2 text-sm font-medium text-foreground">No places on the map yet</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">

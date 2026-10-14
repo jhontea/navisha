@@ -36,7 +36,7 @@ export function SharedDay({
   const summary = dayContentSummary(day)
 
   return (
-    <section id={`day-${day.id}`} aria-labelledby={`day-heading-${day.id}`} className="scroll-mt-20 rounded-2xl border bg-card shadow-card">
+    <section id={`day-${day.id}`} aria-labelledby={`day-heading-${day.id}`} className="scroll-mt-20 rounded-xl border bg-card">
       <div className="flex items-start gap-3 px-4 pb-1 pt-4 sm:px-5">
         <div className="min-w-0 flex-1">
           <h2 id={`day-heading-${day.id}`} className="font-display text-xl font-extrabold leading-tight text-foreground">

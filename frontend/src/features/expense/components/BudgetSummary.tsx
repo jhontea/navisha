@@ -46,7 +46,7 @@ export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBu
 
   if (summary.isError || !summary.data) {
     return (
-      <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+      <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
         Couldn&apos;t load the budget. Check your connection and reload the page.
       </p>
     )

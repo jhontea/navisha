@@ -110,7 +110,7 @@ export function TravelDateRangePicker({
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         disabled={disabled}
-        className={`flex w-full items-center gap-3 rounded-lg border bg-background px-4 py-3 text-left transition-all hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`flex w-full items-center gap-3 rounded-xl border bg-card px-4 py-2.5 text-left transition-all hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           hasError ? "border-destructive" : "border-border"
         } disabled:cursor-not-allowed disabled:opacity-60`}
         aria-haspopup="dialog"
@@ -135,7 +135,7 @@ export function TravelDateRangePicker({
           </span>
         </span>
         {displayedDuration !== null && (
-          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-soft-foreground">
             {displayedDuration}{" "}
             {displayedDuration === 1 ? durationUnit : `${durationUnit}s`}
           </span>
@@ -198,11 +198,11 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
                   onClick={() => selectDate(date)}
                   className={`relative flex h-9 items-center justify-center text-sm transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     isStart || isEnd
-                      ? "rounded-lg bg-primary font-semibold text-primary-foreground"
+                      ? "rounded-full bg-primary font-bold text-primary-foreground"
                       : `${
                           isInRange
-                            ? "bg-primary/10"
-                            : "rounded-lg hover:bg-accent"
+                            ? "bg-primary-soft"
+                            : "rounded-full hover:bg-accent"
                         } ${
                           isCurrentMonth
                             ? "text-foreground"

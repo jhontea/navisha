@@ -75,8 +75,8 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
   return (
     <div className="space-y-6">
       {/* Header summary */}
-      <div className="rounded-xl border bg-card p-5 md:p-6">
-        <h2 className="mb-1 text-xl font-semibold text-foreground">
+      <div className="rounded-2xl border bg-card shadow-card p-5 md:p-6">
+        <h2 className="mb-1 text-xl font-display font-extrabold text-foreground">
           {draft.title}
         </h2>
         {draft.summary && (
@@ -102,7 +102,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
 
       {/* Curation toolbar */}
       {totalActivities > 0 && (
-        <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-1.5 shadow-card">
+        <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-2xl border bg-card shadow-card px-4 py-1.5 shadow-card">
           <span className="text-sm text-muted-foreground tabular-nums">
             <span className="font-semibold text-foreground">{selectedCount}</span>
             {" "}of {totalActivities} places selected
@@ -126,7 +126,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
           return (
           <div
             key={day.day_number}
-            className="rounded-xl border bg-card p-4 md:p-5"
+            className="rounded-2xl border bg-card shadow-card p-4 md:p-5"
           >
             <div className="mb-3 flex items-center gap-2">
               <span className="text-base font-semibold text-foreground">

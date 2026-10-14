@@ -35,7 +35,7 @@ export function BudgetSnapshot({
   const over = remaining < 0
 
   return (
-    <section aria-labelledby="overview-budget-heading" className="rounded-xl border bg-card p-4">
+    <section aria-labelledby="overview-budget-heading" className="rounded-2xl border bg-card p-4">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h3 id="overview-budget-heading" className="text-sm font-semibold text-foreground">
           Budget

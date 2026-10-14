@@ -62,11 +62,11 @@ export function TripShell({ children }: { children: ReactNode }) {
     const isNotFound = error instanceof ApiError && error.status === 404
     return (
       <div className="mx-auto flex min-h-[50vh] w-full max-w-xl items-center px-4 py-10">
-        <div className="w-full rounded-xl border bg-card p-6 text-center">
+        <div className="w-full rounded-2xl border bg-card shadow-card p-6 text-center">
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" aria-hidden="true" />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">
+          <h1 className="text-xl font-display font-extrabold text-foreground">
             {isNotFound ? "Trip not found" : "Couldn't load this trip"}
           </h1>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">

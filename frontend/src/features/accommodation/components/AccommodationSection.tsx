@@ -73,7 +73,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
       )}
 
       {isError && (
-        <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+        <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
           Couldn&apos;t load stays. Check your connection and reload the page.
         </p>
       )}
@@ -84,7 +84,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
           size="sm"
           title="No stays yet"
           description="Add where you're sleeping each night: hotels, hostels or apartments."
-          className="rounded-xl border border-dashed"
+          className="rounded-2xl border-2 border-dashed bg-card/60"
         />
       )}
 

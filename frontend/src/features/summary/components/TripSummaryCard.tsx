@@ -76,7 +76,7 @@ const markdownComponents: Components = {
     const { className, children } = props as React.HTMLAttributes<HTMLElement>
     if (!className) return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
     return (
-      <pre className="my-3 overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm">
+      <pre className="my-3 overflow-x-auto rounded-2xl bg-muted p-4 font-mono text-sm">
         <code className={className}>{children}</code>
       </pre>
     )
@@ -263,8 +263,8 @@ function Notice({ tone, title, children }: { tone: "warning" | "error"; title: s
       role={tone === "error" ? "alert" : "status"}
       className={
         tone === "warning"
-          ? "mb-4 flex items-start gap-2 rounded-lg border border-warning/50 bg-warning-bg p-3 text-sm text-foreground"
-          : "mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-foreground"
+          ? "mb-4 flex items-start gap-2 rounded-2xl bg-warning-bg p-3 text-sm text-foreground"
+          : "mb-4 flex items-start gap-2 rounded-2xl bg-destructive/5 p-3 text-sm text-foreground"
       }
     >
       <Icon className={tone === "warning" ? "mt-0.5 h-4 w-4 shrink-0 text-warning" : "mt-0.5 h-4 w-4 shrink-0 text-destructive"} aria-hidden="true" />

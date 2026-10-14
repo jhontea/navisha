@@ -63,8 +63,8 @@ export function EmptyState({
         <div className="relative">
           <div
             className={cn(
-              "relative flex items-center justify-center rounded-2xl",
-              "bg-muted",
+              "relative flex items-center justify-center rounded-full",
+              "bg-primary-soft",
               s.wrapper,
             )}
           >
@@ -72,14 +72,14 @@ export function EmptyState({
             {emoji ? (
               <span className={s.emoji} role="img" aria-hidden="true">{emoji}</span>
             ) : Icon ? (
-              <Icon className={cn(s.icon, "text-muted-foreground")} aria-hidden="true" />
+              <Icon className={cn(s.icon, "text-primary-soft-foreground")} aria-hidden="true" />
             ) : null}
           </div>
         </div>
       ) : null}
 
       <div className="max-w-[280px] space-y-1.5">
-        <p className={cn("text-foreground", t.title)}>{title}</p>
+        <p className={cn("font-display font-extrabold text-foreground", t.title)}>{title}</p>
         {description && (
           <p className={cn("text-muted-foreground leading-relaxed", t.desc)}>
             {description}

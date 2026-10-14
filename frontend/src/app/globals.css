@@ -230,12 +230,12 @@ html {
   width: fit-content;
   max-width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid hsl(var(--border) / 0.7);
-  border-radius: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
   color: hsl(var(--foreground));
   font-family: inherit;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.35;
   box-shadow: var(--shadow-overlay);
   opacity: 0;
@@ -253,14 +253,14 @@ html {
 
 .navisha-toast-action {
   min-height: 2.75rem;
-  padding: 0 0.875rem;
-  border-radius: 0.625rem;
+  padding: 0 1rem;
+  border-radius: 9999px;
   color: hsl(var(--primary));
   font-weight: 600;
 }
 
 .navisha-toast-action:hover {
-  background: hsl(var(--primary) / 0.1);
+  background: hsl(var(--primary-soft));
 }
 
 .navisha-toast-action:focus-visible {

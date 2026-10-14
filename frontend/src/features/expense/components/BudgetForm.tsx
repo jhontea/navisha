@@ -93,7 +93,7 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
               return (
                 <label
                   key={category}
-                  className="flex h-11 items-center gap-2 rounded-lg border bg-background px-3 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50"
+                  className="flex h-11 items-center gap-2 rounded-xl border bg-card px-4 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50"
                 >
                   <cfg.Icon className={cn("h-4 w-4 shrink-0", cfg.text)} aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate text-sm text-foreground">{cfg.label}</span>

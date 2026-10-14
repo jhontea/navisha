@@ -121,7 +121,7 @@ function Body({ trip }: { trip: PublicItinerary }) {
   }, [selectedActivityId])
 
   if (trip.days.length === 0) {
-    return <p className="mt-6 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">This trip has no days yet.</p>
+    return <p className="mt-6 rounded-2xl border-2 border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">This trip has no days yet.</p>
   }
 
   return (

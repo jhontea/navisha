@@ -117,7 +117,7 @@ variant="destructive" className="mt-5 w-full">
                 href="/currency"
                 className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ variant="destructive" className="mt-5 w-full">
               </div>
 
               <div className="flex items-center gap-3 px-4 py-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
                   <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
