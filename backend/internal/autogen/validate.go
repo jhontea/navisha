@@ -221,7 +221,9 @@ func logSuspiciousLocations(d *TripDraft, destination string) {
 
 	for i := range d.Days {
 		for _, a := range d.Days[i].Activities {
-			if a.Type != "location" {
+			// A place with its own city is checked by geocoding around that
+			// city; only places without one are worth a warning here.
+			if a.Type != "location" || a.City != "" {
 				continue
 			}
 			locLower := strings.ToLower(a.LocationName + " " + a.PlaceQuery + " " + a.City)

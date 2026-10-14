@@ -3,7 +3,9 @@ package location
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -180,8 +182,12 @@ func (h *Handler) Resolve(c echo.Context) error {
 				items, err = h.searchAround(ctx, near, item, request.Destination)
 			}
 			if !canSearchNear || (err == nil && items == nil) {
+				// Plain search: results are not limited to an area, so they
+				// are not near_city and only a name match will be used.
 				query := item.name
-				if request.Destination != "" {
+				if item.city != "" {
+					query += ", " + item.city
+				} else if request.Destination != "" {
 					query += ", " + request.Destination
 				}
 				items, err = h.client.Autocomplete(ctx, query, "place", "en")
@@ -200,21 +206,115 @@ func (h *Handler) Resolve(c echo.Context) error {
 	if successes == 0 {
 		return echo.NewHTTPError(http.StatusBadGateway, "location provider is unavailable")
 	}
+	if canSearchNear {
+		h.retryAroundFoundPlaces(ctx, near, normalized, results)
+	}
 	return c.JSON(http.StatusOK, map[string]any{"results": results})
+}
+
+// anchorRadiusMeters bounds the second pass around the places already found;
+// a result farther than outlierKm from them is treated as a wrong namesake.
+const (
+	anchorRadiusMeters = 80_000
+	outlierKm          = 300
+)
+
+// retryAroundFoundPlaces searches again, around the median of the places
+// already found, for every item that got no specific place. City names are
+// ambiguous for geocoders ("Badung" resolves to East Java, "Bali" to a
+// district in Taiwan), but the itinerary's other places show where the trip
+// really is.
+func (h *Handler) retryAroundFoundPlaces(ctx context.Context, near NearSearcher, items []resolveItem, results map[string][]Suggestion) {
+	firstSpecific := func(item resolveItem) *Suggestion {
+		for i, s := range results[item.key] {
+			if s.NearCity && !areaResultTypes[s.ResultType] {
+				return &results[item.key][i]
+			}
+		}
+		return nil
+	}
+	var lats, lngs []float64
+	for _, item := range items {
+		if s := firstSpecific(item); s != nil {
+			lats, lngs = append(lats, s.Latitude), append(lngs, s.Longitude)
+		}
+	}
+	if len(lats) < 2 {
+		return
+	}
+	anchor := Point{Lat: median(lats), Lng: median(lngs)}
+
+	// Retry places with nothing specific, and places whose result is far
+	// from the rest of the trip (a namesake in another country).
+	var missing []resolveItem
+	for _, item := range items {
+		s := firstSpecific(item)
+		if s == nil || distanceKm(anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm {
+			missing = append(missing, item)
+		}
+	}
+	if len(missing) == 0 {
+		return
+	}
+
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 4)
+	for _, item := range missing {
+		wg.Add(1)
+		go func(item resolveItem) {
+			defer wg.Done()
+			select {
+			case semaphore <- struct{}{}:
+				defer func() { <-semaphore }()
+			case <-ctx.Done():
+				return
+			}
+			queries := []string{item.name}
+			if item.altName != "" && !strings.EqualFold(item.altName, item.name) {
+				queries = append(queries, item.altName)
+			}
+			found, err := searchQueries(ctx, near, queries, anchor, anchorRadiusMeters)
+			if err != nil || !hasSpecific(found) {
+				if s := firstSpecific(item); s != nil && distanceKm(anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm {
+					mu.Lock()
+					results[item.key] = []Suggestion{} // a far-away namesake is worse than nothing
+					mu.Unlock()
+				}
+				return
+			}
+			mu.Lock()
+			results[item.key] = found
+			mu.Unlock()
+		}(item)
+	}
+	wg.Wait()
+}
+
+// distanceKm is the great-circle distance between two points.
+func distanceKm(a, b Point) float64 {
+	const earthKm = 6371.0
+	rad := math.Pi / 180
+	dLat := (b.Lat - a.Lat) * rad
+	dLng := (b.Lng - a.Lng) * rad
+	h := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(a.Lat*rad)*math.Cos(b.Lat*rad)*math.Sin(dLng/2)*math.Sin(dLng/2)
+	return 2 * earthKm * math.Asin(math.Sqrt(h))
+}
+
+func median(values []float64) float64 {
+	sorted := append([]float64(nil), values...)
+	sort.Float64s(sorted)
+	mid := len(sorted) / 2
+	if len(sorted)%2 == 0 {
+		return (sorted[mid-1] + sorted[mid]) / 2
+	}
+	return sorted[mid]
 }
 
 // searchAround looks the item up around its city, or the destination. It
 // returns nil (not an error) when neither can be located, so the caller falls
 // back to a plain search.
 func (h *Handler) searchAround(ctx context.Context, near NearSearcher, item resolveItem, destination string) ([]Suggestion, error) {
-	center, radius := h.cityCenter(ctx, near, item.city), cityRadiusMeters
-	if center == nil {
-		center, radius = h.cityCenter(ctx, near, destination), destinationRadiusMeters
-	}
-	if center == nil {
-		return nil, nil
-	}
-
 	queries := []string{item.name}
 	if item.city != "" {
 		queries = append(queries, item.name+", "+item.city)
@@ -223,11 +323,42 @@ func (h *Handler) searchAround(ctx context.Context, near NearSearcher, item reso
 		queries = append(queries, item.altName)
 	}
 
+	// Around the place's city first, then around the trip destination. A
+	// city name can geocode to a namesake elsewhere ("Lembang" exists in
+	// several provinces); then only area results come back and the next
+	// center is tried.
+	var lastErr error
+	tried := false
+	for _, area := range []struct {
+		name   string
+		radius int
+	}{{item.city, cityRadiusMeters}, {destination, destinationRadiusMeters}} {
+		center := h.cityCenter(ctx, near, area.name)
+		if center == nil {
+			continue
+		}
+		tried = true
+		found, err := searchQueries(ctx, near, queries, *center, area.radius)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if hasSpecific(found) {
+			return found, nil
+		}
+	}
+	if !tried || lastErr == nil {
+		return nil, nil // caller falls back to a plain search
+	}
+	return nil, lastErr
+}
+
+func searchQueries(ctx context.Context, near NearSearcher, queries []string, center Point, radius int) ([]Suggestion, error) {
 	merged := make([]Suggestion, 0, 8)
 	seen := map[string]bool{}
 	var lastErr error
 	for _, q := range queries {
-		found, err := near.SearchNear(ctx, q, "en", *center, radius)
+		found, err := near.SearchNear(ctx, q, "en", center, radius)
 		if err != nil {
 			lastErr = err
 			continue
@@ -242,7 +373,7 @@ func (h *Handler) searchAround(ctx context.Context, near NearSearcher, item reso
 				merged = append(merged, s)
 			}
 		}
-		if len(merged) >= 3 {
+		if hasSpecific(merged) && len(merged) >= 3 {
 			break
 		}
 	}
@@ -253,6 +384,21 @@ func (h *Handler) searchAround(ctx context.Context, near NearSearcher, item reso
 		merged = merged[:8]
 	}
 	return merged, nil
+}
+
+// areaResultTypes are whole areas, too coarse to pin an activity on.
+var areaResultTypes = map[string]bool{
+	"city": true, "county": true, "state": true, "country": true, "postcode": true, "suburb": true, "district": true,
+}
+
+// hasSpecific reports whether any result is a specific place, not an area.
+func hasSpecific(items []Suggestion) bool {
+	for _, s := range items {
+		if !areaResultTypes[s.ResultType] {
+			return true
+		}
+	}
+	return false
 }
 
 // cityCenter geocodes a city once and caches it (including misses).

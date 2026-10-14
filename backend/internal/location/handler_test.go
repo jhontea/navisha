@@ -181,3 +181,77 @@ func TestResolve_AcceptsALongItinerary(t *testing.T) {
 		t.Fatalf("got %d results, want 60", len(got))
 	}
 }
+
+// A namesake city can put the search circle in the wrong place; when only
+// area results come back, the trip destination is tried next.
+type areaThenPlaceClient struct {
+	fakeNearClient
+}
+
+func (f *areaThenPlaceClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
+	f.queries = append(f.queries, query)
+	if center.Lat == 1 { // the wrong "Lembang"
+		return []Suggestion{{Name: "Lembang", ResultType: "city", NearCity: true}}, nil
+	}
+	return []Suggestion{{ExternalID: "fm", Name: "Floating Market Lembang", ResultType: "amenity", NearCity: true}}, nil
+}
+
+func TestResolve_TriesTheDestinationWhenTheCityGivesOnlyAreas(t *testing.T) {
+	client := &areaThenPlaceClient{fakeNearClient{cities: map[string]*Point{
+		"lembang, indonesia": {Lat: 1, Lng: 1},
+		"bandung":            {Lat: -6.9, Lng: 107.6},
+	}}}
+	h := NewHandler(client)
+	got := postResolve(t, h, `{"destination":"Bandung","items":[{"key":"a","name":"Floating Market Lembang","city":"Lembang, Indonesia"}]}`)
+	if len(got["a"]) != 1 || got["a"][0].ExternalID != "fm" {
+		t.Fatalf("results = %+v, want the place found around the destination", got["a"])
+	}
+}
+
+func TestDistanceKm(t *testing.T) {
+	// Mecca to Medina is about 340 km.
+	if d := distanceKm(Point{Lat: 21.42, Lng: 39.83}, Point{Lat: 24.47, Lng: 39.61}); d < 330 || d > 350 {
+		t.Errorf("distance = %.0f km", d)
+	}
+}
+
+// Places found around the city anchor the trip; a place with nothing, or with
+// a namesake far away, is searched again around them.
+type anchorClient struct {
+	fakeNearClient
+}
+
+func (f *anchorClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
+	f.queries = append(f.queries, query)
+	switch {
+	case query == "Seminyak Village" && center.Lat > 20: // around the "Bali" in Taiwan
+		return []Suggestion{{ExternalID: "tw", Name: "Seminary", ResultType: "amenity", NearCity: true, Latitude: 25.1, Longitude: 121.4}}, nil
+	case query == "Seminyak Village":
+		return []Suggestion{{ExternalID: "sv", Name: "Seminyak Village", ResultType: "amenity", NearCity: true, Latitude: -8.69, Longitude: 115.16}}, nil
+	case query == "Melasti Beach" && center.Lat < -8: // only around the found places
+		return []Suggestion{{ExternalID: "mb", Name: "Melasti Beach", ResultType: "amenity", NearCity: true, Latitude: -8.85, Longitude: 115.16}}, nil
+	case strings.HasPrefix(query, "Ubud") || strings.HasPrefix(query, "Tegallalang"):
+		return []Suggestion{{ExternalID: query, Name: query, ResultType: "amenity", NearCity: true, Latitude: -8.5, Longitude: 115.26}}, nil
+	}
+	return []Suggestion{{Name: "Badung", ResultType: "city", NearCity: true}}, nil
+}
+
+func TestResolve_RetriesAroundThePlacesAlreadyFound(t *testing.T) {
+	client := &anchorClient{fakeNearClient{cities: map[string]*Point{
+		"ubud, bali, indonesia":   {Lat: -8.5, Lng: 115.26},
+		"badung, bali, indonesia": {Lat: -7.1, Lng: 113.4}, // the wrong Badung
+		"bali":                    {Lat: 25.1, Lng: 121.4}, // Bali District, Taiwan
+	}}}
+	h := NewHandler(client)
+	got := postResolve(t, h, `{"destination":"Bali","items":[
+		{"key":"u1","name":"Ubud Palace","city":"Ubud, Bali, Indonesia"},
+		{"key":"u2","name":"Tegallalang Rice Terraces","city":"Ubud, Bali, Indonesia"},
+		{"key":"m","name":"Melasti Beach","city":"Badung, Bali, Indonesia"},
+		{"key":"s","name":"Seminyak Village","city":"Badung, Bali, Indonesia"}]}`)
+	if len(got["m"]) == 0 || got["m"][0].ExternalID != "mb" {
+		t.Errorf("Melasti = %+v, want the beach found around the other places", got["m"])
+	}
+	if len(got["s"]) == 0 || got["s"][0].ExternalID != "sv" {
+		t.Errorf("Seminyak = %+v, want the Bali result, not the Taiwan namesake", got["s"])
+	}
+}

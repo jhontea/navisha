@@ -46,8 +46,8 @@ Writing rules (same voice as full-trip generation):
 - "location_name": the place name shown to the user (Indonesian is fine), without the city.
 - "place_query": the place's official name exactly as on Google Maps/OpenStreetMap (English or official local name),
   without the city, e.g. "Al-Masjid an-Nabawi", "Kopi Toko Djawa", "Senso-ji".
-- "city": the city/regency where the place is plus its country, in English, as "City, Country"
-  (e.g. "Medina, Saudi Arabia", "Bandung, Indonesia", "Tokyo, Japan").
+- "city": the city/regency where the place is, with its province/region and country, in English, as
+  "City, Province, Country" (e.g. "Lembang, West Java, Indonesia", "Ubud, Bali, Indonesia", "Medina, Saudi Arabia").
 - "notes": 2-3 sentences in two parts: (1) why it is worth it, ONE concrete detail people can see/taste/feel or the best
   moment to be there, (2) ONE insider tip (price estimate in the trip currency, best time, what to order, queue, access).
   Good: "Kuahnya bening tapi gurih kaldu sapi, dan antrean warga lokal sudah mengular sejak jam 6. Pesan yang campur

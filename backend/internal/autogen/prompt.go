@@ -90,8 +90,9 @@ momen terbaik, kontras), BUKAN dari kata sifat kosong.
 - "place_query": nama resmi tempat PERSIS seperti di Google Maps/OpenStreetMap — nama internasional
   (bahasa Inggris) atau nama lokal resminya, TANPA kota. Contoh: "Al-Masjid an-Nabawi",
   "Masjid al-Haram", "King Abdulaziz International Airport", "Kopi Toko Djawa", "Museum Geologi", "Senso-ji".
-- "city": kota/kabupaten lokasi tempat itu BESERTA negaranya, dalam bahasa Inggris, format "Kota, Negara"
-  (contoh: "Mecca, Saudi Arabia", "Medina, Saudi Arabia", "Lembang, Indonesia", "Tokyo, Japan").
+- "city": kota/kabupaten lokasi tempat itu beserta provinsi/region dan negaranya, dalam bahasa Inggris,
+  format "Kota, Provinsi, Negara" (contoh: "Lembang, West Java, Indonesia", "Ubud, Bali, Indonesia",
+  "Medina, Saudi Arabia", "Tokyo, Japan"). Provinsi boleh dilewati untuk kota besar yang tidak ambigu.
   Untuk trip multi-kota, isi sesuai kota masing-masing tempat.
 - Untuk tipe "note", isi "place_query" dan "city" dengan "".
 - JANGAN mengarang koordinat atau alamat.
@@ -354,7 +355,7 @@ func JSONSchema() any {
 
 const placeQueryDescription = "Nama resmi tempat seperti di Google Maps/OpenStreetMap (bahasa Inggris atau nama lokal resmi), tanpa kota. Kosong untuk note."
 
-const cityDescription = "Kota tempat itu berada beserta negaranya, bahasa Inggris, format \"Kota, Negara\" (mis. \"Medina, Saudi Arabia\"). Kosong untuk note."
+const cityDescription = "Kota tempat itu berada, bahasa Inggris, format \"Kota, Provinsi, Negara\" (mis. \"Ubud, Bali, Indonesia\", \"Medina, Saudi Arabia\"). Kosong untuk note."
 
 // EstimateTokenCount gives a rough token estimate (1 token ≈ 4 chars).
 func EstimateTokenCount(system, user string) int {
