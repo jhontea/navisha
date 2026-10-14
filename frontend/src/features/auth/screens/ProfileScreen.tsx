@@ -146,7 +146,7 @@ variant="destructive" className="mt-5 w-full">
                   <span className="block text-sm font-semibold text-foreground">Account security</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">Authentication is managed securely through Google.</span>
                 </span>
-                <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
+                <span className="rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-foreground">
                   Connected
                 </span>
               </div>
