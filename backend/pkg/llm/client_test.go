@@ -344,3 +344,58 @@ func TestChatCompletion_SendsTemperatureAndMaxTokens(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestChatCompletion_RetriesWithoutMaxTokensWhenCapLeavesNoContent(t *testing.T) {
+	var caps []*int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			MaxTokens *int `json:"max_tokens"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		caps = append(caps, req.MaxTokens)
+		content, finish := "", "length"
+		if req.MaxTokens == nil {
+			content, finish = "Full summary", "stop"
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{{"message": map[string]string{"role": "assistant", "content": content}, "finish_reason": finish}},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient(ProviderDeepSeek, "k", "m", srv.URL)
+	limit := 2048
+	got, err := c.ChatCompletion(context.Background(), ChatRequest{MaxTokens: &limit, Messages: []Message{{Role: "user", Content: "hi"}}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "Full summary" {
+		t.Errorf("content = %q", got)
+	}
+	if len(caps) != 2 || caps[0] == nil || *caps[0] != 2048 || caps[1] != nil {
+		t.Errorf("want a capped call then an uncapped retry, got %v", caps)
+	}
+}
+
+func TestChatCompletion_EmptyContentReportsFinishReason(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{{"message": map[string]string{"role": "assistant", "content": ""}, "finish_reason": "content_filter"}},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient(ProviderDeepSeek, "k", "m", srv.URL)
+	limit := 100
+	_, err := c.ChatCompletion(context.Background(), ChatRequest{MaxTokens: &limit, Messages: []Message{{Role: "user", Content: "hi"}}})
+	if err == nil || !strings.Contains(err.Error(), `finish_reason "content_filter"`) {
+		t.Fatalf("err = %v", err)
+	}
+	if calls != 1 {
+		t.Errorf("retried a non-length empty reply: %d calls", calls)
+	}
+}

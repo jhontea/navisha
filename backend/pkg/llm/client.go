@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -63,7 +64,8 @@ type chatResponse struct {
 }
 
 type choice struct {
-	Message Message `json:"message"`
+	Message      Message `json:"message"`
+	FinishReason string  `json:"finish_reason"`
 }
 
 // ── Client ──
@@ -197,41 +199,62 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (string, e
 
 	// The request is sent as-is (temperature and max_tokens included; they
 	// used to be dropped here, so every call ran at the provider default).
-	payload := req
-
-	body, err := json.Marshal(payload)
+	content, finish, err := c.send(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("llm.ChatCompletion: marshal request: %w", err)
+		return "", err
+	}
+	// A reasoning model can spend the whole max_tokens budget thinking and
+	// return no answer. Ask once more without the cap (the provider default).
+	if content == "" && finish == "length" && req.MaxTokens != nil {
+		slog.Warn("llm.ChatCompletion: no content within max_tokens, retrying without it",
+			"provider", c.provider, "model", req.Model, "max_tokens", *req.MaxTokens)
+		req.MaxTokens = nil
+		content, finish, err = c.send(ctx, req)
+		if err != nil {
+			return "", err
+		}
+	}
+	if content == "" {
+		return "", fmt.Errorf("llm.ChatCompletion: empty response content (finish_reason %q)", finish)
+	}
+	return content, nil
+}
+
+// send makes one chat completion call and returns the first choice's content
+// and finish reason.
+func (c *Client) send(ctx context.Context, req ChatRequest) (string, string, error) {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return "", "", fmt.Errorf("llm.ChatCompletion: marshal request: %w", err)
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
-		return "", fmt.Errorf("llm.ChatCompletion: new request: %w", err)
+		return "", "", fmt.Errorf("llm.ChatCompletion: new request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	res, err := c.http.Do(httpReq)
 	if err != nil {
-		return "", fmt.Errorf("llm.ChatCompletion: do request: %w", err)
+		return "", "", fmt.Errorf("llm.ChatCompletion: do request: %w", err)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		// Provider response bodies can contain request details or echoed user
 		// input. Keep them out of wrapped errors because callers log those errors.
-		return "", fmt.Errorf("llm.ChatCompletion: provider %q returned status %d", c.provider, res.StatusCode)
+		return "", "", fmt.Errorf("llm.ChatCompletion: provider %q returned status %d", c.provider, res.StatusCode)
 	}
 
 	var raw chatResponse
 	if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-		return "", fmt.Errorf("llm.ChatCompletion: decode response: %w", err)
+		return "", "", fmt.Errorf("llm.ChatCompletion: decode response: %w", err)
 	}
-
-	if len(raw.Choices) == 0 || raw.Choices[0].Message.Content == "" {
-		return "", fmt.Errorf("llm.ChatCompletion: empty response content")
+	if len(raw.Choices) == 0 {
+		return "", "", nil
 	}
-	return raw.Choices[0].Message.Content, nil
+	return raw.Choices[0].Message.Content, raw.Choices[0].FinishReason, nil
 }
 
 // defaultBaseURL returns the default base URL for a known provider.
