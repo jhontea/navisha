@@ -4,61 +4,68 @@ import { ArrowRight, MapPin } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
+import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
 import { TripCover } from "./TripCard"
 
-/** The trip in progress, or the next one: shown above the Trips list. */
+/**
+ * The trip in progress, or the next one, as a big cover card above the Trips
+ * list (docs/DESIGN.md §5 NextTripCard). Title sits on the dark left side of
+ * the cover illustration.
+ */
 export function NextUpCard({ trip }: { trip: Trip }) {
   const metrics = getTripDateMetrics(trip.start_date, trip.end_date)
   const active = metrics.status === "active"
+  const nights = Math.max(0, metrics.totalDays - 1)
+  const { main, rest } = splitTripTitle(trip.title)
 
   return (
-    <section
-      aria-labelledby="next-up-heading"
-      className="overflow-hidden rounded-xl border bg-card md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
-    >
+    <section aria-labelledby="next-up-heading" className="relative overflow-hidden rounded-3xl shadow-card">
       <TripCover
         trip={trip}
         priority
-        sizes="(max-width: 767px) calc(100vw - 2rem), 460px"
-        className="aspect-[16/9] w-full md:aspect-auto md:h-full md:min-h-52"
+        sizes="(min-width: 1920px) 1920px, 100vw"
+        className="absolute inset-0 h-full w-full [&_img]:object-[75%_50%]"
       />
-      <div className="flex flex-col gap-3 p-4 sm:p-5">
-        <div>
-          <p className="text-sm font-medium text-primary">{active ? "Happening now" : "Next up"}</p>
-          <h2 id="next-up-heading" className="mt-0.5 text-xl font-semibold leading-snug text-foreground">
-            {trip.title}
-          </h2>
-          {trip.description && (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span className="line-clamp-1">{trip.description}</span>
-            </p>
-          )}
-        </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/15 to-transparent" aria-hidden="true" />
 
-        <p className="text-sm text-foreground tabular-nums">
-          <span className="font-semibold">{tripTimingLabel(metrics)}</span>
-          <span className="text-muted-foreground"> · {formatTripRange(trip.start_date, trip.end_date)}</span>
-        </p>
+      <div className="relative flex min-h-72 flex-col items-start gap-3 p-5 text-on-cover sm:p-7 md:min-h-80 md:max-w-[65%] md:p-8">
+        <span className="rounded-full bg-cover-button/90 px-3 py-1 text-xs font-extrabold text-cover-button-foreground">
+          {active ? "Happening now" : "Next up"} · {tripTimingLabel(metrics)}
+        </span>
+
+        <div className="mt-auto">
+          <h2 id="next-up-heading" className="font-display text-3xl font-extrabold leading-tight [text-wrap:balance] md:text-4xl">
+            {main}
+            {rest && <span className="opacity-70"> {rest}</span>}
+          </h2>
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-on-cover/85 tabular-nums">
+            <span>
+              {formatTripRange(trip.start_date, trip.end_date)} · {nights} {nights === 1 ? "night" : "nights"}
+            </span>
+            {trip.description && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span className="line-clamp-1">{trip.description}</span>
+              </span>
+            )}
+          </p>
+        </div>
 
         {active && (
           <div
-            className="h-2 overflow-hidden rounded-full bg-muted"
+            className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-on-cover/25"
             role="progressbar"
             aria-label="Trip progress"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={metrics.percent}
           >
-            <div className="h-full rounded-full bg-primary" style={{ width: `${metrics.percent}%` }} />
+            <div className="h-full rounded-full bg-on-cover" style={{ width: `${metrics.percent}%` }} />
           </div>
         )}
 
-        <Link
-          href={`/trips/${trip.id}`}
-          className={buttonVariants({ className: "mt-auto self-start" })}
-        >
+        <Link href={`/trips/${trip.id}`} className={buttonVariants({ variant: "cover", className: "px-5" })}>
           {active ? "Open today's plan" : "Open trip"}
           <ArrowRight aria-hidden="true" />
         </Link>

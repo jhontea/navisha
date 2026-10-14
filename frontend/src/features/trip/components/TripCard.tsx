@@ -2,6 +2,7 @@ import Link from "next/link"
 import { memo } from "react"
 import { MapPin } from "lucide-react"
 
+import { StatusChip } from "@/components/StatusChip"
 import { cn } from "@/lib/utils"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
@@ -49,28 +50,27 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
     >
       <TripCover
         trip={trip}
-        sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 380px"
-        className="aspect-[16/9] w-full"
+        sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 480px"
+        className="aspect-[16/9] w-full rounded-xl [&_img]:object-[75%_50%]"
       />
-      <div className="flex flex-1 flex-col gap-1 px-4 py-3">
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground">{trip.title}</h3>
+      <div className="flex flex-1 flex-col gap-1 px-2.5 pb-2 pt-3">
+        <h3 className="line-clamp-2 font-display text-lg font-extrabold leading-snug text-foreground">{trip.title}</h3>
         {trip.description && (
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span className="line-clamp-1">{trip.description}</span>
           </p>
         )}
-        <p className="mt-auto pt-1 text-xs text-muted-foreground tabular-nums">
-          <span className={cn(metrics.status === "active" && "font-medium text-primary")}>{timing}</span>
-          {" · "}
-          {formatTripRange(trip.start_date, trip.end_date)}
-          {" · "}
-          {trip.base_currency}
-        </p>
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-xs text-muted-foreground tabular-nums">
+          <StatusChip tone={metrics.status === "past" ? "neutral" : metrics.status === "active" ? "success" : "info"}>{timing}</StatusChip>
+          <span>
+            {formatTripRange(trip.start_date, trip.end_date)} · {trip.base_currency}
+          </span>
+        </div>
       </div>
     </Link>
   )
