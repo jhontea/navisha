@@ -43,8 +43,8 @@ func Optional(s *string) {
 	*s = Text(*s)
 }
 
-// TooLong reports whether s has more than max characters. Limits count
+// TooLong reports whether s has more than limit characters. Limits count
 // characters, not bytes, so Japanese or emoji text gets the same room.
-func TooLong(s string, max int) bool {
-	return utf8.RuneCountInString(s) > max
+func TooLong(s string, limit int) bool {
+	return utf8.RuneCountInString(s) > limit
 }
