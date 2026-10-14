@@ -6,7 +6,7 @@ type ChipProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
   /** Selected state, exposed as aria-pressed. Leave out for a plain action chip. */
   pressed?: boolean
   /**
-   * filter: list filters (All / Food / Day 2), solid when selected.
+   * filter: list filters (All / Food / Day 2), a pill tinted when selected.
    * option: a choice inside a form (stay type, category), tinted when selected.
    */
   variant?: "filter" | "option"
@@ -29,13 +29,15 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
         "inline-flex shrink-0 items-center gap-1.5 border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         variant === "filter"
           ? cn(
-              "h-9 rounded-full px-3.5",
-              pressed ? "border-foreground bg-foreground text-background" : "bg-card text-foreground hover:bg-muted",
+              "h-9 rounded-full px-3.5 font-semibold",
+              pressed
+                ? "border-transparent bg-primary-soft text-primary-soft-foreground"
+                : "bg-card text-foreground hover:bg-muted",
             )
           : cn(
-              "h-10 rounded-lg px-3",
+              "h-10 rounded-full px-3.5",
               pressed
-                ? "border-primary bg-primary/10 font-medium text-foreground"
+                ? "border-transparent bg-primary-soft font-semibold text-primary-soft-foreground"
                 : "bg-background text-foreground hover:bg-muted",
             ),
         className,
@@ -46,8 +48,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
         <Icon
           className={cn(
             "h-4 w-4 shrink-0",
-            variant === "option" && pressed ? "text-primary" : "text-muted-foreground",
-            pressed && variant === "filter" && "text-background",
+            pressed ? "text-primary-soft-foreground" : "text-muted-foreground",
             iconClassName,
           )}
           aria-hidden="true"

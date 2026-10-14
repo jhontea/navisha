@@ -96,6 +96,8 @@ html {
 
     /* ── Covers are always dusk-dark, in both themes (DESIGN.md §2.4) ── */
     --on-cover: 0 0% 100%;
+    --cover-button: 0 0% 100%;
+    --cover-button-foreground: 219 37.5% 22%;
     --cover-fallback: radial-gradient(120% 70% at 78% 100%, rgb(244 162 107 / 0.55) 0%, rgb(198 162 153 / 0.22) 30%, transparent 60%),
       linear-gradient(180deg, #011334 0%, #0e2b53 55%, #205a81 100%);
 

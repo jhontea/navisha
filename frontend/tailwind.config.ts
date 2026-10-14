@@ -59,6 +59,10 @@ const config: Config = {
         "destructive-bg": "hsl(var(--destructive-bg))",
         // Text on top of the (always dark) trip cover — DESIGN.md §2.4
         "on-cover": "hsl(var(--on-cover))",
+        "cover-button": {
+          DEFAULT: "hsl(var(--cover-button))",
+          foreground: "hsl(var(--cover-button-foreground))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

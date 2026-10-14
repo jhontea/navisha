@@ -1,6 +1,6 @@
 # Navisha — Design Foundation V2 · "Soft"
 
-> **Status:** fondasi yang dipilih (2026-10-14). Arah: **Soft** dari ronde 4 eksplorasi.
+> **Status:** fondasi yang dipilih (2026-10-14). Arah: **Soft** dari ronde 4 eksplorasi. V1 (token) dan V2 (komponen di §5) sudah diterapkan; semua komponen bisa dilihat di `/dev/ui`.
 > **Menggantikan:** [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) setelah fase V1 diterapkan. Aturan aksesibilitas, larangan hex di komponen, dan palet kategori expense dari dokumen lama tetap berlaku.
 > **Acuan visual:** mockup `design-audit/v2-trip/index.html` (opsi Soft) · referensi user `design-audit/references/` · plan [PLANNING_REDESIGN_V2.md](PLANNING_REDESIGN_V2.md) · cover [design/COVER_PROMPTS.md](design/COVER_PROMPTS.md)
 
@@ -173,13 +173,13 @@ Desktop                                         Mobile (di dalam trip)
 | **DateCircles** | Lingkaran 48px berlatar `muted`, berisi angka tanggal (display 17) dan bulan (11px). Aktif = tint `primary-soft`. Titik 4px di bawah menandai hari yang punya kegiatan. Bisa digeser. |
 | **TimePills** | Pill `card` dengan border. Aktif = tint tanpa border. Isi: `06:00 – 07:00`. Memilih pill menggulung ke kegiatan terkait. |
 | **ActivityRow** (desktop/list) | Baris radius 16 berlatar `muted`, berisi jam dalam pill putih, judul, meta, dan ikon dalam lingkaran. Aktif = tint. |
-| **BoardingPass** | Kartu radius 28. Header (nomor + chip maskapai), kode asal/tujuan display 28, garis putus-putus dengan ikon moda, dua lekukan setengah lingkaran di kiri/kanan, lalu grid 3×2 (Berangkat, Tiba, Durasi, Tanggal, Hari, Kursi/Gate). Dipakai untuk flight, train, bus, ship. |
+| **BoardingPass** | Kartu radius 28. Header (nomor + chip maskapai), kode asal/tujuan display 28, garis putus-putus dengan ikon moda, dua lekukan setengah lingkaran di kiri/kanan, lalu grid 3 kolom (Berangkat, Tiba, Tanggal, Hari, Kode booking; kursi/gate menyusul di fase backend). **Tanpa durasi**: waktu disimpan sebagai jam lokal tanpa zona, jadi durasi antarzona akan salah. Kode bandara diambil dari teks lokasi, misalnya "(CGK)"; tanpa kode, yang tampil nama tempatnya. Dipakai untuk flight, train, bus, ship. |
 | **FloatingNav** | Pill 58px, `card` + border + shadow, 14px dari tepi. Item aktif = pill tint dengan label; item lain hanya ikon (dengan `aria-label`). |
 | **MapBubble** | Label pill `card` di atas titik pin 12px. Aktif = `primary` solid. Isi: jam atau nama tempat. |
 | **BottomSheet** | Radius atas 30, grab handle 44×5. Isi: thumbnail + nama tempat, 3 fact box, tombol utama "Buka di Maps". |
 | **FactBox** | Kotak radius 16 berlatar `muted`, berisi label 11px dan nilai 13px bold. |
 | **StatusChip / Chip** | Pill 12px/800 berlatar lembut. |
-| **Button** | Pill tinggi 44 (mobile) / 36–40 (desktop). Varian: `primary` (biru solid), `soft` (`muted`), `ghost`, `destructive`. |
+| **Button** | Pill tinggi 44 (mobile) / 36–40 (desktop). Varian: `default` (biru solid), `soft` (tint biru), `secondary` (`muted`), `outline`, `ghost`, `destructive`, `danger`, `cover` (putih di atas cover). |
 | **NextTripCard** (beranda) | Cover 230px radius 28, chip hitung mundur di kanan atas, kartu putih mengambang di bawah (judul, tanggal, chip status). |
 | **TripCard** (grid/list) | Kartu putih padding 6, cover radius 17, judul 13 bold, tanggal 11.5. |
 | **BudgetMeter** | Bar 8px bulat dengan celah 2px antar segmen kategori. Caption `97% terpakai · sisa Rp 133.000`. |
