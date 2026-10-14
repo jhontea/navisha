@@ -35,5 +35,7 @@ func MapHTTP(err error, mappings ...HTTPMapping) error {
 	}
 	// Log unmapped errors so we can diagnose 500s.
 	slog.Error("apperr.MapHTTP: unmapped error", "error", err)
-	return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	// The cause stays internal (never sent to the client) so error
+	// reporting can see it.
+	return echo.NewHTTPError(http.StatusInternalServerError, "internal error").SetInternal(err)
 }
