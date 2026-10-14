@@ -129,6 +129,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
                     }}
                     className={cn("flex items-start gap-1 px-2", selectedActivityId === p.activityId && "bg-primary/5")}
                   >
+                    {/* eslint-disable-next-line no-restricted-syntax -- selectable place row synced with the map */}
                     <button
                       type="button"
                       onClick={() => handleSelect(p)}

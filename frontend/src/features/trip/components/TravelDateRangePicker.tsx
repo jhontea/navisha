@@ -105,6 +105,7 @@ export function TravelDateRangePicker({
 
   return (
     <div ref={containerRef} className="relative">
+      {/* eslint-disable-next-line no-restricted-syntax -- date range trigger styled as a field */}
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
@@ -190,6 +191,7 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
               const isToday = value === toISODate(new Date())
 
               return (
+                // eslint-disable-next-line no-restricted-syntax -- calendar day cell
                 <button
                   key={value}
                   type="button"

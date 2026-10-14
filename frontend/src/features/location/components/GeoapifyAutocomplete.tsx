@@ -285,6 +285,7 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
               const showDescription = primaryText !== suggestion.description
 
               return (
+              // eslint-disable-next-line no-restricted-syntax -- listbox option (role=option) of the combobox
               <button
                 key={`${suggestion.provider}:${suggestion.external_id}`}
                 id={`${listboxId}-option-${index}`}

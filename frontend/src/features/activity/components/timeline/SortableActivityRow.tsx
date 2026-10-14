@@ -40,6 +40,7 @@ export function SortableActivityRow({
     useSortable({ id: activity.id, disabled: selectMode })
 
   const icon = selectMode ? (
+    // eslint-disable-next-line no-restricted-syntax -- custom role=checkbox on the timeline rail
     <button
       type="button"
       role="checkbox"

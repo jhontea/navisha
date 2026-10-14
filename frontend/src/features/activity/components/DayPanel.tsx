@@ -135,6 +135,7 @@ export function DayPanel({
       className={cn("rounded-xl border bg-card", isActive && expanded && "border-primary/40")}
     >
       <div className="flex items-start gap-2 px-3 py-2 sm:px-4">
+        {/* eslint-disable-next-line no-restricted-syntax -- collapsible day header spanning the title block */}
         <button
           type="button"
           onClick={toggleExpanded}

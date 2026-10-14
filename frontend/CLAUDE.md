@@ -63,6 +63,7 @@ frontend/
 - Add `"use client"` only when using hooks, events, or browser APIs
 - Feature components in `features/<feature>/components/`
 - Primitive UI in `components/ui/` (coss ui — never modify generated files)
+- Outside `src/components/`, no raw `<button>`, `<input>` (except `type="hidden"`), `<select>` or `<textarea>` (lint fails). Use `Button`, `Chip`, `SegmentedControl`, `SelectableRow`, `Input` (`variant="bare"` inside an input group), `NativeSelect`, `Textarea`. A genuinely custom control (calendar cell, listbox option, role=switch card) gets `eslint-disable-next-line no-restricted-syntax -- <reason>`.
 - `app/` pages are thin — import from `features/`, no business logic in pages
 - For trigger-based overlays (Dialog, DropdownMenu, etc.) use coss `render` prop, not `asChild`
 - Consult `.agents/skills/coss/SKILL.md` and per-component references before composing new primitives

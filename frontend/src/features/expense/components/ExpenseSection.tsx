@@ -250,6 +250,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
             const isCollapsed = collapsedGroups.has(group.date)
             return (
               <div key={group.date}>
+                {/* eslint-disable-next-line no-restricted-syntax -- collapsible date-group header row */}
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.date)}
