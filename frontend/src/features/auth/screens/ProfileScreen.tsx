@@ -46,7 +46,7 @@ export function ProfileScreen() {
       </header>
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="glass-lg overflow-hidden rounded-3xl">
+        <aside className="overflow-hidden rounded-xl border bg-card">
           <div className="relative h-24 overflow-hidden bg-primary" aria-hidden="true">
             <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full border border-white/20 bg-white/10" />
             <div className="absolute left-8 top-12 h-16 w-16 rounded-full border border-white/15 bg-white/5" />
@@ -59,7 +59,7 @@ export function ProfileScreen() {
                 <Skeleton variant="avatar" className="-mt-11 mb-4 h-[88px] w-[88px] ring-4 ring-background" />
                 <Skeleton variant="text" className="mb-2 h-6 w-36" />
                 <Skeleton variant="text" className="mb-5 h-4 w-48" />
-                <Skeleton variant="glass" className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-10 w-full rounded-xl" />
               </div>
             ) : (
               <>
@@ -71,7 +71,7 @@ export function ProfileScreen() {
                     className="h-20 w-20 ring-2 ring-primary/25"
                     textClassName="text-3xl"
                   />
-                  <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-chromatic-ocean text-white">
+                  <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                 </div>
@@ -123,7 +123,7 @@ variant="destructive" className="mt-5 w-full">
             <div id="account-heading">
               <SectionHeading>Preferences &amp; access</SectionHeading>
             </div>
-            <div className="glass overflow-hidden rounded-2xl divide-y divide-border/30">
+            <div className="divide-y overflow-hidden rounded-xl border bg-card">
               <Link
                 href="/currency"
                 className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
@@ -139,7 +139,7 @@ variant="destructive" className="mt-5 w-full">
               </Link>
 
               <div className="flex items-center gap-3 px-4 py-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-chromatic-ocean/10 text-chromatic-ocean">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -155,7 +155,7 @@ variant="destructive" className="mt-5 w-full">
 
           <section className="md:hidden" aria-label="Legal and support links">
             <SectionHeading>Legal &amp; support</SectionHeading>
-            <div className="glass overflow-hidden rounded-2xl divide-y divide-border/30">
+            <div className="divide-y overflow-hidden rounded-xl border bg-card">
               {[
                 { href: "/privacy", label: "Privacy Policy", icon: Shield },
                 { href: "/terms", label: "Terms of Service", icon: FileText },

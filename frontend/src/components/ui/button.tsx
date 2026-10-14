@@ -27,12 +27,6 @@ const buttonVariants = cva(
         danger:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/40",
         link: "h-auto px-0 text-primary underline-offset-4 hover:underline",
-        /** @deprecated use `default` */
-        gradient: primary,
-        /** @deprecated use `outline` */
-        glass: outline,
-        /** @deprecated use `default` */
-        chromatic: primary,
       },
       size: {
         // 44px on touch layouts, 40px from md up.

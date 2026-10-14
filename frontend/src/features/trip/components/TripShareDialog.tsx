@@ -96,7 +96,7 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
         )}
         {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
         <DialogFooter className="flex-row justify-end">
-          {link ? <><Button variant="destructive" onClick={revoke} disabled={loading} className="rounded-full"><Trash2 /> Disable link</Button><Button variant="outline" onClick={generate} disabled={loading} className="rounded-full">Create new link</Button></> : <Button variant="gradient" onClick={generate} disabled={loading} className="rounded-full px-5 shadow-md shadow-primary/25">{loading && <Loader2 className="animate-spin" />} Create share link</Button>}
+          {link ? <><Button variant="destructive" onClick={revoke} disabled={loading} className="rounded-full"><Trash2 /> Disable link</Button><Button variant="outline" onClick={generate} disabled={loading} className="rounded-full">Create new link</Button></> : <Button onClick={generate} disabled={loading} className="rounded-full px-5">{loading && <Loader2 className="animate-spin" />} Create share link</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

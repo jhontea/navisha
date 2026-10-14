@@ -37,7 +37,7 @@ export function FormActions({
           {cancelLabel}
         </Button>
       )}
-      <Button type={submitType} variant="gradient" size="lg" onClick={onSubmit} disabled={isSubmitting || submitDisabled} aria-describedby={submitAriaDescribedBy} className="w-full min-w-32 rounded-xl sm:w-auto">
+      <Button type={submitType} size="lg" onClick={onSubmit} disabled={isSubmitting || submitDisabled} aria-describedby={submitAriaDescribedBy} className="w-full min-w-32 rounded-xl sm:w-auto">
         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : submitIcon}
         {isSubmitting ? submittingLabel : submitLabel}
       </Button>

@@ -12,9 +12,9 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
         <BackLink href="/" label="Back to Home" className="mb-8" />
-        <div className="glass-lg rounded-2xl p-8">
+        <div className="rounded-xl border bg-card p-6 sm:p-8">
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Privacy Policy</h1>
-        <p className="mb-8 text-sm text-muted-foreground">Last updated: July 30, 2026</p>
+        <p className="mb-8 text-sm text-muted-foreground">Last updated: October 14, 2026</p>
         <div className="prose prose-sm prose-gray max-w-none space-y-6">
           <section>
             <h2 className="text-xl font-semibold text-foreground">1. Overview</h2>
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">3. Third-Party Services</h2>
-            <div className="overflow-x-auto"><table className="w-full text-sm text-muted-foreground"><thead><tr className="border-b"><th className="py-2 text-left font-medium text-foreground">Service</th><th className="py-2 text-left font-medium text-foreground">Purpose</th><th className="py-2 text-left font-medium text-foreground">Data shared</th></tr></thead><tbody><tr className="border-b"><td className="py-2">Google OAuth</td><td className="py-2">Sign-in</td><td className="py-2">Account identity</td></tr><tr className="border-b"><td className="py-2">Google Maps/Places</td><td className="py-2">Maps, location search</td><td className="py-2">Queries, coordinates</td></tr><tr className="border-b"><td className="py-2">DeepSeek / OpenRouter</td><td className="py-2">AI trip generation, summaries</td><td className="py-2">Trip data (destinations, dates, activities)</td></tr><tr><td className="py-2">CurrencyFreaks</td><td className="py-2">Exchange rates</td><td className="py-2">Currency codes only</td></tr></tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full text-sm text-muted-foreground"><thead><tr className="border-b"><th className="py-2 text-left font-medium text-foreground">Service</th><th className="py-2 text-left font-medium text-foreground">Purpose</th><th className="py-2 text-left font-medium text-foreground">Data shared</th></tr></thead><tbody><tr className="border-b"><td className="py-2">Google OAuth</td><td className="py-2">Sign-in</td><td className="py-2">Account identity</td></tr><tr className="border-b"><td className="py-2">Geoapify</td><td className="py-2">Location search</td><td className="py-2">Search text, coordinates</td></tr><tr className="border-b"><td className="py-2">OpenFreeMap</td><td className="py-2">Map tiles</td><td className="py-2">Map area being viewed</td></tr><tr className="border-b"><td className="py-2">Google Maps/Places (optional)</td><td className="py-2">Maps, location search when enabled; &quot;Open in Google Maps&quot; links</td><td className="py-2">Queries, coordinates</td></tr><tr className="border-b"><td className="py-2">DeepSeek / OpenRouter</td><td className="py-2">AI trip generation, summaries</td><td className="py-2">Trip data (destinations, dates, activities)</td></tr><tr><td className="py-2">CurrencyFreaks</td><td className="py-2">Exchange rates</td><td className="py-2">Currency codes only</td></tr></tbody></table></div>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">4. AI Processing</h2>
