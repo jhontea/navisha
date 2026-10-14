@@ -25,6 +25,7 @@ export function BoardingPass({
   dayNumber,
   showDate = true,
   actions,
+  children,
   className,
 }: {
   transportation: BoardingPassData
@@ -34,6 +35,8 @@ export function BoardingPass({
   dayNumber?: number | null
   /** Optional slot top-right, e.g. the ⋯ menu. */
   actions?: ReactNode
+  /** Extra content under the facts, e.g. notes. */
+  children?: ReactNode
   className?: string
 }) {
   const Icon = transportIcon(t.type)
@@ -113,6 +116,7 @@ export function BoardingPass({
           </dl>
         </div>
       )}
+      {children}
     </article>
   )
 }

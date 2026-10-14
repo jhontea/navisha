@@ -49,7 +49,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
     <section aria-labelledby="stays-heading">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 id="stays-heading" className="text-lg font-semibold text-foreground">
+          <h2 id="stays-heading" className="font-display text-xl font-extrabold text-foreground">
             Stays
           </h2>
           {items.length > 0 && (

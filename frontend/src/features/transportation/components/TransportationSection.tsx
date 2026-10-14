@@ -49,7 +49,7 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
     <section aria-labelledby="transport-heading">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 id="transport-heading" className="text-lg font-semibold text-foreground">
+          <h2 id="transport-heading" className="font-display text-xl font-extrabold text-foreground">
             Transport
           </h2>
           {items.length > 0 && (
