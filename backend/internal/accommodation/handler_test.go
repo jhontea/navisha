@@ -210,8 +210,10 @@ func TestHandler_Create(t *testing.T) {
 				}
 			},
 		},
-		{name: "cost with zero amount silently ignored", tripID: "trip-1", body: body(`"cost":{"amount":0,"currency":"USD"}`), want: http.StatusCreated, wantCalls: 0},
-		{name: "cost without currency silently ignored", tripID: "trip-1", body: body(`"cost":{"amount":10}`), want: http.StatusCreated, wantCalls: 0},
+		{name: "cost with zero amount means no cost", tripID: "trip-1", body: body(`"cost":{"amount":0,"currency":"USD"}`), want: http.StatusCreated, wantCalls: 0},
+		{name: "cost without currency rejected", tripID: "trip-1", body: body(`"cost":{"amount":10}`), want: http.StatusBadRequest, wantCalls: 0},
+		{name: "negative cost rejected", tripID: "trip-1", body: body(`"cost":{"amount":-5,"currency":"USD"}`), want: http.StatusBadRequest, wantCalls: 0},
+		{name: "lowercase cost currency normalized", tripID: "trip-1", body: body(`"cost":{"amount":10,"currency":" usd "}`), want: http.StatusCreated, wantCalls: 1},
 		{
 			name: "linked expense forbidden maps through wrap", tripID: "trip-1",
 			body: body(`"cost":{"amount":10,"currency":"USD"}`), ecErr: apperr.ErrForbidden,

@@ -52,10 +52,10 @@ func (h *Handler) List(c echo.Context, userID string) error {
 // clean strips HTML before the required checks (a tag-only title counts as
 // empty) and normalizes the currency code.
 func (r *expenseRequest) clean() *echo.HTTPError {
-	if len(r.Title) > 200 {
+	if sanitize.TooLong(r.Title, 200) {
 		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
 	}
-	if len(r.Note) > 2000 {
+	if sanitize.TooLong(r.Note, 2000) {
 		return echo.NewHTTPError(http.StatusBadRequest, "note is too long")
 	}
 	r.Title = strings.TrimSpace(sanitize.Text(r.Title))

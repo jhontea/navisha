@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { QuotaBadge } from "@/components/QuotaBadge"
 import { sanitizeText } from "@/lib/sanitize"
-import { useDeleteSummary, useGenerateSummary, useTripSummary } from "../hooks/useTripSummary"
+import { cn } from "@/lib/utils"
+import { NativeSelect } from "@/components/NativeSelect"
+import { useDeleteSummary, useGenerateSummary, useSummaryLanguage, useTripSummary } from "../hooks/useTripSummary"
+import type { SummaryLanguage } from "../types"
 import { GeneratingIndicator } from "./GeneratingIndicator"
 
 // Markdown from the AI rendered with the app's type scale.
@@ -70,10 +73,36 @@ const GENERATED_AT = new Intl.DateTimeFormat("en-GB", {
   minute: "2-digit",
 })
 
+function LanguageSelect({
+  value,
+  onChange,
+  disabled,
+  className,
+}: {
+  value: SummaryLanguage
+  onChange: (language: SummaryLanguage) => void
+  disabled?: boolean
+  className?: string
+}) {
+  return (
+    <NativeSelect
+      aria-label="Summary language"
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value as SummaryLanguage)}
+      className={cn("w-auto", className)}
+    >
+      <option value="id">Indonesian</option>
+      <option value="en">English</option>
+    </NativeSelect>
+  )
+}
+
 /** AI summary of the whole trip: generate, update when the trip changes, delete. */
 export function TripSummaryCard({ tripId }: { tripId: string }) {
   const { data: summary, isLoading } = useTripSummary(tripId)
   const generate = useGenerateSummary(tripId)
+  const [language, setLanguage] = useSummaryLanguage()
   const deleteSummary = useDeleteSummary(tripId)
 
   const errStatus = (generate.error as { status?: number })?.status
@@ -122,7 +151,11 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
             </p>
             <div className="mx-auto mt-4 max-w-md text-left">{errors}</div>
             <div className="mt-5 flex flex-col items-center gap-2">
-              <Button onClick={() => generate.mutate()}>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Language
+                <LanguageSelect value={language} onChange={setLanguage} />
+              </label>
+              <Button onClick={() => generate.mutate(language)}>
                 <Sparkles aria-hidden="true" />
                 {isGenerateError ? "Try again" : "Generate summary"}
               </Button>
@@ -148,10 +181,16 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
           </p>
         </div>
         <div className="flex items-center gap-1">
+          <LanguageSelect
+            value={language}
+            onChange={setLanguage}
+            disabled={generate.isPending}
+            className="mr-1 min-h-9 py-1.5 md:min-h-9"
+          />
           <Button
             variant={summary.is_outdated ? "default" : "outline"}
             size="sm"
-            onClick={() => generate.mutate()}
+            onClick={() => generate.mutate(language)}
             disabled={generate.isPending}
           >
             {generate.isPending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}

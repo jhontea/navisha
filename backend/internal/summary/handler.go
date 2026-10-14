@@ -35,13 +35,24 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 
 func (h *Handler) Generate(c echo.Context, userID string) error {
 	tripID := c.Param("id")
+	// Optional body {"language": "id" | "en"}; no body keeps Indonesian.
+	var req struct {
+		Language string `json:"language"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	lang, ok := ParseLanguage(req.Language)
+	if !ok {
+		return echo.NewHTTPError(http.StatusBadRequest, "language must be id or en")
+	}
 
 	// ── Daily quota check (shared with autogen — same counter) ──
 	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
 		return quotaErr
 	}
 
-	s, err := h.usecase.Generate(c.Request().Context(), userID, tripID)
+	s, err := h.usecase.Generate(c.Request().Context(), userID, tripID, lang)
 	if err != nil {
 		// No summary was produced (missing or foreign trip, LLM failure), so
 		// the attempt does not count against the daily quota.

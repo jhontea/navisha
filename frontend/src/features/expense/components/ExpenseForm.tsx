@@ -175,7 +175,7 @@ export function ExpenseForm({
             className={cn("h-auto", 
               "w-full py-2.5 rounded-lg border bg-background text-foreground",
               "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
-              "font-body-md placeholder:text-muted-foreground/60",
+              "placeholder:text-muted-foreground/60",
               selectedCategory ? "pl-10 pr-4" : "px-4",
               errors.title ? "border-destructive" : "border-border",
             )}
@@ -216,7 +216,7 @@ export function ExpenseForm({
                 className={cn("h-auto", 
                   "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground",
                   "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
-                  "font-body-md placeholder:text-muted-foreground/60",
+                  "placeholder:text-muted-foreground/60",
                   errors.amount ? "border-destructive" : "border-border",
                 )}
               />
@@ -237,8 +237,7 @@ export function ExpenseForm({
                     className={cn(
                       "w-full px-3 py-2.5 rounded-lg border bg-background text-foreground",
                       "focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none",
-                      "font-body-md",
-                    )}
+                                          )}
                   >
                     {SUPPORTED_CURRENCIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
@@ -250,7 +249,7 @@ export function ExpenseForm({
             </div>
           </div>
           {previewEnabled && preview && (
-            <p className="text-label-sm text-primary font-medium flex items-center gap-1 mt-1">
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
               ≈ {formatMoney(preview.converted_amount, tripBaseCurrency)}{" "}
               <span className="text-muted-foreground font-normal">
@@ -270,8 +269,7 @@ export function ExpenseForm({
             className={cn("h-auto", 
               "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground",
               "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
-              "font-body-md",
-              "border-border",
+                            "border-border",
             )}
             onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker?.() } catch {} }}
           />
@@ -291,7 +289,7 @@ export function ExpenseForm({
           className={cn(
             "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground resize-none",
             "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
-            "font-body-md placeholder:text-muted-foreground/60 text-sm",
+            "placeholder:text-muted-foreground/60 text-sm",
             "border-border",
           )}
         />

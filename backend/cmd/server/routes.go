@@ -54,6 +54,9 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 		},
 	}))
 	e.Use(echomw.Recover())
+	if cfg.App.SentryDSN != "" {
+		useSentry(e)
+	}
 	// Compress JSON responses to reduce transfer time on mobile networks.
 	// Small responses stay uncompressed to avoid CPU/header overhead.
 	e.Use(echomw.GzipWithConfig(echomw.GzipConfig{
