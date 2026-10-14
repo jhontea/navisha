@@ -179,10 +179,10 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   return (
     // No overflow-hidden here: the date picker's calendar drops below the card.
     <div className="rounded-xl border bg-card">
-      {/* Progress bar (clipped to the card's top corners) */}
-      <div className="h-1 overflow-hidden rounded-t-xl bg-muted">
+      {/* Progress bar, inset so it needs no clipping by the card */}
+      <div className="mx-5 mt-4 h-1 overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full bg-primary transition-all duration-500"
+          className="h-full rounded-full bg-primary transition-all duration-500"
           style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }}
         />
       </div>

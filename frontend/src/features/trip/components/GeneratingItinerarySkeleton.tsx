@@ -20,7 +20,7 @@ export function GeneratingItinerarySkeleton({ days: _days }: Props) {
     <div className="flex h-full min-h-[260px] items-center justify-center" aria-live="polite" aria-busy="true">
       <GeneratingIndicator
         messages={MESSAGES}
-        helperText="Ini bisa memakan waktu beberapa menit, santai sebentar ya."
+        helperText="This can take a few minutes. You can wait here."
       />
     </div>
   )
