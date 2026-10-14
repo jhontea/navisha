@@ -359,7 +359,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 aria-required="true"
                 aria-invalid={Boolean(errors.base_currency)}
                 aria-describedby={errors.base_currency ? "trip-currency-error" : undefined}
-                className={`${inputBase} appearance-none pr-10 ${
+                className={`h-auto md:h-auto ${inputBase} appearance-none pr-10 ${
                   errors.base_currency ? "border-error" : "border-border"
                 } disabled:opacity-60`}
               >

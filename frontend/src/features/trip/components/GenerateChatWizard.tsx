@@ -333,7 +333,7 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-
                 <NativeSelect
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className={`${inputBase} appearance-none pr-10`}
+                  className={`h-auto md:h-auto ${inputBase} appearance-none pr-10`}
                 >
                   {currencies.length === 0 ? (
                     <option value="IDR">IDR</option>
