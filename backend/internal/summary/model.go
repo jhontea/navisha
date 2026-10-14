@@ -17,8 +17,30 @@ type Summary struct {
 // TripContext is the cross-domain snapshot fed to the LLM prompt. Assembled
 // by an adapter (internal/integration) so the summary package stays decoupled
 // from the individual domain packages.
+// Language is the language the summary is written in.
+type Language string
+
+const (
+	LanguageIndonesian Language = "id"
+	LanguageEnglish    Language = "en"
+)
+
+// ParseLanguage maps a request value to a Language; empty means Indonesian
+// (the original behavior). ok is false for any other value.
+func ParseLanguage(s string) (lang Language, ok bool) {
+	switch Language(s) {
+	case "", LanguageIndonesian:
+		return LanguageIndonesian, true
+	case LanguageEnglish:
+		return LanguageEnglish, true
+	}
+	return "", false
+}
+
 type TripContext struct {
 	TripID        string // Phase 3E: for deterministic style variation
+	// Language of the summary to write (set by the usecase, not the provider).
+	Language Language
 	Title         string
 	Destination   string
 	StartDate     time.Time
