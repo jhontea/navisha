@@ -32,7 +32,7 @@ type ServerConfig struct {
 
 type DBConfig struct {
 	URL      string
-	PoolSize int   `mapstructure:"pool_size"`
+	PoolSize int32 `mapstructure:"pool_size"`
 	MaxConns int32 `mapstructure:"max_conns"`
 	MinConns int32 `mapstructure:"min_conns"`
 	// MaxConnLifetime and MaxConnIdleTime are in seconds (from config.yaml).

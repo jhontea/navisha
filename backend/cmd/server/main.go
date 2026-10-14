@@ -36,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 	if cfg.DB.PoolSize > 0 {
-		dbCfg.MaxConns = int32(cfg.DB.PoolSize)
+		dbCfg.MaxConns = cfg.DB.PoolSize
 	}
 	if cfg.DB.MaxConns > 0 {
 		dbCfg.MaxConns = cfg.DB.MaxConns

@@ -230,35 +230,10 @@ html {
     --surface-variant: 230 20% 92%;
   }
 
-  /* Iter 5 — dark mode: correct glass-bg to dark triplet + better primary */
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 215 85% 65%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 215 85% 65%;
-    --radius: 0.75rem;
-    /* Iter 5 — dark glass: dark bg triplet */
-    --glass-bg: 15 20 40;
-    --glass-opacity-1: 0.20;
-    --glass-opacity-2: 0.30;
-    --glass-opacity-3: 0.40;
-    --glass-border-opacity: 0.25;
-    --glass-highlight-opacity: 0.12;
+  /* Light only: there is no dark theme, so keep native controls (date
+     pickers, scrollbars) light when the OS is in dark mode. */
+  :root {
+    color-scheme: light;
   }
 
   * {

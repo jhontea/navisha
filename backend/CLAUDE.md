@@ -140,4 +140,4 @@ Domains communicate via **local interfaces** (not cross-imports):
 
 ## Checks
 - `go build ./... && go vet ./... && go test ./...`
-- `golangci-lint run ./...` (config in `.golangci.yml`). CI fails only on **new** findings; existing ones are a baseline to clean up during the R2 refactor.
+- `golangci-lint run ./...` (config in `.golangci.yml`). CI fails only on **new** findings. The baseline is clean (on Windows, CRLF checkouts can show false gofmt hits).

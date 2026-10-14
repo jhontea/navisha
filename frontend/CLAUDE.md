@@ -90,6 +90,7 @@ frontend/
 - Tailwind only — no inline styles
 - `cn()` from `lib/utils.ts` for conditional class merging
 - Responsive: mobile-first (sm → md → lg breakpoints)
+- Light theme only: there are no `.dark` tokens; `dark:` classes in generated `components/ui/` files are inert
 
 ## Auth Guard (middleware.ts)
 

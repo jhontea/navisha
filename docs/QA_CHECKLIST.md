@@ -32,5 +32,5 @@ Catat hasil sebagai ✅ / ❌ + catatan singkat (model HP, browser, langkah yang
 - [ ] Generate trip dengan AI di jaringan seluler: indikator proses terlihat, tidak ada timeout di tengah, hasil draft bisa dipilih lalu dibuat jadi trip.
 
 ## Tampilan
-- [ ] Mode gelap HP (dark mode): teks tetap terbaca, tidak ada kotak putih menyilaukan.
+- [ ] Dengan mode gelap HP aktif, app tetap tampil terang dan rapi (app belum punya tema gelap).
 - [ ] Teks sekunder (abu-abu) tetap terbaca di luar ruangan / kecerahan rendah.
