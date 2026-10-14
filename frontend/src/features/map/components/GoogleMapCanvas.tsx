@@ -206,8 +206,8 @@ function Markers({
             title={point.title}
           >
             <Pin
-              background={isStay ? "#0f172a" : colorForDay(point.dayNumber)}
-              borderColor={isSelected ? "#fbbf24" : "#ffffff"}
+              background={isStay ? "#0E2B53" : colorForDay(point.dayNumber)}
+              borderColor={isSelected ? "#3673DB" : "#ffffff"}
               glyphColor="#ffffff"
               glyph={glyph}
               scale={isSelected ? 1.35 : 1}

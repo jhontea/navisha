@@ -2,8 +2,9 @@
 
 import { Chip } from "@/components/Chip"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AlertTriangle, ExternalLink, MapPin, Route } from "lucide-react"
+import { AlertTriangle, ExternalLink, MapPin, Route, X } from "lucide-react"
 
+import { IconButton } from "@/components/IconButton"
 import { buttonVariants, Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
@@ -14,8 +15,9 @@ import { colorForDay } from "./mapColors"
 import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
 
 /**
- * Map tab: pick a day (or all), see its places in order next to the map.
- * Selecting a place highlights its marker and vice versa.
+ * Map tab: the map with a floating day filter, and the places in order next
+ * to it (below it on phones). Selecting a place highlights its pin and vice
+ * versa; on phones the picked place also shows as a card over the map.
  */
 export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
   const { isLoading, isError, byDay, unpinned } = useTripLocations(tripId, days)
@@ -72,83 +74,99 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
     )
   }
 
-  return (
-    // One map element: below the day picker on phones, a full-height column on
-    // the right from lg (grid placement, so the map is never mounted twice).
-    <div className="grid gap-3 lg:h-[calc(100vh-10rem)] lg:min-h-[32rem] lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-x-4">
-      <div role="group" aria-label="Show day" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:col-start-1 lg:row-start-1">
-        <Chip pressed={activeDay === null} onClick={() => setActiveDay(null)}>
-          All days
-        </Chip>
-        {daysWithPlaces.map((d) => {
-          const pressed = activeDay === d.dayId
-          return (
-            <Chip key={d.dayId} pressed={pressed} onClick={() => setActiveDay(pressed ? null : d.dayId)}>
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForDay(d.dayNumber) }} aria-hidden="true" />
-              Day {d.dayNumber}
-            </Chip>
-          )
-        })}
-      </div>
+  const selectedPoint = visiblePoints.find((p) => p.activityId === selectedActivityId) ?? null
+  const placeNumber = (p: LocationPoint) => {
+    const day = visibleByDay.find((d) => d.dayId === p.dayId)
+    if (!day || p.kind === "stay") return null
+    return day.points.slice(0, day.points.indexOf(p) + 1).filter((x) => x.kind !== "stay").length
+  }
 
-      <div className="relative h-[55vh] min-h-72 overflow-hidden rounded-xl border bg-card lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-auto">
+  return (
+    // One map element: first on phones, the wide right column from lg (order
+    // swap, so the map is never mounted twice).
+    <div className="grid gap-4 lg:h-[calc(100vh-11rem)] lg:min-h-[34rem] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
+      <div className="relative h-[62vh] min-h-80 overflow-hidden rounded-2xl border bg-card shadow-card lg:order-2 lg:h-auto">
         <MapCanvas
           visibleByDay={visibleByDay}
           selectedActivityId={selectedActivityId}
           onSelectActivity={handleSelect}
           onOpenInMaps={openPin}
         />
+
+        {/* Day filter floats on the map (clear of the zoom controls on the right). */}
+        <div
+          role="group"
+          aria-label="Show day"
+          className="absolute left-3 right-14 top-3 z-10 flex gap-2 overflow-x-auto p-0.5 [scrollbar-width:none]"
+        >
+          <Chip pressed={activeDay === null} onClick={() => setActiveDay(null)} className="shadow-card">
+            All days
+          </Chip>
+          {daysWithPlaces.map((d) => {
+            const pressed = activeDay === d.dayId
+            return (
+              <Chip key={d.dayId} pressed={pressed} onClick={() => setActiveDay(pressed ? null : d.dayId)} className="shadow-card">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForDay(d.dayNumber) }} aria-hidden="true" />
+                Day {d.dayNumber}
+              </Chip>
+            )
+          })}
+        </div>
+
+        {/* Phones: the picked place as a card over the bottom of the map. */}
+        {selectedPoint && (
+          <div className="absolute inset-x-3 bottom-3 z-10 flex items-start gap-3 rounded-2xl border bg-card p-3 shadow-overlay lg:hidden">
+            <PointBadge point={selectedPoint} number={placeNumber(selectedPoint)} />
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-base font-extrabold leading-snug text-foreground">{selectedPoint.title}</p>
+              {selectedPoint.address && <p className="line-clamp-2 text-xs text-muted-foreground">{selectedPoint.address}</p>}
+              <Button type="button" size="sm" variant="soft" className="mt-2" onClick={() => openPin(selectedPoint)}>
+                <ExternalLink aria-hidden="true" />
+                Open in Google Maps
+              </Button>
+            </div>
+            <IconButton label="Close" icon={<X />} size="sm" className="-mr-1 -mt-1 shrink-0 text-muted-foreground" onClick={() => setSelectedActivityId(null)} />
+          </div>
+        )}
       </div>
 
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border bg-card lg:col-start-1 lg:row-start-2">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:order-1">
         {unpinned > 0 && (
           <p className="border-b bg-warning-bg px-4 py-2 text-xs text-foreground">
             {unpinned} {unpinned === 1 ? "place isn't" : "places aren't"} on the map yet. Open {unpinned === 1 ? "it" : "them"} in
             the Itinerary to pick the exact spot.
           </p>
         )}
-        <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
+        <ol className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
           {visibleByDay.map((d) => (
             <li key={d.dayId}>
-              <p className="sticky top-0 z-10 flex items-center gap-2 bg-card px-4 py-2 text-sm font-semibold text-foreground">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForDay(d.dayNumber) }} aria-hidden="true" />
+              <p className="sticky top-0 z-10 flex items-center gap-2 bg-card px-3 pb-1.5 pt-3 font-display text-base font-extrabold text-foreground">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorForDay(d.dayNumber) }} aria-hidden="true" />
                 Day {d.dayNumber}
-                <span className="font-normal text-muted-foreground">· {formatWeekdayDate(d.date)}</span>
+                <span className="text-muted-foreground">· {formatWeekdayDate(d.date)}</span>
               </p>
-              <ol className="pb-2">
-                {d.points.map((p, i) => (
+              <ol className="space-y-1">
+                {d.points.map((p) => (
                   <li
                     key={p.activityId}
                     ref={(el) => {
                       rowRefs.current.set(p.activityId, el)
                     }}
-                    className={cn("flex items-start gap-1 px-2", selectedActivityId === p.activityId && "bg-primary/5")}
+                    className={cn(
+                      "flex items-start gap-1 rounded-xl px-1 transition-colors",
+                      selectedActivityId === p.activityId ? "bg-primary-soft" : "hover:bg-muted",
+                    )}
                   >
                     {/* eslint-disable-next-line no-restricted-syntax -- selectable place row synced with the map */}
                     <button
                       type="button"
                       onClick={() => handleSelect(p)}
                       aria-pressed={selectedActivityId === p.activityId}
-                      className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-lg px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-xl px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      {p.kind === "stay" ? (
-                        <span
-                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-semibold text-background"
-                          aria-hidden="true"
-                        >
-                          H
-                        </span>
-                      ) : (
-                        <span
-                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                          style={{ backgroundColor: colorForDay(p.dayNumber) }}
-                          aria-hidden="true"
-                        >
-                          {d.points.slice(0, i + 1).filter((x) => x.kind !== "stay").length}
-                        </span>
-                      )}
+                      <PointBadge point={p} number={placeNumber(p)} />
                       <span className="min-w-0">
-                        <span className="block text-sm font-medium text-foreground">{p.title}</span>
+                        <span className="block text-sm font-bold text-foreground">{p.title}</span>
                         {p.address && <span className="line-clamp-1 text-xs text-muted-foreground">{p.address}</span>}
                         {p.approximate && (
                           <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
@@ -179,7 +197,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
             {visibleByDay.length === 1 ? "day" : "days"}
           </p>
           {directionsUrl && (
-            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "soft", size: "sm" })}>
               <Route aria-hidden="true" />
               Directions
             </a>
@@ -187,5 +205,28 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Numbered circle for a place (day colour) or an "H" square for a stay, matching the map pins. */
+function PointBadge({ point, number }: { point: LocationPoint; number: number | null }) {
+  if (point.kind === "stay") {
+    return (
+      <span
+        className="bg-cover-fallback mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-extrabold text-on-cover"
+        aria-hidden="true"
+      >
+        H
+      </span>
+    )
+  }
+  return (
+    <span
+      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold text-white"
+      style={{ backgroundColor: colorForDay(point.dayNumber) }}
+      aria-hidden="true"
+    >
+      {number}
+    </span>
   )
 }
