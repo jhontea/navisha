@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
 )
@@ -136,11 +137,10 @@ func TestHandler_Create(t *testing.T) {
 		{name: "missing category", tripID: "trip-1", body: `{"title":"x","amount":1,"currency":"USD"}`, want: http.StatusBadRequest},
 		{name: "trip not found", tripID: "missing", body: valid(""), want: http.StatusNotFound},
 		{name: "trip owned by other user", tripID: "trip-2", body: valid(""), want: http.StatusForbidden},
-		// The following document current behavior that looks wrong: the
-		// usecase returns errors mapErr does not know, so they surface as 500.
-		{name: "html-only title sanitized to empty (500, arguably 400)", tripID: "trip-1", body: valid(`"title":"<b></b>"`), want: http.StatusInternalServerError},
-		{name: "bad expense_date (500, arguably 400)", tripID: "trip-1", body: valid(`"expense_date":"02/01/2026"`), want: http.StatusInternalServerError},
-		{name: "converter failure (500)", tripID: "trip-1", body: valid(""), conv: &mockConverter{err: errors.New("rates down")}, want: http.StatusInternalServerError},
+		{name: "html-only title is empty", tripID: "trip-1", body: valid(`"title":"<b></b>"`), want: http.StatusBadRequest},
+		{name: "bad expense_date", tripID: "trip-1", body: valid(`"expense_date":"02/01/2026"`), want: http.StatusBadRequest},
+		{name: "rates unavailable", tripID: "trip-1", body: valid(""), conv: &mockConverter{err: errors.New("rates down")}, want: http.StatusServiceUnavailable},
+		{name: "unsupported currency", tripID: "trip-1", body: valid(""), conv: &mockConverter{err: apperr.ErrUnsupportedCurrency}, want: http.StatusBadRequest},
 		{
 			name: "happy path", tripID: "trip-1",
 			body: valid(`"title":"<b>Ramen</b>","note":"<i>good</i>","expense_date":"2026-03-04","activity_id":"act-9"`),

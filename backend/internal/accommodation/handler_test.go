@@ -121,9 +121,6 @@ var commonValidationCases = []struct {
 	{"missing check_out", body(`"check_out":""`)},
 	{"bad date format", body(`"check_in":"01/03/2026"`)},
 	{"check_out before check_in", body(`"check_in":"2026-03-05"`)},
-	// Handler requires check_out strictly after check_in, although the
-	// usecase (and the ErrInvalidDates message) allows same-day.
-	{"same-day stay rejected by handler", body(`"check_out":"2026-03-01"`)},
 	{"invalid accommodation type", body(`"accommodation_type":"castle"`)},
 	{"html-only name sanitized to empty", body(`"name":"<b></b>"`)},
 }

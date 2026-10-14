@@ -2,6 +2,7 @@ package expense
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -91,7 +92,7 @@ func (u *Usecase) CreateLinkedExpenseTx(
 
 	converted, _, err := u.converter.Convert(ctx, currency, base, amount)
 	if err != nil {
-		return fmt.Errorf("expense.CreateLinkedExpenseTx convert: %w", err)
+		return convertErr("expense.CreateLinkedExpenseTx", err)
 	}
 
 	// Parse the caller-supplied date or default to today
@@ -100,7 +101,7 @@ func (u *Usecase) CreateLinkedExpenseTx(
 		var err error
 		eDate, err = time.Parse("2006-01-02", expenseDate)
 		if err != nil {
-			return fmt.Errorf("expense.CreateLinkedExpenseTx: invalid expense_date %q: %w", expenseDate, err)
+			return fmt.Errorf("expense.CreateLinkedExpenseTx: %w %q: %w", ErrInvalidDate, expenseDate, err)
 		}
 	}
 	if eDate.IsZero() {
@@ -166,7 +167,7 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 
 	converted, _, err := u.converter.Convert(ctx, in.Currency, base, in.Amount)
 	if err != nil {
-		return nil, fmt.Errorf("expense.Create convert: %w", err)
+		return nil, convertErr("expense.Create", err)
 	}
 
 	// Parse optional expense date; default to today
@@ -175,7 +176,7 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 		var err error
 		expDate, err = time.Parse("2006-01-02", in.ExpenseDate)
 		if err != nil {
-			return nil, fmt.Errorf("expense.Create: invalid expense_date %q: %w", in.ExpenseDate, err)
+			return nil, fmt.Errorf("expense.Create: %w %q: %w", ErrInvalidDate, in.ExpenseDate, err)
 		}
 	}
 	if expDate.IsZero() {
@@ -215,7 +216,7 @@ func (u *Usecase) Update(ctx context.Context, userID, expenseID string, in Updat
 	}
 	converted, _, err := u.converter.Convert(ctx, in.Currency, base, in.Amount)
 	if err != nil {
-		return nil, fmt.Errorf("expense.Update convert: %w", err)
+		return nil, convertErr("expense.Update", err)
 	}
 
 	existing, err := u.repo.FindByID(ctx, expenseID)
@@ -226,7 +227,7 @@ func (u *Usecase) Update(ctx context.Context, userID, expenseID string, in Updat
 	if in.ExpenseDate != "" {
 		d, err := time.Parse("2006-01-02", in.ExpenseDate)
 		if err != nil {
-			return nil, fmt.Errorf("expense.Update: invalid expense_date %q: %w", in.ExpenseDate, err)
+			return nil, fmt.Errorf("expense.Update: %w %q: %w", ErrInvalidDate, in.ExpenseDate, err)
 		}
 		existing.ExpenseDate = d
 	}
@@ -263,6 +264,15 @@ func (u *Usecase) Summary(ctx context.Context, userID, tripID string) (*Summary,
 		return nil, apperr.ErrForbidden
 	}
 	return u.repo.Summary(ctx, tripID, base)
+}
+
+// convertErr classifies a failed conversion: an unknown code is the caller's
+// mistake (400), anything else means rates could not be fetched (503).
+func convertErr(op string, err error) error {
+	if errors.Is(err, apperr.ErrUnsupportedCurrency) {
+		return fmt.Errorf("%s convert: %w: %w", op, ErrInvalidCurrency, err)
+	}
+	return fmt.Errorf("%s convert: %w: %w", op, apperr.ErrRatesUnavailable, err)
 }
 
 func validateInput(title string, amount float64, currency string, cat Category) error {

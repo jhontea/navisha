@@ -12,6 +12,7 @@ var (
 	ErrTripNotFound    = errors.New("trip not found")
 	ErrInvalidCategory = errors.New("invalid category")
 	ErrInvalidCurrency = errors.New("invalid currency")
+	ErrInvalidDate     = errors.New("invalid expense_date (expect YYYY-MM-DD)")
 )
 
 type Repository interface {

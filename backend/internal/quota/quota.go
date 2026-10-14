@@ -37,9 +37,10 @@ func NewChecker(rdb *redis.Client, db *pgxpool.Pool) *Checker {
 	return &Checker{rdb: rdb, db: db}
 }
 
-// Enabled returns true if quota checking is active (Redis is wired).
+// Enabled returns true if quota checking is active (Redis is wired). A nil
+// Checker is valid and disabled.
 func (c *Checker) Enabled() bool {
-	return c.rdb != nil
+	return c != nil && c.rdb != nil
 }
 
 // limit returns the current daily quota limit.

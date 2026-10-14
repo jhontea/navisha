@@ -293,28 +293,36 @@ func TestHandler_MissingUser_401(t *testing.T) {
 // ---------- Generate ----------
 
 func TestHandlerGenerate_Validation(t *testing.T) {
+	const bad, unprocessable = http.StatusBadRequest, http.StatusUnprocessableEntity
 	tests := []struct {
-		name    string
-		body    string
-		wantMsg string
+		name     string
+		body     string
+		wantCode int
+		wantMsg  string
 	}{
-		{"malformed json", `{"destination":`, "invalid body"},
-		{"wrong type", `{"destination":123}`, "invalid body"},
-		{"missing destination", genBody("", "", "2026-11-01", "2026-11-02"), "destination is required"},
-		{"blank destination", genBody("   ", "", "2026-11-01", "2026-11-02"), "destination is required"},
-		{"destination too long", genBody(strings.Repeat("a", 201), "", "2026-11-01", "2026-11-02"), "destination must be 200 characters or less"},
-		{"description too long", genBody("Tokyo", strings.Repeat("a", 2001), "2026-11-01", "2026-11-02"), "description is too long"},
-		{"missing start_date", genBody("Tokyo", "", "", "2026-11-02"), "invalid start_date (expect YYYY-MM-DD)"},
-		{"bad start_date", genBody("Tokyo", "", "01/11/2026", "2026-11-02"), "invalid start_date (expect YYYY-MM-DD)"},
-		{"bad end_date", genBody("Tokyo", "", "2026-11-01", "2026-13-40"), "invalid end_date (expect YYYY-MM-DD)"},
+		{"malformed json", `{"destination":`, bad, "invalid body"},
+		{"wrong type", `{"destination":123}`, bad, "invalid body"},
+		{"missing start_date", genBody("Tokyo", "", "", "2026-11-02"), bad, "invalid start_date"},
+		{"bad start_date", genBody("Tokyo", "", "01/11/2026", "2026-11-02"), bad, "invalid start_date"},
+		{"bad end_date", genBody("Tokyo", "", "2026-11-01", "2026-13-40"), bad, "invalid end_date"},
+		// The usecase's own rules run before quota is consumed.
+		{"missing destination", genBody("", "", "2026-11-01", "2026-11-02"), unprocessable, "destination required"},
+		{"blank destination", genBody("   ", "", "2026-11-01", "2026-11-02"), unprocessable, "destination required"},
+		{"html-only destination", genBody("<b></b>", "", "2026-11-01", "2026-11-02"), unprocessable, "destination required"},
+		{"symbols-only destination", genBody("!!!", "", "2026-11-01", "2026-11-02"), unprocessable, "must contain letters"},
+		{"destination too long", genBody(strings.Repeat("a", MaxDestinationLen+1), "", "2026-11-01", "2026-11-02"), unprocessable, "destination too long"},
+		{"description too long", genBody("Tokyo", strings.Repeat("a", MaxDescriptionLen+1), "2026-11-01", "2026-11-02"), unprocessable, "description too long"},
+		{"end before start", genBody("Tokyo", "", "2026-11-05", "2026-11-01"), unprocessable, "end date before start date"},
+		{"trip too long", genBody("Tokyo", "", "2026-11-01", "2026-11-30"), unprocessable, "trip too long"},
+		{"no currency", `{"destination":"Tokyo","start_date":"2026-11-01","end_date":"2026-11-02"}`, unprocessable, "base currency required"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h, uc, fr := newTestHandler(t, 5, 0)
 			_, err := do(t, h.Generate, http.MethodPost, reqOpts{body: tt.body, user: testUser})
-			he := wantHTTPErr(t, err, http.StatusBadRequest)
-			if he.Message != tt.wantMsg {
-				t.Errorf("message = %v, want %q", he.Message, tt.wantMsg)
+			he := wantHTTPErr(t, err, tt.wantCode)
+			if msg := fmt.Sprint(he.Message); !strings.Contains(msg, tt.wantMsg) {
+				t.Errorf("message = %v, want it to contain %q", he.Message, tt.wantMsg)
 			}
 			if uc.genCalls != 0 {
 				t.Error("usecase must not be called on invalid input")
@@ -396,11 +404,11 @@ func TestHandlerGenerate_UsecaseErrorMapping(t *testing.T) {
 		wantCode   string
 		wantUsed   int
 	}{
-		{"invalid input", fmt.Errorf("%w: trip too long", ErrInvalidInput), http.StatusUnprocessableEntity, "INVALID_INPUT", 1},
+		{"invalid input", fmt.Errorf("%w: trip too long", ErrInvalidInput), http.StatusUnprocessableEntity, "INVALID_INPUT", 0},
 		{"invalid prompt", fmt.Errorf("%w: not a trip", ErrInvalidPrompt), http.StatusUnprocessableEntity, "INVALID_PROMPT", 1},
 		{"llm unavailable refunds", fmt.Errorf("%w: timeout", ErrLLMUnavailable), http.StatusServiceUnavailable, "LLM_UNAVAILABLE", 0},
-		{"forbidden", apperr.ErrForbidden, http.StatusForbidden, "", 1},
-		{"unknown", errors.New("parse llm response"), http.StatusInternalServerError, "", 1},
+		{"forbidden refunds", apperr.ErrForbidden, http.StatusForbidden, "", 0},
+		{"unknown refunds", errors.New("parse llm response"), http.StatusInternalServerError, "", 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -422,13 +430,13 @@ func TestHandlerGenerate_UsecaseErrorMapping(t *testing.T) {
 
 func TestHandlerGenerate_InvalidInputMessageIsSurfaced(t *testing.T) {
 	h, uc, _ := newTestHandler(t, 5, 0)
-	uc.draftErr = fmt.Errorf("%w: end date before start date", ErrInvalidInput)
+	uc.draftErr = fmt.Errorf("%w: something the usecase rejects", ErrInvalidInput)
 	_, err := do(t, h.Generate, http.MethodPost, reqOpts{
-		body: genBody("Tokyo", "", "2026-11-05", "2026-11-01"), user: testUser,
+		body: genBody("Tokyo", "", "2026-11-01", "2026-11-02"), user: testUser,
 	})
 	he := wantHTTPErr(t, err, http.StatusUnprocessableEntity)
 	m, _ := he.Message.(map[string]any)
-	if msg, _ := m["message"].(string); !strings.Contains(msg, "end date before start date") {
+	if msg, _ := m["message"].(string); !strings.Contains(msg, "something the usecase rejects") {
 		t.Errorf("message = %v", he.Message)
 	}
 }
@@ -516,11 +524,11 @@ func TestHandlerDayPreview_UsecaseErrorMapping(t *testing.T) {
 		wantStatus int
 		wantUsed   int
 	}{
-		{"day not found", ErrDayNotFound, http.StatusNotFound, 1},
-		{"forbidden", fmt.Errorf("wrap: %w", apperr.ErrForbidden), http.StatusForbidden, 1},
-		{"day full", fmt.Errorf("%w: day already has 6 activities", ErrInvalidInput), http.StatusUnprocessableEntity, 1},
+		{"day not found", ErrDayNotFound, http.StatusNotFound, 0},
+		{"forbidden", fmt.Errorf("wrap: %w", apperr.ErrForbidden), http.StatusForbidden, 0},
+		{"day full", fmt.Errorf("%w: day already has 6 activities", ErrInvalidInput), http.StatusUnprocessableEntity, 0},
 		{"llm unavailable refunds", fmt.Errorf("%w: 502", ErrLLMUnavailable), http.StatusServiceUnavailable, 0},
-		{"internal", errors.New("provider missing"), http.StatusInternalServerError, 1},
+		{"internal", errors.New("provider missing"), http.StatusInternalServerError, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

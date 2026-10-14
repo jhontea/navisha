@@ -278,15 +278,12 @@ func TestHandler_Create_CostExpenseFailure_Rollback500(t *testing.T) {
 	}
 }
 
-// Documents current behaviour: the usecase's "arrival before departure"
-// check returns an unmapped plain error, so the client sees 500 rather
-// than 400.
-func TestHandler_Create_ArrivalBeforeDeparture_Currently500(t *testing.T) {
+func TestHandler_Create_ArrivalBeforeDeparture_400(t *testing.T) {
 	h, _, _ := newHandlerFixture()
 	body := `{"type":"bus","from_location":"A","to_location":"B",
 		"departure_datetime":"2026-08-02T10:00:00Z","arrival_datetime":"2026-08-01T10:00:00Z"}`
 	_, err := serve(t, h.Create, http.MethodPost, body, hOwner, map[string]string{"trip_id": hTrip})
-	assertHTTPCode(t, err, http.StatusInternalServerError)
+	assertHTTPCode(t, err, http.StatusBadRequest)
 }
 
 func TestHandler_Update(t *testing.T) {
@@ -366,17 +363,10 @@ func TestHandler_Delete(t *testing.T) {
 	}
 }
 
-// Documents current behaviour: the required-field check runs before
-// sanitization, so a location made only of HTML tags passes validation and
-// is stored as an empty string.
-func TestHandler_Create_TagOnlyLocation_StoredEmpty(t *testing.T) {
+// HTML is stripped before the required check, so a tag-only location is empty.
+func TestHandler_Create_TagOnlyLocation_400(t *testing.T) {
 	h, _, _ := newHandlerFixture()
 	body := `{"type":"bus","from_location":"<b></b>","to_location":"B"}`
-	rec, err := serve(t, h.Create, http.MethodPost, body, hOwner, map[string]string{"trip_id": hTrip})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := decode(t, rec)["from_location"]; got != "" {
-		t.Errorf("from_location = %v, want empty (current behaviour)", got)
-	}
+	_, err := serve(t, h.Create, http.MethodPost, body, hOwner, map[string]string{"trip_id": hTrip})
+	assertHTTPCode(t, err, http.StatusBadRequest)
 }

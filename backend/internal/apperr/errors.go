@@ -12,4 +12,6 @@ var (
 	// ErrRatesUnavailable means exchange rates could not be fetched, so an
 	// operation that needs a currency conversion was not applied.
 	ErrRatesUnavailable = errors.New("exchange rates unavailable")
+	// ErrUnsupportedCurrency means a currency code is not in the supported list.
+	ErrUnsupportedCurrency = errors.New("unsupported currency")
 )

@@ -297,14 +297,14 @@ func TestHandlerGenerate_ErrorMapping(t *testing.T) {
 		saveErr     error
 		wantStatus  int
 		wantCode    string
-		wantUsed    int // quota counter after the call
+		wantUsed    int // quota counter after the call; every failure is refunded
 	}{
-		{name: "trip forbidden", providerErr: apperr.ErrForbidden, wantStatus: http.StatusForbidden, wantUsed: 1},
-		{name: "summary forbidden", providerErr: ErrForbidden, wantStatus: http.StatusForbidden, wantUsed: 1},
-		{name: "trip not found", providerErr: ErrNotFound, wantStatus: http.StatusNotFound, wantUsed: 1},
+		{name: "trip forbidden", providerErr: apperr.ErrForbidden, wantStatus: http.StatusForbidden, wantUsed: 0},
+		{name: "summary forbidden", providerErr: ErrForbidden, wantStatus: http.StatusForbidden, wantUsed: 0},
+		{name: "trip not found", providerErr: ErrNotFound, wantStatus: http.StatusNotFound, wantUsed: 0},
 		{name: "llm error refunds quota", llmErr: errors.New("upstream 502"), wantStatus: http.StatusServiceUnavailable, wantCode: "LLM_UNAVAILABLE", wantUsed: 0},
 		{name: "llm empty refunds quota", llmResp: "", wantStatus: http.StatusServiceUnavailable, wantCode: "LLM_UNAVAILABLE", wantUsed: 0},
-		{name: "save fails", saveErr: errors.New("db down"), llmResp: "ok", wantStatus: http.StatusInternalServerError, wantUsed: 1},
+		{name: "save fails", saveErr: errors.New("db down"), llmResp: "ok", wantStatus: http.StatusInternalServerError, wantUsed: 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

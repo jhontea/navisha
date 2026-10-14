@@ -243,24 +243,19 @@ func TestHandler_Convert_DoesNotValidateCodesBeforeRepo(t *testing.T) {
 	}
 }
 
-// Documents current behaviour: "NaN" and "Inf" parse as valid floats and
-// slip past the `amount <= 0` check; the request then fails while encoding
-// the JSON response (non-HTTPError → 500) instead of a clean 400.
-func TestHandler_Convert_NaNAndInf_NotRejectedAs400(t *testing.T) {
-	for _, amt := range []string{"NaN", "Inf", "+Inf"} {
+// "NaN" and "Inf" parse as floats; they are rejected before the rate source.
+func TestHandler_Convert_NaNAndInf_400(t *testing.T) {
+	for _, amt := range []string{"NaN", "Inf", "+Inf", "-Inf"} {
 		t.Run(amt, func(t *testing.T) {
 			repo := &stubRepo{rate: &Rate{Rate: 2}}
 			h := NewHandler(NewUsecase(repo))
 			_, err := doGet(t, h.Convert, url.Values{"from": {"USD"}, "to": {"IDR"}, "amount": {amt}})
-			if err == nil {
-				t.Fatal("expected an error")
-			}
-			if repo.rateCalls != 1 {
-				t.Errorf("repo calls = %d, want 1 (input reached the rate source)", repo.rateCalls)
-			}
 			var he *echo.HTTPError
-			if errors.As(err, &he) && he.Code == http.StatusBadRequest {
-				t.Log("now rejected with 400 — update this test")
+			if !errors.As(err, &he) || he.Code != http.StatusBadRequest {
+				t.Fatalf("err = %v, want 400", err)
+			}
+			if repo.rateCalls != 0 {
+				t.Errorf("repo calls = %d, want 0", repo.rateCalls)
 			}
 		})
 	}

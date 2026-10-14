@@ -1,11 +1,14 @@
 package currency
 
 import (
-	"errors"
 	"time"
+
+	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 )
 
-var ErrUnsupported = errors.New("unsupported currency")
+// ErrUnsupported is the shared apperr sentinel, so other domains can tell a bad
+// code from a rates outage without importing this package.
+var ErrUnsupported = apperr.ErrUnsupportedCurrency
 
 // Rate represents a single exchange rate between two currencies.
 type Rate struct {

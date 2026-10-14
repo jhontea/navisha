@@ -1,9 +1,9 @@
 package tripshare
 
 import (
-	"errors"
 	"net/http"
 
+	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
 	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
 )
@@ -59,14 +59,11 @@ func (h *Handler) Resolve(c echo.Context) error {
 }
 
 func mapError(err error) error {
-	switch {
-	case errors.Is(err, ErrInvalidDuration):
-		return echo.NewHTTPError(http.StatusBadRequest, "duration must be 1, 3, 7, 14, or 30 days")
-	case errors.Is(err, ErrExpired):
-		return echo.NewHTTPError(http.StatusGone, "share link has expired or was revoked")
-	case errors.Is(err, ErrNotFound), errors.Is(err, ErrInvalidToken):
-		return echo.NewHTTPError(http.StatusNotFound, "share link not found")
-	default:
-		return err
-	}
+	return apperr.MapHTTP(err,
+		apperr.HTTPMapping{Err: ErrInvalidDuration, Code: http.StatusBadRequest, Message: "duration must be 1, 3, 7, 14, or 30 days"},
+		apperr.HTTPMapping{Err: ErrExpired, Code: http.StatusGone, Message: "share link has expired or was revoked"},
+		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "share link not found"},
+		apperr.HTTPMapping{Err: ErrInvalidToken, Code: http.StatusNotFound, Message: "share link not found"},
+		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
+	)
 }

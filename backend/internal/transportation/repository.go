@@ -11,6 +11,8 @@ var (
 	ErrNotFound     = errors.New("transportation not found")
 	ErrTripNotFound = errors.New("trip not found")
 	ErrInvalidType  = errors.New("invalid transportation type")
+	// ErrArrivalBeforeDeparture: both times are set and arrival is earlier.
+	ErrArrivalBeforeDeparture = errors.New("arrival before departure")
 )
 
 type Repository interface {

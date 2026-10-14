@@ -43,9 +43,9 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 
 	s, err := h.usecase.Generate(c.Request().Context(), userID, tripID)
 	if err != nil {
-		if errors.Is(err, ErrLLMUnavailable) {
-			h.quota.Refund(c, userID)
-		}
+		// No summary was produced (missing or foreign trip, LLM failure), so
+		// the attempt does not count against the daily quota.
+		h.quota.Refund(c, userID)
 		return mapErr(err)
 	}
 	return c.JSON(http.StatusOK, toResponse(s))

@@ -127,7 +127,7 @@ func TestHandler_Create(t *testing.T) {
 		{"unsupported 2", `{"duration_days":2}`, nil, http.StatusBadRequest, 0},
 		{"too long 365", `{"duration_days":365}`, nil, http.StatusBadRequest, 0},
 		{"trip not owned/not found", `{"duration_days":7}`, ErrNotFound, http.StatusNotFound, 0},
-		{"repo failure", `{"duration_days":7}`, errors.New("db down"), 0, 0},
+		{"repo failure", `{"duration_days":7}`, errors.New("db down"), http.StatusInternalServerError, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -136,12 +136,6 @@ func TestHandler_Create(t *testing.T) {
 			c, rec := newCtx(http.MethodPost, tt.body, []string{"id"}, []string{"trip-1"})
 			err := authed(h.Create, c, "user-1")
 			switch {
-			case tt.wantCode == 0:
-				// Unmapped errors pass through untouched (Echo renders 500).
-				if err == nil || !errors.Is(err, tt.createErr) {
-					t.Fatalf("err = %v, want passthrough of %v", err, tt.createErr)
-				}
-				return
 			case tt.wantCode != http.StatusCreated:
 				wantHTTPCode(t, err, tt.wantCode)
 				return
