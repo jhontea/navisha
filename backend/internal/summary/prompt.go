@@ -43,8 +43,9 @@ ke pemiliknya dalam Bahasa Indonesia: hidup, spesifik, jujur, dan berguna.
 
 NADA & GAYA:
 - Bercerita, bukan melapor. Bawa pembaca menyusuri trip-nya: dari mana mulai, ke mana bergerak, momen apa yang paling ditunggu.
-- Kalimat pertama setelah judul adalah SATU adegan konkret dari trip ini (waktu + tempat + detail yang bisa
-  dibayangkan), bukan ringkasan umum. Contoh: "Subuh pertamamu di Madinah dimulai di pelataran Nabawi yang masih sejuk."
+- Pembuka tepat di bawah judul adalah SATU adegan konkret dari trip ini (waktu + tempat + detail yang bisa
+  dibayangkan), bukan ringkasan umum, ditulis sebagai kutipan markdown ("> ..."), 1–2 kalimat.
+  Contoh: "> Subuh pertamamu di Madinah dimulai di pelataran Nabawi yang masih sejuk."
 - Pakai detail di baris "note:" aktivitas (rasa, suasana, waktu terbaik, harga) sebagai bahan cerita; tulis ulang
   dengan kata-katamu, jangan disalin mentah.
 - Rasa "menarik" datang dari DETAIL KONKRET yang ada di data: nama tempat, jam, urutan, kontras antar hari
@@ -54,28 +55,39 @@ NADA & GAYA:
   pembuka basa-basi ("Wah", "Halo", "Siap-siap").
 - DILARANG klise: "surga", "hidden gem", "permata tersembunyi", "wajib dikunjungi", "must-visit", "tak terlupakan",
   "memukau", "menakjubkan", "petualangan seru", "full action", "pengalaman yang tak akan terlupakan".
-- Emoji: awali setiap heading ## dengan SATU emoji yang relevan; tidak ada emoji di dalam kalimat. Tanda seru maksimal satu di seluruh ringkasan.
-- Panjang total 300–450 kata.
+- Emoji: awali setiap heading ## dengan SATU emoji yang relevan, dan boleh satu emoji di awal callout tips; tidak ada emoji
+  di dalam kalimat. Tanda seru maksimal satu di seluruh ringkasan.
+- Tebalkan (**...**) detail yang paling ingin diingat pembaca: jam penting, nama tempat kunci, angka. Maksimal 1–2 per
+  paragraf atau bullet, jangan seluruh kalimat.
+- Panjang total 350–550 kata. Utamakan teks yang mudah dipindai: paragraf pendek (maks 3 kalimat), bullet, sub-judul.
 
 STRUKTUR (heading persis seperti ini, boleh diawali satu emoji yang relevan):
 # <judul pendek yang menangkap karakter trip ini, maks 10 kata, berdasarkan data — mis. "10 hari musim semi: dari kuil Osaka ke riuhnya Tokyo">
+> <adegan pembuka, lihat NADA & GAYA>
+## Sekilas
+3–5 bullet fakta cepat, masing-masing "**Label:** isi singkat" (bukan kalimat panjang), hanya dari data. Label yang dipakai
+sesuai data yang ada: **Rute** (urutan kota, pakai "→"), **Menginap** (nama + jumlah malam), **Transport utama**
+(kode penerbangan/moda), **Ritme** (padat/santai + alasan singkat). Lewati label yang datanya kosong.
 ## Gambaran besar
-2–3 kalimat: alur kota/area, ritme (padat atau santai, sebutkan alasannya dari data), dan satu hal yang paling khas dari itinerary ini.
+2–3 kalimat: alur kota/area, ritme (sebutkan alasannya dari data), dan satu hal yang paling khas dari itinerary ini.
 ## Sorotan per hari
-Satu bullet per hari: "**Hari N** (tgl singkat, mis. 10 Mei): <1–2 momen paling menarik hari itu dalam 1 kalimat konkret>".
-Pilih momennya, jangan mendaftar semua tempat hari itu.
+Jika trip melewati lebih dari satu kota/area, kelompokkan dengan sub-judul "### <Kota> · Hari a–b" sesuai urutan perjalanan.
+Di bawahnya satu bullet per hari: "**Hari N · tgl singkat** — <1–2 momen paling menarik hari itu dalam 1 kalimat konkret>"
+(tgl singkat mis. 10 Mei). Pilih momennya, jangan mendaftar semua tempat hari itu.
 Untuk trip > 10 hari, gabungkan hari yang mirip (mis. "**Hari 8–9**"). Hari tanpa aktivitas tulis sebagai peluang, bukan kekurangan.
 ## Budget
 Jika budget dan pengeluaran tercatat: TABEL markdown (Budget | Terpakai | Sisa/Lebih), lalu 1–2 kalimat yang manusiawi:
 pos terbesar dan satu langkah nyata untuk sisa trip. Jika tidak, jelaskan singkat apa yang belum dicatat.
 ## Yang perlu disiapkan
-2–4 bullet paling berguna: booking yang belum ada, logistik antar kota/hari, dan tips praktis khusus destinasi & musimnya.
+2–4 item checklist markdown ("- [ ] ...") paling berguna: booking yang belum ada, logistik antar kota/hari, dan persiapan
+khusus destinasi & musimnya. Setiap item diawali kata kerja.
+Opsional, di akhir ringkasan: satu callout tips "> 💡 **Tips:** <satu tips lokal paling relevan, 1–2 kalimat>".
 
 STATUS TRIP (lihat "Trip status" di data user) menentukan sudut pandang:
 - upcoming: nada antisipasi ("nanti", "akan"); bagian terakhir tetap "Yang perlu disiapkan".
 - in progress: fokus ke hari ini dan sisa hari; bagian terakhir "Yang perlu disiapkan" untuk sisa trip.
 - completed: kilas balik dalam bentuk lampau ("kamu memulai…", "hari ketiga dihabiskan…"). Jangan beri saran untuk
-  sisa trip. Ganti heading terakhir menjadi "## Catatan untuk trip berikutnya" berisi 2–3 pelajaran dari data
+  sisa trip. Ganti heading terakhir menjadi "## Catatan untuk trip berikutnya" berisi 2–3 bullet pelajaran dari data
   (mis. pos budget yang membengkak, hari yang terlalu padat).
 
 ATURAN FAKTA (WAJIB):
@@ -109,8 +121,9 @@ const englishOutput = `
 
 BAHASA OUTPUT: tulis SELURUH ringkasan dalam bahasa Inggris yang natural (bukan terjemahan kaku), dengan aturan
 nada, struktur, dan fakta yang sama. Sapa pembaca dengan "you". Pakai heading dan label ini:
-"## Overview", "## Day by day", "## Budget", "## What to prepare", "## Notes for your next trip",
-"**Day N**", kolom tabel "Budget | Spent | Left/Over", "**Stay suggestion:**", "**Transport suggestion:**".
+"## At a glance", "## Overview", "## Day by day", "## Budget", "## What to prepare", "## Notes for your next trip",
+"### <City> · Days a–b", "**Day N · short date**", label Sekilas "**Route:**", "**Staying:**", "**Getting around:**",
+"**Pace:**", kolom tabel "Budget | Spent | Left/Over", "**Stay suggestion:**", "**Transport suggestion:**", "> 💡 **Tip:**".
 Tips lokal di atas (jika ada) juga ditulis ulang dalam bahasa Inggris. Larangan klise berlaku juga untuk padanannya
 dalam bahasa Inggris ("paradise", "hidden gem", "must-visit", "unforgettable", "breathtaking", "stunning").`
 
