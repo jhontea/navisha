@@ -48,7 +48,7 @@ func TestBuildPrompt_FormatsMoneyPerCurrency(t *testing.T) {
 
 func TestBuildPrompt_StorytellingVoice(t *testing.T) {
 	system, _ := BuildPrompt(*newTripContext())
-	for _, want := range []string{"Bercerita, bukan melapor", "## Gambaran besar", "## Sorotan per hari", "## Budget", "## Yang perlu disiapkan", "300–450 kata", "SATU emoji yang relevan", "cakep abis", "hidden gem"} {
+	for _, want := range []string{"Bercerita, bukan melapor", "## Gambaran besar", "## Sorotan per hari", "## Budget", "## Yang perlu disiapkan", "## Sekilas", "- [ ]", "350–550 kata", "SATU emoji yang relevan", "cakep abis", "hidden gem"} {
 		if !strings.Contains(system, want) {
 			t.Errorf("system prompt missing %q", want)
 		}

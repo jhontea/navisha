@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { AlertCircle, AlertTriangle, ExternalLink, Loader2, MoreHorizontal, RefreshCw, Sparkles, Trash2 } from "lucide-react"
+import { AlertCircle, AlertTriangle, ExternalLink, Loader2, MoreHorizontal, RefreshCw, Sparkles, Square, Trash2 } from "lucide-react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -44,14 +44,32 @@ const markdownComponents: Components = {
   ),
   h1: (props) => <h3 className="mb-2 mt-6 text-xl font-semibold text-foreground first:mt-0">{props.children}</h3>,
   h2: (props) => <h3 className="mb-2 mt-6 text-lg font-semibold text-foreground first:mt-0">{props.children}</h3>,
-  h3: (props) => <h4 className="mb-1.5 mt-5 text-base font-semibold text-foreground">{props.children}</h4>,
+  h3: (props) => (
+    <h4 className="mb-1.5 mt-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{props.children}</h4>
+  ),
   p: (props) => <p className="my-2 leading-relaxed text-foreground">{props.children}</p>,
-  ul: (props) => <ul className="my-2 ml-5 list-disc space-y-1 text-foreground">{props.children}</ul>,
+  // remark-gfm marks a "- [ ]" checklist with contains-task-list / task-list-item.
+  ul: ({ className, children }) =>
+    className?.includes("contains-task-list") ? (
+      <ul className="my-2 space-y-1.5 text-foreground">{children}</ul>
+    ) : (
+      <ul className="my-2 ml-5 list-disc space-y-1 text-foreground">{children}</ul>
+    ),
   ol: (props) => <ol className="my-2 ml-5 list-decimal space-y-1 text-foreground">{props.children}</ol>,
-  li: (props) => <li className="pl-1 leading-relaxed">{props.children}</li>,
+  li: ({ className, children }) =>
+    className?.includes("task-list-item") ? (
+      <li className="relative pl-7 leading-relaxed">{children}</li>
+    ) : (
+      <li className="pl-1 leading-relaxed">{children}</li>
+    ),
+  // Checklist box (read-only): an icon instead of a disabled checkbox.
+  input: (props) =>
+    props.type === "checkbox" ? <Square className="absolute left-0 top-1 h-4 w-4 text-primary" aria-hidden="true" /> : null,
   strong: (props) => <strong className="font-semibold text-foreground">{props.children}</strong>,
   blockquote: (props) => (
-    <blockquote className="my-3 border-l-2 border-border pl-4 text-muted-foreground">{props.children}</blockquote>
+    <blockquote className="my-4 rounded-r-lg border-l-4 border-primary bg-primary/5 px-4 py-1 text-foreground [&_p]:my-2">
+      {props.children}
+    </blockquote>
   ),
   hr: () => <hr className="my-6 border-border" />,
   code: (props) => {
