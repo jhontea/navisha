@@ -23,6 +23,7 @@ import { BackLink } from "@/components/BackLink"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LocationProviderBoundary } from "@/features/location/components/LocationProviderBoundary"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
+import { cn } from "@/lib/utils"
 import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizard"
 import { GeneratingItinerarySkeleton } from "@/features/trip/components/GeneratingItinerarySkeleton"
 import {
@@ -218,7 +219,7 @@ function GenerateTripPageContent() {
 
       {/* Wizard stays mounted during generation; the overlay covers it (pattern 3 above). */}
       {!result ? (
-        <div className="relative">
+        <div className={cn("relative", generate.isPending && "min-h-[320px]")}>
           {generate.isPending && (
             <div className="absolute inset-0 z-20 rounded-xl border bg-card p-6">
               <GeneratingItinerarySkeleton days={pendingDays} />

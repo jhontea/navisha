@@ -188,7 +188,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               aria-label="Sort expenses"
-              className="h-11 rounded-lg border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10"
+              className="w-auto bg-card"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

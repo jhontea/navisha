@@ -21,7 +21,7 @@ const RULES: { name: string; pattern: RegExp }[] = [
   { name: "'Oops' / 'Whoops'", pattern: /\b(Oops|Whoops)\b/ },
   { name: "error starting with 'Failed to'", pattern: /["'>]\s*Failed to / },
   { name: "Title Case button label", pattern: /["'>]\s*(Save|Add|Create|Delete|Update|Generate|Start|Try) [A-Z][a-z]+\s*["'<]/ },
-  { name: "Indonesian copy in the English UI", pattern: /["'>]\s*[^"'<>]*\b(Pilih|Kosongkan|Belum ada|aktivitas|tempat dipilih|Hari \{|Menyusun|Memahami|Mencari|Hampir selesai|Gagal|Berhasil)/ },
+  { name: "Indonesian copy in the English UI", pattern: /["'>]\s*[^"'<>]*\b(Pilih|Kosongkan|Belum ada|aktivitas|tempat dipilih|Hari \{|Menyusun|Memahami|Mencari|Hampir selesai|Gagal|Berhasil|Ini bisa|santai|sebentar)/ },
   { name: "unverifiable usage claim", pattern: /10,000\+|thousands of travelers|Free forever/ },
 ]
 
