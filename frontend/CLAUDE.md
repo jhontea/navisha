@@ -85,12 +85,13 @@ frontend/
 - No cross-feature imports — `trip/` must not import from `auth/`
 
 ### Styling
-- Follow `docs/DESIGN_SYSTEM.md` (tokens, type scale, category colors, anti AI-slop rules) and `docs/COPY_GUIDE.md` (glossary, button/error copy)
+- Follow `docs/DESIGN.md` (V2 "Soft": tokens, fonts, radius, components, checklist) and `docs/COPY_GUIDE.md` (glossary, button/error copy). `docs/DESIGN_SYSTEM.md` still holds the expense category rules.
 - No `text-[Npx]` and no hex colors in classes (lint fails: `--max-warnings 0`); legacy `glass*` / `text-gradient*` / `chromatic-*` / MD3 tokens are gone, only the tokens in `tailwind.config.ts` exist
 - Tailwind only — no inline styles
 - `cn()` from `lib/utils.ts` for conditional class merging
 - Responsive: mobile-first (sm → md → lg breakpoints)
-- Light theme only: there are no `.dark` tokens; `dark:` classes in generated `components/ui/` files are inert
+- Themes: **light is the default**; dark is opt-in via `ThemeToggle` (cookie `navisha-theme`, applied by an inline script in `app/layout.tsx` before paint, never from the OS setting). Use tokens only so both themes work; check new UI in both.
+- Fonts: `font-sans` (Nunito Sans) everywhere, `font-display` (Nunito) for titles and big numbers.
 
 ## Auth Guard (middleware.ts)
 

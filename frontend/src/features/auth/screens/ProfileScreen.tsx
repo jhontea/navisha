@@ -10,9 +10,11 @@ import {
   FileText,
   LogOut,
   Mail,
+  Palette,
   Shield,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { useAuth, useLogout } from "@/features/auth/hooks"
 import { StatsSection } from "@/features/trip/components/StatsSection"
 
@@ -122,7 +124,7 @@ variant="destructive" className="mt-5 w-full">
                 href="/currency"
                 className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -131,6 +133,17 @@ variant="destructive" className="mt-5 w-full">
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
+
+              <div className="flex flex-wrap items-center gap-3 px-4 py-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+                  <Palette className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-foreground">Appearance</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Light is the default. Your choice is saved on this device.</span>
+                </span>
+                <ThemeToggle className="w-full sm:w-56" />
+              </div>
 
               <div className="flex items-center gap-3 px-4 py-4">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

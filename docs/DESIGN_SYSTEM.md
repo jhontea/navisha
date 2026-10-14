@@ -1,5 +1,7 @@
 # Navisha Design System
 
+> ⚠️ **Akan digantikan oleh [DESIGN.md](DESIGN.md) (V2 · Soft)** setelah fase V1 redesign diterapkan. Sampai saat itu, dokumen ini masih mencerminkan kode yang berjalan.
+
 > Sumber kebenaran tampilan. Token ada di `frontend/src/app/globals.css` (CSS variables) dan `frontend/tailwind.config.ts` (nama class).
 > Arah visual: travel-centric, peta dominan, bersih (acuan mood: Wanderlog). Tema: **light saja** untuk sekarang.
 > Latar belakang dan temuan awal: [design/AUDIT_BASELINE.md](design/AUDIT_BASELINE.md).

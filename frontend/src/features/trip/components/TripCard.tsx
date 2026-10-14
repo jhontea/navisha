@@ -8,7 +8,7 @@ import { getTripDateMetrics } from "../lib/status"
 import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
 import type { Trip } from "../types"
 
-/** Trip cover photo, or a neutral block with a pin when there is none. */
+/** Trip cover illustration, or the dusk-navy fallback when there is none (DESIGN.md §7). */
 export function TripCover({
   trip,
   sizes,
@@ -24,7 +24,7 @@ export function TripCover({
   const srcSet = tripCoverSrcSet(trip.cover_image_url, trip.description, [480, 640, 768, 960])
 
   return (
-    <div className={cn("relative overflow-hidden bg-muted", className)}>
+    <div className={cn("bg-cover-fallback relative overflow-hidden", className)}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -36,11 +36,7 @@ export function TripCover({
           decoding="async"
           className="h-full w-full object-cover"
         />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
-          <MapPin className="h-8 w-8 text-muted-foreground/60" />
-        </div>
-      )}
+      ) : null}
     </div>
   )
 }

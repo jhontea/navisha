@@ -13,6 +13,7 @@ import { IconButton } from "@/components/IconButton"
 import { MoneyText } from "@/components/MoneyText"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { StatTile } from "@/components/StatTile"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { UserAvatar } from "@/components/UserAvatar"
 import { CurrencyBadge } from "@/features/currency/components/CurrencyBadge"
 import { CATEGORY_COLORS, CATEGORY_ORDER } from "@/features/expense/categoryColors"
@@ -28,17 +29,23 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 const COLORS = [
   ["primary", "bg-primary"],
+  ["primary-soft", "bg-primary-soft"],
   ["background", "bg-background border"],
   ["card", "bg-card border"],
   ["muted", "bg-muted"],
   ["border", "bg-border"],
   ["destructive", "bg-destructive"],
+  ["destructive-bg", "bg-destructive-bg"],
+  ["success-bg", "bg-success-bg"],
+  ["warning-bg", "bg-warning-bg"],
+  ["cover-fallback", "bg-cover-fallback"],
   ["success", "bg-success"],
   ["warning", "bg-warning"],
   ["info", "bg-info"],
 ] as const
 
 const TYPE = [
+  ["text-hero", "40px · trip title on the desktop hero (display)"],
   ["text-xs", "12px · label, meta, badge (minimum)"],
   ["text-sm", "14px · body in cards, forms, buttons"],
   ["text-base", "16px · main body"],
@@ -55,10 +62,11 @@ export function UiCatalog() {
     <main className="mx-auto max-w-5xl space-y-12 px-4 py-10 md:px-8">
       <header>
         <p className="text-sm text-muted-foreground">Development only</p>
-        <h1 className="text-3xl font-semibold tracking-tight">UI catalog</h1>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight">UI catalog</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tokens and components from docs/DESIGN_SYSTEM.md.
+          Tokens and components from docs/DESIGN.md (V2 · Soft).
         </p>
+        <ThemeToggle className="mt-4 w-56" />
       </header>
 
       <Section title="Colors">
@@ -90,6 +98,23 @@ export function UiCatalog() {
             <div key={cls} className="flex items-baseline gap-4">
               <code className="w-24 shrink-0 text-xs text-muted-foreground">{cls}</code>
               <span className={`${cls} text-foreground`}>{desc}</span>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-1">
+          <p className="font-display text-2xl font-extrabold text-foreground">
+            Umrah <span className="text-muted-foreground">9 Hari</span>
+          </p>
+          <p className="text-xs text-muted-foreground">font-display (Nunito) · two-tone title</p>
+        </div>
+      </Section>
+
+      <Section title="Radius">
+        <div className="flex flex-wrap items-end gap-3">
+          {(["rounded-sm", "rounded-md", "rounded-lg", "rounded-xl", "rounded-2xl", "rounded-3xl", "rounded-full"] as const).map((r) => (
+            <div key={r} className="space-y-1 text-center">
+              <div className={`h-14 w-20 border bg-card shadow-card ${r}`} />
+              <code className="text-xs text-muted-foreground">{r}</code>
             </div>
           ))}
         </div>

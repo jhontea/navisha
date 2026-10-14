@@ -63,25 +63,11 @@ function Hero({ trip }: { trip: PublicItinerary }) {
   const { totalDays } = getTripDateMetrics(trip.start_date, trip.end_date)
   const meta = `${formatTripRange(trip.start_date, trip.end_date)} · ${totalDays} ${totalDays === 1 ? "day" : "days"}`
 
-  if (!cover) {
-    return (
-      <section className="mt-6 rounded-xl border bg-card p-5 md:p-6">
-        <h1 className="text-2xl font-semibold text-foreground md:text-3xl">{trip.title}</h1>
-        {trip.description && (
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {trip.description}
-          </p>
-        )}
-        <p className="mt-2 text-sm text-foreground tabular-nums">{meta}</p>
-      </section>
-    )
-  }
-
+  // No cover: the same dusk navy as the illustrated covers (DESIGN.md §7).
   return (
-    <section className="relative mt-6 overflow-hidden rounded-xl">
+    <section className="bg-cover-fallback relative mt-6 overflow-hidden rounded-xl">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" aria-hidden="true" />
       <div className="relative flex min-h-56 flex-col justify-end p-5 text-white md:min-h-64 md:p-6">
         {trip.description && (

@@ -63,7 +63,7 @@ export function TripHeader({
             className="h-12 w-12 shrink-0 rounded-lg object-cover"
           />
         ) : (
-          <span className="h-12 w-12 shrink-0 rounded-lg bg-muted" aria-hidden="true" />
+          <span className="bg-cover-fallback h-12 w-12 shrink-0 rounded-lg" aria-hidden="true" />
         )}
 
         <div className="min-w-0 flex-1">
