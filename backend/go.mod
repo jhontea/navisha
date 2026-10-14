@@ -12,6 +12,7 @@ require (
 	github.com/redis/go-redis/v9 v9.20.0
 	github.com/spf13/viper v1.21.0
 	golang.org/x/oauth2 v0.36.0
+	golang.org/x/text v0.39.0
 )
 
 require (
@@ -40,6 +41,5 @@ require (
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.39.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 )

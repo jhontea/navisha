@@ -80,6 +80,7 @@ func main() {
 	parallel := flag.Int("parallel", 2, "cases generated at the same time")
 	show := flag.Int("show", 2, "sample place notes to print per case")
 	out := flag.String("out", "", "write full results (with drafts) as JSON to this file")
+	drafts := flag.String("drafts", "", "reuse the drafts in this -out file instead of generating (no LLM calls), to compare geocoding on the same places")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -107,6 +108,20 @@ func main() {
 	}
 
 	fmt.Fprintf(os.Stderr, "model %s, %d case(s), %d at a time\n", cfg.ActiveModel(), len(selected), *parallel)
+	saved := map[string]*autogen.TripDraft{}
+	if *drafts != "" {
+		data, err := os.ReadFile(*drafts)
+		if err != nil {
+			fail(err)
+		}
+		var prev []result
+		if err := json.Unmarshal(data, &prev); err != nil {
+			fail(err)
+		}
+		for _, r := range prev {
+			saved[r.Case] = r.Draft
+		}
+	}
 	results := make([]result, len(selected))
 	sem := make(chan struct{}, max(1, *parallel))
 	var wg sync.WaitGroup
@@ -116,7 +131,7 @@ func main() {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			results[i] = run(usecase, locations, c)
+			results[i] = run(usecase, locations, c, saved[c.Name], *drafts != "")
 			fmt.Fprintf(os.Stderr, "  %s done in %.0fs\n", c.Name, results[i].Seconds)
 		}(i, c)
 	}
@@ -132,15 +147,20 @@ func main() {
 	}
 }
 
-func run(usecase *autogen.Usecase, locations *location.Handler, c evalCase) result {
+func run(usecase *autogen.Usecase, locations *location.Handler, c evalCase, reuse *autogen.TripDraft, reusing bool) result {
 	r := result{Case: c.Name}
 	start := time.Date(2027, 3, 10, 0, 0, 0, 0, time.UTC)
 	began := time.Now()
-	draft, err := usecase.GenerateDraft(context.Background(), "eval", autogen.GenerateInput{
-		Destination: c.Destination, Description: c.Description,
-		StartDate: start, EndDate: start.AddDate(0, 0, c.Days-1),
-		BaseCurrency: "IDR", TravelStyle: c.Style,
-	})
+	draft, err := reuse, error(nil)
+	if reusing && reuse == nil {
+		err = fmt.Errorf("no saved draft for this case")
+	} else if !reusing {
+		draft, err = usecase.GenerateDraft(context.Background(), "eval", autogen.GenerateInput{
+			Destination: c.Destination, Description: c.Description,
+			StartDate: start, EndDate: start.AddDate(0, 0, c.Days-1),
+			BaseCurrency: "IDR", TravelStyle: c.Style,
+		})
+	}
 	r.Seconds = time.Since(began).Seconds()
 	if err != nil {
 		r.Error = err.Error()
