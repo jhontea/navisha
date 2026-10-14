@@ -58,6 +58,18 @@ export function SharedDay({
           entries.map((entry) => {
             if (entry.kind === "activity") {
               const a = entry.activity
+              if (a.type === "note") {
+                return (
+                  <TimelineRow key={a.id} time={a.start_time?.slice(0, 5) || null} icon={<TimelineIcon kind="note" />}>
+                    <div id={`activity-${a.id}`} className="rounded-xl border bg-card px-4 py-3">
+                      <h3 className="text-sm font-semibold leading-snug text-foreground">{a.title}</h3>
+                      {a.payload.content && (
+                        <p className="mt-1.5 whitespace-pre-line text-sm text-muted-foreground">{a.payload.content}</p>
+                      )}
+                    </div>
+                  </TimelineRow>
+                )
+              }
               return (
                 <TimelineRow key={a.id} time={a.start_time?.slice(0, 5) || null} icon={<TimelineIcon kind="location" />}>
                   <SharedActivityCard

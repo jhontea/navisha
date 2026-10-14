@@ -36,7 +36,6 @@ export function MapLibreCanvas({
   onOpenInMaps,
   selectedActivityId,
   onSelectActivity,
-  stays = [],
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -67,16 +66,14 @@ export function MapLibreCanvas({
   // points actually changes (not on every parent re-render, which allocates a
   // fresh `visibleByDay` array and would otherwise recreate the map + all
   // markers on every click). Mirrors the FitBounds pattern in the Google path.
-  const displayableStays = useMemo(() => stays.filter((s) => hasValidCoords(s.lat, s.lng)), [stays])
-
   const pointsKey = useMemo(
     () =>
-      [...displayableByDay.flatMap((d) => d.points.map((p) => p.activityId)), ...displayableStays.map((s) => `stay:${s.id}`)].join("|"),
-    [displayableByDay, displayableStays],
+      displayableByDay.flatMap((d) => d.points.map((p) => p.activityId)).join("|"),
+    [displayableByDay],
   )
 
   useEffect(() => {
-    if (!containerRef.current || (displayableByDay.length === 0 && displayableStays.length === 0)) return
+    if (!containerRef.current || displayableByDay.length === 0) return
 
     setMapError(false)
     // Drop the previous view's route lines until the new map has projected
@@ -84,7 +81,7 @@ export function MapLibreCanvas({
     setRouteOverlay((prev) => ({ ...prev, routes: [] }))
     const allPoints = displayableByDay.flatMap((day) => day.points)
     // Everything the view should fit: places and stays.
-    const allCoords = [...allPoints, ...displayableStays].map((p) => [p.lng, p.lat] as [number, number])
+    const allCoords = allPoints.map((p) => [p.lng, p.lat] as [number, number])
     let cancelled = false
 
     const rasterFallback: StyleSpecification = {
@@ -148,18 +145,20 @@ export function MapLibreCanvas({
       map.on("resize", updateRouteOverlay)
 
       map.once("load", () => {
-        allPoints.forEach((point, index) => {
+        let placeNumber = 0
+        allPoints.forEach((point) => {
+          const isStay = point.kind === "stay"
           const markerElement = document.createElement("button")
           markerElement.type = "button"
           markerElement.title = point.title
           markerElement.setAttribute("aria-label", point.title)
-          markerElement.textContent = String(index + 1)
+          markerElement.textContent = isStay ? "H" : String(++placeNumber)
           Object.assign(markerElement.style, {
             width: "30px",
             height: "30px",
-            borderRadius: "9999px",
+            borderRadius: isStay ? "8px" : "9999px",
             border: "2px solid white",
-            background: colorForDay(point.dayNumber),
+            background: isStay ? "#0f172a" : colorForDay(point.dayNumber),
             color: "white",
             fontSize: "12px",
             fontWeight: "700",
@@ -216,43 +215,6 @@ export function MapLibreCanvas({
           new maplibregl.Marker({ element: markerElement })
             .setLngLat([point.lng, point.lat])
             .setPopup(new maplibregl.Popup({ offset: 22 }).setDOMContent(popupContent))
-            .addTo(map)
-        })
-
-        displayableStays.forEach((stay) => {
-          const stayElement = document.createElement("div")
-          stayElement.title = stay.name
-          stayElement.setAttribute("aria-label", `Stay: ${stay.name}`)
-          stayElement.textContent = "H"
-          Object.assign(stayElement.style, {
-            width: "28px",
-            height: "28px",
-            borderRadius: "8px",
-            border: "2px solid white",
-            background: "#0f172a",
-            color: "white",
-            fontSize: "12px",
-            fontWeight: "700",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 8px rgb(0 0 0 / 0.28)",
-          })
-          const popup = document.createElement("div")
-          popup.style.maxWidth = "240px"
-          const name = document.createElement("p")
-          name.textContent = stay.name
-          name.style.fontWeight = "700"
-          popup.appendChild(name)
-          if (stay.address) {
-            const address = document.createElement("p")
-            address.textContent = stay.address
-            address.style.fontSize = "12px"
-            popup.appendChild(address)
-          }
-          new maplibregl.Marker({ element: stayElement })
-            .setLngLat([stay.lng, stay.lat])
-            .setPopup(new maplibregl.Popup({ offset: 20 }).setDOMContent(popup))
             .addTo(map)
         })
 

@@ -166,10 +166,14 @@ export interface PublicActivityPayload {
   lng?: number
   external_url?: string
   image_urls?: string[]
+  /** A note's text (note activities only). */
+  content?: string
 }
 
 export interface PublicTripActivity {
   id: string
+  /** "location" or "note" (older links may omit it: a place). */
+  type?: "location" | "note"
   title: string
   start_time: string
   end_time: string

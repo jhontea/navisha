@@ -10,17 +10,9 @@ import type { DayLocations, LocationPoint } from "../hooks/useTripLocations"
  * What every map renderer receives. MapLibre (default) and Google Maps both
  * implement it; callers only use <MapCanvas>, never a renderer directly.
  */
-/** A stay (hotel) shown on the map with its own marker, outside the day routes. */
-export interface StayPoint {
-  id: string
-  name: string
-  lat: number
-  lng: number
-  address: string
-}
-
 export interface MapRendererProps {
-  /** Places grouped by day, in itinerary order; drawn as numbered markers and routes. */
+  /** Stops grouped by day, in itinerary order: places get numbered markers,
+   *  hotel stops ("stay") an "H"; each day's stops are joined by its route. */
   visibleByDay: DayLocations[]
   /** Open one place in Google Maps (marker popup action). */
   onOpenInMaps: (point: LocationPoint) => void
@@ -28,8 +20,6 @@ export interface MapRendererProps {
   selectedActivityId?: string | null
   /** Called when a marker is chosen, to highlight the matching list item. */
   onSelectActivity?: (point: LocationPoint) => void
-  /** Stays to mark with an "H" (not numbered, not part of the routes). */
-  stays?: StayPoint[]
 }
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""

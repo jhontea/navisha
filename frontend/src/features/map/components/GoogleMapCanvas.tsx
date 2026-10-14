@@ -54,7 +54,6 @@ function GeocodingLayer({
   onOpenInMaps,
   selectedActivityId,
   onSelectActivity,
-  stays = [],
 }: Props) {
   const map = useMap()
   const [resolved, setResolved] = useState<
@@ -162,13 +161,6 @@ function GeocodingLayer({
           <FitBounds points={displayable} />
         </>
       )}
-      {stays
-        .filter((stay) => hasValidCoords(stay.lat, stay.lng))
-        .map((stay) => (
-          <AdvancedMarker key={`stay-${stay.id}`} position={{ lat: stay.lat, lng: stay.lng }} title={`Stay: ${stay.name}`}>
-            <Pin background="#0f172a" borderColor="#ffffff" glyphColor="#ffffff" glyph="H" />
-          </AdvancedMarker>
-        ))}
     </>
   )
 }
@@ -201,6 +193,8 @@ function Markers({
     <>
       {points.map((point, index) => {
         const isSelected = point.activityId === selectedActivityId
+        const isStay = point.kind === "stay"
+        const glyph = isStay ? "H" : String(points.slice(0, index + 1).filter((p) => p.kind !== "stay").length)
         return (
           <AdvancedMarker
             key={point.activityId}
@@ -212,10 +206,10 @@ function Markers({
             title={point.title}
           >
             <Pin
-              background={colorForDay(point.dayNumber)}
+              background={isStay ? "#0f172a" : colorForDay(point.dayNumber)}
               borderColor={isSelected ? "#fbbf24" : "#ffffff"}
               glyphColor="#ffffff"
-              glyph={String(index + 1)}
+              glyph={glyph}
               scale={isSelected ? 1.35 : 1}
             />
           </AdvancedMarker>
