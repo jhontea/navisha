@@ -2,29 +2,16 @@
 
 import { Chip } from "@/components/Chip"
 import { useCallback, useEffect, useRef, useState } from "react"
-import dynamic from "next/dynamic"
 import { ExternalLink, MapPin, Route } from "lucide-react"
 
 import { buttonVariants, Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
-import { MAP_PROVIDER } from "@/features/location/config"
 import { buildMapsDirectionsUrl, buildMapsPinUrl, hasValidCoords, MAX_WAYPOINTS } from "@/features/trip/lib/mapsUrl"
 import type { Day } from "@/features/trip/types"
 import { useTripLocations, type LocationPoint } from "../hooks/useTripLocations"
 import { colorForDay } from "./mapColors"
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
-
-const mapLoading = () => <div className="h-full animate-pulse bg-muted" aria-hidden="true" />
-const GoogleMapCanvas = dynamic(() => import("./GoogleMapCanvas").then((m) => m.GoogleMapCanvas), {
-  ssr: false,
-  loading: mapLoading,
-})
-const MapLibreCanvas = dynamic(() => import("./MapLibreCanvas").then((m) => m.MapLibreCanvas), {
-  ssr: false,
-  loading: mapLoading,
-})
+import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
 
 /**
  * Map tab: pick a day (or all), see its places in order next to the map.
@@ -46,7 +33,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
     window.open(url, "_blank", "noopener,noreferrer")
   }, [])
 
-  if (MAP_PROVIDER === "disabled" || (MAP_PROVIDER === "google" && !API_KEY)) {
+  if (!MAP_ENABLED) {
     return (
       <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
         The map is turned off for this deployment.
@@ -102,12 +89,11 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
       </div>
 
       <div className="relative h-[55vh] min-h-72 overflow-hidden rounded-xl border bg-card lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-auto">
-        <Canvas
+        <MapCanvas
           visibleByDay={visibleByDay}
-          visiblePoints={visiblePoints}
           selectedActivityId={selectedActivityId}
-          onSelect={handleSelect}
-          onOpenPin={openPin}
+          onSelectActivity={handleSelect}
+          onOpenInMaps={openPin}
         />
       </div>
 
@@ -177,36 +163,5 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
         </div>
       </div>
     </div>
-  )
-}
-
-function Canvas({
-  visibleByDay,
-  visiblePoints,
-  selectedActivityId,
-  onSelect,
-  onOpenPin,
-}: {
-  visibleByDay: ReturnType<typeof useTripLocations>["byDay"]
-  visiblePoints: LocationPoint[]
-  selectedActivityId: string | null
-  onSelect: (p: LocationPoint) => void
-  onOpenPin: (p: LocationPoint) => void
-}) {
-  return MAP_PROVIDER === "google" ? (
-    <GoogleMapCanvas
-      visiblePoints={visiblePoints}
-      visibleByDay={visibleByDay}
-      onOpenInMaps={onOpenPin}
-      selectedActivityId={selectedActivityId}
-      onSelectActivity={onSelect}
-    />
-  ) : (
-    <MapLibreCanvas
-      visibleByDay={visibleByDay}
-      onOpenInMaps={onOpenPin}
-      selectedActivityId={selectedActivityId}
-      onSelectActivity={onSelect}
-    />
   )
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 
-import { MapLibreCanvas } from "@/features/map/components/MapLibreCanvas"
+import { MapCanvas } from "@/features/map/components/MapCanvas"
 import type { DayLocations, LocationPoint } from "@/features/map/hooks/useTripLocations"
 import { buildMapsPinUrl, hasValidCoords } from "../lib/mapsUrl"
 import type { PublicTripDay } from "../types"
@@ -55,7 +55,7 @@ export function SharedTripMap({
   )
 
   return (
-    <MapLibreCanvas
+    <MapCanvas
       visibleByDay={visibleByDay}
       onOpenInMaps={openInMaps}
       selectedActivityId={selectedActivityId}

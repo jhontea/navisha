@@ -6,8 +6,9 @@ import maplibregl, { type StyleSpecification } from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
 import { ExternalLink } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
-import type { DayLocations, LocationPoint } from "../hooks/useTripLocations"
+
 import { colorForDay } from "./mapColors"
+import type { MapRendererProps } from "./MapCanvas"
 
 const DEFAULT_TILE_URL = "/api/map-tiles/{z}/{x}/{y}"
 const TILE_URL = process.env.NEXT_PUBLIC_MAP_TILE_URL || DEFAULT_TILE_URL
@@ -22,12 +23,7 @@ const TILE_ATTRIBUTION =
 const OPENFREEMAP_STYLE_URL =
   process.env.NEXT_PUBLIC_MAP_STYLE_URL || "https://tiles.openfreemap.org/styles/positron"
 
-interface Props {
-  visibleByDay: DayLocations[]
-  onOpenInMaps: (point: LocationPoint) => void
-  selectedActivityId?: string | null
-  onSelectActivity?: (point: LocationPoint) => void
-}
+type Props = MapRendererProps
 
 interface ProjectedRoute {
   id: string

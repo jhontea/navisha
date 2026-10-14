@@ -1,25 +1,14 @@
 "use client"
 
 import { useCallback } from "react"
-import dynamic from "next/dynamic"
 import { MapPin } from "lucide-react"
 
-import { MAP_PROVIDER } from "@/features/location/config"
 import { buildMapsPinUrl, hasValidCoords } from "@/features/trip/lib/mapsUrl"
 import type { Day } from "@/features/trip/types"
 import { useTripLocations, type LocationPoint } from "../hooks/useTripLocations"
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
+import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
 
 const mapLoading = () => <div className="h-full animate-pulse bg-muted" aria-hidden="true" />
-const GoogleMapCanvas = dynamic(
-  () => import("./GoogleMapCanvas").then((module) => module.GoogleMapCanvas),
-  { ssr: false, loading: mapLoading },
-)
-const MapLibreCanvas = dynamic(
-  () => import("./MapLibreCanvas").then((module) => module.MapLibreCanvas),
-  { ssr: false, loading: mapLoading },
-)
 
 /**
  * Map of a single day's places, used beside the itinerary on desktop.
@@ -51,7 +40,7 @@ export function DayMap({
     window.open(url, "_blank", "noopener,noreferrer")
   }, [])
 
-  if (MAP_PROVIDER === "disabled" || (MAP_PROVIDER === "google" && !API_KEY)) return null
+  if (!MAP_ENABLED) return null
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card">
@@ -77,16 +66,8 @@ export function DayMap({
               {day ? `No places with a location on Day ${day.day_number} yet.` : "Open a day to see it on the map."}
             </p>
           </div>
-        ) : MAP_PROVIDER === "google" ? (
-          <GoogleMapCanvas
-            visiblePoints={visiblePoints}
-            visibleByDay={visibleByDay}
-            onOpenInMaps={openInMaps}
-            selectedActivityId={selectedActivityId}
-            onSelectActivity={handleSelect}
-          />
         ) : (
-          <MapLibreCanvas
+          <MapCanvas
             visibleByDay={visibleByDay}
             onOpenInMaps={openInMaps}
             selectedActivityId={selectedActivityId}
