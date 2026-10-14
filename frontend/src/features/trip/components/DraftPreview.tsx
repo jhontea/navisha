@@ -1,12 +1,12 @@
 "use client"
 
+import { SelectableRow } from "@/components/SelectableRow"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Banknote, CalendarDays, Check, List, MapPin, StickyNote } from "lucide-react"
+import { Banknote, CalendarDays, List, MapPin, StickyNote } from "lucide-react"
 import type { TripDraft } from "../types"
 import { suggestionKey } from "../lib/suggestionKey"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
-import { cn } from "@/lib/utils"
 import { formatMoney } from "@/lib/money"
 
 interface Props {
@@ -107,13 +107,13 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
             <span className="font-semibold text-foreground">{selectedCount}</span>
             {" "}of {totalActivities} places selected
           </span>
-          <button
+          <Button
             type="button"
             onClick={toggleAll}
-            className={buttonVariants({ variant: "ghost", size: "sm", className: "text-primary" })}
+            variant="ghost" size="sm" className="text-primary"
           >
             {selectedCount === totalActivities ? "Clear all" : "Select all"}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -134,13 +134,13 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                 <span className="font-normal text-muted-foreground"> · {formatWeekdayDate(day.date) ?? day.date}</span>
               </span>
               {dayKeys.length > 0 && (
-                <button
+                <Button
                   type="button"
                   onClick={() => toggleDay(dayKeys, dayAllSelected)}
-                  className={buttonVariants({ variant: "ghost", size: "sm", className: "ml-auto text-primary" })}
+                  variant="ghost" size="sm" className="ml-auto text-primary"
                 >
                   {dayAllSelected ? "Clear" : "Select all"}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -155,28 +155,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                   const selected = selectedKeys.has(key)
                   return (
                     <li key={i}>
-                      <button
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => toggle(key)}
-                        className={cn(
-                          "flex min-h-11 w-full items-start gap-2.5 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          selected
-                            ? "border-primary/40 bg-primary/5"
-                            : "bg-background text-muted-foreground hover:bg-muted/50",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
-                            selected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-background text-transparent",
-                          )}
-                          aria-hidden="true"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
+                      <SelectableRow selected={selected} onToggle={() => toggle(key)}>
                         {a.type === "location" ? (
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         ) : (
@@ -199,7 +178,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
                             <span className="mt-0.5 block text-sm text-muted-foreground">{a.notes}</span>
                           )}
                         </span>
-                      </button>
+                      </SelectableRow>
                     </li>
                   )
                 })}

@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ExternalLink, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
+import { buttonVariants, Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,17 +105,16 @@ export function ActivityCard({
       )}
 
       {needsReview && (
-        <button
+        <Button
           type="button"
           onClick={(event) => {
             event.stopPropagation()
             onEdit()
           }}
-          className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-warning/50 bg-warning-bg px-3 text-xs font-semibold text-foreground hover:bg-warning/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+variant="outline" size="sm" className="mt-2 border-warning/50 bg-warning-bg text-foreground hover:bg-warning/15">
           <MapPin className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
           Review location
-        </button>
+        </Button>
       )}
 
       <ActivityBody activity={activity} />

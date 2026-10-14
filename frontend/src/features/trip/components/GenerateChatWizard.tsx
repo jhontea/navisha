@@ -1,10 +1,13 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/NativeSelect"
+import { Chip } from "@/components/Chip"
 import { useEffect, useRef, useState } from "react"
 import { Sparkles, Send, ChevronDown, RefreshCw, AlertCircle, X } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { TravelDateRangePicker } from "./TravelDateRangePicker"
 import type { GenerateTripInput } from "../types"
 
@@ -220,9 +223,9 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
 
           {step === "destination" && (
             <div className="space-y-2">
-              <input
+              <Input
                 autoFocus
-                className={inputBase}
+                className={"h-auto " + inputBase}
                 placeholder="e.g. Tokyo, Japan"
                 maxLength={MAX_DESTINATION}
                 value={draftText}
@@ -233,10 +236,10 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
               />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{draftText.length}/{MAX_DESTINATION}</span>
-                <button type="button" onClick={handleDestination} disabled={!hasDraftText} className={sendBtn}>
+                <Button type="button" onClick={handleDestination} disabled={!hasDraftText}>
                   <Send className="h-3.5 w-3.5" aria-hidden="true" />
                   Send
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -244,9 +247,9 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
           {step === "description" && (
             <div className="space-y-2">
               <div className="relative">
-                <input
+                <Input
                   autoFocus
-                  className={cn(inputBase, draftText.length > 0 && "pr-9")}
+                  className={cn("h-auto", inputBase, draftText.length > 0 && "pr-9")}
                   placeholder="e.g. foodie, adventure, budget-friendly"
                   maxLength={MAX_DESCRIPTION}
                   value={draftText}
@@ -256,29 +259,26 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                   }}
                 />
                 {draftText.length > 0 && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => {
                       setDraftText("")
                       setError(null)
                     }}
-                    className="absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     aria-label="Clear input"
-                  >
+variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {PROMPT_CHIPS.map((chip) => (
-                  <button
+                  <Chip
                     key={chip.value}
-                    type="button"
                     onClick={() => handleChipClick(chip.value)}
-                    className="rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     {chip.label}
-                  </button>
+                  </Chip>
                 ))}
               </div>
               <div className="flex items-center justify-between">
@@ -288,13 +288,13 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                     : "Choose a suggestion, type your own, or Skip"}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => handleDescription(true)} className={ghostBtn}>
+                  <Button type="button" onClick={() => handleDescription(true)} variant="ghost" className="text-muted-foreground">
                     Skip
-                  </button>
-                  <button type="button" onClick={() => handleDescription(false)} disabled={!hasDraftText} className={sendBtn}>
+                  </Button>
+                  <Button type="button" onClick={() => handleDescription(false)} disabled={!hasDraftText}>
                     <Send className="h-3.5 w-3.5" aria-hidden="true" />
                     Send
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -318,10 +318,10 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                   {span > 0 ? `${span} day${span > 1 ? "s" : ""}` : "Select date range"}
                   {span > MAX_DAYS && ` — max ${MAX_DAYS}`}
                 </span>
-                <button type="button" onClick={handleDates} className={sendBtn}>
+                <Button type="button" onClick={handleDates}>
                   <Send className="h-3.5 w-3.5" aria-hidden="true" />
                   Continue
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -329,7 +329,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
           {step === "currency" && (
             <div className="space-y-2">
               <div className="relative">
-                <select
+                <NativeSelect
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
                   className={`${inputBase} appearance-none pr-10`}
@@ -343,14 +343,14 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                       </option>
                     ))
                   )}
-                </select>
+                </NativeSelect>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <div className="flex justify-end">
-                <button type="button" onClick={handleCurrency} className={sendBtn}>
+                <Button type="button" onClick={handleCurrency}>
                   <Send className="h-3.5 w-3.5" aria-hidden="true" />
                   Continue
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -382,8 +382,6 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   )
 }
 
-const sendBtn = buttonVariants()
-const ghostBtn = buttonVariants({ variant: "ghost", className: "text-muted-foreground" })
 
 function Recap({ label, value }: { label: string; value: string }) {
   return (

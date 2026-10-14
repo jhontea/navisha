@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
 import { getInclusiveDayCount } from "../lib/dates"
@@ -147,28 +148,26 @@ export function TravelDateRangePicker({
           className="absolute left-0 top-full z-50 mt-2 w-full min-w-[296px] max-w-sm rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-xl"
         >
           <div className="mb-3 flex items-center justify-between">
-            <button
+            <Button
               type="button"
               onClick={() => setVisibleMonth(addMonths(visibleMonth, -1))}
-              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Previous month"
-            >
+variant="ghost" size="icon-sm" className="text-muted-foreground">
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </button>
+            </Button>
             <p className="text-sm font-semibold">
               {visibleMonth.toLocaleDateString("en-US", {
                 month: "long",
                 year: "numeric",
               })}
             </p>
-            <button
+            <Button
               type="button"
               onClick={() => setVisibleMonth(addMonths(visibleMonth, 1))}
-              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Next month"
-            >
+variant="ghost" size="icon-sm" className="text-muted-foreground">
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-7 text-center">

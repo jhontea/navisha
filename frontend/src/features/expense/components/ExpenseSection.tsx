@@ -1,5 +1,7 @@
 "use client"
 
+import { NativeSelect } from "@/components/NativeSelect"
+import { Chip } from "@/components/Chip"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
@@ -182,7 +184,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
         </div>
         <div className="flex items-center gap-2">
           {allItems.length > 1 && (
-            <select
+            <NativeSelect
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               aria-label="Sort expenses"
@@ -193,7 +195,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           )}
           <Button onClick={() => setSheet({ mode: "add" })}>
             <Plus aria-hidden="true" />
@@ -208,20 +210,9 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
             const pressed = activeFilter === category
             const label = category ? getCategoryColor(category).label : "All"
             return (
-              <button
-                key={category ?? "all"}
-                type="button"
-                aria-pressed={pressed}
-                onClick={() => setCategoryFilter(category)}
-                className={cn(
-                  "h-9 shrink-0 rounded-full border px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  pressed
-                    ? "border-foreground bg-foreground text-background"
-                    : "bg-card text-foreground hover:bg-muted",
-                )}
-              >
+              <Chip key={category ?? "all"} pressed={pressed} onClick={() => setCategoryFilter(category)}>
                 {label}
-              </button>
+              </Chip>
             )
           })}
         </div>

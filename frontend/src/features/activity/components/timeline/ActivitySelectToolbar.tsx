@@ -1,6 +1,6 @@
 import { Copy, X } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
+import { buttonVariants, Button } from "@/components/ui/button"
 
 import {
   DropdownMenu,
@@ -31,13 +31,12 @@ export function ActivitySelectToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/50 px-3 py-2">
       <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
-      <button
+      <Button
         type="button"
         onClick={selectedIds.size === activityCount ? selection.clearSelection : selection.selectAll}
-        className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-      >
+variant="ghost" size="sm" className="text-muted-foreground">
         {selectedIds.size === activityCount ? "Clear" : "Select all"}
-      </button>
+      </Button>
       <div className="ml-auto flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -64,14 +63,14 @@ export function ActivitySelectToolbar({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <button
+        <Button
           type="button"
           onClick={selection.exitSelectMode}
-          className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+          variant="ghost" size="icon-sm"
           aria-label="Exit select mode"
         >
           <X className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </div>
   )

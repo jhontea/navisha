@@ -1,10 +1,11 @@
 "use client"
 
+import { Chip } from "@/components/Chip"
 import { useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { ExternalLink, MapPin, Route } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
+import { buttonVariants, Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
 import { MAP_PROVIDER } from "@/features/location/config"
@@ -24,9 +25,6 @@ const MapLibreCanvas = dynamic(() => import("./MapLibreCanvas").then((m) => m.Ma
   ssr: false,
   loading: mapLoading,
 })
-
-const CHIP =
-  "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 /**
  * Map tab: pick a day (or all), see its places in order next to the map.
@@ -89,27 +87,16 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
     // the right from lg (grid placement, so the map is never mounted twice).
     <div className="grid gap-3 lg:h-[calc(100vh-10rem)] lg:min-h-[32rem] lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-x-4">
       <div role="group" aria-label="Show day" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:col-start-1 lg:row-start-1">
-        <button
-          type="button"
-          aria-pressed={activeDay === null}
-          onClick={() => setActiveDay(null)}
-          className={cn(CHIP, activeDay === null ? "border-foreground bg-foreground text-background" : "bg-card text-foreground hover:bg-muted")}
-        >
+        <Chip pressed={activeDay === null} onClick={() => setActiveDay(null)}>
           All days
-        </button>
+        </Chip>
         {daysWithPlaces.map((d) => {
           const pressed = activeDay === d.dayId
           return (
-            <button
-              key={d.dayId}
-              type="button"
-              aria-pressed={pressed}
-              onClick={() => setActiveDay(pressed ? null : d.dayId)}
-              className={cn(CHIP, pressed ? "border-foreground bg-foreground text-background" : "bg-card text-foreground hover:bg-muted")}
-            >
+            <Chip key={d.dayId} pressed={pressed} onClick={() => setActiveDay(pressed ? null : d.dayId)}>
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForDay(d.dayNumber) }} aria-hidden="true" />
               Day {d.dayNumber}
-            </button>
+            </Chip>
           )
         })}
       </div>
@@ -160,14 +147,14 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
                         {p.address && <span className="line-clamp-1 text-xs text-muted-foreground">{p.address}</span>}
                       </span>
                     </button>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => openPin(p)}
                       aria-label={`Open ${p.title} in Google Maps`}
-                      className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "mt-1 shrink-0 text-muted-foreground" })}
+                      variant="ghost" size="icon-sm" className="mt-1 shrink-0 text-muted-foreground"
                     >
                       <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ol>

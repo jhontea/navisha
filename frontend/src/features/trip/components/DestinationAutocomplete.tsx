@@ -1,5 +1,6 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
 import { useEffect, useRef, useState } from "react"
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps"
 import { GeoapifyAutocomplete } from "@/features/location/components/GeoapifyAutocomplete"
@@ -55,12 +56,13 @@ function DeferredGoogleAutocomplete(props: Props) {
   // script starts only when the user actually focuses this field.
   if (!activated) {
     return (
-      <input
+      <Input
+        variant="bare"
         id={props.id}
         disabled={props.disabled}
         aria-invalid={props.ariaInvalid}
         aria-describedby={props.ariaDescribedBy}
-        className={props.className}
+        className={"h-auto " + props.className}
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
         onFocus={() => setActivated(true)}
@@ -123,13 +125,14 @@ function AutocompleteInput({
   }, [places])
 
   return (
-    <input
+    <Input
+        variant="bare"
       ref={inputRef}
       id={id}
       disabled={disabled}
       aria-invalid={ariaInvalid}
       aria-describedby={ariaDescribedBy}
-      className={className}
+      className={"h-auto " + className}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? "Search city, province, or country"}
