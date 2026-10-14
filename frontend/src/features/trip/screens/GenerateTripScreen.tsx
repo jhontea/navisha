@@ -162,13 +162,16 @@ function GenerateTripPageContent() {
           activities: d.activities.filter((a) => selectedKeys.has(suggestionKey(a))),
         })),
       }
+      // The AI's destination is already a clean place name ("Makkah & Madinah,
+      // Saudi Arabia"); the wizard text ("Umroh") can geocode to a street.
+      const tripDestination = result.draft.destination?.trim() || destination
       let draft = curatedDraft
-      let description = ""
+      let description = tripDestination
       try {
-        draft = await resolveDraftLocations(curatedDraft, destination)
-        const meta = await resolveDestinationMeta(destination)
-        if (meta) {
-          description = meta.description
+        draft = await resolveDraftLocations(curatedDraft, tripDestination)
+        if (!result.draft.destination?.trim()) {
+          const meta = await resolveDestinationMeta(destination)
+          if (meta) description = meta.description
         }
       } catch {
         // Ignore resolution failures — fall back to the unresolved draft.
@@ -180,7 +183,7 @@ function GenerateTripPageContent() {
         start_date: result.start_date,
         end_date: result.end_date,
         draft,
-        cover_image_url: getDefaultTripCover(destination),
+        cover_image_url: getDefaultTripCover(tripDestination),
         description,
       })
       router.push(`/trips/${trip_id}`)

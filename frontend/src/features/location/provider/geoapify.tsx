@@ -52,6 +52,8 @@ function DestinationSearch(props: DestinationSearchProps) {
   )
 }
 
+const REGION_RESULT_TYPES = new Set(["city", "county", "state", "country", "district", "suburb"])
+
 function toCandidate(suggestion: LocationSuggestion): PlaceCandidate {
   return {
     name: suggestion.name,
@@ -74,7 +76,10 @@ export const geoapifyLocationProvider: LocationProvider = {
   async resolveDestination(destination) {
     try {
       const response = await searchLocationSuggestions(destination, "region")
-      return { description: response.suggestions[0]?.description ?? destination }
+      // Only an area can be a trip destination; a street or a shop that
+      // happens to share the name ("Gang Umroh") is not.
+      const area = response.suggestions.find((s) => !s.result_type || REGION_RESULT_TYPES.has(s.result_type))
+      return { description: area?.description ?? destination }
     } catch {
       return { description: destination }
     }
