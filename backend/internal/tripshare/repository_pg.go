@@ -20,7 +20,7 @@ func (r *postgresRepository) Create(ctx context.Context, tripID, userID string, 
 	if err != nil {
 		return nil, fmt.Errorf("tripshare.Create begin: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }() // no-op after Commit
 	var owner string
 	if err := tx.QueryRow(ctx, `SELECT user_id FROM trips WHERE id=$1 FOR UPDATE`, tripID).Scan(&owner); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

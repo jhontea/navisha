@@ -80,13 +80,7 @@ func (h *Handler) Create(c echo.Context, userID string) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid activity type")
 	}
 	req.Title = sanitize.Text(req.Title)
-	a, err := h.usecase.Create(c.Request().Context(), userID, dayID, CreateInput{
-		Type:      req.Type,
-		Title:     req.Title,
-		StartTime: req.StartTime,
-		EndTime:   req.EndTime,
-		Payload:   req.Payload,
-	})
+	a, err := h.usecase.Create(c.Request().Context(), userID, dayID, CreateInput(req))
 	if err != nil {
 		return mapErr(err)
 	}
@@ -106,12 +100,7 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "payload is too large")
 	}
 	req.Title = sanitize.Text(req.Title)
-	a, err := h.usecase.Update(c.Request().Context(), userID, id, UpdateInput{
-		Title:     req.Title,
-		StartTime: req.StartTime,
-		EndTime:   req.EndTime,
-		Payload:   req.Payload,
-	})
+	a, err := h.usecase.Update(c.Request().Context(), userID, id, UpdateInput(req))
 	if err != nil {
 		return mapErr(err)
 	}
