@@ -12,21 +12,23 @@ import {
 } from "@vis.gl/react-google-maps"
 import { LoaderCircle, MapPin } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
-import type { DayLocations, LocationPoint } from "../hooks/useTripLocations"
+import type { LocationPoint } from "../hooks/useTripLocations"
+import type { MapRendererProps } from "./MapCanvas"
 import { colorForDay } from "./mapColors"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 const MAP_ID = "cc475d9a8bf16e26f8975c02"
 
-interface Props {
-  visiblePoints: LocationPoint[]
-  visibleByDay: DayLocations[]
-  onOpenInMaps: (point: LocationPoint) => void
-  selectedActivityId: string | null
-  onSelectActivity: (point: LocationPoint) => void
-}
+type Props = MapRendererProps & { visiblePoints: LocationPoint[] }
 
-export function GoogleMapCanvas(props: Props) {
+/** Google Maps renderer behind <MapCanvas> (NEXT_PUBLIC_MAP_PROVIDER=google). */
+export function GoogleMapCanvas(rendererProps: MapRendererProps) {
+  const visiblePoints = useMemo(
+    () => rendererProps.visibleByDay.flatMap((day) => day.points),
+    [rendererProps.visibleByDay],
+  )
+  if (visiblePoints.length === 0) return null
+  const props: Props = { ...rendererProps, visiblePoints }
   return (
     <APIProvider apiKey={API_KEY}>
       <GoogleMap
@@ -143,8 +145,8 @@ function GeocodingLayer({
           <Markers
             points={displayable}
             onOpenInMaps={onOpenInMaps}
-            selectedActivityId={selectedActivityId}
-            onSelectActivity={onSelectActivity}
+            selectedActivityId={selectedActivityId ?? null}
+            onSelectActivity={onSelectActivity ?? (() => {})}
           />
           {visibleByDay.map((day) => (
             <Polyline

@@ -1,25 +1,11 @@
 import type { TripDraft, ActivityDraft } from "../types"
-import { resolveLocationSuggestions } from "@/features/location/api"
-import { LOCATION_PROVIDER } from "@/features/location/config"
-import type { LocationSuggestion } from "@/features/location/types"
+import { locationProvider, type LocationProvider } from "@/features/location/provider"
+import { normalize, tokens, weightedJaccard, type PlaceCandidate } from "@/features/location/placeMatching"
 
-const BOUND_KM = 50
-const DEG_LAT_PER_KM = 1 / 111.32
 const NORMAL_CONFIDENCE = 0.58
 const NORMAL_NAME_SCORE = 0.45
 const GLOBAL_CONFIDENCE = 0.72
 const GLOBAL_NAME_SCORE = 0.72
-
-const STOP_WORDS = new Set([
-  "a", "at", "dan", "dari", "di", "explore", "in", "jalan", "ke",
-  "makan", "ngopi", "the", "to", "visit", "visiting",
-])
-
-const GENERIC_PLACE_WORDS = new Set([
-  "airport", "bandara", "bar", "cafe", "coffee", "eatery", "food", "hotel",
-  "market", "mall", "museum", "park", "restaurant", "restoran", "shop",
-  "station", "stasiun", "store", "temple",
-])
 
 const CATEGORY_TYPES: Record<string, string[]> = {
   kuliner: ["bakery", "cafe", "food", "meal_takeaway", "restaurant"],
@@ -28,15 +14,6 @@ const CATEGORY_TYPES: Record<string, string[]> = {
   belanja: ["market", "shopping_mall", "store"],
   transportasi: ["airport", "bus_station", "subway_station", "train_station", "transit_station"],
   akomodasi: ["lodging"],
-}
-
-interface PlaceCandidate {
-  name: string
-  description: string
-  lat: number
-  lng: number
-  externalId: string
-  types?: string[]
 }
 
 interface ScoredCandidate {
@@ -49,10 +26,13 @@ interface ScoredCandidate {
  * Resolves AI place names only when a candidate is sufficiently similar to
  * the intended place. Ambiguous matches stay usable as itinerary items, but
  * carry no coordinates until the user confirms them in the activity form.
+ * The provider only finds candidates; choosing one is the same for every
+ * provider.
  */
 export async function resolveDraftLocations(
   draft: TripDraft,
   destination: string = "",
+  provider: LocationProvider = locationProvider,
 ): Promise<TripDraft> {
   const cloned: TripDraft = {
     ...draft,
@@ -75,81 +55,33 @@ export async function resolveDraftLocations(
   }
   if (targets.length === 0) return cloned
 
-  if (LOCATION_PROVIDER === "geoapify") {
+  const queries = targets.map(({ key, name }) => ({ key, name }))
+  let local: Record<string, PlaceCandidate[]> = {}
+  try {
+    local = await provider.findPlaceCandidates(queries, destination)
+  } catch {
+    // Fail open: unresolved activities remain reviewable and editable.
+  }
+  const unresolved = targets.filter(({ key, act, name }) => {
+    const best = chooseBest(local[key] ?? [], name, destination, act.category)
+    if (best) applyCandidate(act, best)
+    return !best
+  })
+
+  // A specific airport/station may intentionally be outside the trip's main
+  // destination. Permit a wider search only for a very close name.
+  if (destination && unresolved.length > 0 && provider.findPlaceCandidatesGlobally) {
+    let global: Record<string, PlaceCandidate[]> = {}
     try {
-      const response = await resolveLocationSuggestions(
-        targets.map(({ key, name }) => ({ key, name })),
-        destination,
-      )
-      targets.forEach(({ key, act, name }) => {
-        const best = chooseBest(
-          (response.results[key] ?? []).map(fromLocationSuggestion),
-          name,
-          destination,
-          act.category,
-        )
-        if (best) applyCandidate(act, best)
-      })
+      global = await provider.findPlaceCandidatesGlobally(unresolved.map(({ key, name }) => ({ key, name })))
     } catch {
-      // Fail open: unresolved activities remain reviewable and editable.
+      // Fail open, as above.
     }
-    return cloned
+    for (const { key, act, name } of unresolved) {
+      const best = chooseBest(global[key] ?? [], name, "", act.category, true)
+      if (best) applyCandidate(act, best)
+    }
   }
-
-  const places = await waitForPlaces()
-  if (!places) return cloned
-
-  let restriction: google.maps.LatLngBoundsLiteral | null = null
-  if (destination) {
-    const center = await geocodeDestination(destination)
-    if (center) restriction = boundsAround(center)
-  }
-
-  const autocomplete = new places.AutocompleteService()
-  const details = new places.PlacesService(document.createElement("div"))
-
-  await Promise.allSettled(
-    targets.map(async ({ act, name }) => {
-      const contextualInput = destination ? `${name} ${destination}` : name
-      const localCandidates = await searchGoogleCandidates(
-        autocomplete,
-        details,
-        contextualInput,
-        restriction,
-        name,
-      )
-      const localBest = chooseBest(
-        localCandidates,
-        name,
-        destination,
-        act.category,
-      )
-      if (localBest) {
-        applyCandidate(act, localBest)
-        return
-      }
-
-      // A specific airport/station may intentionally be outside the trip's
-      // main destination. Permit a global fallback only for a very close name.
-      if (destination) {
-        const globalCandidates = await searchGoogleCandidates(
-          autocomplete,
-          details,
-          name,
-          null,
-          name,
-        )
-        const globalBest = chooseBest(
-          globalCandidates,
-          name,
-          "",
-          act.category,
-          true,
-        )
-        if (globalBest) applyCandidate(act, globalBest)
-      }
-    }),
-  )
 
   return cloned
 }
@@ -215,138 +147,4 @@ export function scoreCandidate(
     ? nameScore * 0.78 + destinationScore * 0.17 + categoryScore * 0.05
     : nameScore * 0.94 + categoryScore * 0.06
   return { candidate, score, nameScore }
-}
-
-function weightedJaccard(left: string, right: string): number {
-  const a = new Set(tokens(left))
-  const b = new Set(tokens(right))
-  if (a.size === 0 || b.size === 0) return 0
-  const union = new Set(Array.from(a).concat(Array.from(b)))
-  let intersectionWeight = 0
-  let unionWeight = 0
-  for (const token of Array.from(union)) {
-    const weight = GENERIC_PLACE_WORDS.has(token) ? 0.2 : 1
-    unionWeight += weight
-    if (a.has(token) && b.has(token)) intersectionWeight += weight
-  }
-  return unionWeight === 0 ? 0 : intersectionWeight / unionWeight
-}
-
-function tokens(value: string): string[] {
-  return normalize(value)
-    .split(" ")
-    .filter((token) => token.length > 1 && !STOP_WORDS.has(token))
-}
-
-function normalize(value: string): string {
-  return value
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-}
-
-function fromLocationSuggestion(suggestion: LocationSuggestion): PlaceCandidate {
-  return {
-    name: suggestion.name,
-    description: suggestion.description,
-    lat: suggestion.lat,
-    lng: suggestion.lng,
-    externalId: suggestion.external_id,
-  }
-}
-
-async function searchGoogleCandidates(
-  autocomplete: google.maps.places.AutocompleteService,
-  details: google.maps.places.PlacesService,
-  input: string,
-  restriction: google.maps.LatLngBoundsLiteral | null,
-  intendedName: string,
-): Promise<PlaceCandidate[]> {
-  const predictions = await getPredictions(autocomplete, input, restriction)
-  const likely = predictions
-    .sort((a, b) =>
-      weightedJaccard(intendedName, b.structured_formatting?.main_text ?? b.description) -
-      weightedJaccard(intendedName, a.structured_formatting?.main_text ?? a.description),
-    )
-    .slice(0, 3)
-  const settled = await Promise.allSettled(likely.map((prediction) => getPlaceDetails(details, prediction.place_id)))
-  return settled.flatMap((result) => result.status === "fulfilled" && result.value ? [result.value] : [])
-}
-
-function getPredictions(
-  service: google.maps.places.AutocompleteService,
-  input: string,
-  restriction: google.maps.LatLngBoundsLiteral | null,
-): Promise<google.maps.places.AutocompletePrediction[]> {
-  return new Promise((resolve) => {
-    const request: google.maps.places.AutocompleteRequest = { input }
-    if (restriction) request.locationRestriction = restriction
-    service.getPlacePredictions(request, (predictions, status) => {
-      resolve(status === google.maps.places.PlacesServiceStatus.OK && predictions ? predictions : [])
-    })
-  })
-}
-
-function getPlaceDetails(
-  service: google.maps.places.PlacesService,
-  placeId: string,
-): Promise<PlaceCandidate | null> {
-  return new Promise((resolve) => {
-    service.getDetails(
-      { placeId, fields: ["name", "formatted_address", "geometry", "place_id", "types"] },
-      (place, status) => {
-        const location = place?.geometry?.location
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !place || !location) {
-          resolve(null)
-          return
-        }
-        resolve({
-          name: place.name ?? "",
-          description: place.formatted_address ?? "",
-          lat: location.lat(),
-          lng: location.lng(),
-          externalId: place.place_id ?? placeId,
-          types: place.types,
-        })
-      },
-    )
-  })
-}
-
-function boundsAround(center: google.maps.LatLng): google.maps.LatLngBoundsLiteral {
-  const cLat = center.lat()
-  const cLng = center.lng()
-  const dLat = BOUND_KM * DEG_LAT_PER_KM
-  const dLng = BOUND_KM * DEG_LAT_PER_KM / Math.cos((cLat * Math.PI) / 180)
-  return { west: cLng - dLng, east: cLng + dLng, south: cLat - dLat, north: cLat + dLat }
-}
-
-async function geocodeDestination(destination: string): Promise<google.maps.LatLng | null> {
-  const geocoder = new google.maps.Geocoder()
-  return new Promise((resolve) => {
-    geocoder.geocode({ address: destination }, (results, status) => {
-      resolve(status === "OK" && results?.[0]?.geometry?.location ? results[0].geometry.location : null)
-    })
-  })
-}
-
-function waitForPlaces(): Promise<typeof google.maps.places | null> {
-  return new Promise((resolve) => {
-    let attempts = 0
-    const check = () => {
-      const places = window.google?.maps?.places
-      if (places?.PlacesService && places?.AutocompleteService) {
-        resolve(places)
-        return
-      }
-      if (++attempts > 100) {
-        resolve(null)
-        return
-      }
-      setTimeout(check, 100)
-    }
-    check()
-  })
 }
