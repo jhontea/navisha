@@ -51,7 +51,9 @@ function daySpan(start: string, end: string): number {
   return diff > 0 ? diff : 0
 }
 
-const inputBase = "input-base"
+// Large form field used by the trip forms (16px text, roomy padding).
+const inputBase =
+  "w-full rounded-lg border bg-card px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
 
 // GenerateChatWizard collects the auto-generate inputs through a guided,
 // chat-style flow. Each answer becomes a bubble; the final step shows a recap

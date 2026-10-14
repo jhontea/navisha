@@ -55,7 +55,7 @@ export function UiCatalog() {
     <main className="mx-auto max-w-5xl space-y-12 px-4 py-10 md:px-8">
       <header>
         <p className="text-sm text-muted-foreground">Development only</p>
-        <h1 className="font-display text-3xl font-semibold">UI catalog</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">UI catalog</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Tokens and components from docs/DESIGN_SYSTEM.md.
         </p>
