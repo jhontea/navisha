@@ -88,6 +88,8 @@ type AppConfig struct {
 	// E2EAuth enables POST /auth/test-login for the Playwright suite. Only
 	// allowed with APP_ENV=test (see Validate); never set it elsewhere.
 	E2EAuth bool `mapstructure:"e2e_auth"`
+	// SentryDSN turns on error reporting to Sentry; empty disables it.
+	SentryDSN string `mapstructure:"sentry_dsn"`
 }
 
 // LLMConfig holds the active LLM provider configuration.
@@ -215,6 +217,7 @@ func Load() (*Config, error) {
 		"app.cookie_domain":          "COOKIE_DOMAIN",
 		"app.share_link_secret":      "SHARE_LINK_SECRET",
 		"app.e2e_auth":               "E2E_AUTH",
+		"app.sentry_dsn":             "SENTRY_DSN",
 		"currency.api_key":           "CURRENCYFREAKS_API_KEY",
 		"openrouter.api_key":         "OPENROUTER_API_KEY",
 		"openrouter.model":           "OPENROUTER_MODEL",
