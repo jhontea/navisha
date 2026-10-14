@@ -177,9 +177,10 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   const stepIdx = STEPS.indexOf(step)
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
-      {/* Progress bar */}
-      <div className="h-1 bg-muted">
+    // No overflow-hidden here: the date picker's calendar drops below the card.
+    <div className="rounded-xl border bg-card">
+      {/* Progress bar (clipped to the card's top corners) */}
+      <div className="h-1 overflow-hidden rounded-t-xl bg-muted">
         <div
           className="h-full bg-primary transition-all duration-500"
           style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }}
