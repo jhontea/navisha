@@ -54,6 +54,7 @@ function GeocodingLayer({
   onOpenInMaps,
   selectedActivityId,
   onSelectActivity,
+  stays = [],
 }: Props) {
   const map = useMap()
   const [resolved, setResolved] = useState<
@@ -161,6 +162,13 @@ function GeocodingLayer({
           <FitBounds points={displayable} />
         </>
       )}
+      {stays
+        .filter((stay) => hasValidCoords(stay.lat, stay.lng))
+        .map((stay) => (
+          <AdvancedMarker key={`stay-${stay.id}`} position={{ lat: stay.lat, lng: stay.lng }} title={`Stay: ${stay.name}`}>
+            <Pin background="#0f172a" borderColor="#ffffff" glyphColor="#ffffff" glyph="H" />
+          </AdvancedMarker>
+        ))}
     </>
   )
 }

@@ -9,9 +9,10 @@ import { formatWeekdayDate } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
 import { buildMapsDirectionsUrl, buildMapsPinUrl, hasValidCoords, MAX_WAYPOINTS } from "@/features/trip/lib/mapsUrl"
 import type { Day } from "@/features/trip/types"
+import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
 import { useTripLocations, type LocationPoint } from "../hooks/useTripLocations"
 import { colorForDay } from "./mapColors"
-import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
+import { MAP_ENABLED, MapCanvas, type StayPoint } from "./MapCanvas"
 
 /**
  * Map tab: pick a day (or all), see its places in order next to the map.
@@ -19,6 +20,7 @@ import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
  */
 export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
   const { isLoading, isError, byDay, unpinned } = useTripLocations(tripId, days)
+  const { data: accommodations } = useAccommodations(tripId)
   const [activeDay, setActiveDay] = useState<string | null>(null) // null = all days
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const rowRefs = useRef<Map<string, HTMLLIElement | null>>(new Map())
@@ -53,11 +55,17 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
 
   const daysWithPlaces = byDay.filter((d) => d.points.length > 0)
   const visibleByDay = activeDay === null ? daysWithPlaces : daysWithPlaces.filter((d) => d.dayId === activeDay)
+  // Stays with a pin; for one day, the stay(s) you check in, sleep or check out that day.
+  const activeDate = activeDay === null ? null : days.find((d) => d.id === activeDay)?.date ?? null
+  const stays: StayPoint[] = (accommodations?.items ?? [])
+    .filter((a) => hasValidCoords(a.lat, a.lng))
+    .filter((a) => activeDate === null || (a.check_in <= activeDate && activeDate <= a.check_out))
+    .map((a) => ({ id: a.id, name: a.name, lat: a.lat!, lng: a.lng!, address: a.location_name ?? "" }))
   const visiblePoints = visibleByDay.flatMap((d) => d.points)
   const directionsUrl =
     buildMapsDirectionsUrl(visiblePoints.filter((p) => hasValidCoords(p.lat, p.lng)).slice(0, MAX_WAYPOINTS)) ?? null
 
-  if (daysWithPlaces.length === 0) {
+  if (daysWithPlaces.length === 0 && stays.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-dashed px-6 py-12 text-center">
         <MapPin className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
@@ -93,6 +101,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
       <div className="relative h-[55vh] min-h-72 overflow-hidden rounded-xl border bg-card lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-auto">
         <MapCanvas
           visibleByDay={visibleByDay}
+          stays={stays}
           selectedActivityId={selectedActivityId}
           onSelectActivity={handleSelect}
           onOpenInMaps={openPin}
@@ -107,6 +116,27 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
           </p>
         )}
         <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
+          {stays.length > 0 && (
+            <li>
+              <p className="sticky top-0 z-10 bg-card px-4 py-2 text-sm font-semibold text-foreground">Stays</p>
+              <ul className="pb-2">
+                {stays.map((stay) => (
+                  <li key={stay.id} className="flex items-start gap-3 px-4 py-2">
+                    <span
+                      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-semibold text-background"
+                      aria-hidden="true"
+                    >
+                      H
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-foreground">{stay.name}</span>
+                      {stay.address && <span className="line-clamp-1 text-xs text-muted-foreground">{stay.address}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          )}
           {visibleByDay.map((d) => (
             <li key={d.dayId}>
               <p className="sticky top-0 z-10 flex items-center gap-2 bg-card px-4 py-2 text-sm font-semibold text-foreground">

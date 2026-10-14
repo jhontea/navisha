@@ -36,6 +36,7 @@ export function MapLibreCanvas({
   onOpenInMaps,
   selectedActivityId,
   onSelectActivity,
+  stays = [],
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -66,19 +67,21 @@ export function MapLibreCanvas({
   // points actually changes (not on every parent re-render, which allocates a
   // fresh `visibleByDay` array and would otherwise recreate the map + all
   // markers on every click). Mirrors the FitBounds pattern in the Google path.
+  const displayableStays = useMemo(() => stays.filter((s) => hasValidCoords(s.lat, s.lng)), [stays])
+
   const pointsKey = useMemo(
     () =>
-      displayableByDay
-        .flatMap((d) => d.points.map((p) => p.activityId))
-        .join("|"),
-    [displayableByDay],
+      [...displayableByDay.flatMap((d) => d.points.map((p) => p.activityId)), ...displayableStays.map((s) => `stay:${s.id}`)].join("|"),
+    [displayableByDay, displayableStays],
   )
 
   useEffect(() => {
-    if (!containerRef.current || displayableByDay.length === 0) return
+    if (!containerRef.current || (displayableByDay.length === 0 && displayableStays.length === 0)) return
 
     setMapError(false)
     const allPoints = displayableByDay.flatMap((day) => day.points)
+    // Everything the view should fit: places and stays.
+    const allCoords = [...allPoints, ...displayableStays].map((p) => [p.lng, p.lat] as [number, number])
     let cancelled = false
 
     const rasterFallback: StyleSpecification = {
@@ -103,7 +106,7 @@ export function MapLibreCanvas({
         map = new maplibregl.Map({
           container: containerRef.current,
           style,
-          center: [allPoints[0].lng, allPoints[0].lat],
+          center: allCoords[0],
           zoom: 11,
           attributionControl: {},
         })
@@ -213,12 +216,49 @@ export function MapLibreCanvas({
             .addTo(map)
         })
 
-        if (allPoints.length === 1) {
-          map.setCenter([allPoints[0].lng, allPoints[0].lat])
+        displayableStays.forEach((stay) => {
+          const stayElement = document.createElement("div")
+          stayElement.title = stay.name
+          stayElement.setAttribute("aria-label", `Stay: ${stay.name}`)
+          stayElement.textContent = "H"
+          Object.assign(stayElement.style, {
+            width: "28px",
+            height: "28px",
+            borderRadius: "8px",
+            border: "2px solid white",
+            background: "#0f172a",
+            color: "white",
+            fontSize: "12px",
+            fontWeight: "700",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 2px 8px rgb(0 0 0 / 0.28)",
+          })
+          const popup = document.createElement("div")
+          popup.style.maxWidth = "240px"
+          const name = document.createElement("p")
+          name.textContent = stay.name
+          name.style.fontWeight = "700"
+          popup.appendChild(name)
+          if (stay.address) {
+            const address = document.createElement("p")
+            address.textContent = stay.address
+            address.style.fontSize = "12px"
+            popup.appendChild(address)
+          }
+          new maplibregl.Marker({ element: stayElement })
+            .setLngLat([stay.lng, stay.lat])
+            .setPopup(new maplibregl.Popup({ offset: 20 }).setDOMContent(popup))
+            .addTo(map)
+        })
+
+        if (allCoords.length === 1) {
+          map.setCenter(allCoords[0])
           map.setZoom(13)
         } else {
           const bounds = new maplibregl.LngLatBounds()
-          allPoints.forEach((point) => bounds.extend([point.lng, point.lat]))
+          allCoords.forEach((coord) => bounds.extend(coord))
           map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 })
         }
         updateRouteOverlay()
