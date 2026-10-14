@@ -8,6 +8,8 @@ export interface TabPillItem {
   label: string
   icon?: ComponentType<{ className?: string }>
   active?: boolean
+  /** Warm the data for this tab (hover / focus). */
+  onIntent?: () => void
 }
 
 /**
@@ -27,10 +29,13 @@ export function TabPills({
   return (
     <nav aria-label={ariaLabel} className={cn("max-w-full overflow-x-auto [scrollbar-width:none]", className)}>
       <ul className="inline-flex gap-1 rounded-full bg-card p-1 shadow-card">
-        {items.map(({ href, label, icon: Icon, active }) => (
+        {items.map(({ href, label, icon: Icon, active, onIntent }) => (
           <li key={href}>
             <Link
               href={href}
+              prefetch={false}
+              onMouseEnter={onIntent}
+              onFocus={onIntent}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

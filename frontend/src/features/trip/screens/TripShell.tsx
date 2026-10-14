@@ -26,8 +26,9 @@ const TripForm = dynamic(
 )
 
 /**
- * Trip shell (D3): compact header with a ⋯ menu, section tabs (bottom bar on
- * phones), and the single edit path — a sheet with the full trip form.
+ * Trip shell (V3): cover hero with round buttons and a ⋯ menu, section tabs
+ * (pills over the cover on desktop, floating nav on phones), and the single
+ * edit path — a sheet with the full trip form.
  */
 export function TripShell({ children }: { children: ReactNode }) {
   const { id: tripId } = useParams<{ id: string }>()
@@ -43,15 +44,13 @@ export function TripShell({ children }: { children: ReactNode }) {
   // isLoading is false. Keep the skeleton until data or a real error arrives.
   if (!trip && (isLoading || !isError)) {
     return (
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-3 md:px-margin-desktop">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-12 w-12 rounded-lg" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </div>
+      <div className="mx-auto w-full max-w-max-width md:px-margin-desktop md:pt-2">
+        <Skeleton className="h-52 w-full rounded-none rounded-b-3xl md:h-60 md:rounded-3xl" />
+        <div className="space-y-2 px-margin-mobile pt-4 md:hidden">
+          <Skeleton className="h-7 w-3/4" />
+          <Skeleton className="h-5 w-1/2" />
         </div>
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-3 px-margin-mobile md:px-0">
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-24 w-full rounded-xl" />
         </div>

@@ -1,11 +1,11 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { CalendarDays, FileText, Map, Ticket, Wallet, type LucideIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { FloatingNav } from "@/components/FloatingNav"
+import { TabPills } from "@/components/TabPills"
 import { accommodationApi } from "@/features/accommodation/api"
 import { expenseApi } from "@/features/expense/api"
 import { transportationApi } from "@/features/transportation/api"
@@ -24,9 +24,9 @@ const TABS: Tab[] = [
 ]
 
 /**
- * Trip section tabs. On phones this is the bottom bar and replaces the global
- * nav (one navigation bar at a time); from md up it is a sticky tab row under
- * the top bar.
+ * Trip section tabs (docs/DESIGN.md §4.3). From md up: TabPills overlapping
+ * the trip cover and sticky under the top bar. On phones: the floating nav,
+ * which replaces the global one inside a trip (one navigation at a time).
  */
 export function TripTabBar({ tripId }: { tripId: string }) {
   const pathname = usePathname()
@@ -66,69 +66,23 @@ export function TripTabBar({ tripId }: { tripId: string }) {
     }
   }
 
+  const items = TABS.map((tab) => ({
+    href: href(tab),
+    label: tab.label,
+    icon: tab.icon,
+    active: isActive(tab),
+    onIntent: () => prefetch(tab),
+  }))
+
   return (
     <>
-      {/* md+: sticky tab row */}
-      <nav
-        className="sticky top-14 z-30 hidden border-b bg-background/95 backdrop-blur md:block"
-        aria-label="Trip sections"
-      >
-        <ul className="mx-auto flex w-full max-w-max-width gap-1 px-margin-desktop">
-          {TABS.map((tab) => {
-            const active = isActive(tab)
-            return (
-              <li key={tab.label}>
-                <Link
-                  href={href(tab)}
-                  prefetch={false}
-                  onMouseEnter={() => prefetch(tab)}
-                  onFocus={() => prefetch(tab)}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "relative flex h-12 items-center gap-2 px-3 text-sm font-medium transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <tab.icon className="h-4 w-4" aria-hidden="true" />
-                  {tab.label}
-                  {active && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary" aria-hidden="true" />}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
+      {/* md+: pills that overlap the bottom edge of the trip cover, then stick under the top bar */}
+      <div className="sticky top-16 z-30 -mt-7 hidden justify-center px-margin-desktop md:flex">
+        <TabPills aria-label="Trip sections" items={items} />
+      </div>
 
-      {/* Phones: bottom bar, replaces the global nav inside a trip */}
-      <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-        aria-label="Trip sections"
-      >
-        <ul className="flex items-stretch">
-          {TABS.map((tab) => {
-            const active = isActive(tab)
-            return (
-              <li key={tab.label} className="flex-1">
-                <Link
-                  href={href(tab)}
-                  prefetch={false}
-                  onTouchStart={() => prefetch(tab)}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-xs font-medium transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                    active ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  <tab.icon className="h-6 w-6" strokeWidth={active ? 2.25 : 1.75} aria-hidden="true" />
-                  <span className="leading-none">{tab.label}</span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
+      {/* Phones: floating nav, replaces the global nav inside a trip */}
+      <FloatingNav aria-label="Trip sections" items={items} />
     </>
   )
 }
