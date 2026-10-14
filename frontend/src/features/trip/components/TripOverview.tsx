@@ -1,441 +1,116 @@
 "use client"
 
+import Link from "next/link"
+import { Calendar, ChevronRight, Hotel, Plane, Wallet } from "lucide-react"
+
 import { MoneyText } from "@/components/MoneyText"
 import { StatTile } from "@/components/StatTile"
-import Link from "next/link"
-import {
-  Calendar,
-  Hotel,
-  Plane,
-  Wallet,
-  ChevronRight,
-  ListChecks,
-  AlertTriangle,
-  CheckCircle2,
-  TrendingUp,
-} from "lucide-react"
-import {
-  getTripDateMetrics,
-  toLocalISODate,
-  tripProgressLabel,
-  tripProgressShort,
-} from "@/features/trip/lib/status"
-import { useTripOverview } from "@/features/trip/overview"
-import { formatDate, formatCurrency, cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
+import { overviewTodos } from "@/features/trip/lib/overviewTodos"
+import { getTripDateMetrics, toLocalISODate, tripProgressLabel } from "@/features/trip/lib/status"
+import { useTripOverview } from "@/features/trip/overview"
+import { formatDate } from "@/lib/utils"
 
-import type { Day } from "@/features/trip/types"
+import { BudgetSnapshot } from "./overview/BudgetSnapshot"
+import { TodoList } from "./overview/TodoList"
 
+/**
+ * Trip overview: headline counts, trip progress, what is still missing, the
+ * next day to plan and a budget snapshot. Shown as a collapsible panel above
+ * the Itinerary; details live on the Bookings and Budget tabs.
+ */
+export function TripOverview({ tripId }: { tripId: string }) {
+  const { data: overview, isSuccess: countsLoaded } = useTripOverview(tripId)
+  const trip = overview?.trip
+  if (!trip) return null
 
-// Helper to get today's date in YYYY-MM-DD format
-function getToday(): string {
-  return toLocalISODate()
-}
+  const summary = overview.expense_summary
+  const activitiesByDay = overview.activity_count_by_day ?? {}
+  const activityCount = Object.values(activitiesByDay).reduce((sum, count) => sum + count, 0)
+  const dateMetrics = getTripDateMetrics(trip.start_date, trip.end_date)
 
-type PlanningHealthProps = {
-  tripId: string
-  tripBudget: number
-  baseCurrency: string
-  actualSpent?: number
-  hasActivities: boolean
-  hasStay: boolean
-  hasTransport: boolean
-  hasDays: boolean
-  budgetCategories: Record<string, number>
-  actualByCategory: Array<{ category: string; total: number }>
-}
+  // The day to plan next: today or the first day after it, else the last day.
+  const today = toLocalISODate()
+  const upcomingIdx = trip.days.findIndex((d) => d.date >= today)
+  const nextDay = trip.days[upcomingIdx === -1 ? trip.days.length - 1 : upcomingIdx]
+  const nextDayActivities = nextDay ? activitiesByDay[nextDay.id] ?? 0 : 0
 
-function PlanningHealth({
-  tripId,
-  tripBudget,
-  baseCurrency,
-  actualSpent,
-  hasActivities,
-  hasStay,
-  hasTransport,
-  hasDays,
-  budgetCategories,
-  actualByCategory,
-}: PlanningHealthProps) {
-  const checklistItems = [
-    { label: "Itinerary days added", done: hasDays, href: `/trips/${tripId}` },
-    { label: "Activities planned", done: hasActivities, href: `/trips/${tripId}` },
-    { label: "Stays booked", done: hasStay, href: `/trips/${tripId}/bookings` },
-    { label: "Transport booked", done: hasTransport, href: `/trips/${tripId}/bookings` },
-    { label: "Trip budget set", done: tripBudget > 0, href: `/trips/${tripId}/budget` },
-  ]
-  const completedItems = checklistItems.filter((item) => item.done).length
-  const checklistPercent = Math.round((completedItems / checklistItems.length) * 100)
-  const hasExpenseData = actualSpent !== undefined
-  const remaining = tripBudget - (actualSpent ?? 0)
-  const spentPercent = tripBudget > 0 && hasExpenseData
-    ? Math.round((actualSpent! / tripBudget) * 100)
-    : null
-  const overBudget = remaining < 0
-  const categoryRows = Object.entries(budgetCategories)
+  const categories = Object.entries(trip.budget_categories ?? {})
     .filter(([, planned]) => planned > 0)
     .map(([category, planned]) => ({
       category,
       planned,
-      actual: actualByCategory.find((item) => item.category === category)?.total ?? 0,
+      actual: summary?.by_category.find((item) => item.category === category)?.total ?? 0,
     }))
-  const overCategoryCount = categoryRows.filter((row) => row.actual > row.planned).length
-  const categoryLabels: Record<string, string> = {
-    accommodation: "Stay",
-    transport: "Transport",
-    food: "Food",
-    activity: "Activity",
-    souvenir: "Souvenir",
-    shopping: "Shopping",
-    other: "Other",
-  }
+
+  const todos = overviewTodos({
+    tripId,
+    activityCount,
+    stayCount: overview.accommodation_count,
+    transportCount: overview.transportation_count,
+    budget: trip.budget,
+    spent: summary?.total_base ?? 0,
+    emptyDayCount: countsLoaded
+      ? trip.days.filter((day) => (activitiesByDay[day.id] ?? 0) === 0).length
+      : null,
+    overCategoryCount: categories.filter((c) => c.actual > c.planned).length,
+  })
 
   return (
-    <section className="mb-8" aria-labelledby="trip-health-heading">
-      <div className="mb-5 flex items-end justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Planning health</p>
-          <h3 id="trip-health-heading" className="mt-1 text-lg font-bold text-foreground">
-            Trip planning health
-          </h3>
-        </div>
-        <span className="text-xs text-muted-foreground">{completedItems} of {checklistItems.length} ready</span>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="glass rounded-2xl p-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <ListChecks className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">Trip readiness</h4>
-                <p className="text-xs text-muted-foreground">Core trip setup</p>
-              </div>
-            </div>
-            <span className="text-lg font-bold tabular-nums text-foreground">{checklistPercent}%</span>
-          </div>
-
-          <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted" aria-label={`${checklistPercent}% of planning checklist complete`}>
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${checklistPercent}%` }} />
-          </div>
-
-          <div className="space-y-0.5">
-            {checklistItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="-mx-2 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm transition-colors hover:bg-muted/60"
-              >
-                {item.done ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-                )}
-                <span className={cn(item.done ? "text-muted-foreground" : "font-medium text-foreground")}>
-                  {item.label}
-                </span>
-                {!item.done && <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl p-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-chromatic-sunset/10 text-chromatic-sunset">
-                <TrendingUp className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">Planned vs actual budget</h4>
-                <p className="text-xs text-muted-foreground">{baseCurrency} trip health</p>
-              </div>
-            </div>
-            {spentPercent !== null && (
-              <span className={cn("text-lg font-bold tabular-nums", overBudget ? "text-destructive" : "text-foreground")}>
-                {spentPercent}%
-              </span>
-            )}
-          </div>
-
-          {tripBudget > 0 ? (
-            <>
-              <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted" aria-label={spentPercent === null ? "Budget usage unavailable" : `${spentPercent}% of budget used`}>
-                <div
-                  className={cn("h-full rounded-full transition-all", overBudget ? "bg-destructive" : "bg-chromatic-mint")}
-                  style={{ width: `${Math.min(spentPercent ?? 0, 100)}%` }}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
-                <div>
-                  <p className="text-muted-foreground">Planned</p>
-                  <p className="mt-1 font-semibold tabular-nums text-foreground">{formatCurrency(tripBudget, baseCurrency)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Actual</p>
-                  <p className="mt-1 font-semibold tabular-nums text-foreground">
-                    {hasExpenseData ? formatCurrency(actualSpent!, baseCurrency) : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">{overBudget ? "Over" : "Remaining"}</p>
-                  <p className={cn("mt-1 font-semibold tabular-nums", overBudget ? "text-destructive" : "text-chromatic-mint")}>
-                    {hasExpenseData ? formatCurrency(Math.abs(remaining), baseCurrency) : "—"}
-                  </p>
-                </div>
-              </div>
-              {categoryRows.length > 0 && (
-                <div className="mt-5 border-t border-border/40 pt-4">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-xs font-medium text-muted-foreground">Category variance</p>
-                    {overCategoryCount > 0 && <p className="text-xs font-medium text-destructive">{overCategoryCount} over plan</p>}
-                  </div>
-                  <div className="space-y-2">
-                    {categoryRows.slice(0, 4).map((row) => {
-                      const over = row.actual > row.planned
-                      return (
-                        <div key={row.category} className="flex items-center justify-between gap-3 text-xs">
-                          <span className="text-muted-foreground">{categoryLabels[row.category] ?? row.category}</span>
-                          <span className={cn("tabular-nums", over ? "text-destructive" : "text-foreground")}>
-                            {formatCurrency(row.actual, baseCurrency)} / {formatCurrency(row.planned, baseCurrency)}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <Link href={`/trips/${tripId}/budget`} className="flex items-center justify-between rounded-xl border border-dashed border-border/60 p-4 text-sm hover:bg-muted/50">
-              <span className="text-muted-foreground">Set a trip budget to track variance.</span>
-              <ChevronRight className="h-4 w-4 text-primary" aria-hidden="true" />
-            </Link>
-          )}
-
-          <Link href={`/trips/${tripId}/budget`} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary hover:underline">
-            View budget details
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function NeedsAttention({
-  tripId,
-  hasActivities,
-  hasStay,
-  hasTransport,
-  hasBudget,
-  overBudget,
-  emptyDayCount,
-  overCategoryCount,
-}: {
-  tripId: string
-  hasActivities: boolean
-  hasStay: boolean
-  hasTransport: boolean
-  hasBudget: boolean
-  overBudget: boolean
-  emptyDayCount: number
-  overCategoryCount: number
-}) {
-  const items = [
-    !hasActivities && { label: "Add activities to your itinerary", href: `/trips/${tripId}` },
-    !hasStay && { label: "Add where you are staying", href: `/trips/${tripId}/bookings` },
-    !hasTransport && { label: "Add transport details", href: `/trips/${tripId}/bookings` },
-    !hasBudget && { label: "Set a trip budget", href: `/trips/${tripId}/budget` },
-    overBudget && { label: "Review the budget overrun", href: `/trips/${tripId}/budget` },
-    emptyDayCount > 0 && { label: `${emptyDayCount} itinerary day${emptyDayCount === 1 ? "" : "s"} need activities`, href: `/trips/${tripId}` },
-    overCategoryCount > 0 && { label: `${overCategoryCount} budget categor${overCategoryCount === 1 ? "y is" : "ies are"} over plan`, href: `/trips/${tripId}/budget` },
-  ].filter(Boolean) as Array<{ label: string; href: string }>
-
-  return (
-    <section className="mb-8" aria-labelledby="needs-attention-heading">
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Next actions</p>
-          <h3 id="needs-attention-heading" className="mt-1 text-lg font-bold text-foreground">Needs attention</h3>
-        </div>
-      </div>
-      {items.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-chromatic-mint/25 bg-chromatic-mint/10 p-4 text-sm text-foreground">
-          <CheckCircle2 className="h-5 w-5 text-chromatic-mint" aria-hidden="true" />
-          Everything looks good for now.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          {items.map((item) => (
-            <Link key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl border border-chromatic-amber/20 bg-chromatic-amber/5 px-4 py-3 text-sm transition-colors hover:bg-chromatic-amber/10">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-              <span className="flex-1">{item.label}</span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            </Link>
-          ))}
-        </div>
-      )}
-    </section>
-  )
-}
-
-function NextUp({ tripId, day, activityCount }: { tripId: string; day?: Day; activityCount: number }) {
-  return (
-    <section className="mb-8" aria-labelledby="next-up-heading">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 id="next-up-heading" className="text-lg font-bold text-foreground">Next up</h3>
-      </div>
-      {day ? (
-        <Link href={`/trips/${tripId}#day-${day.id}`} className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10">
-          <div>
-            <p className="text-sm font-medium text-primary">Day {day.day_number} · {formatDate(day.date)}</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{day.title || "Continue planning this day"}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{activityCount} {activityCount === 1 ? "activity" : "activities"} planned</p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-        </Link>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-border/60 p-5 text-sm text-muted-foreground">No upcoming itinerary yet.</div>
-      )}
-    </section>
-  )
-}
-
-/**
- * Trip overview (stats, planning health, budget, progress, needs attention,
- * next up). Shown as a collapsible panel above the Itinerary since D3; the
- * AI summary has its own tab.
- */
-export function TripOverview({ tripId }: { tripId: string }) {
-
-  const { data: overview, isSuccess: activitiesLoaded } = useTripOverview(tripId)
-  const trip = overview?.trip
-  const expenseSummary = overview?.expense_summary
-  const activitiesByDay = overview?.activity_count_by_day ?? {}
-  const totalActivities = Object.values(activitiesByDay).reduce(
-    (sum, count) => sum + count,
-    0,
-  )
-
-  if (!trip) return null
-
-  const dateMetrics = getTripDateMetrics(trip.start_date, trip.end_date)
-  const { totalDays, percent: progressPercent } = dateMetrics
-
-
-  // Don't render every single day — surface the current day and the ones
-  // coming up next (max 3). Full list lives on the Itinerary page.
-  const today = getToday()
-  const upcomingIdx = trip.days.findIndex((d) => d.date >= today)
-  const startIdx = upcomingIdx === -1 ? Math.max(0, trip.days.length - 3) : upcomingIdx
-  const nextUpDay = trip.days[startIdx]
-  const nextUpActivityCount = nextUpDay ? activitiesByDay[nextUpDay.id] ?? 0 : 0
-  const emptyDayCount = activitiesLoaded
-    ? trip.days.filter((day) => (activitiesByDay[day.id] ?? 0) === 0).length
-    : 0
-  const overCategoryCount = Object.entries(trip.budget_categories ?? {}).filter(([category, planned]) => {
-    const actual = expenseSummary?.by_category.find((item) => item.category === category)?.total ?? 0
-    return planned > 0 && actual > planned
-  }).length
-
-  return (
-    <div className="flex flex-col">
-      {/* Content */}
-      <div className="w-full pt-4">
-        {/* Iter 93 — Hero summary section: bento grid on md+ */}
-        <section className="mb-8">
-          {/* Iter 94 — stat chips: 2x2 grid on sm, row on md */}
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile
-              label="Activities"
-              icon={Calendar}
-              value={activitiesLoaded ? totalActivities : "—"}
-            />
-            <StatTile label="Stays" icon={Hotel} value={overview?.accommodation_count ?? 0} />
-            <StatTile label="Transport" icon={Plane} value={overview?.transportation_count ?? 0} />
-            <StatTile
-              label="Spent"
-              icon={Wallet}
-              value={
-                expenseSummary ? (
-                  <MoneyText
-                    amount={expenseSummary.total_base}
-                    currency={expenseSummary.base_currency}
-                    className="text-lg"
-                  />
-                ) : (
-                  "—"
-                )
-              }
-            />
-          </div>
-
-          {/* Duration badge */}
-          <div className="mb-5 flex items-center gap-3">
-            <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-sm font-semibold text-primary">
-              {totalDays} {totalDays === 1 ? "day" : "days"}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {tripProgressLabel(dateMetrics)}
-            </span>
-          </div>
-
-          <PlanningHealth
-            tripId={tripId}
-            tripBudget={trip.budget}
-            baseCurrency={trip.base_currency}
-            actualSpent={expenseSummary?.total_base}
-            budgetCategories={trip.budget_categories ?? {}}
-            actualByCategory={expenseSummary?.by_category ?? []}
-            hasActivities={totalActivities > 0}
-            hasStay={(overview?.accommodation_count ?? 0) > 0}
-            hasTransport={(overview?.transportation_count ?? 0) > 0}
-            hasDays={trip.days.length > 0}
-          />
-
-          {/* Iter 95 — Trip progress bar */}
-          <div className="glass mb-6 rounded-2xl p-5">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h4 className="text-sm font-semibold text-foreground">
-                Trip progress
-              </h4>
-              <span className="shrink-0 text-right text-sm text-muted-foreground">
-                {tripProgressShort(dateMetrics)}
-              </span>
-            </div>
-            <Progress
-              value={progressPercent}
-              variant="gradient"
-              size="lg"
-              showValue
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{formatDate(trip.start_date)}</span>
-              <span>{formatDate(trip.end_date)}</span>
-            </div>
-          </div>
-        </section>
-
-        <NeedsAttention
-          tripId={tripId}
-          hasActivities={totalActivities > 0}
-          hasStay={(overview?.accommodation_count ?? 0) > 0}
-          hasTransport={(overview?.transportation_count ?? 0) > 0}
-          hasBudget={trip.budget > 0}
-          overBudget={trip.budget > 0 && (expenseSummary?.total_base ?? 0) > trip.budget}
-          emptyDayCount={emptyDayCount}
-          overCategoryCount={overCategoryCount}
+    <div className="flex flex-col gap-6 py-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatTile label="Activities" icon={Calendar} value={countsLoaded ? activityCount : "—"} />
+        <StatTile label="Stays" icon={Hotel} value={overview.accommodation_count} />
+        <StatTile label="Transport" icon={Plane} value={overview.transportation_count} />
+        <StatTile
+          label="Spent"
+          icon={Wallet}
+          value={summary ? <MoneyText amount={summary.total_base} currency={summary.base_currency} className="text-lg" /> : "—"}
         />
-
-        <NextUp tripId={tripId} day={nextUpDay} activityCount={nextUpActivityCount} />
-
       </div>
 
+      <section aria-labelledby="overview-progress-heading">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h3 id="overview-progress-heading" className="text-sm font-semibold text-foreground">
+            {dateMetrics.totalDays} {dateMetrics.totalDays === 1 ? "day" : "days"}
+          </h3>
+          <span className="text-sm text-muted-foreground">{tripProgressLabel(dateMetrics)}</span>
+        </div>
+        <Progress value={dateMetrics.percent} size="sm" label="Trip progress" />
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+          <span>{formatDate(trip.start_date)}</span>
+          <span>{formatDate(trip.end_date)}</span>
+        </div>
+      </section>
+
+      <TodoList todos={todos} />
+
+      {nextDay && (
+        <Link
+          href={`/trips/${tripId}#day-${nextDay.id}`}
+          className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50"
+        >
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground">
+              Next up · Day {nextDay.day_number} · {formatDate(nextDay.date)}
+            </p>
+            <p className="mt-1 truncate text-sm font-semibold text-foreground">
+              {nextDay.title || "Continue planning this day"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {nextDayActivities} {nextDayActivities === 1 ? "activity" : "activities"} planned
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        </Link>
+      )}
+
+      <BudgetSnapshot
+        tripId={tripId}
+        budget={trip.budget}
+        currency={trip.base_currency}
+        spent={summary?.total_base}
+      />
     </div>
   )
 }
-
-

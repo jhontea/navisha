@@ -9,17 +9,17 @@ export default function ProfileLoading() {
         <Skeleton variant="text" className="mt-2 h-4 w-72 max-w-full" />
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <Skeleton variant="glass" className="h-[420px] rounded-3xl" />
+        <Skeleton className="h-[420px] rounded-3xl" />
         <div className="space-y-6">
           <div>
             <Skeleton variant="text" className="mb-3 h-3 w-24" />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[0, 1, 2, 3].map((item) => (
-                <Skeleton key={item} variant="glass" className="h-36 rounded-2xl" />
+                <Skeleton key={item} className="h-36 rounded-2xl" />
               ))}
             </div>
           </div>
-          <Skeleton variant="glass" className="h-36 rounded-2xl" />
+          <Skeleton className="h-36 rounded-2xl" />
         </div>
       </div>
     </div>

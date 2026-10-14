@@ -290,7 +290,7 @@ variant="outline" className="w-full justify-start border-primary/30 text-primary
                   ? `${instruction.length}/${customInstructionLimit}`
                   : "Choose a focus or add your own instruction"}
               </span>
-              <Button type="button" size="sm" variant="gradient" onClick={generate} disabled={!hasPlanningInput} className="rounded-full px-5">
+              <Button type="button" size="sm" onClick={generate} disabled={!hasPlanningInput} className="rounded-full px-5">
                 <Sparkles className="h-4 w-4" />
                 Generate plan
               </Button>
@@ -332,7 +332,7 @@ variant="outline" className="w-full justify-start border-primary/30 text-primary
           </p>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" size="sm" variant="outline" onClick={closePlanner} disabled={isApplying}>Cancel</Button>
-            <Button type="button" size="sm" variant="gradient" onClick={apply} disabled={isApplying || selectedActivities.length === 0} className="rounded-full px-5">
+            <Button type="button" size="sm" onClick={apply} disabled={isApplying || selectedActivities.length === 0} className="rounded-full px-5">
               {isApplying && <Loader2 className="h-4 w-4 animate-spin" />}
               {isApplying
                 ? "Adding…"

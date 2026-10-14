@@ -12,9 +12,9 @@ export default function TermsPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
         <BackLink href="/" label="Back to Home" className="mb-8" />
-        <div className="glass-lg rounded-2xl p-8">
+        <div className="rounded-xl border bg-card p-6 sm:p-8">
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Terms of Service</h1>
-        <p className="mb-8 text-sm text-muted-foreground">Last updated: June 26, 2026</p>
+        <p className="mb-8 text-sm text-muted-foreground">Last updated: October 14, 2026</p>
         <div className="prose prose-sm prose-gray max-w-none space-y-6">
           <section>
             <h2 className="text-xl font-semibold text-foreground">1. Acceptance</h2>
@@ -38,7 +38,7 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">6. Third-Party Services</h2>
-            <p className="text-muted-foreground">Google Maps (location/maps), DeepSeek/OpenRouter (AI), CurrencyFreaks (exchange rates). Use is subject to each provider&rsquo;s terms.</p>
+            <p className="text-muted-foreground">Geoapify (location search), OpenFreeMap (map tiles), Google Maps (optional maps and links), DeepSeek/OpenRouter (AI), CurrencyFreaks (exchange rates). Use is subject to each provider&rsquo;s terms.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-foreground">7. Intellectual Property</h2>
