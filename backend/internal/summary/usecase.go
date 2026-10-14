@@ -33,7 +33,7 @@ type LLMClient interface {
 }
 
 type UsecaseInterface interface {
-	Generate(ctx context.Context, userID, tripID string) (*Summary, error)
+	Generate(ctx context.Context, userID, tripID string, lang Language) (*Summary, error)
 	Get(ctx context.Context, userID, tripID string) (*Summary, error)
 	Delete(ctx context.Context, userID, tripID string) error
 }
@@ -53,13 +53,14 @@ var _ UsecaseInterface = (*Usecase)(nil)
 
 // Generate builds the trip context, calls the LLM, and persists the result.
 // Enforces ownership (via provider) and a soft rate limit when configured.
-func (u *Usecase) Generate(ctx context.Context, userID, tripID string) (*Summary, error) {
+func (u *Usecase) Generate(ctx context.Context, userID, tripID string, lang Language) (*Summary, error) {
 	// Assemble context (also enforces ownership).
 	tripCtx, err := u.provider.GetTripContext(ctx, userID, tripID)
 	if err != nil {
 		return nil, err
 	}
 
+	tripCtx.Language = lang
 	system, user := BuildPrompt(*tripCtx)
 	temp := TemperatureForTrip(tripCtx.TripID)
 	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{

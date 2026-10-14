@@ -2,7 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ApiError } from "@/lib/api"
+import { useEffect, useState } from "react"
+
 import { summaryApi } from "../api"
+import type { SummaryLanguage } from "../types"
 
 const summaryKey = (tripId: string) => ["summary", tripId] as const
 
@@ -35,7 +38,7 @@ export function useTripSummary(tripId: string) {
 export function useGenerateSummary(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => summaryApi.generate(tripId),
+    mutationFn: (language: SummaryLanguage) => summaryApi.generate(tripId, language),
     onSuccess: (data) => {
       qc.setQueryData(summaryKey(tripId), data)
       // Summary generation consumes the shared AI daily quota — refresh the
@@ -46,6 +49,30 @@ export function useGenerateSummary(tripId: string) {
     // TanStack Query already enforces one-at-a-time, but this is belt-and-suspenders.
     retry: 0,
   })
+}
+
+const LANGUAGE_KEY = "navisha:summary-language"
+
+/** The summary language this browser last picked (Indonesian by default). */
+export function useSummaryLanguage() {
+  const [language, setLanguage] = useState<SummaryLanguage>("id")
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(LANGUAGE_KEY)
+      if (saved === "id" || saved === "en") setLanguage(saved)
+    } catch {
+      // Storage blocked (private mode); keep the default.
+    }
+  }, [])
+  const choose = (next: SummaryLanguage) => {
+    setLanguage(next)
+    try {
+      window.localStorage.setItem(LANGUAGE_KEY, next)
+    } catch {
+      // Not remembered, still used for this generation.
+    }
+  }
+  return [language, choose] as const
 }
 
 export function useDeleteSummary(tripId: string) {
