@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
               <CircleAlert className="h-8 w-8 text-destructive" aria-hidden="true" />
             </div>
-            <h1 className="text-lg font-semibold text-foreground">
+            <h1 className="text-xl font-display font-extrabold text-foreground">
               This page couldn&apos;t load
             </h1>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">

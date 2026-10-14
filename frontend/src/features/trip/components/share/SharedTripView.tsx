@@ -7,15 +7,17 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Compass, List, Map as MapIcon, MapPin } from "lucide-react"
 
-import { Button, buttonVariants } from "@/components/ui/button"
+import { DateCircles } from "@/components/DateCircles"
+import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ItineraryFocusProvider, useItineraryFocus } from "@/features/activity/ItineraryFocus"
 import { colorForDay } from "@/features/map/components/mapColors"
-import { formatTripRange } from "../../lib/home"
+import { formatTripRange, tripTimingLabel } from "../../lib/home"
 import { getTripDateMetrics } from "../../lib/status"
 import { resolveTripCover } from "../../lib/cover"
 import { hasValidCoords } from "../../lib/mapsUrl"
 import { defaultOpenDayId } from "../../lib/sharedTrip"
+import { splitTripTitle } from "../../lib/title"
 import type { PublicItinerary } from "../../types"
 import { SharedDay } from "./SharedDay"
 
@@ -31,16 +33,16 @@ export function SharedTripView({ trip }: { trip: PublicItinerary }) {
   return (
     <ItineraryFocusProvider initialDayId={trip.days[0]?.id ?? null}>
       <div className="min-h-screen bg-background pb-12">
-        <header className="border-b bg-background">
-          <div className="mx-auto flex max-w-max-width items-center justify-between gap-3 px-margin-mobile py-2 md:px-margin-desktop">
-            <Link href="/" className="flex min-h-11 items-center gap-2" aria-label="Navisha home">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Compass className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
+        <header className="sticky top-0 z-30 bg-background/90 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-max-width items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop">
+            <Link href="/" className="flex min-h-11 items-center gap-2 rounded-full" aria-label="Navisha home">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
+                <Compass className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
               </span>
-              <span className="text-base font-semibold text-foreground">Navisha</span>
-              <span className="hidden text-sm text-muted-foreground sm:inline">· Shared trip</span>
+              <span className="font-display text-xl font-black tracking-tight text-foreground">Navisha</span>
+              <span className="hidden text-sm font-semibold text-muted-foreground sm:inline">· Shared trip</span>
             </Link>
-            <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Link href="/" className={buttonVariants({ variant: "soft", size: "sm" })}>
               Plan your own trip
             </Link>
           </div>
@@ -59,39 +61,35 @@ export function SharedTripView({ trip }: { trip: PublicItinerary }) {
 }
 
 function Hero({ trip }: { trip: PublicItinerary }) {
-  const cover = resolveTripCover(trip.cover_image_url, trip.description, 1280)
-  const { totalDays } = getTripDateMetrics(trip.start_date, trip.end_date)
-  const meta = `${formatTripRange(trip.start_date, trip.end_date)} · ${totalDays} ${totalDays === 1 ? "day" : "days"}`
+  const cover = resolveTripCover(trip.cover_image_url, trip.description, 1600)
+  const metrics = getTripDateMetrics(trip.start_date, trip.end_date)
+  const nights = Math.max(0, metrics.totalDays - 1)
+  const { main, rest } = splitTripTitle(trip.title)
+  const meta = `${formatTripRange(trip.start_date, trip.end_date)} · ${nights} ${nights === 1 ? "night" : "nights"}`
 
-  if (!cover) {
-    return (
-      <section className="mt-6 rounded-xl border bg-card p-5 md:p-6">
-        <h1 className="text-2xl font-semibold text-foreground md:text-3xl">{trip.title}</h1>
-        {trip.description && (
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {trip.description}
-          </p>
-        )}
-        <p className="mt-2 text-sm text-foreground tabular-nums">{meta}</p>
-      </section>
-    )
-  }
-
+  // Same cover hero as the app (DESIGN.md §5 TripCover); no cover → dusk navy.
   return (
-    <section className="relative mt-6 overflow-hidden rounded-xl">
+    <section className="bg-cover-fallback relative mt-2 overflow-hidden rounded-3xl">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" aria-hidden="true" />
-      <div className="relative flex min-h-56 flex-col justify-end p-5 text-white md:min-h-64 md:p-6">
-        {trip.description && (
-          <p className="flex items-center gap-1.5 text-sm text-white/90">
-            <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {trip.description}
-          </p>
-        )}
-        <h1 className="mt-1 text-2xl font-semibold md:text-3xl">{trip.title}</h1>
-        <p className="mt-1 text-sm text-white/90 tabular-nums">{meta}</p>
+      {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover object-[75%_50%]" />}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/15 to-transparent" aria-hidden="true" />
+      <div className="relative flex min-h-56 flex-col justify-end gap-2 p-5 text-on-cover md:min-h-64 md:p-8">
+        <span className="self-start rounded-full bg-cover-button/90 px-3 py-1 text-xs font-extrabold text-cover-button-foreground">
+          {tripTimingLabel(metrics)}
+        </span>
+        <h1 className="max-w-3xl font-display text-3xl font-extrabold leading-tight [text-wrap:balance] md:text-hero">
+          {main}
+          {rest && <span className="opacity-70"> {rest}</span>}
+        </h1>
+        <p className="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-on-cover/85 tabular-nums">
+          <span>{meta}</span>
+          {trip.description && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {trip.description}
+            </span>
+          )}
+        </p>
       </div>
     </section>
   )
@@ -102,31 +100,18 @@ function Body({ trip }: { trip: PublicItinerary }) {
   // Day shown on the phone map; null = every day.
   const [mobileMapDay, setMobileMapDay] = useState<string | null>(null)
   const { activeDayId, setActiveDayId, selectedActivityId, selectActivity } = useItineraryFocus()
-  // One day open at first: Day 1 when rendered, then today's day once the
-  // browser knows the date (the server may be in another time zone).
-  const [openDays, setOpenDays] = useState<Set<string>>(() => new Set(trip.days.slice(0, 1).map((d) => d.id)))
-  const allOpen = trip.days.length > 0 && openDays.size === trip.days.length
   const transportations = trip.transportations ?? []
   const accommodations = trip.accommodations ?? []
-  const activeDay = trip.days.find((d) => d.id === activeDayId)
+  // One day at a time, like the app: Day 1 when rendered, then today's day
+  // once the browser knows the date (the server may be in another time zone).
+  const activeDay = trip.days.find((d) => d.id === activeDayId) ?? trip.days[0]
   const dayHasPlaces = (d: PublicItinerary["days"][number]) => d.activities.some((a) => hasValidCoords(a.payload.lat, a.payload.lng))
   const hasPlaces = trip.days.some(dayHasPlaces)
 
   useEffect(() => {
     const id = defaultOpenDayId(trip.days)
-    if (id && id !== trip.days[0]?.id) {
-      setOpenDays(new Set([id]))
-      setActiveDayId(id)
-    }
+    if (id && id !== trip.days[0]?.id) setActiveDayId(id)
   }, [trip.days, setActiveDayId])
-
-  const setDayOpen = (id: string, open: boolean) =>
-    setOpenDays((prev) => {
-      const next = new Set(prev)
-      if (open) next.add(id)
-      else next.delete(id)
-      return next
-    })
 
   // A marker click on desktop brings its card into view.
   useEffect(() => {
@@ -136,7 +121,7 @@ function Body({ trip }: { trip: PublicItinerary }) {
   }, [selectedActivityId])
 
   if (trip.days.length === 0) {
-    return <p className="mt-6 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">This trip has no days yet.</p>
+    return <p className="mt-6 rounded-2xl border-2 border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">This trip has no days yet.</p>
   }
 
   return (
@@ -170,44 +155,37 @@ function Body({ trip }: { trip: PublicItinerary }) {
               )
             })}
           </div>
-          <div className="h-[65vh] overflow-hidden rounded-xl border">
+          <div className="h-[65vh] overflow-hidden rounded-2xl border shadow-card">
             <SharedTripMap days={trip.days} dayId={mobileMapDay} />
           </div>
         </div>
       )}
 
-      <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]", mobileView === "map" && "max-lg:hidden")}>
+      <div
+        className={cn(
+          "grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,37.5rem)_minmax(0,1fr)]",
+          mobileView === "map" && "max-lg:hidden",
+        )}
+      >
         <div className="flex min-w-0 flex-col gap-3">
-          {trip.days.length > 1 && (
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setOpenDays(allOpen ? new Set() : new Set(trip.days.map((d) => d.id)))}
-              >
-                {allOpen ? "Collapse all" : "Expand all"}
-              </Button>
-            </div>
-          )}
-          {trip.days.map((day) => (
-            <SharedDay
-              key={day.id}
-              day={day}
-              transportations={transportations}
-              accommodations={accommodations}
-              open={openDays.has(day.id)}
-              onOpenChange={(open) => setDayOpen(day.id, open)}
-            />
-          ))}
+          <DateCircles
+            aria-label="Trip day"
+            days={trip.days.map((d) => ({ id: d.id, date: d.date, hasItems: d.activities.length > 0 }))}
+            value={activeDay.id}
+            onChange={(id) => {
+              selectActivity(null)
+              setActiveDayId(id)
+            }}
+          />
+          <SharedDay key={activeDay.id} day={activeDay} transportations={transportations} accommodations={accommodations} />
         </div>
 
         {hasPlaces && (
           <aside
             aria-label="Map of the selected day"
-            className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border bg-card lg:flex"
+            className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:flex"
           >
-            <p className="border-b px-4 py-2.5 text-sm font-semibold text-foreground">
+            <p className="border-b px-5 py-3 font-display text-base font-extrabold text-foreground">
               {activeDay ? `Day ${activeDay.day_number} map` : "Map"}
             </p>
             <div className="relative min-h-0 flex-1">

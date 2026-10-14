@@ -1,21 +1,46 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { CalendarDays, Plane, Plus, Trash2, Wallet } from "lucide-react"
+import {
+  ArrowLeft,
+  CalendarDays,
+  Check,
+  FileText,
+  Home,
+  Hotel,
+  Map as MapIcon,
+  MoreHorizontal,
+  Plane,
+  Plus,
+  Share,
+  Ticket,
+  Trash2,
+  Wallet,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Chip } from "@/components/Chip"
+import { DateCircles, type DateCircleDay } from "@/components/DateCircles"
 import { EmptyState } from "@/components/EmptyState"
+import { FactBox } from "@/components/FactBox"
+import { StatusChip } from "@/components/StatusChip"
+import { TabPills } from "@/components/TabPills"
+import { TimePills, type TimePill } from "@/components/TimePills"
 import { IconButton } from "@/components/IconButton"
 import { MoneyText } from "@/components/MoneyText"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { StatTile } from "@/components/StatTile"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { UserAvatar } from "@/components/UserAvatar"
 import { CurrencyBadge } from "@/features/currency/components/CurrencyBadge"
 import { CATEGORY_COLORS, CATEGORY_ORDER } from "@/features/expense/categoryColors"
+import { BudgetMeter } from "@/features/expense/components/BudgetMeter"
+import { BoardingPass } from "@/features/transportation/components/BoardingPass"
+import type { Transportation } from "@/features/transportation/types"
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -28,17 +53,23 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 const COLORS = [
   ["primary", "bg-primary"],
+  ["primary-soft", "bg-primary-soft"],
   ["background", "bg-background border"],
   ["card", "bg-card border"],
   ["muted", "bg-muted"],
   ["border", "bg-border"],
   ["destructive", "bg-destructive"],
+  ["destructive-bg", "bg-destructive-bg"],
+  ["success-bg", "bg-success-bg"],
+  ["warning-bg", "bg-warning-bg"],
+  ["cover-fallback", "bg-cover-fallback"],
   ["success", "bg-success"],
   ["warning", "bg-warning"],
   ["info", "bg-info"],
 ] as const
 
 const TYPE = [
+  ["text-hero", "40px · trip title on the desktop hero (display)"],
   ["text-xs", "12px · label, meta, badge (minimum)"],
   ["text-sm", "14px · body in cards, forms, buttons"],
   ["text-base", "16px · main body"],
@@ -48,17 +79,61 @@ const TYPE = [
   ["text-3xl", "30px · page title (desktop)"],
 ] as const
 
+// Demo data: the "Dream Tour Umrah 9 Hari" trip used in the V2 mockups.
+const DEMO_DAYS: DateCircleDay[] = [10, 11, 12, 13, 14, 15, 16, 17, 18].map((d, i) => ({
+  id: `d${i + 1}`,
+  date: `2027-01-${d}`,
+  hasItems: [0, 1, 2, 4].includes(i),
+}))
+
+const DEMO_TIMES: TimePill[] = [
+  { id: "t1", label: "06:00 – 07:00", description: "Meet at Soekarno-Hatta" },
+  { id: "t2", label: "10:00 – 15:55", description: "Flight SV 817" },
+  { id: "t3", label: "17:30", description: "Transfer to the hotel" },
+]
+
+const DEMO_BASE = { trip_id: "demo", notes: "", created_at: "", updated_at: "" }
+const DEMO_FLIGHT: Transportation = {
+  ...DEMO_BASE,
+  id: "f1",
+  type: "flight",
+  label: "SV 817",
+  operator: "Saudia Airlines",
+  reference_number: "",
+  from_location: "Bandara Soekarno-Hatta (CGK), Jakarta",
+  to_location: "Bandara King Abdulaziz (JED), Jeddah",
+  departure_datetime: "2027-01-10T10:00:00",
+  arrival_datetime: "2027-01-10T15:55:00",
+}
+const DEMO_TRAIN: Transportation = {
+  ...DEMO_BASE,
+  id: "t1",
+  type: "train",
+  label: "Kereta Cepat Haramain",
+  operator: "Haramain High Speed Railway",
+  reference_number: "HHR-2741",
+  from_location: "Stasiun Haramain Makkah",
+  to_location: "Stasiun Haramain Madinah",
+  departure_datetime: "2027-01-14T09:00:00",
+  arrival_datetime: null,
+}
+
+const DEMO_SPEND = { accommodation: 2680000, transport: 400000, food: 1147000, souvenir: 640000 }
+
 export function UiCatalog() {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [day, setDay] = useState("d1")
+  const [time, setTime] = useState("t1")
 
   return (
     <main className="mx-auto max-w-5xl space-y-12 px-4 py-10 md:px-8">
       <header>
         <p className="text-sm text-muted-foreground">Development only</p>
-        <h1 className="text-3xl font-semibold tracking-tight">UI catalog</h1>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight">UI catalog</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tokens and components from docs/DESIGN_SYSTEM.md.
+          Tokens and components from docs/DESIGN.md (V2 · Soft).
         </p>
+        <ThemeToggle className="mt-4 w-56" />
       </header>
 
       <Section title="Colors">
@@ -93,6 +168,23 @@ export function UiCatalog() {
             </div>
           ))}
         </div>
+        <div className="space-y-1">
+          <p className="font-display text-2xl font-extrabold text-foreground">
+            Umrah <span className="text-muted-foreground">9 Hari</span>
+          </p>
+          <p className="text-xs text-muted-foreground">font-display (Nunito) · two-tone title</p>
+        </div>
+      </Section>
+
+      <Section title="Radius">
+        <div className="flex flex-wrap items-end gap-3">
+          {(["rounded-sm", "rounded-md", "rounded-lg", "rounded-xl", "rounded-2xl", "rounded-3xl", "rounded-full"] as const).map((r) => (
+            <div key={r} className="space-y-1 text-center">
+              <div className={`h-14 w-20 border bg-card shadow-card ${r}`} />
+              <code className="text-xs text-muted-foreground">{r}</code>
+            </div>
+          ))}
+        </div>
       </Section>
 
       <Section title="Buttons">
@@ -113,6 +205,78 @@ export function UiCatalog() {
           <Button size="xs" variant="outline">XS (32, desktop)</Button>
           <IconButton label="Delete" icon={<Trash2 />} />
           <IconButton label="Add" icon={<Plus />} variant="outline" size="sm" />
+        </div>
+      </Section>
+
+      <Section title="Navigation & pickers (V2)">
+        <TabPills
+          aria-label="Trip sections (demo)"
+          items={[
+            { href: "/dev/ui", label: "Itinerary", icon: CalendarDays, active: true },
+            { href: "/dev/ui#map", label: "Map", icon: MapIcon },
+            { href: "/dev/ui#bookings", label: "Bookings", icon: Ticket },
+            { href: "/dev/ui#budget", label: "Budget", icon: Wallet },
+            { href: "/dev/ui#summary", label: "Summary", icon: FileText },
+          ]}
+        />
+        <DateCircles days={DEMO_DAYS} value={day} onChange={setDay} aria-label="Trip day (demo)" />
+        <TimePills items={DEMO_TIMES} value={time} onChange={setTime} aria-label="Times on Day 1 (demo)" />
+        <div className="flex flex-wrap gap-2">
+          <Chip pressed>All</Chip>
+          <Chip>Stay</Chip>
+          <Chip>Food</Chip>
+          <Chip variant="option" pressed icon={Hotel}>Hotel</Chip>
+          <Chip variant="option" icon={Home}>Apartment</Chip>
+        </div>
+      </Section>
+
+      <Section title="Status, facts, cover buttons (V2)">
+        <div className="flex flex-wrap gap-2">
+          <StatusChip tone="success" icon={Check}>4/6 ready</StatusChip>
+          <StatusChip tone="warning">97% used</StatusChip>
+          <StatusChip tone="danger">Over budget</StatusChip>
+          <StatusChip tone="info">88 days to go</StatusChip>
+          <StatusChip>Completed</StatusChip>
+        </div>
+        <div className="grid max-w-md grid-cols-3 gap-2 rounded-xl border bg-card p-3 shadow-card">
+          <FactBox label="Check-in" value="10 Jan" />
+          <FactBox label="Nights" value="4" />
+          <FactBox label="To Haram" value="± 250 m" />
+        </div>
+        <div className="bg-cover-fallback flex h-32 items-start gap-2 rounded-3xl p-3">
+          <IconButton label="Back" icon={<ArrowLeft />} variant="cover" />
+          <span className="flex-1" />
+          <IconButton label="Share" icon={<Share />} variant="cover" />
+          <IconButton label="More actions" icon={<MoreHorizontal />} variant="cover" />
+        </div>
+      </Section>
+
+      <Section title="Boarding pass (V2)">
+        <div className="grid gap-4 md:grid-cols-2">
+          <BoardingPass transportation={DEMO_FLIGHT} dayNumber={1} />
+          <BoardingPass transportation={DEMO_TRAIN} dayNumber={5} />
+        </div>
+      </Section>
+
+      <Section title="Budget meter (V2)">
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="space-y-2 rounded-xl border bg-card p-4 shadow-card">
+            <p className="text-sm text-muted-foreground">Spent</p>
+            <p className="font-display text-3xl font-extrabold">
+              <MoneyText amount={4867000} currency="IDR" />
+            </p>
+            <BudgetMeter byCategory={DEMO_SPEND} budget={5000000} label="Budget used (demo)" />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>97% used</span>
+              <span>Rp 133,000 left</span>
+            </div>
+          </div>
+          <div className="space-y-2 rounded-xl border bg-card p-4 shadow-card">
+            <p className="text-sm text-muted-foreground">Over budget</p>
+            <BudgetMeter byCategory={DEMO_SPEND} budget={4000000} label="Budget used, over (demo)" />
+            <p className="text-sm text-muted-foreground">No budget set: category mix only</p>
+            <BudgetMeter byCategory={DEMO_SPEND} label="Spending mix (demo)" />
+          </div>
         </div>
       </Section>
 

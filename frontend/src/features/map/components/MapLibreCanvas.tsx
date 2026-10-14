@@ -25,6 +25,18 @@ const OPENFREEMAP_STYLE_URL =
 
 type Props = MapRendererProps
 
+// Soft palette (docs/DESIGN.md §2). Markers are DOM nodes styled inline, so
+// the token values are mirrored here.
+const INK = "#23324D"
+const PRIMARY = "#3673DB"
+const STAY = "#0E2B53"
+/** Show a name label above each pin while the view stays readable. */
+const MAX_LABELLED_POINTS = 10
+
+function shortLabel(title: string): string {
+  return title.length > 22 ? `${title.slice(0, 21).trimEnd()}…` : title
+}
+
 interface ProjectedRoute {
   id: string
   color: string
@@ -146,8 +158,37 @@ export function MapLibreCanvas({
 
       map.once("load", () => {
         let placeNumber = 0
+        const labelled = allPoints.length <= MAX_LABELLED_POINTS
         allPoints.forEach((point) => {
           const isStay = point.kind === "stay"
+          // Pin = optional name pill above a numbered circle; the circle sits on the coordinate.
+          const pin = document.createElement("div")
+          Object.assign(pin.style, {
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "4px",
+            pointerEvents: "none",
+            // Above the route overlay (z-index 1): the pin, not its children,
+            // is the stacking context MapLibre positions with a transform.
+            zIndex: "2",
+          })
+          if (labelled) {
+            const label = document.createElement("span")
+            label.textContent = shortLabel(point.title)
+            Object.assign(label.style, {
+              background: "white",
+              color: INK,
+              borderRadius: "9999px",
+              padding: "3px 9px",
+              fontSize: "12px",
+              fontWeight: "700",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgb(35 50 77 / 0.18)",
+              fontFamily: "var(--font-sans), system-ui, sans-serif",
+            })
+            pin.appendChild(label)
+          }
           const markerElement = document.createElement("button")
           markerElement.type = "button"
           markerElement.title = point.title
@@ -156,16 +197,18 @@ export function MapLibreCanvas({
           Object.assign(markerElement.style, {
             width: "30px",
             height: "30px",
-            borderRadius: isStay ? "8px" : "9999px",
-            border: "2px solid white",
-            background: isStay ? "#0f172a" : colorForDay(point.dayNumber),
+            borderRadius: isStay ? "10px" : "9999px",
+            border: "2.5px solid white",
+            background: isStay ? STAY : colorForDay(point.dayNumber),
             color: "white",
             fontSize: "12px",
-            fontWeight: "700",
+            fontWeight: "800",
             cursor: "pointer",
-            boxShadow: "0 2px 8px rgb(0 0 0 / 0.28)",
+            pointerEvents: "auto",
+            boxShadow: "0 2px 8px rgb(35 50 77 / 0.3)",
             zIndex: "2",
           })
+          pin.appendChild(markerElement)
 
           // Register marker for fly-to + highlight (focus-on-click). Clicking a
           // marker selects the matching list card (two-way sync).
@@ -176,6 +219,8 @@ export function MapLibreCanvas({
 
           const popupContent = document.createElement("div")
           popupContent.style.maxWidth = "240px"
+          popupContent.style.fontFamily = "var(--font-sans), system-ui, sans-serif"
+          popupContent.style.color = INK
           const title = document.createElement("p")
           title.textContent = point.title
           title.style.fontWeight = "700"
@@ -201,9 +246,9 @@ export function MapLibreCanvas({
           openButton.textContent = "Open in Google Maps"
           Object.assign(openButton.style, {
             border: "0",
-            borderRadius: "6px",
-            padding: "6px 10px",
-            background: "#2563eb",
+            borderRadius: "9999px",
+            padding: "7px 12px",
+            background: PRIMARY,
             color: "white",
             fontSize: "12px",
             fontWeight: "600",
@@ -212,7 +257,9 @@ export function MapLibreCanvas({
           openButton.addEventListener("click", () => onOpenInMaps(point))
           popupContent.appendChild(openButton)
 
-          new maplibregl.Marker({ element: markerElement })
+          // Anchor at the bottom of the pin, nudged down by half the circle so
+          // the circle's centre is on the coordinate.
+          new maplibregl.Marker({ element: pin, anchor: "bottom", offset: [0, 15] })
             .setLngLat([point.lng, point.lat])
             .setPopup(new maplibregl.Popup({ offset: 22 }).setDOMContent(popupContent))
             .addTo(map)
@@ -279,12 +326,12 @@ export function MapLibreCanvas({
 
       markerElsRef.current.forEach((el, id) => {
         const isSelected = id === selectedActivityId
-        el.style.borderColor = isSelected ? "#fbbf24" : "white"
-        el.style.borderWidth = isSelected ? "3px" : "2px"
+        el.style.borderWidth = isSelected ? "3px" : "2.5px"
         el.style.boxShadow = isSelected
-          ? "0 0 0 4px rgb(251 191 36 / 0.35), 0 4px 12px rgb(0 0 0 / 0.4)"
-          : "0 2px 8px rgb(0 0 0 / 0.28)"
-        el.style.zIndex = isSelected ? "10" : "2"
+          ? `0 0 0 4px ${PRIMARY}59, 0 4px 12px rgb(35 50 77 / 0.35)`
+          : "0 2px 8px rgb(35 50 77 / 0.3)"
+        // Raise the whole pin (label included) above its neighbours.
+        if (el.parentElement) el.parentElement.style.zIndex = isSelected ? "10" : "2"
       })
     }, [selectedActivityId, displayableByDay])
 
@@ -342,7 +389,7 @@ export function MapLibreCanvas({
           </svg>
         )}
         {mapError && (
-          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 text-xs shadow-md">
+          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border bg-card/95 px-4 py-2 text-xs shadow-overlay">
             <span>Some map tiles could not be loaded.</span>
             <a
               href="https://www.openstreetmap.org"

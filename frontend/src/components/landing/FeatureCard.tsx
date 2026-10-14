@@ -18,14 +18,14 @@ export function FeatureCard({
   className?: string
 }) {
   return (
-    <article className={cn("flex flex-col rounded-xl border bg-card p-5 md:p-6", className)}>
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+    <article className={cn("flex flex-col rounded-2xl border bg-card p-5 shadow-card md:p-6", className)}>
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
         <Icon className="h-5 w-5" aria-hidden="true" />
       </span>
-      <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
+      <h3 className="mt-4 font-display text-xl font-extrabold text-foreground">{title}</h3>
       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
       {visual && (
-        <div className="mt-5 rounded-lg border bg-background p-3" aria-hidden="true">
+        <div className="mt-5 rounded-xl bg-background p-3" aria-hidden="true">
           {visual}
         </div>
       )}

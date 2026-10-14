@@ -5,6 +5,8 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ArrowLeft, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
 
+import { IconButton } from "@/components/IconButton"
+import { StatusChip } from "@/components/StatusChip"
 import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,9 +15,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn, formatDateRange } from "@/lib/utils"
-import { getTripDateMetrics, tripProgressLabel } from "../lib/status"
-import { canRenderTripCover, resolveTripCover } from "../lib/cover"
+import { cn } from "@/lib/utils"
+import { formatTripRange, tripTimingLabel } from "../lib/home"
+import { getTripDateMetrics } from "../lib/status"
+import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
 
 const TripShareDialog = dynamic(
@@ -26,9 +30,9 @@ const TripShareDialog = dynamic(
 const MENU_ITEM = "min-h-10 px-3 text-sm"
 
 /**
- * Compact trip header (D3): back to Trips, small cover thumbnail, title,
- * dates and status, plus one ⋯ menu for Edit / Share / Delete. Replaces the
- * full-height hero so the trip content starts above the fold on phones.
+ * Trip hero (docs/DESIGN.md §5 TripCover): the cover illustration with round
+ * buttons on top (back, share, ⋯). Desktop puts the two-tone title on the
+ * cover; phones put it under the cover so the picture stays clean.
  */
 export function TripHeader({
   trip,
@@ -41,65 +45,94 @@ export function TripHeader({
 }) {
   const [shareOpen, setShareOpen] = useState(false)
   const metrics = getTripDateMetrics(trip.start_date, trip.end_date)
-  const cover = resolveTripCover(trip.cover_image_url, trip.description, 160)
+  const nights = Math.max(0, metrics.totalDays - 1)
+  const timing = tripTimingLabel(metrics)
+  const { main, rest } = splitTripTitle(trip.title)
+  const range = formatTripRange(trip.start_date, trip.end_date)
+  const cover = resolveTripCover(trip.cover_image_url, trip.description, 1600)
+  const srcSet = cover ? tripCoverSrcSet(trip.cover_image_url, trip.description, [768, 1280, 1600]) : undefined
+  const meta = [range, `${nights} ${nights === 1 ? "night" : "nights"}`].filter(Boolean).join(" · ")
+  const timingTone = metrics.status === "past" ? "neutral" : "info"
 
   return (
-    <header className="border-b bg-background">
-      <div className="mx-auto flex w-full max-w-max-width items-center gap-3 px-margin-mobile py-3 md:px-margin-desktop">
-        <Link
-          href="/trips"
-          aria-label="Back to Trips"
-          className={buttonVariants({ variant: "ghost", size: "icon", className: "-ml-2 shrink-0" })}
-        >
-          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-        </Link>
-
-        {canRenderTripCover(cover) ? (
+    <header className="md:mx-auto md:w-full md:max-w-max-width md:px-margin-desktop md:pt-2">
+      <div className="bg-cover-fallback relative h-52 overflow-hidden rounded-b-3xl md:h-60 md:rounded-3xl">
+        {cover && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={cover}
+            srcSet={srcSet}
+            sizes="(min-width: 1600px) 1600px, 100vw"
             alt=""
-            aria-hidden="true"
-            className="h-12 w-12 shrink-0 rounded-lg object-cover"
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-[75%_50%]"
           />
-        ) : (
-          <span className="h-12 w-12 shrink-0 rounded-lg bg-muted" aria-hidden="true" />
         )}
+        {/* Keeps the title readable on the left of any cover. */}
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-black/40 via-black/10 to-transparent md:block" aria-hidden="true" />
 
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">
-            {trip.title}
-          </h1>
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {formatDateRange(trip.start_date, trip.end_date)}
-            <span aria-hidden="true"> · </span>
-            {tripProgressLabel(metrics)}
-          </p>
+        <div className="absolute inset-x-3 top-3 flex items-center gap-2 md:inset-x-5 md:top-5">
+          <Link
+            href="/trips"
+            aria-label="Back to Trips"
+            className={buttonVariants({ variant: "cover", size: "icon", className: "shrink-0" })}
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </Link>
+          <span className="hidden rounded-full bg-cover-button/90 px-3 py-1.5 text-xs font-extrabold text-cover-button-foreground md:inline">
+            {timing}
+          </span>
+          <span className="flex-1" />
+          <IconButton label="Share trip" icon={<Share2 />} variant="cover" onClick={() => setShareOpen(true)} />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Trip actions"
+              className={buttonVariants({ variant: "cover", size: "icon", className: "shrink-0" })}
+            >
+              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
+                <Pencil aria-hidden="true" />
+                Edit trip
+              </DropdownMenuItem>
+              <DropdownMenuItem className={MENU_ITEM} onClick={() => setShareOpen(true)}>
+                <Share2 aria-hidden="true" />
+                Share trip
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>
+                <Trash2 aria-hidden="true" />
+                Delete trip
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label="Trip actions"
-            className={buttonVariants({ variant: "ghost", size: "icon", className: "shrink-0" })}
-          >
-            <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
-              <Pencil aria-hidden="true" />
-              Edit trip
-            </DropdownMenuItem>
-            <DropdownMenuItem className={MENU_ITEM} onClick={() => setShareOpen(true)}>
-              <Share2 aria-hidden="true" />
-              Share trip
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>
-              <Trash2 aria-hidden="true" />
-              Delete trip
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Desktop: title on the cover, clear of the tabs that overlap the bottom edge. */}
+        <div className="absolute bottom-12 left-8 hidden max-w-[60%] flex-col items-start gap-1.5 text-on-cover md:flex">
+          <h1 className="line-clamp-2 font-display text-3xl font-extrabold leading-tight [text-wrap:balance] lg:text-hero">
+            {main}
+            {rest && <span className="opacity-70"> {rest}</span>}
+          </h1>
+          <p className="text-sm font-semibold text-on-cover/85 tabular-nums">
+            {meta}
+            {trip.description && <span> · {trip.description}</span>}
+          </p>
+        </div>
+      </div>
+
+      {/* Phones: title under the cover. */}
+      <div className="px-margin-mobile pt-4 md:hidden">
+        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground [text-wrap:balance]">
+          {main}
+          {rest && <span className="text-muted-foreground"> {rest}</span>}
+        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground tabular-nums">
+          <StatusChip tone={timingTone}>{timing}</StatusChip>
+          <span>{meta}</span>
+        </div>
       </div>
 
       {shareOpen && <TripShareDialog tripId={trip.id} open={shareOpen} onOpenChange={setShareOpen} />}

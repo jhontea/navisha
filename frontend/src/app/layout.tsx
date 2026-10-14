@@ -1,23 +1,24 @@
 import type { Metadata } from "next"
-import localFont from "next/font/local"
+import { Nunito, Nunito_Sans } from "next/font/google"
 import { ErrorReporting } from "@/components/ErrorReporting"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
+import { THEME_INIT_SCRIPT } from "@/lib/theme"
 import "./globals.css"
 
-const inter = localFont({
-  src: "./fonts/InterVariable.woff2",
-  variable: "--font-inter",
+// docs/DESIGN.md §3: Nunito for display (titles, big numbers), Nunito Sans for UI.
+const display = Nunito({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  variable: "--font-display",
   display: "swap",
-  weight: "100 900",
 })
 
-const interItalic = localFont({
-  src: "./fonts/InterVariableItalic.woff2",
-  variable: "--font-inter-italic",
+const sans = Nunito_Sans({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  style: ["normal", "italic"],
+  variable: "--font-sans",
   display: "swap",
-  style: "italic",
-  weight: "100 900",
-  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -41,11 +42,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <head />
-      <body
-        className={`${inter.variable} ${interItalic.variable} font-sans antialiased`}
-      >
+    // The theme script may add `dark` before React hydrates.
+    <html lang="en" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="font-sans antialiased">
         <WebVitalsReporter />
         <ErrorReporting />
         {children}

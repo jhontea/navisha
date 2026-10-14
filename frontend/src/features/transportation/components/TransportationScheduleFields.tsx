@@ -64,7 +64,7 @@ export function TransportationScheduleFields({
           </FormFieldDescription>
         </div>
         {duration !== null && (
-          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-soft-foreground">
             {formatDuration(duration)}
           </span>
         )}
@@ -87,7 +87,7 @@ export function TransportationScheduleFields({
             disabled={disabled}
             aria-invalid={Boolean(departureError)}
             aria-describedby={departureError ? "departure-error" : undefined}
-            className={`h-auto w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
+            className={`h-auto w-full rounded-xl border bg-card px-4 py-2.5 text-base outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
               departureError ? "border-destructive" : "border-border"
             }`}
             onChange={(event) => updateDeparture(event.target.value)}
@@ -132,7 +132,7 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
               disabled={disabled}
               aria-invalid={Boolean(arrivalError)}
               aria-describedby={arrivalError ? "arrival-error" : undefined}
-              className={`h-auto w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
+              className={`h-auto w-full rounded-xl border bg-card px-4 py-2.5 text-base outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
                 arrivalError ? "border-destructive" : "border-border"
               }`}
               onChange={(event) => onArrivalChange(event.target.value)}
@@ -167,7 +167,7 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
             type="button"
             disabled={disabled}
             onClick={addArrival}
-variant="outline" className="border-dashed text-muted-foreground">
+variant="soft">
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add arrival time
           </Button>

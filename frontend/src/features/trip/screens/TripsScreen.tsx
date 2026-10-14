@@ -13,13 +13,13 @@ import { useDashboardTrips, useTrips } from "@/features/trip/hooks/useTrips"
 import { groupTrips, pickNextUp, tripStats } from "@/features/trip/lib/home"
 import type { Trip } from "@/features/trip/types"
 
-const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
 
 function TripGrid({ id, title, trips }: { id: string; title: string; trips: Trip[] }) {
   if (trips.length === 0) return null
   return (
     <section aria-labelledby={id}>
-      <h2 id={id} className="mb-3 text-lg font-semibold text-foreground">
+      <h2 id={id} className="mb-3 font-display text-xl font-extrabold text-foreground">
         {title}
       </h2>
       <div className={GRID}>
@@ -56,9 +56,12 @@ export function TripsScreen() {
     <main className="mx-auto w-full max-w-max-width px-margin-mobile pb-28 pt-6 md:px-margin-desktop">
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground md:text-3xl">Trips</h1>
+          <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground sm:text-3xl md:text-4xl">
+            {firstName ? `Hi, ${firstName}` : "Trips"}
+            <span className="block text-muted-foreground">where to next?</span>
+          </h1>
           {allTrips.length > 0 && (
-            <p className="mt-1 text-sm text-muted-foreground tabular-nums">
+            <p className="mt-2 text-sm font-semibold text-muted-foreground tabular-nums">
               {stats.trips} {stats.trips === 1 ? "trip" : "trips"} · {stats.days} days ·{" "}
               {stats.currencies} {stats.currencies === 1 ? "currency" : "currencies"}
             </p>
@@ -69,15 +72,15 @@ export function TripsScreen() {
 
       {isLoading ? (
         <div className="space-y-6" aria-label="Loading trips" aria-busy="true">
-          <div className="h-52 animate-pulse rounded-xl bg-muted" />
+          <div className="h-72 animate-pulse rounded-3xl bg-muted md:h-80" />
           <div className={GRID}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-60 animate-pulse rounded-xl bg-muted" />
+              <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted" />
             ))}
           </div>
         </div>
       ) : isError ? (
-        <div role="alert" className="rounded-xl border border-dashed p-6 text-center">
+        <div role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center">
           <p className="text-sm font-medium text-destructive">Couldn&apos;t load your trips.</p>
           <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
@@ -87,7 +90,7 @@ export function TripsScreen() {
       ) : allTrips.length === 0 ? (
         <OnboardingCard userName={firstName} />
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-8">
           {nextUp && <NextUpCard trip={nextUp} />}
           <TripGrid id="upcoming-heading" title={nextUp ? "Also coming up" : "Upcoming"} trips={upcomingRest} />
           <TripGrid id="past-heading" title="Past" trips={past} />

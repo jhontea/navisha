@@ -14,12 +14,10 @@ html {
 
 @layer base {
   body {
-    font-family: 'Inter', var(--font-inter), sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-  }
-  :where(i, em, .italic) {
-    font-family: var(--font-inter-italic), var(--font-inter), sans-serif;
   }
 
   /* Native controls inside forms share the same non-interactive treatment. */
@@ -48,44 +46,46 @@ html {
 }
 
 @layer base {
+  /* Design foundation V2 "Soft" — docs/DESIGN.md §2.
+     Light is the default theme; `.dark` on <html> is opt-in (theme toggle). */
   :root {
-    /* ── Base palette (light only) ── */
-    --background: 240 33% 98%;
-    --foreground: 222.2 47.4% 11.2%;
+    /* ── Core ── */
+    --background: 216 71.4% 97.3%;          /* #F3F7FD */
+    --foreground: 219 37.5% 22%;            /* #23324D · 12:1 */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 219 37.5% 22%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 215 100% 36%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 33% 88%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 42%; /* 5.2:1 on --muted, WCAG AA (axe, plan D6) */
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 73.7% 41.8%; /* red-700: 6.5:1 as text and under white text (WCAG AA) */
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 215 100% 36%;
-    --radius: 0.75rem;
+    --popover-foreground: 219 37.5% 22%;
+    --primary: 218 69.6% 53.5%;             /* #3673DB */
+    --primary-foreground: 0 0% 100%;        /* 4.5:1 */
+    --primary-soft: 217 100% 95.9%;         /* #EAF2FF — active state tint */
+    --primary-soft-foreground: 218 61.7% 47.1%; /* #2E64C2 · 5:1 on tint */
+    --secondary: 218 64.7% 96.7%;
+    --secondary-foreground: 219 37.5% 22%;
+    --muted: 218 64.7% 96.7%;               /* #F1F5FC */
+    --muted-foreground: 219 15.6% 44.1%;    /* #5F6B82 · 5:1 */
+    --accent: 217 100% 95.9%;
+    --accent-foreground: 218 61.7% 47.1%;
+    --destructive: 4 76.5% 40%;             /* #B42318 */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-bg: 6 82.6% 95.5%;
+    --border: 215 51.5% 93.5%;              /* #E6EDF7 */
+    --input: 215 40% 88%;
+    --ring: 218 69.6% 53.5%;
+    --radius: 1rem;
 
-    /* ── Semantic Status Tokens (warning / info / success) ── */
-    --warning: 38 92% 50%;
+    /* ── Status ── */
+    --warning: 35 100% 30.2%;               /* #9A5B00 */
     --warning-foreground: 0 0% 100%;
-    --warning-bg: 38 92% 95%;
-    --info: 200 90% 50%;
+    --warning-bg: 37 100% 93.9%;
+    --info: 218 61.7% 47.1%;
     --info-foreground: 0 0% 100%;
-    --info-bg: 200 90% 95%;
-    --success: 142 71% 45%;
+    --info-bg: 217 100% 95.9%;
+    --success: 149 58.1% 29%;               /* #1F7548 */
     --success-foreground: 0 0% 100%;
-    --success-bg: 142 71% 95%;
+    --success-bg: 148 45.5% 93.5%;
 
-    /* ── Design system tokens (D1) — see docs/DESIGN_SYSTEM.md ──
-       Expense category colors. Validated as a categorical palette in this
-       fixed order (adjacent pairs pass CVD checks); charts must keep the
-       order and always pair a color with a text label. */
+    /* ── Expense categories (fixed order, CVD-checked; DESIGN_SYSTEM.md §2) ── */
     --cat-stay: 213 68% 50%;      /* #2a78d6 */
     --cat-transport: 159 73% 40%; /* #1baf7a */
     --cat-food: 17 82% 56%;       /* #eb6834 */
@@ -94,18 +94,80 @@ html {
     --cat-shopping: 41 100% 46%;  /* #eda100 */
     --cat-other: 215 8% 53%;      /* #7d8590 */
 
-    /* Two elevation levels only: cards and overlays. */
-    --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
-    --shadow-overlay: 0 10px 30px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+    /* ── Covers are always dusk-dark, in both themes (DESIGN.md §2.4) ── */
+    --on-cover: 0 0% 100%;
+    --cover-button: 0 0% 100%;
+    --cover-button-foreground: 219 37.5% 22%;
+    --cover-fallback: radial-gradient(120% 70% at 78% 100%, rgb(244 162 107 / 0.55) 0%, rgb(198 162 153 / 0.22) 30%, transparent 60%),
+      linear-gradient(180deg, #011334 0%, #0e2b53 55%, #205a81 100%);
+
+    /* ── Map palette (MapLibre style, V4) ── */
+    --map-land: 218 66.7% 97.6%;
+    --map-water: 214 88.9% 92.9%;
+    --map-park: 135 42.1% 92.5%;
+    --map-road: 0 0% 100%;
+
+    /* Two elevation levels: cards and overlays. Blue-tinted, very soft. */
+    --shadow-card: 0 2px 4px rgb(54 115 219 / 0.04), 0 12px 32px rgb(54 115 219 / 0.08);
+    --shadow-overlay: 0 16px 48px rgb(35 50 77 / 0.16);
 
     /* Toasts sit above dialogs and sheets. */
     --z-toast: 500;
+
+    color-scheme: light;
   }
 
-  /* Light only: there is no dark theme, so keep native controls (date
-     pickers, scrollbars) light when the OS is in dark mode. */
-  :root {
-    color-scheme: light;
+  .dark {
+    --background: 221 41% 12%;              /* #121A2B */
+    --foreground: 219 51.5% 93.5%;          /* #E6ECF7 */
+    --card: 220 36.6% 16.1%;                /* #1A2438 */
+    --card-foreground: 219 51.5% 93.5%;
+    --popover: 220 36.6% 16.1%;
+    --popover-foreground: 219 51.5% 93.5%;
+    --primary: 218 100% 76.3%;              /* #86B2FF */
+    --primary-foreground: 220 46.2% 10.2%;  /* 8.5:1 */
+    --primary-soft: 218 46.1% 22.5%;        /* #1F3254 */
+    --primary-soft-foreground: 219 100% 86.9%;
+    --secondary: 220 35.3% 20%;
+    --secondary-foreground: 219 51.5% 93.5%;
+    --muted: 220 35.3% 20%;                 /* #212D45 */
+    --muted-foreground: 219 22.7% 70.6%;    /* #A3AFC5 · 7.9:1 */
+    --accent: 218 46.1% 22.5%;
+    --accent-foreground: 219 100% 86.9%;
+    --destructive: 5 100% 75.1%;            /* #FF8A80 */
+    --destructive-foreground: 221 41% 12%;
+    --destructive-bg: 0 38.1% 16.5%;
+    --border: 221 31.1% 23.9%;              /* #2A3650 */
+    --input: 221 28% 30%;
+    --ring: 218 100% 76.3%;
+
+    --warning: 36 89.1% 63.9%;
+    --warning-foreground: 221 41% 12%;
+    --warning-bg: 36 52.6% 14.9%;
+    --info: 219 100% 86.9%;
+    --info-foreground: 221 41% 12%;
+    --info-bg: 218 46.1% 22.5%;
+    --success: 149 56.8% 63.7%;
+    --success-foreground: 221 41% 12%;
+    --success-bg: 154 37.8% 14.5%;
+
+    --cat-stay: 212 73.5% 62.9%;
+    --cat-transport: 158 62.4% 49%;
+    --cat-food: 18 83.6% 64.1%;
+    --cat-activity: 249 61.7% 68.2%;
+    --cat-gift: 337 72.4% 75.9%;
+    --cat-shopping: 41 90.9% 57.1%;
+    --cat-other: 215 9.2% 63.7%;
+
+    --map-land: 220 41.8% 15.5%;
+    --map-water: 215 54.8% 22.5%;
+    --map-park: 153 34.2% 15.5%;
+    --map-road: 220 36.8% 22.4%;
+
+    --shadow-card: 0 2px 4px rgb(0 0 0 / 0.2), 0 12px 32px rgb(0 0 0 / 0.25);
+    --shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.45);
+
+    color-scheme: dark;
   }
 
   * {
@@ -119,6 +181,10 @@ html {
 }
 
 @layer utilities {
+  /* Trip without a cover image: same dusk navy as the illustrated covers. */
+  .bg-cover-fallback {
+    background: var(--cover-fallback);
+  }
   .text-balance {
     text-wrap: balance;
   }
@@ -131,8 +197,8 @@ html {
 /* Google Places Autocomplete dropdown — ensure it's above everything */
 .pac-container {
   z-index: 9999 !important;
-  font-family: 'Inter', var(--font-inter), sans-serif;
-  border-radius: 10px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0,0,0,0.06);
   margin-top: 4px;
   border: 1px solid hsl(var(--border));
@@ -164,12 +230,12 @@ html {
   width: fit-content;
   max-width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid hsl(var(--border) / 0.7);
-  border-radius: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
   color: hsl(var(--foreground));
   font-family: inherit;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.35;
   box-shadow: var(--shadow-overlay);
   opacity: 0;
@@ -187,14 +253,14 @@ html {
 
 .navisha-toast-action {
   min-height: 2.75rem;
-  padding: 0 0.875rem;
-  border-radius: 0.625rem;
+  padding: 0 1rem;
+  border-radius: 9999px;
   color: hsl(var(--primary));
   font-weight: 600;
 }
 
 .navisha-toast-action:hover {
-  background: hsl(var(--primary) / 0.1);
+  background: hsl(var(--primary-soft));
 }
 
 .navisha-toast-action:focus-visible {

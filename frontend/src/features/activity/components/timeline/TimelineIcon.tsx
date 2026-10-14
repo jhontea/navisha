@@ -6,11 +6,11 @@ import { transportIcon } from "@/features/transportation/lib/transportType"
 
 type Kind = "location" | "note" | "todo" | "transport" | "stay"
 
-// Category tint for each timeline item kind (docs/DESIGN_SYSTEM.md tokens).
+// One soft blue for places and bookings, neutral for notes and to-dos (DESIGN.md §2.1).
 const STYLE: Record<Kind, string> = {
-  location: "bg-primary/10 text-primary",
-  transport: "bg-cat-transport/15 text-cat-transport",
-  stay: "bg-cat-stay/15 text-cat-stay",
+  location: "bg-primary-soft text-primary-soft-foreground",
+  transport: "bg-primary-soft text-primary-soft-foreground",
+  stay: "bg-primary-soft text-primary-soft-foreground",
   note: "bg-muted text-muted-foreground",
   todo: "bg-muted text-muted-foreground",
 }

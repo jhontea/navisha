@@ -8,8 +8,8 @@ import { buttonVariants } from "@/components/ui/button"
 /** First-run state on the Trips page: the two ways to start a trip. */
 export function OnboardingCard({ userName }: { userName?: string }) {
   return (
-    <section aria-labelledby="onboarding-heading" className="rounded-xl border bg-card p-6 md:p-8">
-      <h2 id="onboarding-heading" className="text-xl font-semibold text-foreground">
+    <section aria-labelledby="onboarding-heading" className="rounded-2xl border bg-card shadow-card p-6 md:p-8">
+      <h2 id="onboarding-heading" className="text-xl font-display font-extrabold text-foreground">
         {userName ? `Welcome, ${userName}` : "Welcome to Navisha"}
       </h2>
       <p className="mt-1 max-w-xl text-sm text-muted-foreground">

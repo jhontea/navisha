@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input"
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { Check, CheckSquare, ChevronDown, LoaderCircle, MoreHorizontal, Pencil, X } from "lucide-react"
+import { Check, CheckSquare, LoaderCircle, MoreHorizontal, Pencil, X } from "lucide-react"
 
 import { buttonVariants, Button } from "@/components/ui/button"
 import {
@@ -12,10 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
 import { useUpdateDayTitle } from "@/features/trip/hooks/useTrips"
 import type { Day } from "@/features/trip/types"
-import { useItineraryFocus } from "../ItineraryFocus"
 
 const DayActivities = dynamic(
   () => import("./DayActivities").then((module) => module.DayActivities),
@@ -38,47 +36,30 @@ interface Props {
   title: string
   notes: string
   destination?: string
-  defaultExpanded?: boolean
   days: Day[]
 }
 
 const MENU_ITEM = "min-h-10 px-3 text-sm"
 
-/** A collapsible day: header (number, date, title, ⋯ menu) and its timeline. */
+/**
+ * The selected day (V4, one day at a time): two-tone header with the date and
+ * the day title, a ⋯ menu, and the day's timeline.
+ */
 export function DayPanel({
   tripId,
   dayId,
   dayNumber,
   date,
   title,
-  defaultExpanded = false,
   destination,
   days,
 }: Props) {
-  const { activeDayId, setActiveDayId } = useItineraryFocus()
-  const [expanded, setExpanded] = useState(defaultExpanded)
-  const [hasBeenExpanded, setHasBeenExpanded] = useState(defaultExpanded)
   const [selectMode, setSelectMode] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [currentTitle, setCurrentTitle] = useState(title)
   const [titleDraft, setTitleDraft] = useState(title)
   const [titleError, setTitleError] = useState("")
   const updateTitle = useUpdateDayTitle(tripId)
-
-  const expand = () => {
-    setExpanded(true)
-    setHasBeenExpanded(true)
-    setActiveDayId(dayId)
-  }
-
-  const toggleExpanded = () => {
-    if (expanded) {
-      setExpanded(false)
-      setSelectMode(false)
-    } else {
-      expand()
-    }
-  }
 
   useEffect(() => {
     if (editingTitle) return
@@ -126,31 +107,18 @@ export function DayPanel({
     day: "numeric",
     month: "short",
   })
-  const isActive = activeDayId === dayId
-
   return (
-    <section
-      id={`day-${dayId}`}
-      aria-labelledby={`day-heading-${dayId}`}
-      className={cn("rounded-xl border bg-card", isActive && expanded && "border-primary/40")}
-    >
-      <div className="flex items-start gap-2 px-3 py-2 sm:px-4">
-        {/* eslint-disable-next-line no-restricted-syntax -- collapsible day header spanning the title block */}
-        <button
-          type="button"
-          onClick={toggleExpanded}
-          aria-expanded={expanded}
-          aria-controls={`day-panel-${dayId}`}
-          className="flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-lg py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span id={`day-heading-${dayId}`} className="text-base font-semibold text-foreground">
+    <section id={`day-${dayId}`} aria-labelledby={`day-heading-${dayId}`} className="rounded-2xl border bg-card shadow-card">
+      <div className="flex items-start gap-2 px-4 pb-1 pt-4 sm:px-5">
+        <div className="min-w-0 flex-1">
+          <h2 id={`day-heading-${dayId}`} className="font-display text-xl font-extrabold leading-tight text-foreground">
             Day {dayNumber}
-            <span className="font-normal text-muted-foreground"> · {dayLabel}</span>
-          </span>
+            <span className="text-muted-foreground"> · {dayLabel}</span>
+          </h2>
           {!editingTitle && currentTitle && (
-            <span className="truncate text-sm text-muted-foreground">{currentTitle}</span>
+            <p className="mt-0.5 truncate text-sm font-semibold text-muted-foreground">{currentTitle}</p>
           )}
-        </button>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -164,33 +132,17 @@ export function DayPanel({
               <Pencil aria-hidden="true" />
               {currentTitle ? "Edit day title" : "Add day title"}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className={MENU_ITEM}
-              onClick={() => {
-                expand()
-                setSelectMode(true)
-              }}
-            >
+            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSelectMode(true)}>
               <CheckSquare aria-hidden="true" />
               Select & copy
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button
-          type="button"
-          onClick={toggleExpanded}
-          aria-expanded={expanded}
-          aria-controls={`day-panel-${dayId}`}
-          aria-label={`${expanded ? "Collapse" : "Expand"} Day ${dayNumber}`}
-          variant="ghost" size="icon" className="shrink-0 text-muted-foreground"
-        >
-          <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", expanded && "rotate-180")} aria-hidden="true" />
-        </Button>
       </div>
 
       {editingTitle && (
-        <div className="px-3 pb-3 sm:px-4">
+        <div className="px-4 pb-3 sm:px-5">
           <div className="flex items-center gap-1.5">
             <Input
               value={titleDraft}
@@ -209,7 +161,7 @@ export function DayPanel({
               aria-invalid={Boolean(titleError)}
               aria-describedby={titleError ? `day-title-error-${dayId}` : undefined}
               placeholder="e.g. Arrival & Shibuya nights"
-              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:opacity-60"
+              className="h-10 min-w-0 flex-1 rounded-full border bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:opacity-60"
             />
             <Button
               type="button"
@@ -242,30 +194,17 @@ export function DayPanel({
         </div>
       )}
 
-      {/* Grid-rows animation: grid-rows-[0fr] -> [1fr] gives a smooth height transition. */}
-      <div
-        id={`day-panel-${dayId}`}
-        className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-out",
-          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="border-t px-2 pb-3 pt-3 sm:px-4">
-            {hasBeenExpanded ? (
-              <DayActivities
-                tripId={tripId}
-                dayId={dayId}
-                date={date}
-                dayNumber={dayNumber}
-                destination={destination}
-                days={days}
-                selectMode={selectMode}
-                onSelectModeChange={setSelectMode}
-              />
-            ) : null}
-          </div>
-        </div>
+      <div className="px-2 pb-4 pt-3 sm:px-5">
+        <DayActivities
+          tripId={tripId}
+          dayId={dayId}
+          date={date}
+          dayNumber={dayNumber}
+          destination={destination}
+          days={days}
+          selectMode={selectMode}
+          onSelectModeChange={setSelectMode}
+        />
       </div>
     </section>
   )

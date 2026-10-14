@@ -43,9 +43,9 @@ export function DayMap({
   if (!MAP_ENABLED) return null
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b px-4 py-2.5">
-        <p className="text-sm font-semibold text-foreground">
+    <div className="flex h-full flex-col overflow-hidden bg-card">
+      <div className="flex items-center justify-between gap-2 border-b px-5 py-3">
+        <p className="font-display text-base font-extrabold text-foreground">
           {day ? `Day ${day.day_number} map` : "Map"}
         </p>
         {visiblePoints.length > 0 && (

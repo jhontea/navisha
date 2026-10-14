@@ -16,11 +16,10 @@ export default function DashboardLayout({
         <div className="relative flex min-h-screen flex-col bg-background">
           <NavBar />
 
-          {/* Bottom padding clears the trip tab bar on phones (and the notch). */}
+          {/* Bottom padding clears the floating nav on phones (and the notch). */}
           <main
             id="main-content"
-            className="flex-1 md:pb-10"
-            style={{ paddingBottom: "max(5rem, calc(4.5rem + env(safe-area-inset-bottom)))" }}
+            className="flex-1 pb-[max(6.5rem,calc(5.75rem+env(safe-area-inset-bottom)))] md:pb-10"
           >
             {children}
           </main>

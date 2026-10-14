@@ -57,7 +57,7 @@ export function SharedTripPage({ token, initial }: { token: string; initial?: Sh
           <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <Link2 className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           </span>
-          <h1 className="text-xl font-semibold text-foreground">
+          <h1 className="text-xl font-display font-extrabold text-foreground">
             {status === "expired" ? "This link has expired" : "This trip isn't available"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">Ask the trip owner to send you a new share link.</p>

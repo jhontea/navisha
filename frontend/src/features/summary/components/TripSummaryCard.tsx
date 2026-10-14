@@ -24,7 +24,7 @@ import { GeneratingIndicator } from "./GeneratingIndicator"
 // Markdown from the AI rendered with the app's type scale.
 const markdownComponents: Components = {
   table: (props) => (
-    <div className="my-4 overflow-x-auto rounded-lg border">
+    <div className="my-4 overflow-x-auto rounded-xl border">
       <table className="min-w-full text-sm">{props.children}</table>
     </div>
   ),
@@ -42,8 +42,8 @@ const markdownComponents: Components = {
       <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
     </a>
   ),
-  h1: (props) => <h3 className="mb-2 mt-6 text-xl font-semibold text-foreground first:mt-0">{props.children}</h3>,
-  h2: (props) => <h3 className="mb-2 mt-6 text-lg font-semibold text-foreground first:mt-0">{props.children}</h3>,
+  h1: (props) => <h3 className="mb-2 mt-6 font-display text-2xl font-extrabold text-foreground first:mt-0">{props.children}</h3>,
+  h2: (props) => <h3 className="mb-2 mt-6 font-display text-xl font-extrabold text-foreground first:mt-0">{props.children}</h3>,
   h3: (props) => (
     <h4 className="mb-1.5 mt-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{props.children}</h4>
   ),
@@ -67,7 +67,7 @@ const markdownComponents: Components = {
     props.type === "checkbox" ? <Square className="absolute left-0 top-1 h-4 w-4 text-primary" aria-hidden="true" /> : null,
   strong: (props) => <strong className="font-semibold text-foreground">{props.children}</strong>,
   blockquote: (props) => (
-    <blockquote className="my-4 rounded-r-lg border-l-4 border-primary bg-primary/5 px-4 py-1 text-foreground [&_p]:my-2">
+    <blockquote className="my-4 rounded-2xl bg-primary-soft px-4 py-1 text-foreground [&_p]:my-2">
       {props.children}
     </blockquote>
   ),
@@ -76,7 +76,7 @@ const markdownComponents: Components = {
     const { className, children } = props as React.HTMLAttributes<HTMLElement>
     if (!className) return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
     return (
-      <pre className="my-3 overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm">
+      <pre className="my-3 overflow-x-auto rounded-2xl bg-muted p-4 font-mono text-sm">
         <code className={className}>{children}</code>
       </pre>
     )
@@ -135,7 +135,7 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
     return () => window.removeEventListener("beforeunload", handler)
   }, [generate.isPending])
 
-  if (isLoading) return <div className="h-48 animate-pulse rounded-xl bg-muted" aria-label="Loading summary" />
+  if (isLoading) return <div className="h-48 animate-pulse rounded-2xl bg-muted" aria-label="Loading summary" />
 
   const errors = (
     <>
@@ -154,15 +154,15 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
 
   if (!summary) {
     return (
-      <section className="mx-auto max-w-3xl rounded-xl border bg-card p-6 text-center md:p-8" aria-busy={generate.isPending}>
+      <section className="mx-auto max-w-3xl rounded-2xl border bg-card p-6 text-center shadow-card md:p-10" aria-busy={generate.isPending}>
         {generate.isPending ? (
           <GeneratingIndicator />
         ) : (
           <>
-            <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
               <Sparkles className="h-5 w-5" aria-hidden="true" />
             </span>
-            <h2 className="mt-3 text-lg font-semibold text-foreground">Trip summary</h2>
+            <h2 className="mt-3 font-display text-2xl font-extrabold text-foreground">Trip summary</h2>
             <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
               A short write-up of this trip: the highlights of each day, where you&apos;re staying, how you&apos;re
               getting around, and how the budget looks.
@@ -186,10 +186,10 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
   }
 
   return (
-    <section className="mx-auto max-w-3xl rounded-xl border bg-card" aria-busy={generate.isPending}>
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 sm:px-6">
+    <section className="mx-auto max-w-4xl rounded-2xl border bg-card shadow-card" aria-busy={generate.isPending}>
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-6">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-foreground">Trip summary</h2>
+          <h2 className="font-display text-xl font-extrabold text-foreground">Trip summary</h2>
           <p className="text-sm text-muted-foreground tabular-nums">
             {generate.isPending ? (
               <GeneratingIndicator compact />
@@ -263,8 +263,8 @@ function Notice({ tone, title, children }: { tone: "warning" | "error"; title: s
       role={tone === "error" ? "alert" : "status"}
       className={
         tone === "warning"
-          ? "mb-4 flex items-start gap-2 rounded-lg border border-warning/50 bg-warning-bg p-3 text-sm text-foreground"
-          : "mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-foreground"
+          ? "mb-4 flex items-start gap-2 rounded-2xl bg-warning-bg p-3 text-sm text-foreground"
+          : "mb-4 flex items-start gap-2 rounded-2xl bg-destructive/5 p-3 text-sm text-foreground"
       }
     >
       <Icon className={tone === "warning" ? "mt-0.5 h-4 w-4 shrink-0 text-warning" : "mt-0.5 h-4 w-4 shrink-0 text-destructive"} aria-hidden="true" />

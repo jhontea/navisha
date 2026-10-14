@@ -121,15 +121,15 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
 
     return (
       <li key={e.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
-        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", cfg.bg)}>
+        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", cfg.bg)}>
           <cfg.Icon className={cn("h-4 w-4", cfg.text)} aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">{e.title}</p>
+          <p className="truncate text-sm font-bold text-foreground">{e.title}</p>
           <p className="truncate text-xs text-muted-foreground">{meta}</p>
         </div>
         <div className="shrink-0 text-right">
-          <MoneyText amount={e.amount} currency={e.currency} className="block text-sm font-semibold text-foreground" />
+          <MoneyText amount={e.amount} currency={e.currency} className="block text-sm font-extrabold text-foreground" />
           {!sameCurrency && (
             <span className="block text-xs text-muted-foreground">
               ≈ <MoneyText amount={e.converted_amount} currency={e.base_currency} />
@@ -173,7 +173,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
     <section aria-labelledby="expenses-heading">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="expenses-heading" className="text-lg font-semibold text-foreground">
+          <h2 id="expenses-heading" className="font-display text-xl font-extrabold text-foreground">
             Expenses
           </h2>
           {allItems.length > 0 && (
@@ -227,7 +227,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
       )}
 
       {isError && (
-        <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+        <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
           Couldn&apos;t load expenses. Check your connection and reload the page.
         </p>
       )}
@@ -238,7 +238,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
           size="sm"
           title="No expenses yet"
           description="Add what you spend on food, transport and activities to track your budget."
-          className="rounded-xl border border-dashed"
+          className="rounded-2xl border-2 border-dashed bg-card/60"
         />
       )}
 
@@ -257,7 +257,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
                   aria-expanded={!isCollapsed}
                   className="-mx-1 mb-1 flex min-h-11 w-[calc(100%+0.5rem)] items-center justify-between gap-3 rounded-lg px-1 text-sm hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <span className="flex items-center gap-2 font-medium text-foreground">
+                  <span className="flex items-center gap-2 font-display font-extrabold text-foreground">
                     <ChevronDown
                       className={cn("h-4 w-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")}
                       aria-hidden="true"
@@ -267,7 +267,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
                   <MoneyText amount={groupTotal} currency={baseCurrency} className="text-muted-foreground" />
                 </button>
                 {!isCollapsed && (
-                  <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+                  <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-card">
                     {group.expenses.map(renderRow)}
                   </ul>
                 )}
@@ -278,7 +278,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
       )}
 
       {!isLoading && !isError && !isDateSort && flatSorted.length > 0 && (
-        <ul className="divide-y overflow-hidden rounded-xl border bg-card">{flatSorted.map(renderRow)}</ul>
+        <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-card">{flatSorted.map(renderRow)}</ul>
       )}
 
       <ResponsiveSheet

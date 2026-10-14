@@ -3,11 +3,13 @@
 import { AlertTriangle, Pencil, Plus } from "lucide-react"
 
 import { MoneyText } from "@/components/MoneyText"
+import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { Day } from "@/features/trip/types"
 import { getCategoryColor } from "../categoryColors"
+import { BudgetMeter } from "./BudgetMeter"
 import { useExpenses, useExpenseSummary } from "../hooks/useExpenses"
 import {
   budgetStatus,
@@ -26,7 +28,7 @@ interface Props {
   onEditBudget: () => void
 }
 
-const CARD = "rounded-xl border bg-card p-4 sm:p-5"
+const CARD = "rounded-2xl border bg-card p-4 shadow-card sm:p-5"
 
 /** Budget overview: spent vs budget, spending by category and by day. */
 export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBudget }: Props) {
@@ -44,7 +46,7 @@ export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBu
 
   if (summary.isError || !summary.data) {
     return (
-      <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+      <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
         Couldn&apos;t load the budget. Check your connection and reload the page.
       </p>
     )
@@ -57,7 +59,12 @@ export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBu
 
   return (
     <div className="space-y-4">
-      <SpentCard status={status} currency={currency} onEditBudget={onEditBudget} />
+      <SpentCard
+        status={status}
+        currency={currency}
+        byCategory={Object.fromEntries(by_category.map((c) => [c.category, c.total]))}
+        onEditBudget={onEditBudget}
+      />
       {rows.length > 0 && <CategoryCard rows={rows} currency={currency} />}
       {days.length > 0 && daily.max + daily.outside > 0 && <DailyCard daily={daily} currency={currency} />}
     </div>
@@ -67,10 +74,12 @@ export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBu
 function SpentCard({
   status,
   currency,
+  byCategory,
   onEditBudget,
 }: {
   status: ReturnType<typeof budgetStatus>
   currency: string
+  byCategory: Record<string, number>
   onEditBudget: () => void
 }) {
   const { spent, budget, remaining, ratio, over } = status
@@ -80,10 +89,10 @@ function SpentCard({
     <section className={CARD} aria-labelledby="budget-spent-heading">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 id="budget-spent-heading" className="text-sm font-medium text-muted-foreground">
+          <h3 id="budget-spent-heading" className="text-sm font-semibold text-muted-foreground">
             Spent
           </h3>
-          <p className="mt-0.5 text-2xl font-semibold text-foreground">
+          <p className="mt-0.5 font-display text-3xl font-extrabold text-foreground">
             <MoneyText amount={spent} currency={currency} />
           </p>
           {budget !== null && (
@@ -92,7 +101,7 @@ function SpentCard({
             </p>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={onEditBudget}>
+        <Button variant="soft" size="sm" onClick={onEditBudget}>
           {budget !== null ? <Pencil aria-hidden="true" /> : <Plus aria-hidden="true" />}
           {budget !== null ? "Edit budget" : "Set budget"}
         </Button>
@@ -100,21 +109,11 @@ function SpentCard({
 
       {ratio !== null && remaining !== null ? (
         <>
-          <div
-            className="mt-4 h-2.5 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-label="Budget used"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(Math.min(ratio, 1) * 100)}
-          >
-            <div
-              className={cn("h-full rounded-full", over ? "bg-destructive" : near ? "bg-warning" : "bg-primary")}
-              style={{ width: `${Math.min(ratio, 1) * 100}%` }}
-            />
-          </div>
+          <BudgetMeter byCategory={byCategory} budget={budget} label="Budget used" className="mt-4" />
           <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-            <span className="text-muted-foreground tabular-nums">{Math.round(ratio * 100)}% used</span>
+            <StatusChip tone={over ? "danger" : near ? "warning" : "success"}>
+              {over ? "Over budget" : `${Math.round(ratio * 100)}% used`}
+            </StatusChip>
             {over ? (
               <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                 <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden="true" />
@@ -141,7 +140,7 @@ function CategoryCard({ rows, currency }: { rows: CategoryRow[]; currency: strin
   return (
     <section className={CARD} aria-labelledby="budget-category-heading">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 id="budget-category-heading" className="text-base font-semibold text-foreground">
+        <h3 id="budget-category-heading" className="font-display text-lg font-extrabold text-foreground">
           By category
         </h3>
         {hasPlan && (
@@ -159,8 +158,10 @@ function CategoryCard({ rows, currency }: { rows: CategoryRow[]; currency: strin
           return (
             <li key={row.category}>
               <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="inline-flex min-w-0 items-center gap-2 text-foreground">
-                  <cfg.Icon className={cn("h-4 w-4 shrink-0", cfg.text)} aria-hidden="true" />
+                <span className="inline-flex min-w-0 items-center gap-2 font-semibold text-foreground">
+                  <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", cfg.bg)}>
+                    <cfg.Icon className={cn("h-3.5 w-3.5", cfg.text)} aria-hidden="true" />
+                  </span>
                   <span className="truncate">{cfg.label}</span>
                   {row.over && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive">
@@ -176,7 +177,7 @@ function CategoryCard({ rows, currency }: { rows: CategoryRow[]; currency: strin
                   )}
                 </span>
               </div>
-              <div className="relative mt-1.5 h-2 rounded-full bg-muted">
+              <div className="relative ml-9 mt-1.5 h-2 rounded-full bg-muted">
                 {row.spent > 0 && (
                   <div
                     className={cn("h-full rounded-full", cfg.bar)}
@@ -210,7 +211,7 @@ function DailyCard({ daily, currency }: { daily: DailyTotals; currency: string }
   return (
     <section className={CARD} aria-labelledby="budget-daily-heading">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 id="budget-daily-heading" className="text-base font-semibold text-foreground">
+        <h3 id="budget-daily-heading" className="font-display text-lg font-extrabold text-foreground">
           By day
         </h3>
         {peak && (
@@ -240,7 +241,10 @@ function DailyCard({ daily, currency }: { daily: DailyTotals; currency: string }
                 </span>
                 <span className="flex min-h-0 w-full flex-1 items-end justify-center" aria-hidden="true">
                   <span
-                    className={cn("w-full max-w-8 rounded-t", d.total > 0 ? "bg-primary" : "bg-muted")}
+                    className={cn(
+                      "w-full max-w-9 rounded-t-lg",
+                      d.total <= 0 ? "bg-muted" : d === peak ? "bg-primary" : "bg-primary/35",
+                    )}
                     style={{ height: d.total > 0 ? `max(${pct}%, 3px)` : "3px" }}
                   />
                 </span>

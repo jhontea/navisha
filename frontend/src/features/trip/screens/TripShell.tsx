@@ -26,8 +26,9 @@ const TripForm = dynamic(
 )
 
 /**
- * Trip shell (D3): compact header with a ⋯ menu, section tabs (bottom bar on
- * phones), and the single edit path — a sheet with the full trip form.
+ * Trip shell (V3): cover hero with round buttons and a ⋯ menu, section tabs
+ * (pills over the cover on desktop, floating nav on phones), and the single
+ * edit path — a sheet with the full trip form.
  */
 export function TripShell({ children }: { children: ReactNode }) {
   const { id: tripId } = useParams<{ id: string }>()
@@ -43,15 +44,13 @@ export function TripShell({ children }: { children: ReactNode }) {
   // isLoading is false. Keep the skeleton until data or a real error arrives.
   if (!trip && (isLoading || !isError)) {
     return (
-      <div className="mx-auto w-full max-w-max-width px-margin-mobile py-3 md:px-margin-desktop">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-12 w-12 rounded-lg" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </div>
+      <div className="mx-auto w-full max-w-max-width md:px-margin-desktop md:pt-2">
+        <Skeleton className="h-52 w-full rounded-none rounded-b-3xl md:h-60 md:rounded-3xl" />
+        <div className="space-y-2 px-margin-mobile pt-4 md:hidden">
+          <Skeleton className="h-7 w-3/4" />
+          <Skeleton className="h-5 w-1/2" />
         </div>
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-3 px-margin-mobile md:px-0">
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-24 w-full rounded-xl" />
         </div>
@@ -63,11 +62,11 @@ export function TripShell({ children }: { children: ReactNode }) {
     const isNotFound = error instanceof ApiError && error.status === 404
     return (
       <div className="mx-auto flex min-h-[50vh] w-full max-w-xl items-center px-4 py-10">
-        <div className="w-full rounded-xl border bg-card p-6 text-center">
+        <div className="w-full rounded-2xl border bg-card shadow-card p-6 text-center">
           <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" aria-hidden="true" />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">
+          <h1 className="text-xl font-display font-extrabold text-foreground">
             {isNotFound ? "Trip not found" : "Couldn't load this trip"}
           </h1>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">

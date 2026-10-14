@@ -14,63 +14,80 @@ import { cn } from "@/lib/utils"
 
 const MENU_ITEM = "min-h-10 px-3 text-sm"
 
+/** ⋯ menu with Edit / Delete for a booking (transport pass, stay card). */
+export function BookingActions({
+  label,
+  onEdit,
+  onDelete,
+  className,
+}: {
+  label: string
+  onEdit: () => void
+  onDelete: () => void
+  className?: string
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={label}
+        className={buttonVariants({ variant: "ghost", size: "icon-sm", className: cn("shrink-0 text-muted-foreground", className) })}
+      >
+        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
+          <Pencil aria-hidden="true" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem className={MENU_ITEM} variant="destructive" onClick={onDelete}>
+          <Trash2 aria-hidden="true" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 /**
- * Shell for a transport or stay card on the Bookings page: tinted round
- * icon, content, and a ⋯ menu with Edit / Delete.
+ * Shell for a booking card on the Bookings page (docs/DESIGN.md §5): soft
+ * icon circle, Nunito title, an optional chip, the ⋯ menu, then content.
  */
 export function BookingCard({
   icon: Icon,
-  iconClassName,
   title,
   subtitle,
+  badge,
   actionsLabel,
   onEdit,
   onDelete,
   children,
 }: {
   icon: ComponentType<{ className?: string }>
-  /** Background + text tint, e.g. "bg-cat-transport/15 text-cat-transport". */
-  iconClassName: string
   title: ReactNode
   subtitle?: ReactNode
+  /** Small chip next to the title, e.g. the stay type. */
+  badge?: ReactNode
   actionsLabel: string
   onEdit: () => void
   onDelete: () => void
   children?: ReactNode
 }) {
   return (
-    <article className="flex gap-3 rounded-xl border bg-card px-4 py-3">
-      <span className={cn("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full", iconClassName)}>
-        <Icon className="h-4 w-4" aria-hidden="true" />
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold leading-snug text-foreground">{title}</h3>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+    <article className="rounded-2xl border bg-card p-4 shadow-card">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="font-display text-lg font-extrabold leading-snug text-foreground">{title}</h3>
+            {badge}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label={actionsLabel}
-              className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "-mr-2 -mt-1 shrink-0 text-muted-foreground" })}
-            >
-              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
-                <Pencil aria-hidden="true" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} variant="destructive" onClick={onDelete}>
-                <Trash2 aria-hidden="true" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
         </div>
-        {children}
+        <BookingActions label={actionsLabel} onEdit={onEdit} onDelete={onDelete} className="-mr-1.5 -mt-1" />
       </div>
+      {children}
     </article>
   )
 }

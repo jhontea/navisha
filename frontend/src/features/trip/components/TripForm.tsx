@@ -74,9 +74,9 @@ interface Props {
   submitLabel?: string
 }
 
-// Large form field used by the trip forms (16px text, roomy padding).
+// Form field shape shared with Input (44px, rounded-xl, card fill; 16px text).
 const inputBase =
-  "w-full rounded-lg border bg-card px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
+  "h-11 w-full rounded-xl border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
@@ -149,7 +149,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           aria-required="true"
           aria-invalid={Boolean(errors.title)}
           aria-describedby={errors.title ? "trip-title-error" : undefined}
-          className={`h-auto ${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
+          className={`${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : ""}`}
           placeholder="e.g., Summer in Tokyo"
           {...register("title")}
         />
@@ -159,7 +159,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       {/* Destination */}
       <div className="space-y-1.5">
         <FormFieldLabel htmlFor="destination" optional>Destination</FormFieldLabel>
-        <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
+        <div className="flex items-center rounded-xl border bg-card transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
           style={{ borderColor: errors.destination ? 'hsl(var(--destructive))' : undefined }}
         >
           {/* Icon area */}
@@ -175,7 +175,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             render={({ field }) => (
               <DestinationAutocomplete
                 id="destination"
-                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-muted-foreground/50"
+                // The wrapper draws the field border; the inner input stays bare.
+                className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0"
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -200,7 +201,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
         {/* Existing cover preview */}
         {canRenderTripCover(coverPreview) && (
-          <div className="relative mt-2 h-32 w-full overflow-hidden rounded-lg border border-border">
+          <div className="relative mt-2 h-32 w-full overflow-hidden rounded-2xl border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={coverPreview}
@@ -257,13 +258,13 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             role="switch"
             aria-checked={generateWithAI}
             onClick={() => setGenerateWithAI((enabled) => !enabled)}
-            className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               generateWithAI
                 ? "border-primary/40 bg-primary/5"
                 : "bg-background hover:bg-muted/50"
             }`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
               <Sparkles className="h-5 w-5" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
@@ -289,7 +290,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           </button>
 
           {generateWithAI && (
-            <div className="rounded-xl border bg-muted/40 p-4">
+            <div className="rounded-2xl bg-muted p-4">
               <p className="text-sm text-foreground">
                 Your destination and travel dates will be carried into the AI planner.
               </p>
@@ -314,7 +315,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       {/* Budget (optional) */}
       <div className="space-y-1.5">
         <FormFieldLabel htmlFor="budget" optional>Budget</FormFieldLabel>
-        <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
+        <div className="flex items-center rounded-xl border bg-card transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
           style={{ borderColor: errors.budget ? 'hsl(var(--destructive))' : undefined }}
         >
           <div className="flex items-center justify-center px-4 shrink-0">
@@ -327,7 +328,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             inputMode="numeric"
             aria-invalid={Boolean(errors.budget)}
             aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
-            className="h-auto flex-1 px-4 py-3 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-muted-foreground/50"
+            className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {

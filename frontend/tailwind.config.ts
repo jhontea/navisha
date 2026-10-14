@@ -36,6 +36,9 @@ const config: Config = {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          // Active-state tint (tabs, date circles, nav) — DESIGN.md §2.1
+          soft: "hsl(var(--primary-soft))",
+          "soft-foreground": "hsl(var(--primary-soft-foreground))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -52,6 +55,13 @@ const config: Config = {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        "destructive-bg": "hsl(var(--destructive-bg))",
+        // Text on top of the (always dark) trip cover — DESIGN.md §2.4
+        "on-cover": "hsl(var(--on-cover))",
+        "cover-button": {
+          DEFAULT: "hsl(var(--cover-button))",
+          foreground: "hsl(var(--cover-button-foreground))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -73,17 +83,22 @@ const config: Config = {
         },
         "success-bg": "hsl(var(--success-bg))",
       },
+      // DESIGN.md §4.1: pills and circles for controls, 16 → 32px for surfaces.
       borderRadius: {
-        DEFAULT: "0.25rem",
-        sm: "calc(var(--radius) - 4px)",
-        md: "calc(var(--radius) - 2px)",
-        lg: "var(--radius)",
-        xl: "0.75rem",
-        "2xl": "1rem",
+        DEFAULT: "0.375rem",
+        sm: "calc(var(--radius) - 8px)", // 8px
+        md: "calc(var(--radius) - 4px)", // 12px
+        lg: "var(--radius)", // 16px: rows, inputs, thumbnails
+        xl: "1.375rem", // 22px: cards
+        "2xl": "1.75rem", // 28px: panels, boarding pass, map, sheet
+        "3xl": "2rem", // 32px: hero, mobile cover
+        "4xl": "2.5rem",
         full: "9999px",
       },
       spacing: {
-        "max-width": "1200px",
+        // Content width cap (DESIGN.md §4.3): wide enough for 27" monitors; the
+        // trip map and grids grow into it.
+        "max-width": "1920px",
         "margin-mobile": "1rem",
         "margin-desktop": "2.5rem",
         "unit": "4px",
@@ -91,7 +106,13 @@ const config: Config = {
         "6": "1.5rem",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "sans-serif"],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "system-ui", "sans-serif"],
+        // coss ui titles (CardTitle, DialogTitle) use font-heading
+        heading: ["var(--font-display)", "var(--font-sans)", "system-ui", "sans-serif"],
+      },
+      fontSize: {
+        hero: ["2.5rem", { lineHeight: "1.05", letterSpacing: "-0.025em" }],
       },
       boxShadow: {
         card: "var(--shadow-card)",

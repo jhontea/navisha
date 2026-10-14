@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
 import { api, ApiError, setLoggingOut } from "@/lib/api"
 import { clearPersistedQueries } from "@/lib/queryPersistence"
 import { useAuthStore } from "./store"
@@ -50,7 +49,6 @@ export function useAuth() {
 export function useLogout() {
   const queryClient = useQueryClient()
   const { setUser } = useAuthStore()
-  const router = useRouter()
 
   return useMutation({
     mutationFn: async () => {
@@ -59,7 +57,9 @@ export function useLogout() {
       setLoggingOut(true)
       return api.post("/auth/logout")
     },
-    onSuccess: async () => {
+    // Settled, not success: a failed logout call must never leave the user
+    // stranded on a protected page with 401s silenced (isLoggingOut).
+    onSettled: async () => {
       // Cancel in-flight queries *first* so their abort signals fire and stop
       // background fetches (e.g. /trips list, /auth/me) before the cookie is
       // gone — otherwise those fetches 401 and pollute the console. `clear()`
@@ -68,7 +68,10 @@ export function useLogout() {
       setUser(null)
       queryClient.clear()
       await clearPersistedQueries()
-      router.push("/login")
+      // Full page load, not router.push: the client router may still hold a
+      // prefetched "/login → /trips" redirect from while the user was signed
+      // in, which would land a signed-out user on /trips.
+      window.location.replace("/login")
     },
   })
 }

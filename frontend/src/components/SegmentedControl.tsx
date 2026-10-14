@@ -48,7 +48,7 @@ export function SegmentedControl<T extends string>({
       role="radiogroup"
       {...aria}
       className={cn(
-        "gap-1 rounded-lg bg-muted p-1",
+        "gap-1 rounded-full bg-muted p-1",
         stackOnMobile ? cn("flex flex-col sm:grid", SM_COLS[options.length]) : cn("grid", COLS[options.length]),
         className,
       )}
@@ -69,7 +69,7 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
-              "flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               selected ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
             )}
           >

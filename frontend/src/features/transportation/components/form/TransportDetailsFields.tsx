@@ -55,7 +55,7 @@ export function TransportDetailsFields({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
@@ -63,7 +63,7 @@ export function TransportDetailsFields({
           <span className="mt-0.5 block text-xs text-muted-foreground">Label, operator, booking reference, cost, and notes</span>
         </span>
         {filledCount > 0 && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{filledCount}</span>
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary-soft-foreground">{filledCount}</span>
         )}
         <ChevronDown
           className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
@@ -72,7 +72,7 @@ export function TransportDetailsFields({
       </button>
 
       {open && (
-        <div id="transport-additional-details" className="space-y-5 border-t border-border/60 bg-background/50 p-4">
+        <div id="transport-additional-details" className="space-y-5 border-t p-4">
           <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <FormFieldLabel htmlFor="transport-label" optional>
@@ -126,7 +126,7 @@ export function TransportDetailsFields({
           </div>
 
           {withCost && (
-            <div className="rounded-xl border border-dashed bg-muted/30 p-4">
+            <div className="rounded-2xl bg-muted p-4">
               <FormFieldLabel optional className="text-sm">
                 Cost
               </FormFieldLabel>

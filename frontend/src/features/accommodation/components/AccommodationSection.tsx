@@ -49,7 +49,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
     <section aria-labelledby="stays-heading">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 id="stays-heading" className="text-lg font-semibold text-foreground">
+          <h2 id="stays-heading" className="font-display text-xl font-extrabold text-foreground">
             Stays
           </h2>
           {items.length > 0 && (
@@ -73,7 +73,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
       )}
 
       {isError && (
-        <p role="alert" className="rounded-xl border border-dashed p-6 text-center text-sm text-destructive">
+        <p role="alert" className="rounded-2xl bg-destructive-bg p-6 text-center text-sm text-destructive">
           Couldn&apos;t load stays. Check your connection and reload the page.
         </p>
       )}
@@ -84,7 +84,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
           size="sm"
           title="No stays yet"
           description="Add where you're sleeping each night: hotels, hostels or apartments."
-          className="rounded-xl border border-dashed"
+          className="rounded-2xl border-2 border-dashed bg-card/60"
         />
       )}
 

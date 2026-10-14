@@ -173,7 +173,7 @@ export function ExpenseForm({
             aria-describedby={errors.title ? "expense-title-error" : undefined}
             placeholder={CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.placeholder ?? "e.g., Entry fee"}
             className={cn("h-auto", 
-              "w-full py-2.5 rounded-lg border bg-background text-foreground",
+              "w-full py-2.5 rounded-xl border bg-card text-foreground",
               "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
               "placeholder:text-muted-foreground/60",
               selectedCategory ? "pl-10 pr-4" : "px-4",
@@ -214,7 +214,7 @@ export function ExpenseForm({
                   setValue("amount", isNaN(num) ? "" : String(num), { shouldValidate: true })
                 }}
                 className={cn("h-auto", 
-                  "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground",
+                  "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
                   "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
                   "placeholder:text-muted-foreground/60",
                   errors.amount ? "border-destructive" : "border-border",
@@ -235,7 +235,7 @@ export function ExpenseForm({
                     aria-invalid={Boolean(errors.currency)}
                     aria-describedby={errors.currency ? "expense-currency-error" : undefined}
                     className={cn(
-                      "w-full px-3 py-2.5 rounded-lg border bg-background text-foreground",
+                      "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
                       "focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none",
                                           )}
                   >
@@ -267,7 +267,7 @@ export function ExpenseForm({
             {...register("expense_date")}
             type="date"
             className={cn("h-auto", 
-              "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground",
+              "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
               "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
                             "border-border",
             )}
@@ -287,7 +287,7 @@ export function ExpenseForm({
           rows={2}
           placeholder="e.g., Split with 3 friends, or referral code used"
           className={cn(
-            "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground resize-none",
+            "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground resize-none",
             "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
             "placeholder:text-muted-foreground/60 text-sm",
             "border-border",

@@ -11,12 +11,12 @@ export function TodoList({ todos }: { todos: OverviewTodo[] }) {
         To do
       </h3>
       {todos.length === 0 ? (
-        <p className="flex items-center gap-2 rounded-xl border bg-card p-4 text-sm text-foreground">
+        <p className="flex items-center gap-2 rounded-2xl border bg-card p-4 text-sm text-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
           Everything is in place.
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="divide-y rounded-2xl border bg-card">
           {todos.map((todo) => (
             <li key={todo.label}>
               <Link

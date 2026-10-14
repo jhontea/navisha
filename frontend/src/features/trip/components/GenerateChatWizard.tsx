@@ -63,9 +63,9 @@ function daySpan(start: string, end: string): number {
   return diff > 0 ? diff : 0
 }
 
-// Large form field used by the trip forms (16px text, roomy padding).
+// Form field shape shared with Input (44px, rounded-xl, card fill; 16px text).
 const inputBase =
-  "w-full rounded-lg border bg-card px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
+  "h-11 w-full rounded-xl border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
 
 // GenerateChatWizard collects the auto-generate inputs through a guided,
 // chat-style flow. Each answer becomes a bubble; the final step shows a recap
@@ -196,9 +196,9 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
 
   return (
     // No overflow-hidden here: the date picker's calendar drops below the card.
-    <div className="rounded-xl border bg-card">
+    <div className="rounded-3xl border bg-card shadow-card">
       {/* Progress bar, inset so it needs no clipping by the card */}
-      <div className="mx-5 mt-4 h-1 overflow-hidden rounded-full bg-muted">
+      <div className="mx-5 mt-5 h-1.5 overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-primary transition-all duration-500"
           style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }}
@@ -213,15 +213,15 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
             className={`flex items-end gap-2 ${m.from === "user" ? "justify-end" : "justify-start"}`}
           >
             {m.from === "bot" && (
-              <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
                 <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               </div>
             )}
             <div
-              className={`max-w-[78%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
+              className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 m.from === "user"
-                  ? "rounded-br-sm bg-primary text-primary-foreground"
-                  : "rounded-bl-sm bg-muted text-foreground"
+                  ? "rounded-br-md bg-primary font-semibold text-primary-foreground"
+                  : "rounded-bl-md bg-muted text-foreground"
               }`}
             >
               {m.text}
@@ -244,7 +244,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
             <div className="space-y-2">
               <Input
                 autoFocus
-                className={"h-auto " + inputBase}
+                className={inputBase}
                 placeholder="e.g. Tokyo, Japan"
                 maxLength={MAX_DESTINATION}
                 value={draftText}
@@ -284,7 +284,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
               <div className="relative">
                 <Input
                   autoFocus
-                  className={cn("h-auto", inputBase, draftText.length > 0 && "pr-9")}
+                  className={cn(inputBase, draftText.length > 0 && "pr-9")}
                   placeholder="e.g. foodie, adventure, budget-friendly"
                   maxLength={MAX_DESCRIPTION}
                   value={draftText}
@@ -395,7 +395,7 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-
       {/* Review / generate */}
       {step === "review" && (
         <div className="space-y-4 border-t p-5">
-          <div className="space-y-2 rounded-lg bg-muted/50 p-4 text-sm">
+          <div className="space-y-2 rounded-2xl bg-muted p-4 text-sm">
             <Recap label="Destination" value={destination} />
             <Recap label="Style" value={TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"} />
             {description && <Recap label="Preferences" value={description} />}

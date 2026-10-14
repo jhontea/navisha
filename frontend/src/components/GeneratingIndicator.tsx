@@ -72,7 +72,7 @@ export function GeneratingIndicator({
     >
       <div className="relative flex h-12 w-12 items-center justify-center">
         <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-        <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+        <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
           <Sparkles className="h-6 w-6 animate-pulse text-primary" />
         </span>
       </div>

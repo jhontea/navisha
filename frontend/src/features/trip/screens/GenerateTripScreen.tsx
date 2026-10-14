@@ -19,7 +19,6 @@
 // See: /memories/navisha-frontend-patterns.md
 
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { BackLink } from "@/components/BackLink"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LocationProviderBoundary } from "@/features/location/components/LocationProviderBoundary"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
@@ -209,12 +208,13 @@ function GenerateTripPageContent() {
 
   return (
     <LocationProviderBoundary>
-    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop">
-      <BackLink href="/trips" label="Back to Trips" className="mb-4" />
+    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop md:pt-8">
 
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Generate a trip with AI</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-balance font-display text-3xl font-extrabold leading-tight text-foreground md:text-4xl">
+          Plan a trip <span className="text-muted-foreground">with AI</span>
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-muted-foreground md:text-base">
           Answer a few questions and get a day-by-day draft (up to {MAX_DAYS} days). You pick what to keep.
         </p>
         <QuotaBadge className="mt-3" />
@@ -224,7 +224,7 @@ function GenerateTripPageContent() {
       {!result ? (
         <div className={cn("relative", generate.isPending && "min-h-[320px]")}>
           {generate.isPending && (
-            <div className="absolute inset-0 z-20 rounded-xl border bg-card p-6">
+            <div className="absolute inset-0 z-20 rounded-3xl border bg-card p-6 shadow-card">
               <GeneratingItinerarySkeleton days={pendingDays} />
             </div>
           )}
@@ -237,7 +237,7 @@ function GenerateTripPageContent() {
             />
           </div>
           {formError && (
-            <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+            <div role="alert" className="mt-4 flex items-start gap-3 rounded-2xl bg-destructive-bg p-3">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
               <div className="min-w-0 flex-1 text-sm">
                 <p className="text-foreground">{formError}</p>
@@ -253,7 +253,7 @@ function GenerateTripPageContent() {
           <DraftPreview draft={result.draft} onSelectionChange={setSelectedKeys} />
 
           {formError && (
-            <div role="alert" className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+            <div role="alert" className="flex items-start gap-3 rounded-2xl bg-destructive-bg p-3">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
               <p className="text-sm text-foreground">{formError}</p>
             </div>
@@ -298,7 +298,7 @@ function GenerateTripPageFallback() {
   return (
     <div className="mx-auto w-full max-w-3xl px-margin-mobile pt-6 md:px-margin-desktop" aria-hidden="true">
       <div className="h-8 w-56 animate-pulse rounded-lg bg-muted" />
-      <div className="mt-6 h-72 animate-pulse rounded-xl bg-muted" />
+      <div className="mt-6 h-72 animate-pulse rounded-3xl bg-muted" />
     </div>
   )
 }

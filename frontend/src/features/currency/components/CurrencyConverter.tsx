@@ -95,7 +95,7 @@ export function CurrencyConverter() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="rounded-xl border bg-card p-4 sm:p-6">
+      <div className="rounded-3xl border bg-card p-5 shadow-card md:p-8">
         <div className="grid items-end gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-2">
             <Label id={fromLabelId}>From</Label>
@@ -110,7 +110,7 @@ export function CurrencyConverter() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="h-12 text-2xl font-semibold tabular-nums"
+              className="h-14 rounded-xl font-display text-3xl font-extrabold tabular-nums"
             />
           </div>
 
@@ -133,7 +133,7 @@ export function CurrencyConverter() {
             <Label id={toLabelId}>To</Label>
             <CurrencySelect value={to} onChange={setTo} options={options} labelId={toLabelId} />
             <p
-              className="flex h-12 items-center break-all rounded-lg bg-muted px-3 text-2xl font-semibold tabular-nums text-foreground"
+              className="flex h-14 items-center break-all rounded-xl bg-primary-soft px-4 font-display text-3xl font-extrabold tabular-nums text-primary-soft-foreground"
               aria-live="polite"
             >
               {isLoading ? <span className="text-base text-muted-foreground">Converting…</span> : fmt(result?.converted_amount ?? 0)}
@@ -191,7 +191,7 @@ function RecentConversions({
   return (
     <section aria-labelledby="recent-conversions-heading">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 id="recent-conversions-heading" className="text-lg font-semibold text-foreground">
+        <h2 id="recent-conversions-heading" className="font-display text-xl font-extrabold text-foreground">
           Recent conversions
         </h2>
         {records.length > 0 && (
@@ -201,19 +201,19 @@ function RecentConversions({
         )}
       </div>
       {records.length === 0 ? (
-        <p className="flex items-center gap-2 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 rounded-2xl bg-muted p-4 text-sm text-muted-foreground">
           <History className="h-4 w-4 shrink-0" aria-hidden="true" />
           Conversions you make appear here.
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="divide-y rounded-2xl border bg-card shadow-card">
           {records.map((r) => (
             <li key={r.id} className="flex items-center gap-2 pr-2">
               {/* eslint-disable-next-line no-restricted-syntax -- whole-row button to reuse a past conversion */}
               <button
                 type="button"
                 onClick={() => onReuse(r)}
-                className="min-w-0 flex-1 rounded-lg px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="min-w-0 flex-1 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Reuse conversion ${r.amount} ${r.from} to ${r.to}`}
               >
                 <p className="break-words text-sm text-foreground">
