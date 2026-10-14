@@ -157,7 +157,7 @@ Desktop                                         Mobile (di dalam trip)
 └─────────────────────────────────────────┘
 ```
 
-- **Desktop:** top bar (logo, nav pill global, avatar) → hero cover → tab pill yang menempel di tepi bawah hero → split itinerary (kiri, 600px) dan peta (kanan, mengisi sisa lebar). Lebar maksimal konten **1600px** supaya monitor besar (27") tidak menyisakan banyak ruang kosong.
+- **Desktop:** top bar (logo, nav pill global, avatar) → hero cover → tab pill yang menempel di tepi bawah hero → split itinerary (kiri, 600px) dan peta (kanan, mengisi sisa lebar). Lebar maksimal konten **1920px** supaya monitor besar (27") tidak menyisakan banyak ruang kosong.
 - **Mobile:** nav mengambang di bawah. Di luar trip isinya global (Trips · AI · Kurs · Profil). Di dalam trip isinya tab trip (Itinerary · Peta · Bookings · Budget · Ringkasan), dan keduanya tidak pernah tampil bersamaan. Tab Peta di mobile memakai peta penuh dengan detail di bottom sheet.
 - Top bar global versi lama dan bottom nav berlapis dihapus.
 
@@ -170,7 +170,7 @@ Desktop                                         Mobile (di dalam trip)
 | **TripCover** | Gambar cover (§7), `object-position: 75% 50%`. Mobile: tinggi 250px dengan radius bawah 32px. Desktop: hero 210px dengan radius 32px. Tanpa cover memakai `--cover-fallback`. |
 | **CoverButton** | Lingkaran 40px `--cover-button`, ikon 18px. Ditaruh di atas cover (kiri: back; kanan: share, more). |
 | **TabPills** | Wadah `card` bulat dengan shadow. Item aktif berupa tint `primary-soft`, bukan blok penuh. Desktop: menempel di tepi bawah hero (margin-top −34px). |
-| **DateCircles** (tile hari) | Tile 60px radius 28 berisi hari singkat (SUN), tanggal (display 24), dan titik jika hari punya rencana. Tile aktif **biru solid** (`primary`), lainnya `card` + border. Satu hari per layar di Itinerary; bisa digeser, dan tombol panah memindah hari. |
+| **DateCircles** (tile hari) | Lingkaran 60px berisi hari singkat (SUN) dan tanggal (display 20). Yang aktif **biru solid** (`primary`), lainnya `card` + border. Satu hari per layar di Itinerary; bisa digeser, dan tombol panah memindah hari. |
 | **TimePills** | Pill `card` dengan border. Aktif = tint tanpa border. Isi: `06:00 – 07:00`. Memilih pill menggulung ke kegiatan terkait. |
 | **ActivityRow** (desktop/list) | Baris radius 16 berlatar `muted`, berisi jam dalam pill putih, judul, meta, dan ikon dalam lingkaran. Aktif = tint. |
 | **BoardingPass** | Kartu radius 28. Header (nomor + chip maskapai), kode asal/tujuan display 28, garis putus-putus dengan ikon moda, dua lekukan setengah lingkaran di kiri/kanan, lalu grid 3 kolom (Berangkat, Tiba, Tanggal, Hari, Kode booking; kursi/gate menyusul di fase backend). **Tanpa durasi**: waktu disimpan sebagai jam lokal tanpa zona, jadi durasi antarzona akan salah. Kode bandara diambil dari teks lokasi, misalnya "(CGK)"; tanpa kode, yang tampil nama tempatnya. Dipakai untuk flight, train, bus, ship. |

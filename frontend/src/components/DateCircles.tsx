@@ -11,7 +11,7 @@ export interface DateCircleDay {
   id: string
   /** "YYYY-MM-DD" */
   date: string
-  /** Shows a dot under the date: the day already has plans. */
+  /** Read out to screen readers ("has plans"); not drawn. */
   hasItems?: boolean
 }
 
@@ -26,8 +26,8 @@ function parts(date: string) {
 }
 
 /**
- * Day picker: one rounded tile per trip day — weekday, date, and a dot when
- * the day has plans (docs/DESIGN.md §5). The selected day is solid blue.
+ * Day picker: one circle per trip day with the weekday and the date
+ * (docs/DESIGN.md §5). The selected day is solid blue.
  * A radiogroup: Tab enters the selected day, arrow keys move and select.
  */
 export function DateCircles({
@@ -64,7 +64,7 @@ export function DateCircles({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none]", className)}
+      className={cn("-mx-1 flex gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none]", className)}
     >
       {days.map((day, index) => {
         const p = parts(day.date)
@@ -83,7 +83,7 @@ export function DateCircles({
             onClick={() => onChange(day.id)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
-              "flex w-[3.75rem] shrink-0 flex-col items-center rounded-2xl border px-1 pb-2 pt-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "flex size-[3.75rem] shrink-0 flex-col items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               selected
                 ? "border-primary bg-primary text-primary-foreground shadow-card"
                 : "bg-card text-foreground hover:border-primary/40 hover:bg-primary-soft/50",
@@ -91,20 +91,13 @@ export function DateCircles({
           >
             <span
               className={cn(
-                "text-xs font-bold uppercase tracking-wide",
+                "text-xs font-bold uppercase leading-none tracking-wide",
                 selected ? "text-primary-foreground/85" : "text-muted-foreground",
               )}
             >
               {p?.short ?? ""}
             </span>
-            <span className="font-display text-2xl font-extrabold leading-tight tabular-nums">{p?.d ?? index + 1}</span>
-            <span
-              className={cn(
-                "size-1.5 rounded-full",
-                day.hasItems ? (selected ? "bg-primary-foreground" : "bg-primary") : "bg-transparent",
-              )}
-              aria-hidden="true"
-            />
+            <span className="mt-0.5 font-display text-xl font-extrabold leading-none tabular-nums">{p?.d ?? index + 1}</span>
           </button>
         )
       })}
