@@ -51,6 +51,12 @@ type DayPreview struct {
 	Activities []ActivityDraft `json:"activities"`
 }
 
+// TravelStyles are the accepted GenerateInput.TravelStyle values ("" = balanced).
+var TravelStyles = map[string]bool{
+	"": true, "balanced": true, "foodie": true, "cultural": true, "nature": true,
+	"family": true, "relaxed": true, "backpacker": true, "luxury": true,
+}
+
 // GenerateInput is the user-supplied form data for an auto-generate request.
 type GenerateInput struct {
 	Destination  string    // "Tokyo, Japan"

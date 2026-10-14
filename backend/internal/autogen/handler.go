@@ -81,6 +81,8 @@ type generateRequest struct {
 	StartDate    string `json:"start_date"` // YYYY-MM-DD
 	EndDate      string `json:"end_date"`
 	BaseCurrency string `json:"base_currency"`
+	// TravelStyle picks a style block in the prompt; empty means balanced.
+	TravelStyle string `json:"travel_style"`
 }
 
 func (h *Handler) Generate(c echo.Context, userID string) error {
@@ -107,6 +109,7 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 		StartDate:    start,
 		EndDate:      end,
 		BaseCurrency: req.BaseCurrency,
+		TravelStyle:  strings.ToLower(strings.TrimSpace(req.TravelStyle)),
 	}
 	if err := ValidateInput(input); err != nil {
 		return mapErr(err)

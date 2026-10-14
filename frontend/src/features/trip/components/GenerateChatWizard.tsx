@@ -9,7 +9,7 @@ import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { TravelDateRangePicker } from "./TravelDateRangePicker"
-import type { GenerateTripInput } from "../types"
+import type { GenerateTripInput, TravelStyle } from "../types"
 
 const MAX_DAYS = 10
 const MAX_DESTINATION = 60
@@ -27,6 +27,18 @@ const PROMPT_CHIPS: { label: string; value: string }[] = [
   { label: "Off the main sights", value: "quieter places away from the main tourist sights" },
   { label: "Slow pace", value: "relaxed pace, fewer stops per day" },
   { label: "Nightlife", value: "nightlife and evening entertainment" },
+]
+
+// One style shapes the whole itinerary (pace, kinds of places, tips).
+const TRAVEL_STYLES: { value: TravelStyle; label: string }[] = [
+  { value: "balanced", label: "Balanced" },
+  { value: "foodie", label: "Food" },
+  { value: "cultural", label: "Culture" },
+  { value: "nature", label: "Nature" },
+  { value: "family", label: "Family" },
+  { value: "relaxed", label: "Relaxed" },
+  { value: "backpacker", label: "Budget" },
+  { value: "luxury", label: "Luxury" },
 ]
 
 // Steps in the conversation. Each maps to one field of GenerateTripInput.
@@ -70,6 +82,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   // Collected values
   const [destination, setDestination] = useState(initialValues?.destination ?? "")
   const [description, setDescription] = useState("")
+  const [travelStyle, setTravelStyle] = useState<TravelStyle>(initialValues?.travel_style ?? "balanced")
   const [startDate, setStartDate] = useState(initialValues?.start_date ?? "")
   const [endDate, setEndDate] = useState(initialValues?.end_date ?? "")
   const [currency, setCurrency] = useState(initialValues?.base_currency ?? "IDR")
@@ -108,7 +121,8 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     const v = skip ? "" : draftText.trim()
     setError(null)
     setDescription(v)
-    pushUser(skip || !v ? "(skip)" : v)
+    const styleLabel = TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"
+    pushUser(skip || !v ? `${styleLabel} trip` : `${styleLabel} trip · ${v}`)
     setDraftText("")
     setStep("dates")
     pushBot("Got it! When is your trip? (up to 10 days)")
@@ -159,6 +173,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       start_date: startDate,
       end_date: endDate,
       base_currency: currency,
+      travel_style: travelStyle,
     })
   }
 
@@ -170,6 +185,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     setStartDate("")
     setEndDate("")
     setCurrency("IDR")
+    setTravelStyle("balanced")
     setDraftText("")
     setError(null)
   }
@@ -249,6 +265,22 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
 
           {step === "description" && (
             <div className="space-y-2">
+              <div className="space-y-1.5">
+                <p id="travel-style-label" className="text-xs font-medium text-muted-foreground">
+                  Trip style
+                </p>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="travel-style-label">
+                  {TRAVEL_STYLES.map((s) => (
+                    <Chip
+                      key={s.value}
+                      pressed={travelStyle === s.value}
+                      onClick={() => setTravelStyle(s.value)}
+                    >
+                      {s.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
               <div className="relative">
                 <Input
                   autoFocus
@@ -365,6 +397,7 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-
         <div className="space-y-4 border-t p-5">
           <div className="space-y-2 rounded-lg bg-muted/50 p-4 text-sm">
             <Recap label="Destination" value={destination} />
+            <Recap label="Style" value={TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"} />
             {description && <Recap label="Preferences" value={description} />}
             <Recap label="Dates" value={`${startDate} → ${endDate} (${span} day${span > 1 ? "s" : ""})`} />
             <Recap label="Currency" value={currency} />

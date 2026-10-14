@@ -69,6 +69,9 @@ type ActivityContext struct {
 	StartTime    string
 	EndTime      string
 	LocationName string
+	// Notes is the activity's note (location notes or note content), used as
+	// concrete detail for the story; trimmed when the prompt is built.
+	Notes string
 }
 
 type AccommodationContext struct {

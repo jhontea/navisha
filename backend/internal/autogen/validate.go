@@ -52,6 +52,9 @@ func ValidateInput(in GenerateInput) error {
 	if strings.TrimSpace(in.BaseCurrency) == "" {
 		return fmt.Errorf("%w: base currency required", ErrInvalidInput)
 	}
+	if !TravelStyles[strings.ToLower(strings.TrimSpace(in.TravelStyle))] {
+		return fmt.Errorf("%w: unknown travel style", ErrInvalidInput)
+	}
 	return nil
 }
 

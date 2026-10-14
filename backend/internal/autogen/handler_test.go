@@ -656,3 +656,16 @@ func TestHandlerGetQuota(t *testing.T) {
 		}
 	})
 }
+
+// A daily quota of 0 means unlimited (it used to fall back to the default 10).
+func TestHandlerGenerate_ZeroQuotaIsUnlimited(t *testing.T) {
+	h, uc, _ := newTestHandler(t, 0, 50)
+	if _, err := do(t, h.Generate, http.MethodPost, reqOpts{
+		body: genBody("Tokyo", "", "2026-11-01", "2026-11-02"), user: testUser,
+	}); err != nil {
+		t.Fatalf("quota 0 must not limit: %v", err)
+	}
+	if uc.genCalls != 1 {
+		t.Errorf("usecase calls = %d, want 1", uc.genCalls)
+	}
+}

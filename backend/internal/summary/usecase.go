@@ -63,9 +63,11 @@ func (u *Usecase) Generate(ctx context.Context, userID, tripID string, lang Lang
 	tripCtx.Language = lang
 	system, user := BuildPrompt(*tripCtx)
 	temp := TemperatureForTrip(tripCtx.TripID)
+	maxTokens := 2048 // ~450 words of markdown with headroom; caps cost
 	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{
 		Model:       u.model,
 		Temperature: &temp,
+		MaxTokens:   &maxTokens,
 		Messages: []llm.Message{
 			{Role: "system", Content: system},
 			{Role: "user", Content: user},

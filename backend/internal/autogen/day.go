@@ -48,7 +48,10 @@ Writing rules (same voice as full-trip generation):
   without the city, e.g. "Al-Masjid an-Nabawi", "Kopi Toko Djawa", "Senso-ji".
 - "city": the city/regency where the place is plus its country, in English, as "City, Country"
   (e.g. "Medina, Saudi Arabia", "Bandung, Indonesia", "Tokyo, Japan").
-- "notes": 1-2 sentences with one specific practical fact (price estimate, best time, booking, dress code, what to order).
+- "notes": 2-3 sentences in two parts: (1) why it is worth it, ONE concrete detail people can see/taste/feel or the best
+  moment to be there, (2) ONE insider tip (price estimate in the trip currency, best time, what to order, queue, access).
+  Good: "Kuahnya bening tapi gurih kaldu sapi, dan antrean warga lokal sudah mengular sejak jam 6. Pesan yang campur
+  (sekitar Rp35.000) dan datang sebelum jam 8." Bad: "Tempat ikonik yang wajib dikunjungi."
 - No clichés ("surga", "hidden gem", "wajib dikunjungi", "tak terlupakan", "memukau"), no emoji.`
 	user := fmt.Sprintf(`Trip: %s
 Destination / area: %s

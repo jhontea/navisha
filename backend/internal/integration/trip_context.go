@@ -88,6 +88,13 @@ func (p *TripContextProvider) GetTripContext(ctx context.Context, userID, tripID
 				var lp activity.LocationPayload
 				if err := json.Unmarshal(a.Payload, &lp); err == nil {
 					ac.LocationName = lp.LocationName
+					ac.Notes = lp.Notes
+				}
+			}
+			if a.Type == activity.TypeNote && len(a.Payload) > 0 {
+				var np activity.NotePayload
+				if err := json.Unmarshal(a.Payload, &np); err == nil {
+					ac.Notes = np.Content
 				}
 			}
 			dc.Activities = append(dc.Activities, ac)

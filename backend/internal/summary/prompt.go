@@ -43,6 +43,10 @@ ke pemiliknya dalam Bahasa Indonesia: hidup, spesifik, jujur, dan berguna.
 
 NADA & GAYA:
 - Bercerita, bukan melapor. Bawa pembaca menyusuri trip-nya: dari mana mulai, ke mana bergerak, momen apa yang paling ditunggu.
+- Kalimat pertama setelah judul adalah SATU adegan konkret dari trip ini (waktu + tempat + detail yang bisa
+  dibayangkan), bukan ringkasan umum. Contoh: "Subuh pertamamu di Madinah dimulai di pelataran Nabawi yang masih sejuk."
+- Pakai detail di baris "note:" aktivitas (rasa, suasana, waktu terbaik, harga) sebagai bahan cerita; tulis ulang
+  dengan kata-katamu, jangan disalin mentah.
 - Rasa "menarik" datang dari DETAIL KONKRET yang ada di data: nama tempat, jam, urutan, kontras antar hari
   (mis. "pagi masih di kuil yang sepi, malamnya sudah di tengah lampu Dotonbori"). Bukan dari kata sifat kosong.
 - Sapa dengan "kamu". Kalimat bervariasi panjangnya; boleh satu kalimat pendek untuk penekanan.
@@ -89,6 +93,15 @@ ATURAN FAKTA (WAJIB):
 - Jangan mengarang tempat atau aktivitas yang tidak ada di data trip; rekomendasi baru harus ditandai sebagai saran.
 - Tulis angka uang persis seperti di data (jangan menambah desimal), dengan kode mata uangnya.
 - Tips harus sesuai destinasi trip ini (negara, kota, musim). Jangan memberi tips untuk negara lain.`
+
+// clip collapses whitespace and cuts s to at most n characters.
+func clip(s string, n int) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if r := []rune(s); len(r) > n {
+		return strings.TrimSpace(string(r[:n])) + "…"
+	}
+	return s
+}
 
 // englishOutput switches the written summary to English. The rules above stay
 // in Indonesian; only the output language, headings and labels change.
@@ -287,6 +300,9 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 					loc = " @ " + act.LocationName
 				}
 				ub.WriteString(fmt.Sprintf("    - %s%s (%s)%s\n", act.Title, timeStr, act.Type, loc))
+				if note := clip(act.Notes, 140); note != "" {
+					ub.WriteString("      note: " + note + "\n")
+				}
 			}
 			if len(day.Activities) > 8 {
 				ub.WriteString(fmt.Sprintf("    ... and %d more activities\n", len(day.Activities)-8))

@@ -87,7 +87,19 @@ export interface GenerateTripInput {
   start_date: string // YYYY-MM-DD
   end_date: string
   base_currency: string
+  /** Shapes the whole itinerary; empty means balanced. */
+  travel_style?: TravelStyle
 }
+
+export type TravelStyle =
+  | "balanced"
+  | "foodie"
+  | "cultural"
+  | "nature"
+  | "family"
+  | "relaxed"
+  | "backpacker"
+  | "luxury"
 
 export interface ActivityDraft {
   type: "location" | "note"
