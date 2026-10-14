@@ -14,13 +14,22 @@ import type { Transportation } from "../types"
  * Times are wall-clock local times without a zone, so no duration is shown:
  * across time zones it would be wrong.
  */
+/** The fields the pass reads; the timeline passes a trimmed transport. */
+export type BoardingPassData = Pick<
+  Transportation,
+  "label" | "operator" | "from_location" | "to_location" | "departure_datetime" | "arrival_datetime"
+> & { type: string; reference_number?: string }
+
 export function BoardingPass({
   transportation: t,
   dayNumber,
+  showDate = true,
   actions,
   className,
 }: {
-  transportation: Transportation
+  transportation: BoardingPassData
+  /** Hide the date fact when the context already shows the day (itinerary timeline). */
+  showDate?: boolean
   /** Trip day of the departure, when known. */
   dayNumber?: number | null
   /** Optional slot top-right, e.g. the ⋯ menu. */
@@ -53,7 +62,7 @@ export function BoardingPass({
         </>
       ),
     })
-  if (date) facts.push({ label: "Date", value: date })
+  if (date && showDate) facts.push({ label: "Date", value: date })
   if (dayNumber) facts.push({ label: "Trip day", value: `Day ${dayNumber}` })
   if (t.reference_number) facts.push({ label: "Booking ref", value: t.reference_number })
 

@@ -9,23 +9,28 @@ import { cn } from "@/lib/utils"
 export const TimelineRow = forwardRef<
   HTMLDivElement,
   {
+    id?: string
     time?: string | null
     icon: ReactNode
     children: ReactNode
     className?: string
     style?: CSSProperties
   }
->(function TimelineRow({ time, icon, children, className, style }, ref) {
+>(function TimelineRow({ id, time, icon, children, className, style }, ref) {
   return (
     <div
       ref={ref}
+      id={id}
       style={style}
-      className={cn("relative grid grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-x-1.5 sm:grid-cols-[3.25rem_2.75rem_minmax(0,1fr)] sm:gap-x-2", className)}
+      className={cn("relative grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-1.5 sm:grid-cols-[3.5rem_2.75rem_minmax(0,1fr)] sm:gap-x-2", className)}
     >
-      <div className="pt-3 text-right text-xs font-medium tabular-nums text-muted-foreground">
-        {time}
+      {/* Phones skip the time column: each card already shows its time. */}
+      <div className="hidden items-start justify-end pt-2.5 sm:flex">
+        {time && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold tabular-nums text-foreground">{time}</span>
+        )}
       </div>
-      <div className="relative flex justify-center before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-border">
+      <div className="relative flex justify-center before:absolute before:inset-y-0 before:left-1/2 before:w-0.5 before:-translate-x-1/2 before:rounded-full before:bg-border">
         <div className="relative z-10 pt-0.5">{icon}</div>
       </div>
       <div className="min-w-0 pb-3">{children}</div>

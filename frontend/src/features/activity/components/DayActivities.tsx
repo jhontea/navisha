@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, ChevronDown, PenLine, Plus, Sparkles } from "lucide-react"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
+import { TimePills, type TimePill } from "@/components/TimePills"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { buttonVariants } from "@/components/ui/button"
 import {
@@ -82,6 +83,7 @@ export function DayActivities({
 
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; activity: Activity } | { mode: "ai" } | null>(null)
   const [reorderKey, setReorderKey] = useState(0)
+  const [timeFocus, setTimeFocus] = useState<string | null>(null)
 
   const createMut = useCreateActivity(dayId, tripId)
   const updateMut = useUpdateActivity(sheet?.mode === "edit" ? sheet.activity.id : "", dayId, tripId)
@@ -137,6 +139,27 @@ export function DayActivities({
 
   const entries = interleaveTimeline(activities, staticItems)
 
+  // Phone shortcut: one pill per timed entry, jumps to it (the map does this on desktop).
+  const hhmm = (value?: string | null) => (value ? value.slice(0, 5) : null)
+  const timePills: TimePill[] = entries.flatMap((entry): TimePill[] => {
+    if (entry.kind === "activity") {
+      const start = hhmm(entry.activity.start_time)
+      if (!start) return []
+      const end = hhmm(entry.activity.end_time)
+      return [{ id: `activity-${entry.activity.id}`, label: end ? `${start} – ${end}` : start, description: entry.activity.title }]
+    }
+    if (entry.kind === "transport") {
+      const dep = extractTime(entry.data.departure_datetime)
+      return dep ? [{ id: `trans-${entry.data.id}`, label: dep, description: entry.data.label || entry.data.to_location }] : []
+    }
+    return []
+  })
+  const jumpTo = (elementId: string) => {
+    setTimeFocus(elementId)
+    if (elementId.startsWith("activity-")) selectActivity(elementId.slice("activity-".length))
+    document.getElementById(elementId)?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
+
   return (
     <div className="space-y-3">
       {selectMode && activities.length > 0 && (
@@ -153,8 +176,12 @@ export function DayActivities({
         </div>
       )}
 
+      {timePills.length >= 2 && !selectMode && (
+        <TimePills className="lg:hidden" aria-label={`Times on Day ${dayNumber}`} items={timePills} value={timeFocus} onChange={jumpTo} />
+      )}
+
       {entries.length === 0 ? (
-        <p className="py-2 text-sm text-muted-foreground">Nothing planned yet.</p>
+        <p className="rounded-xl bg-muted px-4 py-6 text-center text-sm text-muted-foreground">Nothing planned for this day yet.</p>
       ) : (
         <DndContext key={reorderKey} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={activities.map((a) => a.id)} strategy={verticalListSortingStrategy}>
@@ -188,6 +215,7 @@ export function DayActivities({
                   return (
                     <TimelineRow
                       key={`trans-${entry.data.id}`}
+                      id={`trans-${entry.data.id}`}
                       time={extractTime(entry.data.departure_datetime)}
                       icon={<TimelineIcon kind="transport" transportType={entry.data.type} />}
                     >
@@ -212,7 +240,7 @@ export function DayActivities({
 
       {!selectMode && (
         <DropdownMenu>
-          <DropdownMenuTrigger className={buttonVariants({ variant: "outline", className: "w-full justify-center border-dashed" })}>
+          <DropdownMenuTrigger className={buttonVariants({ variant: "soft", className: "w-full justify-center" })}>
             <Plus aria-hidden="true" />
             Add to Day {dayNumber}
             <ChevronDown className="opacity-70" aria-hidden="true" />

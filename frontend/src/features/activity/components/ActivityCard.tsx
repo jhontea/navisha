@@ -64,15 +64,15 @@ export function ActivityCard({
     <div
       onClick={onSelect}
       className={cn(
-        "rounded-xl border bg-card px-4 py-3 transition-shadow",
+        "rounded-xl border bg-card px-4 py-3 transition-[box-shadow,background-color]",
         onSelect && "cursor-pointer hover:shadow-card",
-        selected && "ring-2 ring-primary",
+        selected && "border-primary/40 bg-primary-soft/50 shadow-card ring-1 ring-primary/40",
         hasOverlap && !selected && "border-warning/60",
       )}
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <h4 className="text-sm font-semibold leading-snug text-foreground">{activity.title}</h4>
+          <h4 className="font-display text-base font-extrabold leading-snug text-foreground">{activity.title}</h4>
           {meta && <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">{meta}</p>}
         </div>
 

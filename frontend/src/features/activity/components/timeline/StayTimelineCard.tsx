@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/StatusChip"
 import type { TimelineStay } from "../../lib/timeline"
 
 /** Read-only stay check-in / check-out entry on a day's timeline (edited in Bookings). */
@@ -12,8 +13,10 @@ export function StayTimelineCard({
 
   return (
     <div className="rounded-xl border bg-card px-4 py-3">
-      <p className="text-xs font-medium text-muted-foreground">{event === "check_in" ? "Check-in" : "Check-out"}</p>
-      <p className="mt-0.5 text-sm font-semibold text-foreground">{a.name}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate font-display text-base font-extrabold text-foreground">{a.name}</p>
+        <StatusChip tone={event === "check_in" ? "info" : "neutral"}>{event === "check_in" ? "Check-in" : "Check-out"}</StatusChip>
+      </div>
       {meta && <p className="mt-1 text-xs text-muted-foreground">{meta}</p>}
     </div>
   )
