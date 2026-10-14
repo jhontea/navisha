@@ -1,6 +1,7 @@
 package transportation
 
 import (
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -31,6 +32,23 @@ type costRequest struct {
 	Currency string  `json:"currency"`
 }
 
+// toCost validates the optional cost that creates a linked expense. A missing
+// cost or an amount of 0 means none; a negative or non-finite amount, or an
+// amount without a currency, is rejected rather than silently dropped.
+func (cr *costRequest) toCost() (*Cost, *echo.HTTPError) {
+	if cr == nil || cr.Amount == 0 {
+		return nil, nil
+	}
+	if cr.Amount < 0 || math.IsNaN(cr.Amount) || math.IsInf(cr.Amount, 0) {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "cost amount must be greater than 0")
+	}
+	currency := strings.ToUpper(strings.TrimSpace(cr.Currency))
+	if currency == "" {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "cost currency is required")
+	}
+	return &Cost{Amount: cr.Amount, Currency: currency}, nil
+}
+
 type request struct {
 	Type              string       `json:"type"`
 	Label             string       `json:"label"`
@@ -53,10 +71,6 @@ func (req *request) toInput() (CreateInput, error) {
 	if err != nil {
 		return CreateInput{}, err
 	}
-	var cost *Cost
-	if req.Cost != nil && req.Cost.Amount > 0 && req.Cost.Currency != "" {
-		cost = &Cost{Amount: req.Cost.Amount, Currency: req.Cost.Currency}
-	}
 	return CreateInput{
 		Type:              Type(req.Type),
 		Label:             req.Label,
@@ -67,7 +81,6 @@ func (req *request) toInput() (CreateInput, error) {
 		DepartureDatetime: dep,
 		ArrivalDatetime:   arr,
 		Notes:             req.Notes,
-		Cost:              cost,
 	}, nil
 }
 
@@ -98,9 +111,6 @@ func (h *Handler) List(c echo.Context, userID string) error {
 // clean strips HTML from the text fields, then checks the required ones, so a
 // value made only of tags counts as empty.
 func (req *request) clean() *echo.HTTPError {
-	if len(req.Notes) > 5000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
-	}
 	req.FromLocation = strings.TrimSpace(sanitize.Text(req.FromLocation))
 	req.ToLocation = strings.TrimSpace(sanitize.Text(req.ToLocation))
 	req.Notes = sanitize.Text(req.Notes)
@@ -110,6 +120,16 @@ func (req *request) clean() *echo.HTTPError {
 	}
 	if req.ToLocation == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "to_location is required")
+	}
+	req.Operator = sanitize.Text(req.Operator)
+	req.ReferenceNumber = sanitize.Text(req.ReferenceNumber)
+	switch {
+	case sanitize.TooLong(req.FromLocation, 200), sanitize.TooLong(req.ToLocation, 200):
+		return echo.NewHTTPError(http.StatusBadRequest, "locations must be 200 characters or less")
+	case sanitize.TooLong(req.Label, 120), sanitize.TooLong(req.Operator, 120), sanitize.TooLong(req.ReferenceNumber, 120):
+		return echo.NewHTTPError(http.StatusBadRequest, "label, operator and reference must be 120 characters or less")
+	case sanitize.TooLong(req.Notes, 5000):
+		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
 	}
 	return nil
 }
@@ -127,6 +147,11 @@ func (h *Handler) Create(c echo.Context, userID string) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")
 	}
+	cost, herr := req.Cost.toCost()
+	if herr != nil {
+		return herr
+	}
+	in.Cost = cost
 	t, err := h.usecase.Create(c.Request().Context(), userID, tripID, in)
 	if err != nil {
 		return mapErr(err)
@@ -143,6 +168,8 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := req.clean(); err != nil {
 		return err
 	}
+	// A cost only creates the linked expense on Create; after that the
+	// expense is edited on the Budget tab, so Update ignores it.
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")

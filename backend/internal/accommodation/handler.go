@@ -1,6 +1,7 @@
 package accommodation
 
 import (
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -31,6 +32,23 @@ type costRequest struct {
 	Currency string  `json:"currency"`
 }
 
+// toCost validates the optional cost that creates a linked expense. A missing
+// cost or an amount of 0 means none; a negative or non-finite amount, or an
+// amount without a currency, is rejected rather than silently dropped.
+func (cr *costRequest) toCost() (*Cost, *echo.HTTPError) {
+	if cr == nil || cr.Amount == 0 {
+		return nil, nil
+	}
+	if cr.Amount < 0 || math.IsNaN(cr.Amount) || math.IsInf(cr.Amount, 0) {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "cost amount must be greater than 0")
+	}
+	currency := strings.ToUpper(strings.TrimSpace(cr.Currency))
+	if currency == "" {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "cost currency is required")
+	}
+	return &Cost{Amount: cr.Amount, Currency: currency}, nil
+}
+
 type request struct {
 	AccommodationType  string       `json:"accommodation_type"`
 	Name               string       `json:"name"`
@@ -54,10 +72,6 @@ func (req *request) toInput() (CreateInput, error) {
 	if err != nil {
 		return CreateInput{}, err
 	}
-	var cost *Cost
-	if req.Cost != nil && req.Cost.Amount > 0 && req.Cost.Currency != "" {
-		cost = &Cost{Amount: req.Cost.Amount, Currency: req.Cost.Currency}
-	}
 	return CreateInput{
 		AccommodationType:  AccommodationType(req.AccommodationType),
 		Name:               req.Name,
@@ -69,8 +83,39 @@ func (req *request) toInput() (CreateInput, error) {
 		CheckOut:           out,
 		ConfirmationNumber: req.ConfirmationNumber,
 		Notes:              req.Notes,
-		Cost:               cost,
 	}, nil
+}
+
+// validate strips HTML, checks lengths, coordinates and dates, and returns
+// the usecase input (without cost).
+func (req *request) validate() (CreateInput, *echo.HTTPError) {
+	req.Name = strings.TrimSpace(sanitize.Text(req.Name))
+	req.Notes = sanitize.Text(req.Notes)
+	req.LocationName = sanitize.Text(req.LocationName)
+	req.ConfirmationNumber = strings.TrimSpace(sanitize.Text(req.ConfirmationNumber))
+	switch {
+	case req.Name == "":
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "name is required")
+	case sanitize.TooLong(req.Name, 200):
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "name must be 200 characters or less")
+	case sanitize.TooLong(req.LocationName, 300):
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "location must be 300 characters or less")
+	case sanitize.TooLong(req.ConfirmationNumber, 120):
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "confirmation number must be 120 characters or less")
+	case sanitize.TooLong(req.Notes, 5000):
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
+	case req.Lat != nil && (*req.Lat < -90 || *req.Lat > 90), req.Lng != nil && (*req.Lng < -180 || *req.Lng > 180):
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid coordinates")
+	}
+	in, err := req.toInput()
+	if err != nil {
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
+	}
+	// Same-day stays (day use) are allowed, as in the form and the usecase.
+	if in.CheckOut.Before(in.CheckIn) {
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "check-out must be on or after check-in")
+	}
+	return in, nil
 }
 
 func (h *Handler) List(c echo.Context, userID string) error {
@@ -92,24 +137,15 @@ func (h *Handler) Create(c echo.Context, userID string) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	// Loop 16: early validation before parsing dates.
-	if strings.TrimSpace(req.Name) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "name is required")
+	in, herr := req.validate()
+	if herr != nil {
+		return herr
 	}
-	if len(req.Name) > 200 {
-		return echo.NewHTTPError(http.StatusBadRequest, "name must be 200 characters or less")
+	cost, herr := req.Cost.toCost()
+	if herr != nil {
+		return herr
 	}
-	req.Name = sanitize.Text(req.Name)
-	req.Notes = sanitize.Text(req.Notes)
-	req.LocationName = sanitize.Text(req.LocationName)
-	in, err := req.toInput()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
-	}
-	// Same-day stays (day use) are allowed, as in the form and the usecase.
-	if in.CheckOut.Before(in.CheckIn) {
-		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be on or after check-in")
-	}
+	in.Cost = cost
 	a, err := h.usecase.Create(c.Request().Context(), userID, tripID, in)
 	if err != nil {
 		return mapErr(err)
@@ -123,21 +159,11 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	if strings.TrimSpace(req.Name) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "name is required")
-	}
-	if len(req.Name) > 200 {
-		return echo.NewHTTPError(http.StatusBadRequest, "name must be 200 characters or less")
-	}
-	req.Name = sanitize.Text(req.Name)
-	req.Notes = sanitize.Text(req.Notes)
-	req.LocationName = sanitize.Text(req.LocationName)
-	in, err := req.toInput()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
-	}
-	if in.CheckOut.Before(in.CheckIn) {
-		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be on or after check-in")
+	// A cost only creates the linked expense on Create; after that the
+	// expense is edited on the Budget tab, so Update ignores it.
+	in, herr := req.validate()
+	if herr != nil {
+		return herr
 	}
 	a, err := h.usecase.Update(c.Request().Context(), userID, id, in)
 	if err != nil {
