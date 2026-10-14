@@ -15,7 +15,9 @@ type Link struct {
 }
 
 type PublicActivity struct {
-	ID        string          `json:"id"`
+	ID string `json:"id"`
+	// Type is "location" or "note"; todos stay private.
+	Type      string          `json:"type"`
 	Title     string          `json:"title"`
 	StartTime string          `json:"start_time"`
 	EndTime   string          `json:"end_time"`

@@ -91,9 +91,9 @@ func (r *postgresRepository) Resolve(ctx context.Context, linkID string) (*Publi
 	if expired || revoked {
 		return nil, ErrExpired
 	}
-	rows, err := r.db.Query(ctx, `SELECT d.id,d.date::text,d.day_number,d.title,a.id,a.title,a.start_time,a.end_time,a.payload
+	rows, err := r.db.Query(ctx, `SELECT d.id,d.date::text,d.day_number,d.title,a.id,a.type,a.title,a.start_time,a.end_time,a.payload
 		FROM trip_share_links s JOIN days d ON d.trip_id=s.trip_id
-		LEFT JOIN activities a ON a.day_id=d.id AND a.type='location'
+		LEFT JOIN activities a ON a.day_id=d.id AND a.type IN ('location','note')
 		WHERE s.id=$1 ORDER BY d.day_number,a.order_index,a.created_at`, linkID)
 	if err != nil {
 		return nil, fmt.Errorf("tripshare.Resolve days: %w", err)
@@ -102,9 +102,9 @@ func (r *postgresRepository) Resolve(ctx context.Context, linkID string) (*Publi
 	byDay := map[string]int{}
 	for rows.Next() {
 		var day PublicDay
-		var aid, title, start, end *string
+		var aid, kind, title, start, end *string
 		var payload []byte
-		if err := rows.Scan(&day.ID, &day.Date, &day.DayNumber, &day.Title, &aid, &title, &start, &end, &payload); err != nil {
+		if err := rows.Scan(&day.ID, &day.Date, &day.DayNumber, &day.Title, &aid, &kind, &title, &start, &end, &payload); err != nil {
 			return nil, fmt.Errorf("tripshare.Resolve scan: %w", err)
 		}
 		idx, ok := byDay[day.ID]
@@ -115,7 +115,7 @@ func (r *postgresRepository) Resolve(ctx context.Context, linkID string) (*Publi
 			byDay[day.ID] = idx
 		}
 		if aid != nil {
-			out.Days[idx].Activities = append(out.Days[idx].Activities, PublicActivity{ID: *aid, Title: *title, StartTime: *start, EndTime: *end, Payload: sanitizeLocationPayload(payload)})
+			out.Days[idx].Activities = append(out.Days[idx].Activities, PublicActivity{ID: *aid, Type: *kind, Title: *title, StartTime: *start, EndTime: *end, Payload: sanitizePublicPayload(*kind, payload)})
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -144,6 +144,11 @@ func (r *postgresRepository) loadPublicTransportations(ctx context.Context, trip
 		if err := rows.Scan(&item.ID, &item.Type, &item.Label, &item.Operator, &item.FromLocation, &item.ToLocation, &item.DepartureDatetime, &item.ArrivalDatetime); err != nil {
 			return fmt.Errorf("tripshare.loadPublicTransportations scan: %w", err)
 		}
+		// Times are wall-clock digits stored as UTC; send them as UTC (like the
+		// transportation API), not in the server's zone (+07:00 shifted SV 817's
+		// 10:00 departure to 17:00 on the shared page).
+		item.DepartureDatetime = inUTC(item.DepartureDatetime)
+		item.ArrivalDatetime = inUTC(item.ArrivalDatetime)
 		out.Transportations = append(out.Transportations, item)
 	}
 	if err := rows.Err(); err != nil {
@@ -173,17 +178,31 @@ func (r *postgresRepository) loadPublicAccommodations(ctx context.Context, tripI
 	return nil
 }
 
-func sanitizeLocationPayload(raw []byte) json.RawMessage {
+// sanitizePublicPayload keeps only what a shared trip shows: a place's name,
+// address, pin, link and photos (not its private notes), and a note's text.
+func sanitizePublicPayload(kind string, raw []byte) json.RawMessage {
 	var src map[string]any
 	if json.Unmarshal(raw, &src) != nil {
 		return json.RawMessage(`{}`)
 	}
+	keys := []string{"location_name", "address", "lat", "lng", "external_url", "image_urls"}
+	if kind == "note" {
+		keys = []string{"content"}
+	}
 	allowed := map[string]any{}
-	for _, key := range []string{"location_name", "address", "lat", "lng", "external_url", "image_urls"} {
+	for _, key := range keys {
 		if v, ok := src[key]; ok {
 			allowed[key] = v
 		}
 	}
 	b, _ := json.Marshal(allowed)
 	return b
+}
+
+func inUTC(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	u := t.UTC()
+	return &u
 }

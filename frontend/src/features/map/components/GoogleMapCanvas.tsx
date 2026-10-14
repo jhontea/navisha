@@ -193,6 +193,8 @@ function Markers({
     <>
       {points.map((point, index) => {
         const isSelected = point.activityId === selectedActivityId
+        const isStay = point.kind === "stay"
+        const glyph = isStay ? "H" : String(points.slice(0, index + 1).filter((p) => p.kind !== "stay").length)
         return (
           <AdvancedMarker
             key={point.activityId}
@@ -204,10 +206,10 @@ function Markers({
             title={point.title}
           >
             <Pin
-              background={colorForDay(point.dayNumber)}
+              background={isStay ? "#0f172a" : colorForDay(point.dayNumber)}
               borderColor={isSelected ? "#fbbf24" : "#ffffff"}
               glyphColor="#ffffff"
-              glyph={String(index + 1)}
+              glyph={glyph}
               scale={isSelected ? 1.35 : 1}
             />
           </AdvancedMarker>

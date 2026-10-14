@@ -99,8 +99,15 @@ func TestResolveValidToken(t *testing.T) {
 }
 
 func TestSanitizeLocationPayloadRemovesPrivateNotes(t *testing.T) {
-	got := string(sanitizeLocationPayload([]byte(`{"location_name":"Shibuya","address":"Tokyo","notes":"private","google_place_id":"secret-ish"}`)))
+	got := string(sanitizePublicPayload("location", []byte(`{"location_name":"Shibuya","address":"Tokyo","notes":"private","google_place_id":"secret-ish"}`)))
 	if got != `{"address":"Tokyo","location_name":"Shibuya"}` {
 		t.Fatalf("sanitized payload = %s", got)
+	}
+}
+
+func TestSanitizePublicPayloadKeepsOnlyANotesText(t *testing.T) {
+	got := string(sanitizePublicPayload("note", []byte(`{"content":"Kumpul 4 jam sebelum berangkat","secret":"x"}`)))
+	if got != `{"content":"Kumpul 4 jam sebelum berangkat"}` {
+		t.Fatalf("sanitized note = %s", got)
 	}
 }

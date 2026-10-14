@@ -70,6 +70,33 @@ describe("buildStaticItems", () => {
     ])
   })
 
+  it("puts check-in after the day's arrival journey (flight, then transfer bus)", () => {
+    const flight = { id: "SV817", type: "flight", departure_datetime: "2027-01-10T10:00:00Z", arrival_datetime: "2027-01-10T15:55:00Z" } as unknown as Transportation
+    const items = buildStaticItems(
+      [flight, transport("bus", "2027-01-10T17:30:00Z")],
+      [stay("anjum", "2027-01-10", "2027-01-14")],
+      "2027-01-10",
+    )
+    expect(items.map((i) => (i.kind === "transport" ? i.data.id : `${i.data.id}:${i.event}`))).toEqual([
+      "SV817",
+      "bus",
+      "anjum:check_in",
+    ])
+  })
+
+  it("puts check-out before a morning departure", () => {
+    const items = buildStaticItems(
+      [transport("train", "2027-01-14T09:00:00Z")],
+      [stay("anjum", "2027-01-10", "2027-01-14"), stay("nozol", "2027-01-14", "2027-01-17")],
+      "2027-01-14",
+    )
+    expect(items.map((i) => (i.kind === "transport" ? i.data.id : `${i.data.id}:${i.event}`))).toEqual([
+      "anjum:check_out",
+      "train",
+      "nozol:check_in",
+    ])
+  })
+
   it("returns nothing for an empty day", () => {
     expect(buildStaticItems([], [], "2026-05-10")).toEqual([])
   })

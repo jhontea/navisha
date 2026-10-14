@@ -11,7 +11,8 @@ import type { DayLocations, LocationPoint } from "../hooks/useTripLocations"
  * implement it; callers only use <MapCanvas>, never a renderer directly.
  */
 export interface MapRendererProps {
-  /** Places grouped by day, in itinerary order; drawn as numbered markers and routes. */
+  /** Stops grouped by day, in itinerary order: places get numbered markers,
+   *  hotel stops ("stay") an "H"; each day's stops are joined by its route. */
   visibleByDay: DayLocations[]
   /** Open one place in Google Maps (marker popup action). */
   onOpenInMaps: (point: LocationPoint) => void

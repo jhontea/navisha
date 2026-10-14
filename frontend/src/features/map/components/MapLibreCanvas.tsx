@@ -68,9 +68,7 @@ export function MapLibreCanvas({
   // markers on every click). Mirrors the FitBounds pattern in the Google path.
   const pointsKey = useMemo(
     () =>
-      displayableByDay
-        .flatMap((d) => d.points.map((p) => p.activityId))
-        .join("|"),
+      displayableByDay.flatMap((d) => d.points.map((p) => p.activityId)).join("|"),
     [displayableByDay],
   )
 
@@ -78,7 +76,12 @@ export function MapLibreCanvas({
     if (!containerRef.current || displayableByDay.length === 0) return
 
     setMapError(false)
+    // Drop the previous view's route lines until the new map has projected
+    // its own (switching days otherwise leaves a stale line until a pan).
+    setRouteOverlay((prev) => ({ ...prev, routes: [] }))
     const allPoints = displayableByDay.flatMap((day) => day.points)
+    // Everything the view should fit: places and stays.
+    const allCoords = allPoints.map((p) => [p.lng, p.lat] as [number, number])
     let cancelled = false
 
     const rasterFallback: StyleSpecification = {
@@ -103,7 +106,7 @@ export function MapLibreCanvas({
         map = new maplibregl.Map({
           container: containerRef.current,
           style,
-          center: [allPoints[0].lng, allPoints[0].lat],
+          center: allCoords[0],
           zoom: 11,
           attributionControl: {},
         })
@@ -142,18 +145,20 @@ export function MapLibreCanvas({
       map.on("resize", updateRouteOverlay)
 
       map.once("load", () => {
-        allPoints.forEach((point, index) => {
+        let placeNumber = 0
+        allPoints.forEach((point) => {
+          const isStay = point.kind === "stay"
           const markerElement = document.createElement("button")
           markerElement.type = "button"
           markerElement.title = point.title
           markerElement.setAttribute("aria-label", point.title)
-          markerElement.textContent = String(index + 1)
+          markerElement.textContent = isStay ? "H" : String(++placeNumber)
           Object.assign(markerElement.style, {
             width: "30px",
             height: "30px",
-            borderRadius: "9999px",
+            borderRadius: isStay ? "8px" : "9999px",
             border: "2px solid white",
-            background: colorForDay(point.dayNumber),
+            background: isStay ? "#0f172a" : colorForDay(point.dayNumber),
             color: "white",
             fontSize: "12px",
             fontWeight: "700",
@@ -213,12 +218,12 @@ export function MapLibreCanvas({
             .addTo(map)
         })
 
-        if (allPoints.length === 1) {
-          map.setCenter([allPoints[0].lng, allPoints[0].lat])
+        if (allCoords.length === 1) {
+          map.setCenter(allCoords[0])
           map.setZoom(13)
         } else {
           const bounds = new maplibregl.LngLatBounds()
-          allPoints.forEach((point) => bounds.extend([point.lng, point.lat]))
+          allCoords.forEach((coord) => bounds.extend(coord))
           map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 })
         }
         updateRouteOverlay()

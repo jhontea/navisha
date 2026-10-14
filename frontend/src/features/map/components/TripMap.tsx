@@ -54,6 +54,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
   const daysWithPlaces = byDay.filter((d) => d.points.length > 0)
   const visibleByDay = activeDay === null ? daysWithPlaces : daysWithPlaces.filter((d) => d.dayId === activeDay)
   const visiblePoints = visibleByDay.flatMap((d) => d.points)
+  const visiblePlaces = visiblePoints.filter((p) => p.kind === "place").length
   const directionsUrl =
     buildMapsDirectionsUrl(visiblePoints.filter((p) => hasValidCoords(p.lat, p.lng)).slice(0, MAX_WAYPOINTS)) ?? null
 
@@ -130,13 +131,22 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
                       aria-pressed={selectedActivityId === p.activityId}
                       className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-lg px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <span
-                        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                        style={{ backgroundColor: colorForDay(p.dayNumber) }}
-                        aria-hidden="true"
-                      >
-                        {i + 1}
-                      </span>
+                      {p.kind === "stay" ? (
+                        <span
+                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-foreground text-xs font-semibold text-background"
+                          aria-hidden="true"
+                        >
+                          H
+                        </span>
+                      ) : (
+                        <span
+                          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                          style={{ backgroundColor: colorForDay(p.dayNumber) }}
+                          aria-hidden="true"
+                        >
+                          {d.points.slice(0, i + 1).filter((x) => x.kind !== "stay").length}
+                        </span>
+                      )}
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-foreground">{p.title}</span>
                         {p.address && <span className="line-clamp-1 text-xs text-muted-foreground">{p.address}</span>}
@@ -165,7 +175,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3">
           <p className="text-sm text-muted-foreground tabular-nums">
-            {visiblePoints.length} {visiblePoints.length === 1 ? "place" : "places"} · {visibleByDay.length}{" "}
+            {visiblePlaces} {visiblePlaces === 1 ? "place" : "places"} · {visibleByDay.length}{" "}
             {visibleByDay.length === 1 ? "day" : "days"}
           </p>
           {directionsUrl && (
