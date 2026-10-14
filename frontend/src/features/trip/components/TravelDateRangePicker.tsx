@@ -206,7 +206,7 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
                         } ${
                           isCurrentMonth
                             ? "text-foreground"
-                            : "text-muted-foreground/40"
+                            : "text-muted-foreground"
                         }`
                   }`}
                   aria-label={date.toLocaleDateString("en-US", {

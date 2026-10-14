@@ -289,7 +289,7 @@ export function MapLibreCanvas({
           <p className="text-sm font-medium text-muted-foreground">
             Location coordinates are unavailable
           </p>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground/70">
+          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
             Re-select the activity locations to store coordinates and show them
             on the map.
           </p>

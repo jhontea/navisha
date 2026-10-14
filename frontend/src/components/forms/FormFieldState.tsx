@@ -35,7 +35,7 @@ export function FormFieldLabel({
         </>
       )}
       {optional && (
-        <span className="ml-1 font-normal normal-case tracking-normal text-xs text-muted-foreground/70">
+        <span className="ml-1 font-normal normal-case tracking-normal text-xs text-muted-foreground">
           (optional)
         </span>
       )}
