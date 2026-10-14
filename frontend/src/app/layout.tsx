@@ -1,22 +1,33 @@
 import type { Metadata } from "next"
-import { Nunito, Nunito_Sans } from "next/font/google"
+import localFont from "next/font/local"
 import { ErrorReporting } from "@/components/ErrorReporting"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
 import { THEME_INIT_SCRIPT } from "@/lib/theme"
 import "./globals.css"
 
-// docs/DESIGN.md §3: Nunito for display (titles, big numbers), Nunito Sans for UI.
-const display = Nunito({
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
+// docs/DESIGN.md §3: Nunito for display (titles, big numbers), Nunito Sans for
+// UI. Self-hosted from @fontsource-variable (OFL) so builds never depend on
+// fetching Google Fonts at build time (that fetch broke the CI build).
+const display = localFont({
+  src: "../../node_modules/@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2",
+  weight: "200 1000",
   variable: "--font-display",
   display: "swap",
 })
 
-const sans = Nunito_Sans({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-  style: ["normal", "italic"],
+const sans = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2",
+      weight: "200 1000",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-italic.woff2",
+      weight: "200 1000",
+      style: "italic",
+    },
+  ],
   variable: "--font-sans",
   display: "swap",
 })
