@@ -8,3 +8,6 @@ export interface TripSummary {
   created_at: string
   updated_at: string
 }
+
+/** Language the AI summary is written in. */
+export type SummaryLanguage = "id" | "en"

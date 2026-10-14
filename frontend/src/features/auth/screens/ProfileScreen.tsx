@@ -37,7 +37,7 @@ export function ProfileScreen() {
         <p className="mb-1 text-sm font-medium text-primary">
           Account overview
         </p>
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Your profile
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -46,37 +46,31 @@ export function ProfileScreen() {
       </header>
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="overflow-hidden rounded-xl border bg-card">
-          <div className="relative h-24 overflow-hidden bg-primary" aria-hidden="true">
-            <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full border border-white/20 bg-white/10" />
-            <div className="absolute left-8 top-12 h-16 w-16 rounded-full border border-white/15 bg-white/5" />
-            <div className="absolute right-20 top-8 h-2 w-2 rounded-full bg-white/70" />
-          </div>
-
-          <div className="px-6 pb-6 text-center">
+        <aside className="rounded-xl border bg-card">
+          <div className="p-6 text-center">
             {isLoading ? (
               <div className="flex min-h-[236px] flex-col items-center" aria-label="Loading profile">
-                <Skeleton variant="avatar" className="-mt-11 mb-4 h-[88px] w-[88px] ring-4 ring-background" />
+                <Skeleton variant="avatar" className="mb-4 h-20 w-20" />
                 <Skeleton variant="text" className="mb-2 h-6 w-36" />
                 <Skeleton variant="text" className="mb-5 h-4 w-48" />
                 <Skeleton className="h-10 w-full rounded-xl" />
               </div>
             ) : (
               <>
-                <div className="relative mx-auto -mt-11 mb-4 w-fit rounded-full bg-background p-1 shadow-lg shadow-primary/15">
+                <div className="relative mx-auto mb-4 w-fit">
                   <UserAvatar
                     key={user?.id}
                     src={user?.avatar_url}
                     name={user?.name}
-                    className="h-20 w-20 ring-2 ring-primary/25"
+                    className="h-20 w-20"
                     textClassName="text-3xl"
                   />
-                  <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground">
+                  <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                 </div>
 
-                <h2 className="font-heading text-xl font-bold text-foreground">
+                <h2 className="text-xl font-bold text-foreground">
                   {user?.name ?? "Traveler"}
                 </h2>
                 {user?.email && (

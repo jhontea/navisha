@@ -233,23 +233,28 @@ func TestHandler_Create_Cost(t *testing.T) {
 		name      string
 		cost      string
 		wantCalls int
+		wantCode  int
 	}{
-		{"valid cost creates expense", `{"amount":150.5,"currency":"USD"}`, 1},
-		{"zero amount ignored", `{"amount":0,"currency":"USD"}`, 0},
-		{"negative amount ignored", `{"amount":-10,"currency":"USD"}`, 0},
-		{"missing currency ignored", `{"amount":10}`, 0},
-		{"null cost", `null`, 0},
+		{"valid cost creates expense", `{"amount":150.5,"currency":"USD"}`, 1, http.StatusCreated},
+		{"zero amount means no cost", `{"amount":0,"currency":"USD"}`, 0, http.StatusCreated},
+		{"negative amount rejected", `{"amount":-10,"currency":"USD"}`, 0, http.StatusBadRequest},
+		{"missing currency rejected", `{"amount":10}`, 0, http.StatusBadRequest},
+		{"null cost", `null`, 0, http.StatusCreated},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h, repo, exp := newHandlerFixture()
 			body := `{"type":"train","from_location":"A","to_location":"B","cost":` + tt.cost + `}`
 			rec, err := serve(t, h.Create, http.MethodPost, body, hOwner, map[string]string{"trip_id": hTrip})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if rec.Code != http.StatusCreated {
-				t.Fatalf("status = %d", rec.Code)
+			if tt.wantCode != http.StatusCreated {
+				assertHTTPCode(t, err, tt.wantCode)
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if rec.Code != http.StatusCreated {
+					t.Fatalf("status = %d", rec.Code)
+				}
 			}
 			if exp.calls != tt.wantCalls {
 				t.Errorf("expense calls = %d, want %d", exp.calls, tt.wantCalls)

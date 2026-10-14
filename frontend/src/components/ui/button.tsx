@@ -6,9 +6,7 @@ import { cn } from "@/lib/utils"
 
 // Navisha customization of the coss ui button (D2, docs/DESIGN_SYSTEM.md):
 // solid primary (no gradient), a solid `danger`, and sizes that meet the
-// 44px touch target on mobile. Legacy variants `gradient`, `glass` and
-// `chromatic` are kept as aliases so existing call sites keep working; do
-// not use them in new code.
+// 44px touch target on mobile.
 const primary = "bg-primary text-primary-foreground hover:bg-primary/90"
 const outline =
   "border-border bg-card text-foreground hover:bg-muted aria-expanded:bg-muted"

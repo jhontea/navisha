@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
+import { ErrorReporting } from "@/components/ErrorReporting"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
 import "./globals.css"
 
@@ -46,6 +47,7 @@ export default function RootLayout({
         className={`${inter.variable} ${interItalic.variable} font-sans antialiased`}
       >
         <WebVitalsReporter />
+        <ErrorReporting />
         {children}
       </body>
     </html>
