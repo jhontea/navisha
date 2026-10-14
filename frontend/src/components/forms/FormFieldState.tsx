@@ -23,7 +23,7 @@ export function FormFieldLabel({
     <label
       htmlFor={htmlFor}
       id={id}
-      className={cn("text-muted-foreground", className)}
+      className={cn("text-sm font-bold text-foreground", className)}
     >
       {children}
       {required && (

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Currency converter" }
 
 export default function CurrencyPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-4 md:px-margin-desktop md:pt-6">
+    <div className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop md:pt-8">
       <PageHeader
         title="Currency"
         accent="converter"

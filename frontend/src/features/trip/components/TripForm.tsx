@@ -74,9 +74,9 @@ interface Props {
   submitLabel?: string
 }
 
-// Large form field used by the trip forms (16px text, roomy padding).
+// Form field shape shared with Input (44px, rounded-xl, card fill; 16px text).
 const inputBase =
-  "w-full rounded-xl border bg-card px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
+  "h-11 w-full rounded-xl border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
@@ -149,7 +149,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           aria-required="true"
           aria-invalid={Boolean(errors.title)}
           aria-describedby={errors.title ? "trip-title-error" : undefined}
-          className={`h-auto ${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
+          className={`${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : ""}`}
           placeholder="e.g., Summer in Tokyo"
           {...register("title")}
         />
@@ -175,7 +175,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             render={({ field }) => (
               <DestinationAutocomplete
                 id="destination"
-                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-muted-foreground/50"
+                // The wrapper draws the field border; the inner input stays bare.
+                className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0"
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -327,7 +328,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             inputMode="numeric"
             aria-invalid={Boolean(errors.budget)}
             aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
-            className="h-auto flex-1 px-4 py-3 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-muted-foreground/50"
+            className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {

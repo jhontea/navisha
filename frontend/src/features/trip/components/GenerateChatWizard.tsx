@@ -63,9 +63,9 @@ function daySpan(start: string, end: string): number {
   return diff > 0 ? diff : 0
 }
 
-// Large form field used by the trip forms (16px text, roomy padding).
+// Form field shape shared with Input (44px, rounded-xl, card fill; 16px text).
 const inputBase =
-  "w-full rounded-xl border bg-card px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
+  "h-11 w-full rounded-xl border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
 
 // GenerateChatWizard collects the auto-generate inputs through a guided,
 // chat-style flow. Each answer becomes a bubble; the final step shows a recap
@@ -244,7 +244,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
             <div className="space-y-2">
               <Input
                 autoFocus
-                className={"h-auto " + inputBase}
+                className={inputBase}
                 placeholder="e.g. Tokyo, Japan"
                 maxLength={MAX_DESTINATION}
                 value={draftText}
@@ -284,7 +284,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
               <div className="relative">
                 <Input
                   autoFocus
-                  className={cn("h-auto", inputBase, draftText.length > 0 && "pr-9")}
+                  className={cn(inputBase, draftText.length > 0 && "pr-9")}
                   placeholder="e.g. foodie, adventure, budget-friendly"
                   maxLength={MAX_DESCRIPTION}
                   value={draftText}

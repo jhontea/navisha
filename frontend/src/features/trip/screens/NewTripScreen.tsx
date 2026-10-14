@@ -19,9 +19,8 @@ export function NewTripScreen() {
   const { mutateAsync, isPending } = useCreateTrip()
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop">
+    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop md:pt-8">
       <PageHeader
-        back={{ href: "/trips", label: "Back to Trips" }}
         title="New trip"
         accent="from scratch"
         description="Set the destination and dates; you get one day per date. Add activities, bookings and expenses after."

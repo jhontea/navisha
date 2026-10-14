@@ -95,7 +95,7 @@ export function CurrencyConverter() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="rounded-3xl border bg-card p-5 shadow-card sm:p-8">
+      <div className="rounded-3xl border bg-card p-5 shadow-card md:p-8">
         <div className="grid items-end gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-2">
             <Label id={fromLabelId}>From</Label>
@@ -110,7 +110,7 @@ export function CurrencyConverter() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="h-14 rounded-2xl font-display text-3xl font-extrabold tabular-nums"
+              className="h-14 rounded-xl font-display text-3xl font-extrabold tabular-nums"
             />
           </div>
 
@@ -133,7 +133,7 @@ export function CurrencyConverter() {
             <Label id={toLabelId}>To</Label>
             <CurrencySelect value={to} onChange={setTo} options={options} labelId={toLabelId} />
             <p
-              className="flex h-14 items-center break-all rounded-2xl bg-primary-soft px-4 font-display text-3xl font-extrabold tabular-nums text-primary-soft-foreground"
+              className="flex h-14 items-center break-all rounded-xl bg-primary-soft px-4 font-display text-3xl font-extrabold tabular-nums text-primary-soft-foreground"
               aria-live="polite"
             >
               {isLoading ? <span className="text-base text-muted-foreground">Converting…</span> : fmt(result?.converted_amount ?? 0)}

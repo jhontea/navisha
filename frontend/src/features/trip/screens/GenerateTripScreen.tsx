@@ -19,7 +19,6 @@
 // See: /memories/navisha-frontend-patterns.md
 
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { BackLink } from "@/components/BackLink"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LocationProviderBoundary } from "@/features/location/components/LocationProviderBoundary"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
@@ -209,10 +208,9 @@ function GenerateTripPageContent() {
 
   return (
     <LocationProviderBoundary>
-    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop">
+    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop md:pt-8">
 
       <header className="mb-6">
-        <BackLink href="/trips" label="Back to Trips" className="mb-4" />
         <h1 className="text-balance font-display text-3xl font-extrabold leading-tight text-foreground md:text-4xl">
           Plan a trip <span className="text-muted-foreground">with AI</span>
         </h1>
