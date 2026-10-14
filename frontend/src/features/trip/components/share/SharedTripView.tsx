@@ -6,13 +6,14 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Compass, List, Map as MapIcon, MapPin } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ItineraryFocusProvider, useItineraryFocus } from "@/features/activity/ItineraryFocus"
 import { formatTripRange } from "../../lib/home"
 import { getTripDateMetrics } from "../../lib/status"
 import { resolveTripCover } from "../../lib/cover"
 import { hasValidCoords } from "../../lib/mapsUrl"
+import { defaultOpenDayId } from "../../lib/sharedTrip"
 import type { PublicItinerary } from "../../types"
 import { SharedDay } from "./SharedDay"
 
@@ -96,12 +97,32 @@ function Hero({ trip }: { trip: PublicItinerary }) {
 
 function Body({ trip }: { trip: PublicItinerary }) {
   const [mobileView, setMobileView] = useState<"list" | "map">("list")
-  const { activeDayId, selectedActivityId, selectActivity } = useItineraryFocus()
+  const { activeDayId, setActiveDayId, selectedActivityId, selectActivity } = useItineraryFocus()
+  // One day open at first: Day 1 when rendered, then today's day once the
+  // browser knows the date (the server may be in another time zone).
+  const [openDays, setOpenDays] = useState<Set<string>>(() => new Set(trip.days.slice(0, 1).map((d) => d.id)))
+  const allOpen = trip.days.length > 0 && openDays.size === trip.days.length
   const transportations = trip.transportations ?? []
   const accommodations = trip.accommodations ?? []
   const activeDay = trip.days.find((d) => d.id === activeDayId)
   const dayHasPlaces = (d: PublicItinerary["days"][number]) => d.activities.some((a) => hasValidCoords(a.payload.lat, a.payload.lng))
   const hasPlaces = trip.days.some(dayHasPlaces)
+
+  useEffect(() => {
+    const id = defaultOpenDayId(trip.days)
+    if (id && id !== trip.days[0]?.id) {
+      setOpenDays(new Set([id]))
+      setActiveDayId(id)
+    }
+  }, [trip.days, setActiveDayId])
+
+  const setDayOpen = (id: string, open: boolean) =>
+    setOpenDays((prev) => {
+      const next = new Set(prev)
+      if (open) next.add(id)
+      else next.delete(id)
+      return next
+    })
 
   // A marker click on desktop brings its card into view.
   useEffect(() => {
@@ -137,8 +158,27 @@ function Body({ trip }: { trip: PublicItinerary }) {
 
       <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]", mobileView === "map" && "max-lg:hidden")}>
         <div className="flex min-w-0 flex-col gap-3">
+          {trip.days.length > 1 && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setOpenDays(allOpen ? new Set() : new Set(trip.days.map((d) => d.id)))}
+              >
+                {allOpen ? "Collapse all" : "Expand all"}
+              </Button>
+            </div>
+          )}
           {trip.days.map((day) => (
-            <SharedDay key={day.id} day={day} transportations={transportations} accommodations={accommodations} />
+            <SharedDay
+              key={day.id}
+              day={day}
+              transportations={transportations}
+              accommodations={accommodations}
+              open={openDays.has(day.id)}
+              onOpenChange={(open) => setDayOpen(day.id, open)}
+            />
           ))}
         </div>
 
