@@ -69,7 +69,7 @@ func (h *Handler) Create(c echo.Context, userID string) error {
 	if strings.TrimSpace(req.Title) == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
 	}
-	if len(req.Title) > 200 {
+	if sanitize.TooLong(req.Title, 200) {
 		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
 	}
 	// Loop 48: reject oversized payloads (> 64KB).
@@ -93,7 +93,7 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	if len(req.Title) > 200 {
+	if sanitize.TooLong(req.Title, 200) {
 		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
 	}
 	if len(req.Payload) > 65536 {

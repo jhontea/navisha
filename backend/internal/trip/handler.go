@@ -230,7 +230,7 @@ func (h *Handler) UpdateDayNotes(c echo.Context, userID string) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
 	// Loop 43: validate and sanitize day notes.
-	if len(req.Notes) > 10000 {
+	if sanitize.TooLong(req.Notes, 10000) {
 		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
 	}
 	req.Notes = sanitize.Text(req.Notes)
