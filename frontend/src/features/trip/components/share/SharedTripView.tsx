@@ -1,5 +1,6 @@
 "use client"
 
+import { Chip } from "@/components/Chip"
 import { SegmentedControl } from "@/components/SegmentedControl"
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
@@ -9,6 +10,7 @@ import { Compass, List, Map as MapIcon, MapPin } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ItineraryFocusProvider, useItineraryFocus } from "@/features/activity/ItineraryFocus"
+import { colorForDay } from "@/features/map/components/mapColors"
 import { formatTripRange } from "../../lib/home"
 import { getTripDateMetrics } from "../../lib/status"
 import { resolveTripCover } from "../../lib/cover"
@@ -97,6 +99,8 @@ function Hero({ trip }: { trip: PublicItinerary }) {
 
 function Body({ trip }: { trip: PublicItinerary }) {
   const [mobileView, setMobileView] = useState<"list" | "map">("list")
+  // Day shown on the phone map; null = every day.
+  const [mobileMapDay, setMobileMapDay] = useState<string | null>(null)
   const { activeDayId, setActiveDayId, selectedActivityId, selectActivity } = useItineraryFocus()
   // One day open at first: Day 1 when rendered, then today's day once the
   // browser knows the date (the server may be in another time zone).
@@ -151,8 +155,24 @@ function Body({ trip }: { trip: PublicItinerary }) {
       )}
 
       {mobileView === "map" && (
-        <div className="h-[70vh] overflow-hidden rounded-xl border lg:hidden">
-          <SharedTripMap days={trip.days} />
+        <div className="flex flex-col gap-3 lg:hidden">
+          <div role="group" aria-label="Show day" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+            <Chip pressed={mobileMapDay === null} onClick={() => setMobileMapDay(null)}>
+              All days
+            </Chip>
+            {trip.days.filter(dayHasPlaces).map((d) => {
+              const pressed = mobileMapDay === d.id
+              return (
+                <Chip key={d.id} pressed={pressed} onClick={() => setMobileMapDay(pressed ? null : d.id)}>
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForDay(d.day_number) }} aria-hidden="true" />
+                  Day {d.day_number}
+                </Chip>
+              )
+            })}
+          </div>
+          <div className="h-[65vh] overflow-hidden rounded-xl border">
+            <SharedTripMap days={trip.days} dayId={mobileMapDay} />
+          </div>
         </div>
       )}
 
