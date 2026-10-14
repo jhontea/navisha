@@ -247,10 +247,14 @@ func (h *Handler) retryAroundFoundPlaces(ctx context.Context, near NearSearcher,
 	// Retry places with nothing specific, and places whose result is far
 	// from the rest of the trip (a namesake in another country).
 	var missing []resolveItem
+	farAway := map[string]bool{} // decided before the goroutines below write results
 	for _, item := range items {
 		s := firstSpecific(item)
-		if s == nil || distanceKm(anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm {
+		if s == nil {
 			missing = append(missing, item)
+		} else if distanceKm(anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm {
+			missing = append(missing, item)
+			farAway[item.key] = true
 		}
 	}
 	if len(missing) == 0 {
@@ -276,7 +280,7 @@ func (h *Handler) retryAroundFoundPlaces(ctx context.Context, near NearSearcher,
 			}
 			found, err := searchQueries(ctx, near, queries, anchor, anchorRadiusMeters)
 			if err != nil || !hasSpecific(found) {
-				if s := firstSpecific(item); s != nil && distanceKm(anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm {
+				if farAway[item.key] {
 					mu.Lock()
 					results[item.key] = []Suggestion{} // a far-away namesake is worse than nothing
 					mu.Unlock()

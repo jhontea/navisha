@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -109,11 +110,19 @@ type fakeNearClient struct {
 	fakeAutocompleteClient
 	cities  map[string]*Point
 	near    map[string][]Suggestion // by query text
+	mu      sync.Mutex
 	queries []string
 }
 
-func (f *fakeNearClient) SearchNear(_ context.Context, query, _ string, _ Point, _ int) ([]Suggestion, error) {
+// record notes a query; Resolve searches from several goroutines.
+func (f *fakeNearClient) record(query string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.queries = append(f.queries, query)
+}
+
+func (f *fakeNearClient) SearchNear(_ context.Context, query, _ string, _ Point, _ int) ([]Suggestion, error) {
+	f.record(query)
 	return f.near[query], nil
 }
 
@@ -189,7 +198,7 @@ type areaThenPlaceClient struct {
 }
 
 func (f *areaThenPlaceClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
-	f.queries = append(f.queries, query)
+	f.record(query)
 	if center.Lat == 1 { // the wrong "Lembang"
 		return []Suggestion{{Name: "Lembang", ResultType: "city", NearCity: true}}, nil
 	}
@@ -222,7 +231,7 @@ type anchorClient struct {
 }
 
 func (f *anchorClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
-	f.queries = append(f.queries, query)
+	f.record(query)
 	switch {
 	case query == "Seminyak Village" && center.Lat > 20: // around the "Bali" in Taiwan
 		return []Suggestion{{ExternalID: "tw", Name: "Seminary", ResultType: "amenity", NearCity: true, Latitude: 25.1, Longitude: 121.4}}, nil
