@@ -68,3 +68,28 @@ func TestOptional(t *testing.T) {
 		t.Errorf("Optional(\"hello\") = %q, want %q", plain, "hello")
 	}
 }
+
+func TestText_KeepsParagraphs(t *testing.T) {
+	tests := map[string]string{
+		"para 1\n\npara 2":       "para 1\n\npara 2",
+		"para 1\r\n\r\npara 2":   "para 1\n\npara 2",
+		"a\n\n\n\nb":             "a\n\nb",
+		"a   b\t\tc":             "a b c",
+		"line  \nnext":           "line\nnext",
+		"<p>one</p>\n<p>two</p>": "one\ntwo",
+	}
+	for in, want := range tests {
+		if got := Text(in); got != want {
+			t.Errorf("Text(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestTooLong_CountsCharacters(t *testing.T) {
+	if TooLong("東京タワー", 5) {
+		t.Error("5 Japanese characters must fit a 5-character limit")
+	}
+	if !TooLong("東京タワーへ", 5) {
+		t.Error("6 characters must exceed a 5-character limit")
+	}
+}

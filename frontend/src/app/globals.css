@@ -18,54 +18,14 @@ html {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
-  .font-geist {
-    font-family: 'Geist', var(--font-geist-sans), sans-serif;
-  }
-
   :where(i, em, .italic) {
     font-family: var(--font-inter-italic), var(--font-inter), sans-serif;
-  }
-
-  /* Shared input style — used by TripForm, GenerateChatWizard, and form pages.
-     Keeps the 200+ char Tailwind string DRY and consistent. */
-  .input-base {
-    @apply w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md text-on-surface transition-all;
-    @apply focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary;
-    @apply placeholder:text-on-surface-variant/50;
-    @apply disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60;
-    @apply aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-destructive/20;
-  }
-
-  /* Form input focus ring matching design system */
-  .form-input-focus:focus {
-    outline: none;
-    border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 1px hsl(var(--primary));
   }
 
   /* Native controls inside forms share the same non-interactive treatment. */
   form :where(input, textarea, select):disabled {
     cursor: not-allowed;
     opacity: 0.6;
-  }
-
-  /* Iter 2 — custom scrollbar (thinner, softer thumb) */
-  .custom-scrollbar::-webkit-scrollbar,
-  .sidebar-scroll::-webkit-scrollbar {
-    width: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track,
-  .sidebar-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb,
-  .sidebar-scroll::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.25);
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
-  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.4);
   }
 
   /* Native date input — remove default calendar icon overlap */
@@ -89,7 +49,7 @@ html {
 
 @layer base {
   :root {
-    /* ── Original Blue Palette (MD3) ── */
+    /* ── Base palette (light only) ── */
     --background: 240 33% 98%;
     --foreground: 222.2 47.4% 11.2%;
     --card: 0 0% 100%;
@@ -138,96 +98,8 @@ html {
     --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
     --shadow-overlay: 0 10px 30px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
 
-    /* Iter 4 — --glass-bg needs to be an RGB triplet for rgba() usage */
-    --glass-bg: 255 255 255;
-
-    /* ── Chromatic Accent Tokens (pure blue/cool spectrum) ── */
-    --chromatic-primary: 215 100% 36%;
-    --chromatic-primary-light: 215 80% 55%;
-    --chromatic-ocean: 185 80% 40%;
-    --chromatic-ocean-end: 200 80% 50%;
-    --chromatic-aurora: 250 70% 55%;
-    --chromatic-sky: 200 90% 60%;
-    --chromatic-mint: 170 65% 48%;
-    --chromatic-ice: 210 60% 70%;
-    --chromatic-sunset: 215 100% 36%;
-    --chromatic-sunset-end: 250 70% 55%;
-    /* Legacy warm token names — now mapped to cool colors */
-    --chromatic-amber: 170 65% 48%;
-    --chromatic-coral: 200 90% 60%;
-    --chromatic-gold: 210 60% 70%;
-
-    /* ── Glassmorphism Tokens ── */
-    --glass-blur-sm: 8px;
-    --glass-blur: 14px;
-    --glass-blur-lg: 24px;
-    --glass-opacity-1: 0.06;
-    --glass-opacity-2: 0.12;
-    --glass-opacity-3: 0.22;
-    --glass-border-opacity: 0.14;
-    --glass-highlight-opacity: 0.30;
-
-    /* ── Depth / Elevation Scale ── */
-    --elevation-0: none;
-    --elevation-1: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-    --elevation-2: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
-    --elevation-3: 0 8px 24px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.05);
-    --elevation-4: 0 16px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06);
-
-    /* ── Z-Index Scale ── */
-    --z-base: 0;
-    --z-dropdown: 100;
-    --z-sticky: 200;
-    --z-overlay: 300;
-    --z-modal: 400;
+    /* Toasts sit above dialogs and sheets. */
     --z-toast: 500;
-
-    /* ── Legacy MD3 tokens ── */
-    --on-primary: 0 0% 100%;
-    --on-secondary-container: 210 14% 35%;
-    --on-background: 222.2 47.4% 11.2%;
-    --on-surface-variant: 220 13% 30%;
-    --on-tertiary-fixed-variant: 24 88% 22%;
-    --on-primary-fixed-variant: 215 100% 27%;
-    --surface-dim: 230 20% 88%;
-    --surface-container-highest: 230 20% 92%;
-    --outline: 220 13% 47%;
-    --error: 0 72% 42%;
-    --surface-tint: 215 100% 36%;
-    --tertiary-fixed-dim: 24 100% 72%;
-    --error-container: 0 100% 94%;
-    --on-primary-fixed: 215 100% 10%;
-    --tertiary: 24 88% 32%;
-    --primary-fixed: 230 100% 92%;
-    --surface-container-low: 240 33% 96%;
-    --secondary-fixed: 210 33% 88%;
-    --inverse-on-surface: 240 33% 98%;
-    --secondary-container: 210 33% 88%;
-    --inverse-primary: 215 100% 76%;
-    --budget-green: 120 100% 90%;
-    --stay-purple: 260 100% 94%;
-    --inverse-surface: 240 13% 20%;
-    --surface-container: 240 33% 94%;
-    --on-secondary: 0 0% 100%;
-    --surface-container-high: 230 20% 90%;
-    --secondary-fixed-dim: 210 33% 78%;
-    --transport-blue: 210 100% 94%;
-    --on-error: 0 0% 100%;
-    --on-error-container: 0 100% 22%;
-    --on-surface: 222.2 47.4% 11.2%;
-    --note-yellow: 60 100% 94%;
-    --on-secondary-fixed-variant: 210 14% 22%;
-    --surface-container-lowest: 0 0% 100%;
-    --destructive-red: 0 72% 52%;
-    --on-tertiary-container: 24 100% 98%;
-    --primary-fixed-dim: 215 100% 76%;
-    --on-primary-container: 215 100% 98%;
-    --outline-variant: 220 13% 82%;
-    --surface-bright: 240 33% 98%;
-    --on-tertiary-fixed: 24 88% 10%;
-    --on-tertiary: 0 0% 100%;
-    --on-background: 222.2 47.4% 11.2%;
-    --surface-variant: 230 20% 92%;
   }
 
   /* Light only: there is no dark theme, so keep native controls (date
@@ -250,101 +122,10 @@ html {
   .text-balance {
     text-wrap: balance;
   }
-  /* D1: gradient text is neutralized to solid primary. The class names stay
-     until components are cleaned up (D2/D4); do not use them in new code. */
-  .text-gradient,
-  .text-gradient-sunset,
-  .text-gradient-ocean {
-    /* !important: these classes are paired with text-transparent and
-       bg-gradient-* utilities in components. */
-    color: hsl(var(--primary)) !important;
-    background-image: none !important;
-    -webkit-text-fill-color: hsl(var(--primary)) !important;
-  }
   /* Tabular numbers for data displays */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
-  /* Trip card placeholder gradient */
-  .trip-cover-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(215, 100%, 60%) 40%, hsl(215, 100%, 80%) 70%, hsl(230, 100%, 92%) 100%);
-  }
-
-  /* Iter 7 — font-display shorthand for headings */
-  .font-display {
-    font-family: 'Inter', var(--font-inter), sans-serif;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    letter-spacing: -0.02em;
-  }
-
-  /* Iter 8 — interactive button press feel */
-  .press-sm {
-    @apply transition-transform active:scale-[0.97];
-  }
-  .press-md {
-    @apply transition-transform active:scale-[0.95];
-  }
-}
-
-/* ── D1: legacy decorative utilities, neutralized ──
-   These class names are still used across components. Rather than editing
-   every file now, they render as plain surfaces; components drop the class
-   names when they are rebuilt (D2/D4). Do not use them in new code — use
-   bg-card + border + shadow-card instead (docs/DESIGN_SYSTEM.md). */
-
-/* Shadows: every legacy variant collapses to the single card level. */
-.shadow-soft,
-.soft-shadow,
-.shadow-chromatic,
-.trip-card-shadow {
-  box-shadow: var(--shadow-card);
-}
-.trip-card-hover {
-  transition: box-shadow 150ms ease;
-}
-.trip-card-hover:hover {
-  box-shadow: var(--shadow-overlay);
-}
-
-/* Glass: solid card surface, hairline border, no blur. */
-.glass-sm,
-.glass,
-.glass-lg,
-.glass-bg,
-.glass-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-}
-.glass,
-.glass-lg,
-.glass-card {
-  box-shadow: var(--shadow-card);
-}
-.glass-border {
-  border: 1px solid hsl(var(--border));
-}
-.glass-highlight {
-  position: relative;
-}
-
-/* Decorative motion and background orbs are removed. */
-.animate-float,
-.animate-float-orb {
-  animation: none;
-}
-.landing-orb,
-.auth-orb,
-.dashboard-ambient {
-  display: none;
-}
-
-/* Minimum readable text size: legacy 9–11px arbitrary sizes render at 12px.
-   New code must use the type scale (text-xs and up); lint warns on text-[Npx]. */
-.text-\[9px\],
-.text-\[10px\],
-.text-\[11px\] {
-  font-size: 0.75rem !important;
-  line-height: 1rem;
 }
 
 /* Google Places Autocomplete dropdown — ensure it's above everything */
@@ -365,7 +146,7 @@ html {
   transition: background-color 0.1s;
 }
 
-/* App feedback toast — clear of the mobile bottom nav and aligned with the glass UI. */
+/* App feedback toast — clear of the mobile bottom nav. */
 .navisha-toast-container {
   position: fixed;
   right: 1rem;
@@ -390,8 +171,7 @@ html {
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.35;
-  box-shadow: var(--elevation-3);
-  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-overlay);
   opacity: 0;
   transform: translateY(8px) scale(0.98);
   transition: opacity 180ms ease, transform 180ms ease;
@@ -424,7 +204,7 @@ html {
 
 .navisha-toast-info {
   border-color: hsl(var(--primary) / 0.35);
-  background: hsl(var(--card) / 0.88);
+  background: hsl(var(--card));
 }
 
 .navisha-toast-error {
@@ -459,145 +239,13 @@ html {
   color: hsl(var(--primary));
 }
 
-/* ── Page & element entrance animations ── */
+/* ── Page entrance animation ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-@keyframes shimmer-sweep {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Iter 8 — pop: scale-in + subtle spring feel */
-@keyframes pop {
-  0%   { opacity: 0; transform: scale(0.92); }
-  60%  { transform: scale(1.03); }
-  100% { opacity: 1; transform: scale(1); }
-}
-.animate-pop {
-  animation: pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out both;
-}
-.animate-slide-up {
-  animation: slideUp 0.35s ease-out both;
-}
-.animate-fade-in-up {
-  animation: fadeInUp 0.4s ease-out both;
-}
-.animate-scale-in {
-  animation: scaleIn 0.25s ease-out both;
-}
-
-/* Staggered children — apply to parent, children get delays */
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
-
-/* Shimmer skeleton loading */
-.skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--muted)) 25%,
-    hsl(var(--muted-foreground) / 0.15) 50%,
-    hsl(var(--muted)) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-/* No-scrollbar utility */
-.no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Skip initial layout/paint for landing sections below the viewport. */
-.render-deferred {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 900px;
-}
-
-/* Large animated blur filters are expensive on mobile GPUs. */
-@media (pointer: coarse) {
-  .landing-orb,
-  .auth-orb {
-    animation: none !important;
-    filter: blur(72px) !important;
-  }
-}
-
-/* WebKit on iPhone pays a high compositing cost for large translucent layers.
-   Preserve visual hierarchy with opaque fallbacks and remove decoration-only motion. */
-@supports (-webkit-touch-callout: none) {
-  @media (pointer: coarse) {
-    .glass-sm,
-    .glass,
-    .glass-lg,
-    .glass-bg,
-    .glass-card,
-    .navisha-toast {
-      background: hsl(var(--card) / 0.96) !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-
-    .backdrop-blur,
-    .backdrop-blur-sm,
-    .backdrop-blur-md,
-    .backdrop-blur-xl,
-    .backdrop-blur-2xl {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-
-    .landing-orb,
-    .auth-orb,
-    .dashboard-ambient {
-      display: none !important;
-    }
-
-    .animate-float,
-    .animate-float-orb,
-    .animate-fade-in,
-    .animate-fade-in-up,
-    .animate-slide-up,
-    .animate-scale-in {
-      animation: none !important;
-    }
-
-    body {
-      background-attachment: scroll;
-    }
-  }
 }
 
 /* ── Reduced Motion (accessibility) ── */
@@ -610,15 +258,8 @@ html {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-float,
-  .animate-float-orb,
   .animate-fade-in,
-  .animate-slide-up,
-  .animate-fade-up,
-  .animate-shimmer,
-  .animate-gradient-shift,
-  .animate-pop,
-  .skeleton-shimmer {
+  .animate-shimmer {
     animation: none !important;
   }
 }

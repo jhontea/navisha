@@ -414,3 +414,44 @@ func TestHandlerDelete(t *testing.T) {
 		})
 	}
 }
+
+func callWithBody(t *testing.T, fn func(echo.Context, string) error, tripID, body string) (*httptest.ResponseRecorder, error) {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/trips/"+tripID+"/summary", strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := echo.New().NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(tripID)
+	c.Set(middleware.UserIDKey, testUser)
+	return rec, middleware.WithUser(fn)(c)
+}
+
+func TestHandlerGenerate_Language(t *testing.T) {
+	t.Run("default is Indonesian", func(t *testing.T) {
+		hs := newHarness(t)
+		if _, err := call(t, hs.h.Generate, http.MethodPost, "t1", testUser); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(hs.llm.lastSystem, "BAHASA OUTPUT") {
+			t.Error("no language must keep the Indonesian prompt")
+		}
+	})
+	t.Run("en asks for English", func(t *testing.T) {
+		hs := newHarness(t)
+		if _, err := callWithBody(t, hs.h.Generate, "t1", `{"language":"en"}`); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(hs.llm.lastSystem, "bahasa Inggris") || !strings.Contains(hs.llm.lastSystem, "## Overview") {
+			t.Error("language en must add the English output instruction")
+		}
+	})
+	t.Run("unknown language is 400 and uses no quota", func(t *testing.T) {
+		hs := newHarness(t)
+		_, err := callWithBody(t, hs.h.Generate, "t1", `{"language":"fr"}`)
+		wantHTTPErr(t, err, http.StatusBadRequest)
+		if hs.llm.called || hs.redis.used(testUser) != 0 {
+			t.Error("invalid language must not call the LLM or use quota")
+		}
+	})
+}
