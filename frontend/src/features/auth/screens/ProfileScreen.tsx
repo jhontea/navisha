@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { UserAvatar } from "@/components/UserAvatar"
 import {
@@ -98,16 +99,15 @@ export function ProfileScreen() {
               </>
             )}
 
-            <button
+            <Button
               type="button"
               onClick={() => logout()}
               disabled={loggingOut}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-2.5 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive disabled:opacity-50"
               aria-busy={loggingOut}
-            >
+variant="destructive" className="mt-5 w-full">
               <LogOut className="h-4 w-4" aria-hidden="true" />
               {loggingOut ? "Signing out…" : "Sign out"}
-            </button>
+            </Button>
           </div>
         </aside>
 

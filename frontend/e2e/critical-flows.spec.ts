@@ -50,7 +50,7 @@ test.describe("critical flows", () => {
     await page.getByRole("menuitem", { name: /Add activity/ }).click()
 
     const sheet = page.getByRole("dialog")
-    await sheet.getByRole("group", { name: "Activity type" }).getByRole("button", { name: "Note" }).click()
+    await sheet.getByRole("radiogroup", { name: "Activity type" }).getByRole("radio", { name: "Note" }).click()
     await sheet.locator("#activity-title").fill("Pack the rail pass")
     await sheet.getByPlaceholder("Write your notes here…").fill("Passport and charger too.")
     await sheet.getByRole("button", { name: "Add activity" }).click()

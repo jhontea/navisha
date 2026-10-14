@@ -1,5 +1,7 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/NativeSelect"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -16,7 +18,7 @@ import {
   fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
 import { FormActions } from "@/components/forms/FormActions"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { getInclusiveDayCount } from "../lib/dates"
 import type { CreateTripInput, Trip } from "../types"
 import { canRenderTripCover, getDefaultTripCover } from "../lib/cover"
@@ -139,12 +141,13 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       {/* Trip Title */}
       <div className="space-y-1.5">
         <FormFieldLabel htmlFor="trip-title" required>Title</FormFieldLabel>
-        <input
+        <Input
+            variant="bare"
           id="trip-title"
           aria-required="true"
           aria-invalid={Boolean(errors.title)}
           aria-describedby={errors.title ? "trip-title-error" : undefined}
-          className={`${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
+          className={`h-auto ${inputBase} ${errors.title ? "border-destructive focus:ring-destructive/30" : "border-border/50"}`}
           placeholder="e.g., Summer in Tokyo"
           {...register("title")}
         />
@@ -203,13 +206,9 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               className="h-full w-full object-cover"
               onError={() => setCoverPreview(null)}
             />
-            <button
-              type="button"
-              onClick={() => setCoverPreview(null)}
-              className="absolute right-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-medium text-white hover:bg-black/70"
-            >
-              Remove
-            </button>
+            <Button type="button" variant="secondary" size="xs" onClick={() => setCoverPreview(null)} className="absolute right-2 top-2">
+              Remove cover
+            </Button>
           </div>
         )}
       </div>
@@ -294,14 +293,14 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               <p className="mt-1 text-sm text-muted-foreground">
                 You can add travel preferences before Navisha generates the draft.
               </p>
-              <button
+              <Button
                 type="button"
                 onClick={continueWithAI}
-                className={buttonVariants({ className: "mt-3" })}
+                className="mt-3"
               >
                 <Sparkles aria-hidden="true" />
                 Continue with AI
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -319,13 +318,13 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             <CreditCard className="h-5 w-5 text-muted-foreground pointer-events-none" aria-hidden="true" />
           </div>
           <span className="h-6 w-px bg-border shrink-0" />
-          <input
+          <Input
             id="budget"
             type="text"
             inputMode="numeric"
             aria-invalid={Boolean(errors.budget)}
             aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
-            className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
+            className="h-auto flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {
@@ -351,7 +350,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             name="base_currency"
             control={control}
             render={({ field }) => (
-              <select
+              <NativeSelect
                 id="currency"
                 value={field.value}
                 onChange={field.onChange}
@@ -372,7 +371,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                     </option>
                   ))
                 )}
-              </select>
+              </NativeSelect>
             )}
           />
           <ChevronDown

@@ -1,7 +1,9 @@
 "use client"
 
+import { SelectableRow } from "@/components/SelectableRow"
+import { Chip } from "@/components/Chip"
 import { useState } from "react"
-import { Check, Loader2, MapPin, Sparkles, X } from "lucide-react"
+import { Loader2, MapPin, Sparkles, X } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +13,6 @@ import type { ActivityDraft, DayPreview, TripDraft } from "@/features/trip/types
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { toast } from "@/lib/toast"
-import { cn } from "@/lib/utils"
 import { activityApi } from "../api"
 import type { CreateActivityInput } from "../types"
 
@@ -223,14 +224,13 @@ export function DayAIPlanner({
 
   if (!open) {
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex w-full items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary shadow-sm transition-all hover:border-primary/50 hover:from-primary/15 hover:via-chromatic-aurora/15 hover:to-chromatic-sky/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
+variant="outline" className="w-full justify-start border-primary/30 text-primary">
         <Sparkles className="h-4 w-4 transition-transform duration-200 group-hover:rotate-12" aria-hidden="true" />
         {hasAnchors ? "Build around existing activities" : "Plan this day with AI"}
-      </button>
+      </Button>
     )
   }
 
@@ -248,9 +248,9 @@ export function DayAIPlanner({
               : "AI will suggest a balanced day. Nothing is saved yet."}
           </p>
         </div>
-        <button type="button" onClick={closePlanner} disabled={isGenerating || isApplying} aria-label="Close AI planner" className="rounded-lg p-1.5 text-muted-foreground hover:bg-background hover:text-foreground">
+        <Button type="button" onClick={closePlanner} disabled={isGenerating || isApplying} aria-label="Close AI planner" variant="ghost" size="icon-sm" className="text-muted-foreground">
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {!preview ? (
@@ -268,20 +268,9 @@ export function DayAIPlanner({
                 {DAY_INTENTS.map((intent) => {
                   const selected = selectedIntents.has(intent.id)
                   return (
-                    <button
-                      key={intent.id}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => toggleIntent(intent.id)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                        selected
-                          ? "border-primary/40 bg-primary/10 text-primary shadow-sm shadow-primary/5"
-                          : "border-border/50 bg-background text-muted-foreground hover:border-primary/30 hover:text-primary",
-                      )}
-                    >
+                    <Chip key={intent.id} variant="option" pressed={selected} onClick={() => toggleIntent(intent.id)}>
                       {intent.label}
-                    </button>
+                    </Chip>
                   )
                 })}
               </div>
@@ -316,48 +305,25 @@ export function DayAIPlanner({
             ) : (
               <span />
             )}
-            <button
-              type="button"
-              onClick={toggleAllSuggestions}
-              disabled={isApplying}
-              className="shrink-0 rounded-full px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-            >
+            <Button variant="ghost" size="sm" onClick={toggleAllSuggestions} disabled={isApplying} className="shrink-0 text-primary">
               {allSelected ? "Clear all" : "Select all"}
-            </button>
+            </Button>
           </div>
           <ul className="space-y-2">
             {preview.activities.map((activity) => (
               <li key={suggestionKey(activity)}>
-                <button
-                  type="button"
-                  aria-pressed={selectedKeys.has(suggestionKey(activity))}
-                  onClick={() => toggleSuggestion(activity)}
+                <SelectableRow
+                  selected={selectedKeys.has(suggestionKey(activity))}
+                  onToggle={() => toggleSuggestion(activity)}
                   disabled={isApplying}
-                  className={cn(
-                    "flex w-full gap-3 rounded-xl border p-3 text-left transition-all disabled:opacity-60",
-                    selectedKeys.has(suggestionKey(activity))
-                      ? "border-primary/35 bg-primary/5 shadow-sm shadow-primary/5"
-                      : "border-border/40 bg-background opacity-65 hover:opacity-100",
-                  )}
                 >
-                  <span
-                    className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
-                      selectedKeys.has(suggestionKey(activity))
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background text-transparent",
-                    )}
-                    aria-hidden="true"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </span>
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-foreground">{activity.title}</span>
+                    <span className="block text-sm font-medium text-foreground">{activity.title}</span>
                     <span className="block text-xs text-muted-foreground">{activity.start_time}–{activity.end_time} · {activity.location_name}</span>
                     {activity.notes && <span className="mt-1 block text-xs text-muted-foreground">{activity.notes}</span>}
                   </span>
-                </button>
+                </SelectableRow>
               </li>
             ))}
           </ul>

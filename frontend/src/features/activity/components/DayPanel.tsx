@@ -1,10 +1,11 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Check, CheckSquare, ChevronDown, LoaderCircle, MoreHorizontal, Pencil, X } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
+import { buttonVariants, Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -175,22 +176,22 @@ export function DayPanel({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <button
+        <Button
           type="button"
           onClick={toggleExpanded}
           aria-expanded={expanded}
           aria-controls={`day-panel-${dayId}`}
           aria-label={`${expanded ? "Collapse" : "Expand"} Day ${dayNumber}`}
-          className={buttonVariants({ variant: "ghost", size: "icon", className: "shrink-0 text-muted-foreground" })}
+          variant="ghost" size="icon" className="shrink-0 text-muted-foreground"
         >
           <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", expanded && "rotate-180")} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
 
       {editingTitle && (
         <div className="px-3 pb-3 sm:px-4">
           <div className="flex items-center gap-1.5">
-            <input
+            <Input
               value={titleDraft}
               onChange={(event) => setTitleDraft(event.target.value)}
               onKeyDown={(event) => {
@@ -209,28 +210,28 @@ export function DayPanel({
               placeholder="e.g. Arrival & Shibuya nights"
               className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:opacity-60"
             />
-            <button
+            <Button
               type="button"
               onClick={() => void saveTitle()}
               disabled={updateTitle.isPending}
               aria-label="Save day title"
-              className={buttonVariants({ variant: "ghost", size: "icon", className: "shrink-0 text-primary" })}
+              variant="ghost" size="icon" className="shrink-0 text-primary"
             >
               {updateTitle.isPending ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Check className="h-4 w-4" aria-hidden="true" />
               )}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={cancelTitleEdit}
               disabled={updateTitle.isPending}
               aria-label="Cancel editing day title"
-              className={buttonVariants({ variant: "ghost", size: "icon", className: "shrink-0 text-muted-foreground" })}
+              variant="ghost" size="icon" className="shrink-0 text-muted-foreground"
             >
               <X className="h-4 w-4" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
           {titleError && (
             <p id={`day-title-error-${dayId}`} className="mt-1 text-xs text-destructive" role="alert">

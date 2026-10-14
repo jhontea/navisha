@@ -1,5 +1,8 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Chip } from "@/components/Chip"
 import { useId, useRef, useState } from "react"
 import { Label } from "@/components/ui/label"
 import {
@@ -12,7 +15,6 @@ import { useConvert, useSupportedCurrencies } from "../hooks/useCurrency"
 import { MaterialIcon } from "@/components/MaterialIcon"
 import { getCurrencyLabel } from "@/lib/currency"
 import { CurrencyBadge } from "./CurrencyBadge"
-import { cn } from "@/lib/utils"
 import { useRecentConversionsStore } from "../store"
 
 // Quick-preset amounts for fast conversion without typing.
@@ -108,7 +110,8 @@ export function CurrencyConverter() {
               </SelectContent>
             </Select>
           </div>
-          <input
+          <Input
+            variant="bare"
             id={amountId}
             type="number"
             inputMode="decimal"
@@ -117,7 +120,7 @@ export function CurrencyConverter() {
             placeholder="0.00"
             aria-label={`Amount in ${getCurrencyLabel(from, options.find(o => o.code === from)?.name)}`}
             maxLength={12}
-            className="w-full min-w-0 bg-transparent border-none text-3xl leading-tight md:text-display md:leading-[56px] font-display text-foreground focus:ring-0 p-0"
+            className="h-auto w-full min-w-0 bg-transparent border-none text-3xl leading-tight md:text-display md:leading-[56px] font-display text-foreground focus:ring-0 p-0"
           />
           <p className="text-label-md font-label-md text-outline mt-2">
             {getCurrencyLabel(from, options.find(o => o.code === from)?.name)}
@@ -125,14 +128,13 @@ export function CurrencyConverter() {
         </div>
 
         {/* Swap Button */}
-        <button
+        <Button
           type="button"
           onClick={swap}
           aria-label="Swap currencies"
-          className="swap-button z-10 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all duration-300 hover:shadow-xl rotate-90 md:rotate-0 md:hover:rotate-180 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:absolute md:left-1/2 md:-translate-x-1/2"
-        >
+size="icon-lg" className="z-10 rounded-full">
           <MaterialIcon name="swap_horiz" size={28} />
-        </button>
+        </Button>
 
         {/* To Card */}
         <div className="w-full md:flex-1 glass rounded-xl p-5 md:p-8 soft-shadow transition-all hover:border-primary/30">
@@ -180,20 +182,15 @@ export function CurrencyConverter() {
       <div className="flex flex-wrap items-center justify-center gap-2">
         <span className="text-xs text-muted-foreground mr-1">Quick:</span>
         {PRESETS.map((p) => (
-          <button
+          <Chip
             key={p}
-            type="button"
+            pressed={amount === String(p)}
             onClick={() => setAmount(String(p))}
             aria-label={`Set amount to ${p}`}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold tabular-nums transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-              amount === String(p)
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
+            className="tabular-nums"
           >
             {p.toLocaleString()}
-          </button>
+          </Chip>
         ))}
       </div>
 
@@ -254,13 +251,12 @@ function RecentConversions({
         <h3 className="text-headline-sm font-headline-sm text-foreground">
           Recent conversions
         </h3>
-        <button
+        <Button
           type="button"
           onClick={onClear}
-          className="text-label-md font-label-md text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
+variant="link" size="sm">
           Clear all
-        </button>
+        </Button>
       </div>
       <ul className="space-y-3">
         {records.map((r) => (
@@ -302,14 +298,13 @@ function RecentConversions({
                 </p>
               </div>
             </button>
-            <button
+            <Button
               type="button"
               onClick={() => onRemove(r.id)}
               aria-label="Remove conversion"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
-            >
+variant="ghost" size="icon-sm" className="shrink-0 text-muted-foreground hover:text-destructive">
               <MaterialIcon name="close" size={18} />
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

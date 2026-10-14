@@ -1,5 +1,6 @@
 "use client"
 
+import { Chip } from "@/components/Chip"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -215,30 +216,17 @@ export function TransportationForm({
                   const selected = field.value === t
                   const Icon = meta.Icon
                   return (
-                    <button
+                    <Chip
                       key={t}
-                      type="button"
-                      aria-pressed={selected}
+                      variant="option"
+                      pressed={selected}
+                      icon={Icon}
                       onClick={() => !lockType && field.onChange(t)}
                       disabled={lockType}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all",
-                        "font-label-md text-sm",
-                        selected
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-border bg-background text-muted-foreground hover:border-primary/40",
-                        lockType && "cursor-default",
-                      )}
+                      className={cn(lockType && "disabled:opacity-100")}
                     >
-                      <Icon
-                        className={cn(
-                          "h-4 w-4",
-                          selected ? "text-primary" : "text-muted-foreground",
-                        )}
-                        aria-hidden="true"
-                      />
                       {meta.label}
-                    </button>
+                    </Chip>
                   )
                 })}
             </div>
@@ -367,11 +355,11 @@ export function TransportationForm({
                 <FormFieldLabel htmlFor="transport-label" optional>Transport label</FormFieldLabel>
                 <div className="relative">
                   <Ticket className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                  <input
+                  <Input
                     id="transport-label"
                     aria-invalid={Boolean(errors.label)}
                     aria-describedby={errors.label ? "transport-label-error" : undefined}
-                    className={cn(
+                    className={cn("h-auto", 
                       "w-full rounded-lg border bg-background py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
                       errors.label ? "border-destructive ring-1 ring-destructive/20" : "border-border",
                     )}
@@ -467,37 +455,6 @@ export function TransportationForm({
 
       {/* Form actions */}
       <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save transport"} />
-      {/*
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex items-center justify-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-60 bg-[length:200%_200%] bg-[position:0%_50%] hover:bg-[position:100%_50%] transition-[background-position] duration-500"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Saving…
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              {initial ? "Save changes" : "Save transport"}
-            </>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isSubmitting}
-          className="px-5 py-2.5 rounded-xl border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
-        >
-          Cancel
-        </button>
-      </div> */}
       </fieldset>
     </form>
   )

@@ -1,5 +1,8 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Chip } from "@/components/Chip"
 import { useEffect, useRef, useState } from "react"
 import { Clock3, Plus, X } from "lucide-react"
 import {
@@ -76,7 +79,7 @@ export function TransportationScheduleFields({
           >
             Departure
           </FormFieldLabel>
-          <input
+          <Input
             id="departure-datetime"
             type="datetime-local"
             aria-required="true"
@@ -84,7 +87,7 @@ export function TransportationScheduleFields({
             disabled={disabled}
             aria-invalid={Boolean(departureError)}
             aria-describedby={departureError ? "departure-error" : undefined}
-            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
+            className={`h-auto w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
               departureError ? "border-destructive" : "border-border"
             }`}
             onChange={(event) => updateDeparture(event.target.value)}
@@ -109,20 +112,19 @@ export function TransportationScheduleFields({
               >
                 Arrival
               </FormFieldLabel>
-              <button
+              <Button
                 type="button"
                 disabled={disabled}
                 onClick={() => {
                   onArrivalChange("")
                   setShowArrival(false)
                 }}
-                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
                 aria-label="Remove arrival time"
-              >
+variant="ghost" size="icon-xs" className="text-muted-foreground">
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
-            <input
+            <Input
               ref={arrivalInputRef}
               id="arrival-datetime"
               type="datetime-local"
@@ -130,7 +132,7 @@ export function TransportationScheduleFields({
               disabled={disabled}
               aria-invalid={Boolean(arrivalError)}
               aria-describedby={arrivalError ? "arrival-error" : undefined}
-              className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
+              className={`h-auto w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
                 arrivalError ? "border-destructive" : "border-border"
               }`}
               onChange={(event) => onArrivalChange(event.target.value)}
@@ -144,36 +146,31 @@ export function TransportationScheduleFields({
             />
             {departure && (
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
+                <Chip
                   disabled={disabled}
                   onClick={() => onArrivalChange(moveArrivalToDay(departure, arrival, 0))}
-                  className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:border-primary/50 hover:text-primary disabled:opacity-60"
                 >
                   Same day
-                </button>
-                <button
-                  type="button"
+                </Chip>
+                <Chip
                   disabled={disabled}
                   onClick={() => onArrivalChange(moveArrivalToDay(departure, arrival, 1))}
-                  className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:border-primary/50 hover:text-primary disabled:opacity-60"
                 >
                   +1 day
-                </button>
+                </Chip>
               </div>
             )}
             <FormFieldError id="arrival-error">{arrivalError}</FormFieldError>
           </div>
         ) : (
-          <button
+          <Button
             type="button"
             disabled={disabled}
             onClick={addArrival}
-            className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-60 md:self-end"
-          >
+variant="outline" className="border-dashed text-muted-foreground">
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add arrival time
-          </button>
+          </Button>
         )}
       </div>
     </section>

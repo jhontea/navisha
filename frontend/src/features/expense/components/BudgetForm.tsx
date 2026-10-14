@@ -97,13 +97,14 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
                 >
                   <cfg.Icon className={cn("h-4 w-4 shrink-0", cfg.text)} aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate text-sm text-foreground">{cfg.label}</span>
-                  <input
+                  <Input
+            variant="bare"
                     inputMode="decimal"
                     value={withSeparators(categories[category] ?? "")}
                     onChange={(e) => setCategories((cur) => ({ ...cur, [category]: clean(e.target.value) }))}
                     placeholder="0"
                     aria-label={`${cfg.label} planned amount`}
-                    className="w-36 min-w-0 bg-transparent text-right text-base tabular-nums text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
+                    className="h-auto w-36 min-w-0 bg-transparent text-right text-base tabular-nums text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
                   />
                 </label>
               )

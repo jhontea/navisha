@@ -1,5 +1,8 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/SegmentedControl"
+import { Chip } from "@/components/Chip"
 import { useState } from "react"
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -12,7 +15,6 @@ import {
 } from "@/components/forms/FormFieldState"
 import { Textarea } from "@/components/ui/textarea"
 import { FormActions } from "@/components/forms/FormActions"
-import { cn } from "@/lib/utils"
 import { LocationAutocomplete } from "./LocationAutocomplete"
 import {
   addMinutesToTime,
@@ -257,33 +259,12 @@ export function ActivityForm({
       )}
       {/* Type switcher — stacked full-width on mobile to avoid horizontal overflow, inline row on sm+ */}
       {!lockType && (
-        <div
-          className="flex flex-col gap-1 rounded-xl border border-border/30 bg-muted/30 p-1 sm:flex-row"
-          role="group"
+        <SegmentedControl
           aria-label="Activity type"
-        >
-          {TYPES.map((t) => {
-            const meta = TYPE_META[t]
-            const selected = type === t
-            return (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setValue("type", t)}
-                className={cn(
-                  "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all duration-150 sm:flex-1 sm:px-3 sm:py-2 sm:text-sm",
-                  selected
-                    ? "bg-background text-foreground shadow-sm border border-border/30"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/50",
-                )}
-              >
-                <meta.Icon className={cn("h-3.5 w-3.5 shrink-0", selected ? "text-primary" : "")} />
-                {meta.label}
-              </button>
-            )
-          })}
-        </div>
+          value={type}
+          onChange={(t) => setValue("type", t)}
+          options={TYPES.map((t) => ({ value: t, label: TYPE_META[t].label, icon: TYPE_META[t].Icon }))}
+        />
       )}
 
       {/* Title — always visible */}
@@ -369,34 +350,27 @@ export function ActivityForm({
                   const end = addMinutesToTime(startTime, duration.minutes)
                   const selected = durationMinutes === duration.minutes
                   return (
-                    <button
+                    <Chip
                       key={duration.minutes}
-                      type="button"
+                      variant="option"
                       disabled={!end}
-                      aria-pressed={selected}
+                      pressed={selected}
                       onClick={() => applyDuration(duration.minutes)}
-                      className={cn(
-                        "rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-                        selected
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/50 bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
-                      )}
                     >
                       {duration.label}
-                    </button>
+                    </Chip>
                   )
                 })}
-                <button
-                  type="button"
-                  aria-pressed={
+                <Chip
+                  variant="option"
+                  pressed={
                     durationMinutes !== null &&
                     !QUICK_DURATIONS.some((duration) => duration.minutes === durationMinutes)
                   }
                   onClick={() => setFocus("end_time")}
-                  className="rounded-lg border border-border/50 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
                 >
                   Custom
-                </button>
+                </Chip>
               </div>
               {durationMinutes !== null && (
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -563,19 +537,18 @@ export function ActivityForm({
                   className="flex-1 h-8 text-sm"
                   {...register(`todo_items.${i}.text`)}
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => todoArr.remove(i)}
                   aria-label="Remove item"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover/item:opacity-100"
-                >
+variant="ghost" size="icon-sm" className="shrink-0 text-muted-foreground hover:text-destructive">
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
           <FormFieldError id="activity-todo-error">{errors.todo_items?.message}</FormFieldError>
-          <button
+          <Button
             type="button"
             onClick={() =>
               todoArr.append({
@@ -584,11 +557,10 @@ export function ActivityForm({
                 completed: false,
               })
             }
-            className="flex w-fit items-center gap-1.5 rounded-lg border border-dashed border-border/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/60 hover:text-primary hover:bg-primary/5 transition-all"
-          >
+variant="ghost" size="sm" className="self-start text-primary">
             <Plus className="h-3.5 w-3.5" />
             Add item
-          </button>
+          </Button>
         </div>
       )}
 

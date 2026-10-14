@@ -1,5 +1,6 @@
 "use client"
 
+import { SegmentedControl } from "@/components/SegmentedControl"
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
@@ -116,23 +117,16 @@ function Body({ trip }: { trip: PublicItinerary }) {
   return (
     <div className="mt-6">
       {hasPlaces && (
-        <div role="group" aria-label="View" className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 lg:hidden">
-          {(["list", "map"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              aria-pressed={mobileView === v}
-              onClick={() => setMobileView(v)}
-              className={cn(
-                "flex h-10 items-center justify-center gap-2 rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                mobileView === v ? "bg-card text-foreground shadow-card" : "text-muted-foreground",
-              )}
-            >
-              {v === "list" ? <List className="h-4 w-4" aria-hidden="true" /> : <MapIcon className="h-4 w-4" aria-hidden="true" />}
-              {v === "list" ? "Itinerary" : "Map"}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          aria-label="View"
+          className="mb-4 lg:hidden"
+          value={mobileView}
+          onChange={setMobileView}
+          options={[
+            { value: "list", label: "Itinerary", icon: List },
+            { value: "map", label: "Map", icon: MapIcon },
+          ]}
+        />
       )}
 
       {mobileView === "map" && (

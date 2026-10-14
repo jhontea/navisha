@@ -1,5 +1,9 @@
 "use client"
 
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/NativeSelect"
+import { Chip } from "@/components/Chip"
 import React, { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -130,25 +134,16 @@ export function ExpenseForm({
                 const opt = CATEGORY_OPTIONS.find((o) => o.value === cat)!
                 const isSelected = field.value === cat
                 return (
-                  <button
+                  <Chip
                     key={cat}
-                    type="button"
-                    aria-pressed={isSelected}
+                    variant="option"
+                    pressed={isSelected}
+                    icon={opt.Icon}
+                    iconClassName={opt.text}
                     onClick={() => field.onChange(cat)}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all",
-                      "font-label-md text-sm",
-                      isSelected
-                        ? cn("border-primary", opt.bg, opt.text)
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40",
-                    )}
-                    >
-                    <opt.Icon
-                      className={cn("h-4 w-4", isSelected ? opt.text : "text-muted-foreground")}
-                      aria-hidden="true"
-                    />
+                  >
                     {opt.label}
-                  </button>
+                  </Chip>
                 )
               })}
             </div>
@@ -171,14 +166,14 @@ export function ExpenseForm({
               />
             )
           })()}
-          <input
+          <Input
             id="expense-title"
             aria-required="true"
             {...register("title")}
             aria-invalid={Boolean(errors.title)}
             aria-describedby={errors.title ? "expense-title-error" : undefined}
             placeholder={CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.placeholder ?? "e.g., Entry fee"}
-            className={cn(
+            className={cn("h-auto", 
               "w-full py-2.5 rounded-lg border bg-background text-foreground",
               "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
               "font-body-md placeholder:text-muted-foreground/60",
@@ -198,7 +193,7 @@ export function ExpenseForm({
             <div className="flex-1 flex flex-col gap-1.5">
               <FormFieldLabel htmlFor="expense-amount" required>Amount</FormFieldLabel>
               <input {...register("amount")} type="hidden" />
-              <input
+              <Input
                 id="expense-amount"
                 aria-required="true"
                 type="text"
@@ -219,7 +214,7 @@ export function ExpenseForm({
                   setDisplayAmount(formatted)
                   setValue("amount", isNaN(num) ? "" : String(num), { shouldValidate: true })
                 }}
-                className={cn(
+                className={cn("h-auto", 
                   "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground",
                   "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
                   "font-body-md placeholder:text-muted-foreground/60",
@@ -234,7 +229,7 @@ export function ExpenseForm({
                 control={control}
                 name="currency"
                 render={({ field }) => (
-                  <select
+                  <NativeSelect
                     id="expense-currency"
                     aria-required="true"
                     {...field}
@@ -249,7 +244,7 @@ export function ExpenseForm({
                     {SUPPORTED_CURRENCIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 )}
               />
               <FormFieldError id="expense-currency-error">{errors.currency?.message}</FormFieldError>
@@ -269,11 +264,11 @@ export function ExpenseForm({
         {/* Date */}
         <div className="flex flex-col gap-1.5">
           <FormFieldLabel htmlFor="expense-date" optional>Date</FormFieldLabel>
-          <input
+          <Input
             id="expense-date"
             {...register("expense_date")}
             type="date"
-            className={cn(
+            className={cn("h-auto", 
               "w-full px-4 py-2.5 rounded-lg border bg-background text-foreground",
               "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
               "font-body-md",
@@ -287,7 +282,7 @@ export function ExpenseForm({
       {/* Note (optional) */}
       <div className="flex flex-col gap-1.5">
         <FormFieldLabel htmlFor="expense-note" optional>Note</FormFieldLabel>
-        <textarea
+        <Textarea
           id="expense-note"
           aria-invalid={Boolean(errors.note)}
           aria-describedby={errors.note ? "expense-note-error" : undefined}

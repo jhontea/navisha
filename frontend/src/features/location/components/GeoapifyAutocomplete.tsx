@@ -1,5 +1,7 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useEffect, useId, useRef, useState } from "react"
 import { Loader2, MapPin, X } from "lucide-react"
 import { resolveMapsLink, searchLocationSuggestions } from "../api"
@@ -208,7 +210,7 @@ export function GeoapifyAutocomplete({
 
   return (
     <div className="relative min-w-0 flex-1">
-      <input
+      <Input
         ref={inputRef}
         id={id}
         disabled={disabled}
@@ -216,7 +218,7 @@ export function GeoapifyAutocomplete({
         aria-describedby={ariaDescribedBy}
         aria-label={ariaLabel}
         aria-required={ariaRequired}
-        className={`w-full pr-10 ${className ?? ""}`}
+        className={`h-auto w-full pr-10 ${className ?? ""}`}
         value={value}
         onChange={(event) => {
           selectedValueRef.current = ""
@@ -255,15 +257,14 @@ export function GeoapifyAutocomplete({
             aria-label="Searching locations"
           />
         ) : value ? (
-          <button
+          <Button
             type="button"
             onClick={clear}
             disabled={disabled}
-            className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label="Clear location"
-          >
+variant="ghost" size="icon-xs" className="text-muted-foreground">
             <X className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </Button>
         ) : null}
       </div>
       {isOpen && (

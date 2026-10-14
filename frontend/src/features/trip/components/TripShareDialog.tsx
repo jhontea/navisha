@@ -1,5 +1,7 @@
 "use client"
 
+import { Input } from "@/components/ui/input"
+import { Chip } from "@/components/Chip"
 import { useEffect, useMemo, useState } from "react"
 import { Check, Copy, Link2, Loader2, ShieldCheck, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -68,7 +70,7 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
           <div className="space-y-4">
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
               <div className="mb-2 flex items-center gap-2 text-sm font-medium"><ShieldCheck className="h-4 w-4 text-primary" /> Active read-only link</div>
-              <div className="flex gap-2"><input readOnly value={url} aria-label="Share link" className="min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs" /><Button onClick={copy} className="rounded-full">{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy"}</Button></div>
+              <div className="flex gap-2"><Input readOnly value={url} aria-label="Share link" className="h-auto min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs" /><Button onClick={copy} className="rounded-full">{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy"}</Button></div>
               <p className="mt-2 text-xs text-muted-foreground">Expires {new Date(link.expires_at).toLocaleString()}</p>
             </div>
             <p className="text-xs text-muted-foreground">Creating another link will immediately disable this one.</p>
@@ -77,7 +79,17 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
           <div className="space-y-3">
             <p className="text-sm font-medium">Link duration</p>
             <div className="grid grid-cols-3 gap-2">
-              {durations.map((item) => <button key={item.value} type="button" aria-pressed={duration === item.value} onClick={() => setDuration(item.value)} className={`rounded-full border px-3 py-2 text-xs font-medium transition ${duration === item.value ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50"}`}>{item.label}</button>)}
+              {durations.map((item) => (
+                <Chip
+                  key={item.value}
+                  variant="option"
+                  pressed={duration === item.value}
+                  onClick={() => setDuration(item.value)}
+                  className="justify-center"
+                >
+                  {item.label}
+                </Chip>
+              ))}
             </div>
             <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">Private notes, budget, expenses, booking references, and profile details are never included.</div>
           </div>

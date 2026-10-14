@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useEffect, useMemo, useState } from "react"
 import {
   APIProvider,
@@ -223,14 +224,13 @@ function Markers({
             {points[openIndex].address && (
               <p className="text-xs">{points[openIndex].address}</p>
             )}
-            <button
+            <Button
               type="button"
               onClick={() => onOpenInMaps(points[openIndex])}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-white"
-            >
+size="xs" className="mt-1">
               <MapPin className="h-3.5 w-3.5" />
               Open in Google Maps
-            </button>
+            </Button>
           </div>
         </InfoWindow>
       )}

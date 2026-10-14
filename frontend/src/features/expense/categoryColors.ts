@@ -1,5 +1,5 @@
 import { Hotel, Bus, UtensilsCrossed, Ticket, Gift, ShoppingBag, Receipt } from "lucide-react"
-import type { ElementType } from "react"
+import type { ComponentType } from "react"
 
 /**
  * Canonical category color map — single source of truth.
@@ -11,7 +11,7 @@ import type { ElementType } from "react"
  */
 export const CATEGORY_COLORS: Record<
   string,
-  { bg: string; text: string; border: string; bar: string; emoji: string; Icon: ElementType; label: string }
+  { bg: string; text: string; border: string; bar: string; emoji: string; Icon: ComponentType<{ className?: string }>; label: string }
 > = {
   accommodation: { bg: "bg-cat-stay/10",      text: "text-cat-stay",      border: "border-l-cat-stay",      bar: "bg-cat-stay",      emoji: "🏨", Icon: Hotel,           label: "Stay"      },
   transport:     { bg: "bg-cat-transport/10", text: "text-cat-transport", border: "border-l-cat-transport", bar: "bg-cat-transport", emoji: "✈️", Icon: Bus,             label: "Transport" },
