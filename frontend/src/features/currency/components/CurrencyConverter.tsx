@@ -264,6 +264,7 @@ variant="link" size="sm">
             key={r.id}
             className="group flex items-center justify-between gap-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 transition-all hover:border-primary/20"
           >
+            {/* eslint-disable-next-line no-restricted-syntax -- whole-row button to reuse a past conversion */}
             <button
               type="button"
               onClick={() => onReuse(r)}

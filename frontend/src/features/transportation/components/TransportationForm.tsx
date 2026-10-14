@@ -315,6 +315,7 @@ export function TransportationForm({
 
       {/* Optional fields stay out of the primary completion path. */}
       <section className="overflow-hidden rounded-xl border border-border/70 bg-muted/10">
+        {/* eslint-disable-next-line no-restricted-syntax -- disclosure header for the optional details section */}
         <button
           type="button"
           aria-expanded={showAdditionalDetails}

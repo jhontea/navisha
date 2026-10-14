@@ -249,6 +249,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       {/* Creation mode — keep manual and AI planning in the same entry flow. */}
       {!initial && (
         <div className="space-y-3">
+          {/* eslint-disable-next-line no-restricted-syntax -- full-width role=switch card for the AI option */}
           <button
             type="button"
             role="switch"

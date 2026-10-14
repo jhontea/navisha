@@ -38,6 +38,7 @@ export function SharedDay({
       aria-labelledby={`day-heading-${day.id}`}
       className={cn("scroll-mt-20 rounded-xl border bg-card", isActive && "lg:border-primary/40")}
     >
+      {/* eslint-disable-next-line no-restricted-syntax -- day header that focuses the map on this day */}
       <button
         type="button"
         onClick={() => setActiveDayId(day.id)}
