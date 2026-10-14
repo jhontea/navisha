@@ -46,7 +46,7 @@ Aturan:
 
 ### Dilarang
 - Hex di komponen (`bg-[#FFEDD5]`, `text-[#7C3AED]`). Lint memberi warning. Tambahkan token kalau memang perlu warna baru.
-- Token `chromatic-*`, `on-*`, `surface-*` (sisa MD3) untuk kode baru. Masih ada di config agar komponen lama tidak rusak.
+- Token warna di luar daftar di atas. Token lama (`chromatic-*`, `on-*`, `surface-*` sisa MD3) sudah dihapus dari config.
 
 ## 3. Tipografi
 
@@ -65,7 +65,7 @@ Aturan:
 
 - Dilarang `text-[Npx]` (lint warning). Ukuran lama 9–11px sementara dipaksa jadi 12px lewat CSS.
 - Angka uang dan statistik: `tabular-nums`.
-- Nama class lama (`text-body-md`, `text-label-sm`, `font-heading`, …) masih ada di komponen lama; jangan dipakai di kode baru.
+- Ukuran teks lama (`text-body-md`, `text-label-sm`, …) sudah dihapus dari config; pakai skala di atas.
 
 ## 4. Spasi & layout
 
@@ -84,7 +84,7 @@ Aturan:
 | Blur | Hanya untuk bar sticky yang menimpa konten. |
 | Gradient | Hanya sebagai fallback cover trip ketika tidak ada foto. |
 
-Utilitas lama `glass*`, `shadow-soft`, `soft-shadow`, `shadow-chromatic`, `trip-card-shadow`, `text-gradient*` sudah **dinetralkan** di `globals.css` (tampil sebagai kartu polos / teks biru). Jangan dipakai di kode baru; dihapus dari komponen saat komponen itu dibangun ulang.
+Utilitas lama `glass*`, `shadow-soft`, `soft-shadow`, `shadow-chromatic`, `trip-card-shadow`, `text-gradient*` dan `input-base` sudah **dihapus** dari `globals.css`.
 
 ## 6. Ikon
 
@@ -103,7 +103,7 @@ Katalog hidup: buka **`/dev/ui`** saat `npm run dev` (tidak ada di production).
 
 | Komponen | Lokasi | Catatan |
 |---|---|---|
-| Button | `components/ui/button.tsx` | Varian `default` (primary solid), `outline`, `secondary`, `ghost`, `destructive` (lembut), `danger` (solid). Ukuran `default` 44px (40px dari md), `sm` 36px, `lg` 48px, `xs` 32px khusus desktop. `gradient`/`glass`/`chromatic` hanya alias lama. |
+| Button | `components/ui/button.tsx` | Varian `default` (primary solid), `outline`, `secondary`, `ghost`, `destructive` (lembut), `danger` (solid). Ukuran `default` 44px (40px dari md), `sm` 36px, `lg` 48px, `xs` 32px khusus desktop. |
 | IconButton | `components/IconButton.tsx` | `label` wajib (jadi `aria-label`); 44px default. |
 | MoneyText / `formatMoney` | `components/MoneyText.tsx`, `lib/money.ts` | Tanpa sen untuk IDR/JPY/KRW/VND, 2 desimal lainnya, `tabular-nums`. `formatCurrency` di `lib/utils` sekarang alias. |
 | StatTile | `components/StatTile.tsx` | Angka + label di kartu netral; `tone` hanya untuk status. |
@@ -111,7 +111,7 @@ Katalog hidup: buka **`/dev/ui`** saat `npm run dev` (tidak ada di production).
 | EmptyState | `components/EmptyState.tsx` | 1 kalimat + 1 CTA; tanpa blob/animasi. |
 | UserAvatar | `components/UserAvatar.tsx` | Foto Google dengan `no-referrer`, fallback inisial. |
 | CurrencyBadge | `features/currency/components/CurrencyBadge.tsx` | Simbol mata uang, pengganti emoji bendera. |
-| Card, Badge, Input, Select, Tabs, Dialog, Skeleton | `components/ui/*` (coss ui) | Varian dekoratif Card (`glass`, `gradient-border`) sudah dinetralkan. |
+| Card, Badge, Input, Select, Tabs, Dialog, Skeleton | `components/ui/*` (coss ui) | Card punya varian `default` dan `elevated`. |
 
 Target berikutnya:
 

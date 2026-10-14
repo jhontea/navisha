@@ -29,7 +29,7 @@ const DestinationAutocomplete = dynamic(
   () => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete),
   {
     ssr: false,
-    loading: () => <div className="input-base h-11 animate-pulse bg-muted/30" aria-hidden="true" />,
+    loading: () => <div className="h-12 w-full animate-pulse rounded-lg border bg-muted/30" aria-hidden="true" />,
   },
 )
 
@@ -74,7 +74,9 @@ interface Props {
   submitLabel?: string
 }
 
-const inputBase = "input-base"
+// Large form field used by the trip forms (16px text, roomy padding).
+const inputBase =
+  "w-full rounded-lg border bg-card px-4 py-3 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
@@ -158,7 +160,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       <div className="space-y-1.5">
         <FormFieldLabel htmlFor="destination" optional>Destination</FormFieldLabel>
         <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
-          style={{ borderColor: errors.destination ? 'hsl(var(--error))' : undefined }}
+          style={{ borderColor: errors.destination ? 'hsl(var(--destructive))' : undefined }}
         >
           {/* Icon area */}
           <div className="flex items-center justify-center px-4 shrink-0">
@@ -173,7 +175,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             render={({ field }) => (
               <DestinationAutocomplete
                 id="destination"
-                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
+                className="flex-1 px-4 py-3 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-muted-foreground/50"
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -313,7 +315,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       <div className="space-y-1.5">
         <FormFieldLabel htmlFor="budget" optional>Budget</FormFieldLabel>
         <div className="flex items-center rounded-lg border bg-background transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden"
-          style={{ borderColor: errors.budget ? 'hsl(var(--error))' : undefined }}
+          style={{ borderColor: errors.budget ? 'hsl(var(--destructive))' : undefined }}
         >
           <div className="flex items-center justify-center px-4 shrink-0">
             <CreditCard className="h-5 w-5 text-muted-foreground pointer-events-none" aria-hidden="true" />
@@ -325,7 +327,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             inputMode="numeric"
             aria-invalid={Boolean(errors.budget)}
             aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
-            className="h-auto flex-1 px-4 py-3 bg-transparent border-0 outline-none font-body-md text-body-md text-foreground placeholder:text-muted-foreground/50"
+            className="h-auto flex-1 px-4 py-3 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-muted-foreground/50"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {
@@ -360,7 +362,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 aria-invalid={Boolean(errors.base_currency)}
                 aria-describedby={errors.base_currency ? "trip-currency-error" : undefined}
                 className={`${inputBase} appearance-none pr-10 ${
-                  errors.base_currency ? "border-error" : "border-border"
+                  errors.base_currency ? "border-destructive" : "border-border"
                 } disabled:opacity-60`}
               >
                 {currenciesLoading ? (

@@ -67,7 +67,7 @@ export function TripHeader({
         )}
 
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-lg font-semibold text-foreground md:text-xl">
+          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">
             {trip.title}
           </h1>
           <p className="line-clamp-2 text-sm text-muted-foreground">
