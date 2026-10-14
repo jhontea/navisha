@@ -318,7 +318,7 @@ export const googleLocationProvider: LocationProvider = {
     const center = destination ? await geocodeDestination(destination) : null
     return candidatesFor(
       queries,
-      (q) => (destination ? `${q.name} ${destination}` : q.name),
+      (q) => [q.name, q.city || destination].filter(Boolean).join(" "),
       center ? boundsAround(center) : null,
     )
   },

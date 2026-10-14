@@ -95,6 +95,10 @@ export interface ActivityDraft {
   start_time: string
   end_time: string
   location_name: string
+  /** Official name as on maps (English or local), for geocoding. */
+  place_query?: string
+  /** "City, Country" where the place is, for geocoding. */
+  city?: string
   address: string
   lat: number | null
   lng: number | null

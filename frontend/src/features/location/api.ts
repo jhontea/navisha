@@ -18,7 +18,7 @@ export function searchLocationSuggestions(
 }
 
 export function resolveLocationSuggestions(
-  items: Array<{ key: string; name: string }>,
+  items: Array<{ key: string; name: string; alt_name?: string; city?: string }>,
   destination: string,
   signal?: AbortSignal,
 ) {

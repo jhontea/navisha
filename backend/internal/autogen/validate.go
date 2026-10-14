@@ -184,9 +184,12 @@ func validateDraft(d *TripDraft, in GenerateInput) error {
 			a.Lng = nil
 			a.Address = ""
 			a.GooglePlaceID = ""
-			// Sanitize category
+			a.PlaceQuery = strings.TrimSpace(a.PlaceQuery)
+			a.City = strings.TrimSpace(a.City)
 			if a.Type == "location" {
 				a.Category = sanitizeCategory(a.Category)
+			} else {
+				a.PlaceQuery, a.City = "", ""
 			}
 			valid = append(valid, a)
 		}
@@ -219,7 +222,7 @@ func logSuspiciousLocations(d *TripDraft, destination string) {
 			if a.Type != "location" {
 				continue
 			}
-			locLower := strings.ToLower(a.LocationName)
+			locLower := strings.ToLower(a.LocationName + " " + a.PlaceQuery + " " + a.City)
 			// Check if any destination word appears in the location name.
 			matched := false
 			for _, w := range destWords {

@@ -54,7 +54,12 @@ export interface DestinationSearchProps {
 /** One place name to look up, with a key to match the results back. */
 export interface PlaceQuery {
   key: string
+  /** Searchable name (official name on maps when known). */
   name: string
+  /** Another name for the same place, e.g. the name shown to the user. */
+  altName?: string
+  /** "City, Country" where the place is; narrows the search to that area. */
+  city?: string
 }
 
 /**

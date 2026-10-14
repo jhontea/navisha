@@ -11,6 +11,10 @@ export interface LocationSuggestion {
   lng: number
   /** Original Google Maps link when the suggestion came from a pasted URL. */
   source_url?: string
+  /** Provider result kind (amenity, building, street, city, ...). */
+  result_type?: string
+  /** True when the search was limited to the place's city. */
+  near_city?: boolean
 }
 
 export interface LocationSuggestionsResponse {

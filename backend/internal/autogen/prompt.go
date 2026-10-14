@@ -63,18 +63,24 @@ Tulis seperti teman yang sudah pernah ke sana: hangat, ringkas, spesifik. Fakta 
 - Usahakan setiap hari memiliki minimal 2 KATEGORI berbeda (kuliner, wisata alam, budaya, dll).
 
 ## ATURAN LOKASI (SANGAT PENTING — DIBACA BERULANG)
-- SEMUA lokasi HARUS berada di dalam kota/area destinasi yang diminta user.
-  Contoh: jika destinasi "Bandung", semua tempat harus di Bandung atau sekitarnya (max ~50km).
+- SEMUA tempat HARUS berada di kota/area destinasi yang diminta user (day trip wajar maks ~100 km).
   JANGAN pernah memasukkan tempat dari kota/negara lain — ini KESALAHAN FATAL.
-- SETIAP "location_name" WAJIB menyertakan nama kota/area destinasi sebagai akhiran.
-  Format: "Nama Tempat, Nama Kota". Contoh benar: "Kopi Toko Djawa, Bandung", "Braga Permai, Bandung".
-  Contoh SALAH: "Chapter Two Cafe" (tanpa kota), "Two Hands Full" (tanpa kota),
-  "Starbucks Reserve Roastery, Tokyo" (kota salah untuk destinasi Bandung).
-- Jika kamu TIDAK YAKIN nama tempat nyata di destinasi yang diminta,
-  JANGAN mengarang tempat yang mungkin ada di kota/negara lain.
-  Sebagai gantinya, gunakan nama GENERIK berbasis kategori yang menyertakan nama kota:
-  Contoh: "Kafe spesialti di Bandung", "Toko Oleh-Oleh Khas Bandung", "Restoran Sunda di Bandung".
-- PENTING: JANGAN mengarang koordinat (lat/lng), address, atau google_place_id.
+- Tipe "location" HANYA untuk SATU tempat nyata dan spesifik yang bisa dicari di Google Maps
+  (punya nama sendiri: masjid, museum, restoran, pasar, taman, pantai, bandara, hotel bernama).
+- DILARANG nama generik/kategori: "Restoran keluarga di Ajyad", "Hotel area Ajyad", "Kafe dekat hotel",
+  "Taman kota", "Restoran Sunda di Bandung". Jika tidak yakin nama tempat spesifik, pilih tempat terkenal
+  yang kamu YAKIN ada, atau jadikan tipe "note".
+- Perjalanan antarkota/rute ("Perjalanan Jeddah ke Makkah"), istirahat, check-in tanpa nama hotel,
+  dan kegiatan tanpa tempat spesifik → tipe "note", bukan "location".
+- "location_name": nama tempat untuk ditampilkan ke user (boleh bahasa Indonesia), TANPA akhiran kota.
+- "place_query": nama resmi tempat PERSIS seperti di Google Maps/OpenStreetMap — nama internasional
+  (bahasa Inggris) atau nama lokal resminya, TANPA kota. Contoh: "Al-Masjid an-Nabawi",
+  "Masjid al-Haram", "King Abdulaziz International Airport", "Kopi Toko Djawa", "Museum Geologi", "Senso-ji".
+- "city": kota/kabupaten lokasi tempat itu BESERTA negaranya, dalam bahasa Inggris, format "Kota, Negara"
+  (contoh: "Mecca, Saudi Arabia", "Medina, Saudi Arabia", "Lembang, Indonesia", "Tokyo, Japan").
+  Untuk trip multi-kota, isi sesuai kota masing-masing tempat.
+- Untuk tipe "note", isi "place_query" dan "city" dengan "".
+- JANGAN mengarang koordinat atau alamat.
 - "notes" harus berisi minimal satu tips praktis (harga estimasi, dress code, perlu booking, dll).
 
 ## ATURAN BUDGET
@@ -230,7 +236,7 @@ func BuildPrompt(in GenerateInput) (system, user string) {
 		d := in.StartDate.AddDate(0, 0, i)
 		ub.WriteString(fmt.Sprintf("  Day %d: %s\n", i+1, d.Format("2006-01-02")))
 	}
-	ub.WriteString("\nPENTING: Setiap location_name HARUS menyertakan nama kota destinasi sebagai akhiran (format: \"Nama Tempat, Nama Kota\"). JANGAN gunakan nama tempat dari kota/negara lain.\n")
+	ub.WriteString("\nPENTING: Setiap \"location\" adalah tempat nyata bernama di destinasi ini, dengan \"place_query\" (nama resmi di peta) dan \"city\". Nama generik dan rute dijadikan \"note\".\n")
 	ub.WriteString("PENTING: Variasikan jenis aktivitas setiap hari. Jangan ulangi jenis yang sama lebih dari 2 hari berturut-turut.\n")
 
 	return system, ub.String()
@@ -250,17 +256,15 @@ func daySpan(start, end time.Time) int {
 // strict mode is enabled so the model adheres to the structure.
 func JSONSchema() any {
 	activityProps := map[string]any{
-		"type":            map[string]any{"type": "string", "enum": []string{"location", "note"}},
-		"title":           map[string]any{"type": "string"},
-		"start_time":      map[string]any{"type": "string", "description": "HH:MM 24-hour format"},
-		"end_time":        map[string]any{"type": "string", "description": "HH:MM 24-hour format"},
-		"location_name":   map[string]any{"type": "string"},
-		"address":         map[string]any{"type": "string"},
-		"lat":             map[string]any{"type": []string{"number", "null"}},
-		"lng":             map[string]any{"type": []string{"number", "null"}},
-		"google_place_id": map[string]any{"type": "string"},
-		"category":        map[string]any{"type": "string", "enum": []string{"kuliner", "wisata alam", "budaya", "belanja", "transportasi", "akomodasi"}},
-		"notes":           map[string]any{"type": "string"},
+		"type":          map[string]any{"type": "string", "enum": []string{"location", "note"}},
+		"title":         map[string]any{"type": "string"},
+		"start_time":    map[string]any{"type": "string", "description": "HH:MM 24-hour format"},
+		"end_time":      map[string]any{"type": "string", "description": "HH:MM 24-hour format"},
+		"location_name": map[string]any{"type": "string", "description": "Nama tempat untuk ditampilkan, tanpa kota"},
+		"place_query":   map[string]any{"type": "string", "description": placeQueryDescription},
+		"city":          map[string]any{"type": "string", "description": cityDescription},
+		"category":      map[string]any{"type": "string", "enum": []string{"kuliner", "wisata alam", "budaya", "belanja", "transportasi", "akomodasi"}},
+		"notes":         map[string]any{"type": "string"},
 	}
 
 	dayProps := map[string]any{
@@ -272,7 +276,7 @@ func JSONSchema() any {
 			"items": map[string]any{
 				"type":                 "object",
 				"properties":           activityProps,
-				"required":             []string{"type", "title", "start_time", "end_time", "location_name", "address", "lat", "lng", "google_place_id", "category", "notes"},
+				"required":             []string{"type", "title", "start_time", "end_time", "location_name", "place_query", "city", "category", "notes"},
 				"additionalProperties": false,
 			},
 		},
@@ -318,6 +322,10 @@ func JSONSchema() any {
 		"additionalProperties": false,
 	}
 }
+
+const placeQueryDescription = "Nama resmi tempat seperti di Google Maps/OpenStreetMap (bahasa Inggris atau nama lokal resmi), tanpa kota. Kosong untuk note."
+
+const cityDescription = "Kota tempat itu berada beserta negaranya, bahasa Inggris, format \"Kota, Negara\" (mis. \"Medina, Saudi Arabia\"). Kosong untuk note."
 
 // EstimateTokenCount gives a rough token estimate (1 token ≈ 4 chars).
 func EstimateTokenCount(system, user string) int {

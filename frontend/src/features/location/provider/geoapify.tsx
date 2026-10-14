@@ -59,6 +59,8 @@ function toCandidate(suggestion: LocationSuggestion): PlaceCandidate {
     lat: suggestion.lat,
     lng: suggestion.lng,
     externalId: suggestion.external_id,
+    resultType: suggestion.result_type,
+    nearCity: suggestion.near_city,
   }
 }
 
@@ -79,7 +81,10 @@ export const geoapifyLocationProvider: LocationProvider = {
   },
 
   async findPlaceCandidates(queries, destination) {
-    const response = await resolveLocationSuggestions(queries, destination)
+    const response = await resolveLocationSuggestions(
+      queries.map(({ key, name, altName, city }) => ({ key, name, alt_name: altName, city })),
+      destination,
+    )
     return Object.fromEntries(
       queries.map(({ key }) => [key, (response.results[key] ?? []).map(toCandidate)]),
     )

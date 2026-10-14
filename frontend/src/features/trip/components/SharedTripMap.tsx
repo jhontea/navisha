@@ -41,6 +41,7 @@ export function SharedTripMap({
               address: activity.payload.address ?? "",
               orderIndex: index,
               locationName: activity.payload.location_name ?? activity.title,
+              approximate: false,
             })),
         })),
     [days, dayId],

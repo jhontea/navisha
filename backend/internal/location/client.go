@@ -25,6 +25,26 @@ type Suggestion struct {
 	// SourceURL carries the original (redirect-resolved) Google Maps link
 	// when the suggestion came from POST /locations/link. Empty otherwise.
 	SourceURL string `json:"source_url,omitempty"`
+	// ResultType is the provider's kind of result (amenity, building,
+	// street, city, ...), when known.
+	ResultType string `json:"result_type,omitempty"`
+	// NearCity is true when the search was limited to the place's city, so
+	// any result is at least in the right area.
+	NearCity bool `json:"near_city,omitempty"`
+}
+
+// Point is a WGS84 coordinate.
+type Point struct {
+	Lat float64
+	Lng float64
+}
+
+// NearSearcher finds places inside a radius around a point and locates
+// cities. GeoapifyClient implements it; Resolve falls back to plain
+// Autocomplete for clients that do not.
+type NearSearcher interface {
+	SearchNear(ctx context.Context, query, language string, center Point, radiusMeters int) ([]Suggestion, error)
+	CityCenter(ctx context.Context, city, language string) (*Point, error)
 }
 
 type AutocompleteClient interface {
@@ -53,6 +73,7 @@ func NewGeoapifyClient(apiKey, baseURL string, timeout time.Duration) *GeoapifyC
 
 type geoapifyResponse struct {
 	Results []struct {
+		ResultType  string  `json:"result_type"`
 		PlaceID     string  `json:"place_id"`
 		Name        string  `json:"name"`
 		Formatted   string  `json:"formatted"`
@@ -78,35 +99,93 @@ func (c *GeoapifyClient) Autocomplete(ctx context.Context, query, kind, language
 	}
 	params := endpoint.Query()
 	params.Set("text", query)
-	params.Set("format", "json")
-	params.Set("limit", "6")
-	params.Set("apiKey", c.apiKey)
 	if language != "" {
 		params.Set("lang", language)
 	}
-	endpoint.RawQuery = params.Encode()
+	return c.fetch(ctx, endpoint, params, 6)
+}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
+// SearchNear autocompletes query among places within radiusMeters of center.
+func (c *GeoapifyClient) SearchNear(ctx context.Context, query, language string, center Point, radiusMeters int) ([]Suggestion, error) {
+	if c.apiKey == "" {
+		return nil, ErrNotConfigured
+	}
+	endpoint, err := url.Parse(c.baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("location.GeoapifyClient.Autocomplete: create request: %w", err)
+		return nil, fmt.Errorf("location.GeoapifyClient.SearchNear: parse base url: %w", err)
+	}
+	params := endpoint.Query()
+	params.Set("text", query)
+	params.Set("filter", fmt.Sprintf("circle:%f,%f,%d", center.Lng, center.Lat, radiusMeters))
+	params.Set("bias", fmt.Sprintf("proximity:%f,%f", center.Lng, center.Lat))
+	if language != "" {
+		params.Set("lang", language)
+	}
+	items, err := c.fetch(ctx, endpoint, params, 8)
+	for i := range items {
+		items[i].NearCity = true
+	}
+	return items, err
+}
+
+// CityCenter returns the coordinates of a city (or, failing that, any area
+// with that name), or nil when it cannot be found.
+func (c *GeoapifyClient) CityCenter(ctx context.Context, city, language string) (*Point, error) {
+	if c.apiKey == "" {
+		return nil, ErrNotConfigured
+	}
+	endpoint, err := url.Parse(strings.Replace(c.baseURL, "/autocomplete", "/search", 1))
+	if err != nil {
+		return nil, fmt.Errorf("location.GeoapifyClient.CityCenter: parse base url: %w", err)
+	}
+	for _, kind := range []string{"city", ""} {
+		params := endpoint.Query()
+		params.Set("text", city)
+		if kind != "" {
+			params.Set("type", kind)
+		}
+		if language != "" {
+			params.Set("lang", language)
+		}
+		items, err := c.fetch(ctx, endpoint, params, 1)
+		if err != nil {
+			return nil, err
+		}
+		if len(items) > 0 {
+			return &Point{Lat: items[0].Latitude, Lng: items[0].Longitude}, nil
+		}
+	}
+	return nil, nil
+}
+
+func (c *GeoapifyClient) fetch(ctx context.Context, endpoint *url.URL, params url.Values, limit int) ([]Suggestion, error) {
+	params.Set("format", "json")
+	params.Set("limit", fmt.Sprint(limit))
+	params.Set("apiKey", c.apiKey)
+	u := *endpoint
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("location.GeoapifyClient: create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("location.GeoapifyClient.Autocomplete: request: %w", err)
+		return nil, fmt.Errorf("location.GeoapifyClient: request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
-		return nil, fmt.Errorf("location.GeoapifyClient.Autocomplete: provider status %d", resp.StatusCode)
+		return nil, fmt.Errorf("location.GeoapifyClient: provider status %d", resp.StatusCode)
 	}
 
 	var payload geoapifyResponse
 	decoder := json.NewDecoder(io.LimitReader(resp.Body, 1<<20))
 	if err := decoder.Decode(&payload); err != nil {
-		return nil, fmt.Errorf("location.GeoapifyClient.Autocomplete: decode response: %w", err)
+		return nil, fmt.Errorf("location.GeoapifyClient: decode response: %w", err)
 	}
 
 	items := make([]Suggestion, 0, len(payload.Results))
@@ -126,6 +205,7 @@ func (c *GeoapifyClient) Autocomplete(ctx context.Context, query, kind, language
 			CountryCode: strings.ToUpper(result.CountryCode),
 			Latitude:    result.Latitude,
 			Longitude:   result.Longitude,
+			ResultType:  result.ResultType,
 		})
 	}
 	return items, nil
