@@ -125,10 +125,12 @@ func (u *Usecase) GenerateDayPreview(ctx context.Context, userID string, in Gene
 		return nil, fmt.Errorf("%w: day already has %d activities", ErrInvalidInput, MaxActivitiesPerDay)
 	}
 	system, user := BuildDayPrompt(*dayContext, in.Instruction)
-	temp := 0.5
+	// Lively but grounded copy; up to 5 activities fit well within 3000 tokens.
+	temp, maxTokens := 0.8, 3000
 	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{
 		Model:       u.model,
 		Temperature: &temp,
+		MaxTokens:   &maxTokens,
 		Messages:    []llm.Message{{Role: "system", Content: system}, {Role: "user", Content: user}},
 		ResponseFormat: &llm.ResponseFormat{Type: "json_schema", JSONSchema: &llm.JSONSchema{
 			Name: "day_preview", Strict: true, Schema: DayJSONSchema(),

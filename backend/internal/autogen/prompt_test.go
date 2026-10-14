@@ -32,7 +32,10 @@ func TestBuildPrompt_HasCopywritingRules(t *testing.T) {
 	system, _ := BuildPrompt(mkInput("2026-07-01", "2026-07-03"))
 	for _, want := range []string{
 		"ATURAN COPYWRITING",
-		`"theme" per hari: maksimal 5 kata`,
+		`"theme" per hari: 3–6 kata`,
+		"Kenapa layak",
+		"Tips orang dalam",
+		"HOOK",
 		"hidden gem",
 		"tak terlupakan",
 		"Tanpa emoji",
@@ -84,5 +87,17 @@ func TestParseAndValidate_KeepsPlaceQueryForLocationsOnly(t *testing.T) {
 	}
 	if acts[1].PlaceQuery != "" || acts[1].City != "" {
 		t.Error("notes must not carry a place query")
+	}
+}
+
+func TestBuildPrompt_UsesTheChosenTravelStyle(t *testing.T) {
+	in := mkInput("2026-07-01", "2026-07-02")
+	in.TravelStyle = "family"
+	system, user := BuildPrompt(in)
+	if !strings.Contains(system, "GAYA PERJALANAN: KELUARGA") || !strings.Contains(user, "Gaya perjalanan: family") {
+		t.Error("family style not applied")
+	}
+	if err := ValidateInput(GenerateInput{Destination: "Bandung", StartDate: in.StartDate, EndDate: in.EndDate, BaseCurrency: "IDR", TravelStyle: "space"}); err == nil {
+		t.Error("an unknown style must be rejected")
 	}
 }

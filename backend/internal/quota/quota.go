@@ -50,7 +50,8 @@ func (c *Checker) limit(ctx context.Context) int {
 	if c.rdb != nil {
 		val, err := c.rdb.Get(ctx, cacheKey).Result()
 		if err == nil {
-			if n, e := strconv.Atoi(val); e == nil && n > 0 {
+			// 0 is a valid setting (unlimited), so accept n >= 0.
+			if n, e := strconv.Atoi(val); e == nil && n >= 0 {
 				return n
 			}
 		}
@@ -60,7 +61,7 @@ func (c *Checker) limit(ctx context.Context) int {
 		var val string
 		err := c.db.QueryRow(ctx, "SELECT value FROM app_settings WHERE key='autogen_daily_quota'").Scan(&val)
 		if err == nil {
-			if n, e := strconv.Atoi(val); e == nil && n > 0 {
+			if n, e := strconv.Atoi(val); e == nil && n >= 0 {
 				if c.rdb != nil {
 					_ = c.rdb.Set(ctx, cacheKey, val, cacheTTL).Err()
 				}

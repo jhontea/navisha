@@ -319,3 +319,28 @@ func TestChatCompletion_OpenRouterKeepsJsonSchema(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestChatCompletion_SendsTemperatureAndMaxTokens(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		if req["temperature"] != 0.85 || req["max_tokens"] != float64(1200) {
+			t.Errorf("temperature/max_tokens not sent: %v / %v", req["temperature"], req["max_tokens"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{{"message": map[string]string{"content": "ok"}}},
+		})
+	}))
+	defer srv.Close()
+
+	temp, maxTokens := 0.85, 1200
+	c := NewClient(ProviderOpenRouter, "test-key", "m", srv.URL)
+	if _, err := c.ChatCompletion(context.Background(), ChatRequest{
+		Messages:    []Message{{Role: "user", Content: "hi"}},
+		Temperature: &temp,
+		MaxTokens:   &maxTokens,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
