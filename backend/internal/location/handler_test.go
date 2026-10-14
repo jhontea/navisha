@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -109,11 +110,19 @@ type fakeNearClient struct {
 	fakeAutocompleteClient
 	cities  map[string]*Point
 	near    map[string][]Suggestion // by query text
+	mu      sync.Mutex
 	queries []string
 }
 
-func (f *fakeNearClient) SearchNear(_ context.Context, query, _ string, _ Point, _ int) ([]Suggestion, error) {
+// record notes a query; Resolve searches from several goroutines.
+func (f *fakeNearClient) record(query string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.queries = append(f.queries, query)
+}
+
+func (f *fakeNearClient) SearchNear(_ context.Context, query, _ string, _ Point, _ int) ([]Suggestion, error) {
+	f.record(query)
 	return f.near[query], nil
 }
 
@@ -179,5 +188,185 @@ func TestResolve_AcceptsALongItinerary(t *testing.T) {
 	got := postResolve(t, h, `{"items":[`+strings.Join(items, ",")+`]}`)
 	if len(got) != 60 {
 		t.Fatalf("got %d results, want 60", len(got))
+	}
+}
+
+// A namesake city can put the search circle in the wrong place; when only
+// area results come back, the trip destination is tried next.
+type areaThenPlaceClient struct {
+	fakeNearClient
+}
+
+func (f *areaThenPlaceClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
+	f.record(query)
+	if center.Lat == 1 { // the wrong "Lembang"
+		return []Suggestion{{Name: "Lembang", ResultType: "city", NearCity: true}}, nil
+	}
+	return []Suggestion{{ExternalID: "fm", Name: "Floating Market Lembang", ResultType: "amenity", NearCity: true}}, nil
+}
+
+func TestResolve_TriesTheDestinationWhenTheCityGivesOnlyAreas(t *testing.T) {
+	client := &areaThenPlaceClient{fakeNearClient{cities: map[string]*Point{
+		"lembang, indonesia": {Lat: 1, Lng: 1},
+		"bandung, indonesia": {Lat: -6.9, Lng: 107.6},
+	}}}
+	h := NewHandler(client)
+	got := postResolve(t, h, `{"destination":"Bandung","items":[{"key":"a","name":"Floating Market Lembang","city":"Lembang, Indonesia"}]}`)
+	if len(got["a"]) != 1 || got["a"][0].ExternalID != "fm" {
+		t.Fatalf("results = %+v, want the place found around the destination", got["a"])
+	}
+}
+
+func TestDistanceKm(t *testing.T) {
+	// Mecca to Medina is about 340 km.
+	if d := distanceKm(Point{Lat: 21.42, Lng: 39.83}, Point{Lat: 24.47, Lng: 39.61}); d < 330 || d > 350 {
+		t.Errorf("distance = %.0f km", d)
+	}
+}
+
+// Places found around the city anchor the trip; a place with nothing, or with
+// a namesake far away, is searched again around them.
+type anchorClient struct {
+	fakeNearClient
+}
+
+func (f *anchorClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
+	f.record(query)
+	switch {
+	case query == "Seminyak Village" && center.Lat > 20: // around the "Bali" in Taiwan
+		return []Suggestion{{ExternalID: "tw", Name: "Seminary", ResultType: "amenity", NearCity: true, Latitude: 25.1, Longitude: 121.4}}, nil
+	case query == "Seminyak Village":
+		return []Suggestion{{ExternalID: "sv", Name: "Seminyak Village", ResultType: "amenity", NearCity: true, Latitude: -8.69, Longitude: 115.16}}, nil
+	case query == "Melasti Beach" && center.Lat < -8: // only around the found places
+		return []Suggestion{{ExternalID: "mb", Name: "Melasti Beach", ResultType: "amenity", NearCity: true, Latitude: -8.85, Longitude: 115.16}}, nil
+	case strings.HasPrefix(query, "Ubud") || strings.HasPrefix(query, "Tegallalang"):
+		return []Suggestion{{ExternalID: query, Name: query, ResultType: "amenity", NearCity: true, Latitude: -8.5, Longitude: 115.26}}, nil
+	}
+	return []Suggestion{{Name: "Badung", ResultType: "city", NearCity: true}}, nil
+}
+
+func TestResolve_RetriesAroundThePlacesAlreadyFound(t *testing.T) {
+	client := &anchorClient{fakeNearClient{cities: map[string]*Point{
+		"ubud, bali, indonesia":   {Lat: -8.5, Lng: 115.26},
+		"badung, bali, indonesia": {Lat: -7.1, Lng: 113.4}, // the wrong Badung
+		"bali":                    {Lat: 25.1, Lng: 121.4}, // Bali District, Taiwan
+	}}}
+	h := NewHandler(client)
+	got := postResolve(t, h, `{"destination":"Bali","items":[
+		{"key":"u1","name":"Ubud Palace","city":"Ubud, Bali, Indonesia"},
+		{"key":"u2","name":"Tegallalang Rice Terraces","city":"Ubud, Bali, Indonesia"},
+		{"key":"m","name":"Melasti Beach","city":"Badung, Bali, Indonesia"},
+		{"key":"s","name":"Seminyak Village","city":"Badung, Bali, Indonesia"}]}`)
+	if len(got["m"]) == 0 || got["m"][0].ExternalID != "mb" {
+		t.Errorf("Melasti = %+v, want the beach found around the other places", got["m"])
+	}
+	if len(got["s"]) == 0 || got["s"][0].ExternalID != "sv" {
+		t.Errorf("Seminyak = %+v, want the Bali result, not the Taiwan namesake", got["s"])
+	}
+}
+
+func TestQueryVariants_DropsTheCityWordIncludingAlternateSpellings(t *testing.T) {
+	got := queryVariants(resolveItem{name: "Anjum Hotel Makkah", altName: "Hotel Anjum Makkah", city: "Mecca, Saudi Arabia"})
+	want := []string{"Anjum Hotel Makkah", "Anjum Hotel", "Anjum Hotel Makkah, Mecca, Saudi Arabia", "Hotel Anjum Makkah", "Hotel Anjum"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Errorf("variants = %q, want %q", got, want)
+	}
+}
+
+// The city word in the first query ranks other hotels first; the search goes
+// on until a result's name matches, and the match is put first.
+func TestResolve_KeepsSearchingUntilTheNameMatches(t *testing.T) {
+	others := []Suggestion{
+		{ExternalID: "1", Name: "Le Meridien Makkah Hotel", ResultType: "amenity", NearCity: true},
+		{ExternalID: "2", Name: "Hotel Pullmann ZamZam Makkah", ResultType: "amenity", NearCity: true},
+		{ExternalID: "3", Name: "Makkah Millennium Hotel", ResultType: "amenity", NearCity: true},
+	}
+	client := &fakeNearClient{
+		cities: map[string]*Point{"mecca, saudi arabia": {Lat: 21.42, Lng: 39.83}},
+		near: map[string][]Suggestion{
+			"Anjum Hotel Makkah": others,
+			"Anjum Hotel":        {{ExternalID: "anjum", Name: "Anjum Hotel", ResultType: "amenity", NearCity: true}},
+		},
+	}
+	got := postResolve(t, NewHandler(client), `{"items":[{"key":"a","name":"Anjum Hotel Makkah","city":"Mecca, Saudi Arabia"}]}`)
+	if len(got["a"]) == 0 || got["a"][0].ExternalID != "anjum" {
+		t.Fatalf("results = %+v, want Anjum Hotel first", got["a"])
+	}
+	if len(client.queries) != 2 {
+		t.Errorf("queries = %v, want to stop once the name matched", client.queries)
+	}
+}
+
+// Makkah and Madinah are 340 km apart: a Makkah place that found nothing is
+// never searched again around the Madinah places.
+type twoCityClient struct {
+	fakeNearClient
+}
+
+func (f *twoCityClient) SearchNear(_ context.Context, query, _ string, center Point, _ int) ([]Suggestion, error) {
+	f.record(query)
+	if center.Lat > 24 { // around Madinah
+		if strings.Contains(query, "Haram") {
+			return []Suggestion{{ExternalID: "bani", Name: "Masjid Bani Haram", ResultType: "amenity", NearCity: true, Latitude: 24.47, Longitude: 39.6}}, nil
+		}
+		return []Suggestion{{ExternalID: query, Name: query, ResultType: "amenity", NearCity: true, Latitude: 24.47, Longitude: 39.61}}, nil
+	}
+	return nil, nil // nothing found around Makkah
+}
+
+func TestResolve_NeverRetriesOneCityAroundAnother(t *testing.T) {
+	client := &twoCityClient{fakeNearClient{cities: map[string]*Point{
+		"mecca, saudi arabia":  {Lat: 21.42, Lng: 39.83},
+		"medina, saudi arabia": {Lat: 24.47, Lng: 39.61},
+	}}}
+	got := postResolve(t, NewHandler(client), `{"items":[
+		{"key":"n","name":"Nabawi","city":"Medina, Saudi Arabia"},
+		{"key":"q","name":"Quba","city":"Medina, Saudi Arabia"},
+		{"key":"h","name":"Masjid al-Haram","city":"Mecca, Saudi Arabia"}]}`)
+	for _, s := range got["h"] {
+		if s.ExternalID == "bani" {
+			t.Fatal("a Makkah place was matched to a Madinah namesake")
+		}
+	}
+}
+
+func TestNameMatching(t *testing.T) {
+	names := resolveItem{name: "Masjid al-Haram", altName: "Masjidil Haram", city: "Mecca, Saudi Arabia"}.names()
+	mosque := Suggestion{Name: "Al Masjid al Ḩarām", ResultType: "amenity"}
+	road := Suggestion{Name: "Al Masjid Al Haram Road", ResultType: "amenity"}
+	if resultScore(mosque, names) < goodNameMatch {
+		t.Errorf("diacritics must not hide a match: %.2f", resultScore(mosque, names))
+	}
+	if resultScore(road, names) >= resultScore(mosque, names) {
+		t.Error("a road named after the mosque must rank below the mosque")
+	}
+	if nameMatch("Makkah Millennium Hotel", resolveItem{name: "Anjum Hotel Makkah", city: "Mecca, Saudi Arabia"}.names()) >= goodNameMatch {
+		t.Error("a shared city word and \"hotel\" are not a match")
+	}
+}
+
+func TestInRegion(t *testing.T) {
+	cases := []struct {
+		address, city string
+		want          bool
+	}{
+		{"Canggu, Lampung, Indonesia", "Canggu, Bali, Indonesia", false},
+		{"Seminyak, Kuta, Bali, Indonesia", "Seminyak, Bali, Indonesia", true},
+		{"Lembang, West Java, Indonesia", "Lembang, West Java, Indonesia", true},
+		{"Medina, Medina Province, Saudi Arabia", "Medina, Saudi Arabia", true},
+	}
+	for _, c := range cases {
+		if got := inRegion(c.address, c.city); got != c.want {
+			t.Errorf("inRegion(%q, %q) = %v, want %v", c.address, c.city, got, c.want)
+		}
+	}
+}
+
+func TestInRegion_ChecksTheCountry(t *testing.T) {
+	if inRegion("Bali District, New Taipei, Taiwan", "Bali, Indonesia") {
+		t.Error("a Taiwan result is not in Indonesia")
+	}
+	if withCountryOf("Bali", "Badung, Bali, Indonesia") != "Bali, Indonesia" {
+		t.Error("destination should get the place's country")
 	}
 }

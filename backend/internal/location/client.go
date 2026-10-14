@@ -147,15 +147,37 @@ func (c *GeoapifyClient) CityCenter(ctx context.Context, city, language string) 
 		if language != "" {
 			params.Set("lang", language)
 		}
-		items, err := c.fetch(ctx, endpoint, params, 1)
+		items, err := c.fetch(ctx, endpoint, params, 3)
 		if err != nil {
 			return nil, err
 		}
-		if len(items) > 0 {
-			return &Point{Lat: items[0].Latitude, Lng: items[0].Longitude}, nil
+		for _, item := range items {
+			if inRegion(item.Description, city) {
+				return &Point{Lat: item.Latitude, Lng: item.Longitude}, nil
+			}
 		}
 	}
 	return nil, nil
+}
+
+// inRegion reports whether a geocoded address lies in the region and
+// country named in a "City, Region, Country" (or "City, Country") string.
+// Names repeat across provinces and countries ("Canggu, Bali" geocodes to
+// Canggu in Lampung, "Bali, Indonesia" to a district in Taiwan), so a result
+// outside the stated region or country is not that place. A bare name
+// ("Bali") is accepted as is.
+func inRegion(address, city string) bool {
+	parts := strings.Split(city, ",")
+	if len(parts) < 2 {
+		return true
+	}
+	addr := foldDiacritics(strings.ToLower(address))
+	for _, region := range parts[1:] {
+		if r := foldDiacritics(strings.ToLower(strings.TrimSpace(region))); r != "" && !strings.Contains(addr, r) {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *GeoapifyClient) fetch(ctx context.Context, endpoint *url.URL, params url.Values, limit int) ([]Suggestion, error) {
@@ -171,7 +193,7 @@ func (c *GeoapifyClient) fetch(ctx context.Context, endpoint *url.URL, params ur
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := c.client.Do(req)
+	resp, err := c.do(req)
 	if err != nil {
 		return nil, fmt.Errorf("location.GeoapifyClient: request: %w", err)
 	}
@@ -209,4 +231,22 @@ func (c *GeoapifyClient) fetch(ctx context.Context, endpoint *url.URL, params ur
 		})
 	}
 	return items, nil
+}
+
+// do sends the request, waiting and retrying (up to 3 times) when the
+// provider rate-limits a burst of lookups with 429.
+func (c *GeoapifyClient) do(req *http.Request) (*http.Response, error) {
+	for attempt := 1; ; attempt++ {
+		resp, err := c.client.Do(req)
+		if err != nil || resp.StatusCode != http.StatusTooManyRequests || attempt > 3 {
+			return resp, err
+		}
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		select {
+		case <-req.Context().Done():
+			return nil, req.Context().Err()
+		case <-time.After(time.Duration(attempt) * 400 * time.Millisecond):
+		}
+	}
 }

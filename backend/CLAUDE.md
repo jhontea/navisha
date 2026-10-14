@@ -8,6 +8,7 @@ Go 1.25, Echo framework, PostgreSQL 16+, Redis 7+, JWT (httpOnly cookie), Google
 backend/
 ├── cmd/server/           # main.go (config, DB, Redis, migrations, start/shutdown), wire.go (domains), routes.go (Echo, middleware, routes)
 ├── cmd/summarypreview/   # print the AI summary for one trip without saving (prompt work)
+├── cmd/autogeneval/      # generate sample trips + geocode them, print quality numbers (prompt/model work)
 ├── cmd/migrate/          # standalone migration CLI (`-status` lists pending)
 ├── internal/
 │   ├── accommodation/    # domain: accommodation CRUD + linked expense
