@@ -1,5 +1,6 @@
 "use client"
 
+import { SUPPORTED_CURRENCIES } from "@/lib/currency"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/NativeSelect"
@@ -30,8 +31,6 @@ function localDateString(): string {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
-
-const SUPPORTED_CURRENCIES = ["IDR", "USD", "JPY", "SGD", "KRW", "MYR", "THB", "EUR", "VND"] as const
 
 const CATEGORY_OPTIONS = [
   { value: "food"          as ExpenseCategory, label: "Food",  placeholder: "e.g., Lunch at Ichiran" },
