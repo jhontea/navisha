@@ -7,13 +7,10 @@ function Card({
   size = "default",
   variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm"; variant?: "default" | "glass" | "elevated" | "gradient-border" }) {
+}: React.ComponentProps<"div"> & { size?: "default" | "sm"; variant?: "default" | "elevated" }) {
   const variantStyles = {
     default: "bg-card ring-1 ring-foreground/10",
-    // D2: legacy decorative variants render as plain cards.
-    glass: "bg-card ring-1 ring-foreground/10",
     elevated: "bg-card shadow-card ring-1 ring-foreground/5",
-    "gradient-border": "bg-card ring-1 ring-foreground/10",
   }
   return (
     <div

@@ -49,13 +49,17 @@ func (f *fakeRepo) VerifyTripOwner(ctx context.Context, userID, tripID string) e
 }
 
 type fakeLLM struct {
-	resp   string
-	err    error
-	called bool
+	resp       string
+	err        error
+	called     bool
+	lastSystem string
 }
 
 func (f *fakeLLM) ChatCompletion(ctx context.Context, req llm.ChatRequest) (string, error) {
 	f.called = true
+	if len(req.Messages) > 0 {
+		f.lastSystem = req.Messages[0].Content
+	}
 	return f.resp, f.err
 }
 
@@ -92,7 +96,7 @@ func TestGenerate_NewSummary(t *testing.T) {
 	provider := &fakeProvider{ctx: newTripContext()}
 	uc := NewUsecase(repo, llm, provider, "test-model")
 
-	s, err := uc.Generate(context.Background(), "user1", "trip1")
+	s, err := uc.Generate(context.Background(), "user1", "trip1", LanguageIndonesian)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -134,7 +138,7 @@ func TestGenerate_AlwaysRegenerates(t *testing.T) {
 	provider := &fakeProvider{ctx: newTripContext()}
 	uc := NewUsecase(repo, llm, provider, "test-model")
 
-	s, err := uc.Generate(context.Background(), "user1", "trip1")
+	s, err := uc.Generate(context.Background(), "user1", "trip1", LanguageIndonesian)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -157,7 +161,7 @@ func TestGenerate_RegenerateAfterWindow(t *testing.T) {
 	provider := &fakeProvider{ctx: newTripContext()}
 	uc := NewUsecase(repo, llm, provider, "test-model")
 
-	s, err := uc.Generate(context.Background(), "user1", "trip1")
+	s, err := uc.Generate(context.Background(), "user1", "trip1", LanguageIndonesian)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -172,7 +176,7 @@ func TestGenerate_ForbiddenPropagates(t *testing.T) {
 	provider := &fakeProvider{err: ErrForbidden}
 	uc := NewUsecase(repo, llm, provider, "test-model")
 
-	_, err := uc.Generate(context.Background(), "user1", "trip1")
+	_, err := uc.Generate(context.Background(), "user1", "trip1", LanguageIndonesian)
 	if !errors.Is(err, ErrForbidden) {
 		t.Fatalf("expected ErrForbidden, got %v", err)
 	}

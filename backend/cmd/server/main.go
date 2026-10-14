@@ -27,6 +27,9 @@ func main() {
 		slog.Error("failed to load config", "error", err)
 		os.Exit(1)
 	}
+	if initSentry(cfg) {
+		defer flushSentry()
+	}
 
 	// Database — Phase 3D: tuned connection pool.
 	dbCfg, err := pgxpool.ParseConfig(cfg.DB.URL)

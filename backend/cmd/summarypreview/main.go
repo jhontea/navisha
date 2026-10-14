@@ -35,6 +35,7 @@ import (
 func main() {
 	tripID := flag.String("trip", "", "trip ID to summarize")
 	promptOnly := flag.Bool("prompt-only", false, "print the prompts without calling the LLM")
+	langFlag := flag.String("lang", "id", "summary language: id or en")
 	flag.Parse()
 	if *tripID == "" {
 		fail(fmt.Errorf("-trip is required"))
@@ -79,6 +80,12 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
+	lang, ok := summary.ParseLanguage(*langFlag)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "-lang must be id or en")
+		os.Exit(2)
+	}
+	tripCtx.Language = lang
 	system, user := summary.BuildPrompt(*tripCtx)
 	if *promptOnly {
 		fmt.Printf("===== SYSTEM =====\n%s\n\n===== USER =====\n%s\n", system, user)

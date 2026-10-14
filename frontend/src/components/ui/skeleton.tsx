@@ -5,8 +5,7 @@ interface SkeletonProps {
   variant?: "default" | "text" | "avatar" | "button" | "circle"
 }
 
-/** Glass skeleton loader — shimmer overlay on glass background.
- *  Replaces gray animate-pulse divs with styled placeholders. */
+/** Placeholder block with a shimmer while content loads. */
 export function Skeleton({ className, variant = "default" }: SkeletonProps) {
   const baseClass = "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent"
 

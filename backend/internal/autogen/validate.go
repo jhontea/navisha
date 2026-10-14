@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 // ErrInvalidInput is returned when the user-supplied form data fails validation
@@ -29,13 +30,13 @@ func ValidateInput(in GenerateInput) error {
 	if dest == "" {
 		return fmt.Errorf("%w: destination required", ErrInvalidInput)
 	}
-	if len(dest) > MaxDestinationLen {
+	if utf8.RuneCountInString(dest) > MaxDestinationLen {
 		return fmt.Errorf("%w: destination too long (max %d)", ErrInvalidInput, MaxDestinationLen)
 	}
 	if !hasLetter.MatchString(dest) {
 		return fmt.Errorf("%w: destination must contain letters", ErrInvalidInput)
 	}
-	if len(in.Description) > MaxDescriptionLen {
+	if utf8.RuneCountInString(in.Description) > MaxDescriptionLen {
 		return fmt.Errorf("%w: description too long (max %d)", ErrInvalidInput, MaxDescriptionLen)
 	}
 	if in.StartDate.IsZero() || in.EndDate.IsZero() {
@@ -67,7 +68,7 @@ func ValidateDayInput(in GenerateDayInput) error {
 	if instruction == "" {
 		return fmt.Errorf("%w: instruction required", ErrInvalidInput)
 	}
-	if len(instruction) > MaxDayInstructionLen {
+	if utf8.RuneCountInString(instruction) > MaxDayInstructionLen {
 		return fmt.Errorf("%w: instruction too long (max %d)", ErrInvalidInput, MaxDayInstructionLen)
 	}
 	if !hasLetter.MatchString(instruction) {

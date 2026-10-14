@@ -103,6 +103,17 @@ func clip(s string, n int) string {
 	return s
 }
 
+// englishOutput switches the written summary to English. The rules above stay
+// in Indonesian; only the output language, headings and labels change.
+const englishOutput = `
+
+BAHASA OUTPUT: tulis SELURUH ringkasan dalam bahasa Inggris yang natural (bukan terjemahan kaku), dengan aturan
+nada, struktur, dan fakta yang sama. Sapa pembaca dengan "you". Pakai heading dan label ini:
+"## Overview", "## Day by day", "## Budget", "## What to prepare", "## Notes for your next trip",
+"**Day N**", kolom tabel "Budget | Spent | Left/Over", "**Stay suggestion:**", "**Transport suggestion:**".
+Tips lokal di atas (jika ada) juga ditulis ulang dalam bahasa Inggris. Larangan klise berlaku juga untuk padanannya
+dalam bahasa Inggris ("paradise", "hidden gem", "must-visit", "unforgettable", "breathtaking", "stunning").`
+
 // now is replaced in tests.
 var now = time.Now
 
@@ -131,6 +142,10 @@ func BuildPrompt(ctx TripContext) (system, user string) {
 	sb.WriteString(systemPromptBase)
 	if destination.IsIndonesia(ctx.Destination) {
 		sb.WriteString(tipsPrompt(pickTips(hashSeed(ctx.TripID), 2)))
+	}
+
+	if ctx.Language == LanguageEnglish {
+		sb.WriteString(englishOutput)
 	}
 
 	system = sb.String()
