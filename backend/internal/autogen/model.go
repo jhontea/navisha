@@ -88,11 +88,15 @@ type DayDraft struct {
 // Address and GooglePlaceID are populated by the frontend resolver (not the LLM)
 // using Google Places, matching the manual form flow.
 type ActivityDraft struct {
-	Type                 string   `json:"type"`
-	Title                string   `json:"title"`
-	StartTime            string   `json:"start_time"` // HH:MM 24-hour format
-	EndTime              string   `json:"end_time"`   // HH:MM 24-hour format
-	LocationName         string   `json:"location_name"`
+	Type         string `json:"type"`
+	Title        string `json:"title"`
+	StartTime    string `json:"start_time"` // HH:MM 24-hour format
+	EndTime      string `json:"end_time"`   // HH:MM 24-hour format
+	LocationName string `json:"location_name"`
+	// PlaceQuery is the place's official name as it appears on maps (English
+	// or local), without the city; City is where it is. Both feed geocoding.
+	PlaceQuery           string   `json:"place_query,omitempty"`
+	City                 string   `json:"city,omitempty"`
 	Address              string   `json:"address"`
 	Lat                  *float64 `json:"lat"`
 	Lng                  *float64 `json:"lng"`

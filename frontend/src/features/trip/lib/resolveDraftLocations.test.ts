@@ -109,4 +109,47 @@ describe("resolveDraftLocations", () => {
     await resolveDraftLocations(input, "Kyoto, Japan", provider(() => [place("Kinkaku-ji", "Kyoto, Japan")]))
     expect(input.days[0].activities[0].location_verification).toBeUndefined()
   })
+
+  it("matches on the official place query or the display name, keeping the display name", async () => {
+    const p = provider((name) => (name === "Senso-ji" ? [place("Sensō-ji", "Asakusa, Tokyo, Japan", "sj")] : []))
+    const act = { ...activity("Kuil Senso-ji", "Kuil Senso-ji"), place_query: "Senso-ji", city: "Tokyo, Japan" }
+    const result = await resolveDraftLocations(draft([act]), "Tokyo", p)
+    const out = result.days[0].activities[0]
+    expect(out.location_verification).toBe("verified")
+    expect(out.location_name).toBe("Kuil Senso-ji")
+    expect(out.address).toContain("Tokyo")
+    const sent = (p.findPlaceCandidates as ReturnType<typeof vi.fn>).mock.calls[0][0][0]
+    expect(sent).toMatchObject({ name: "Senso-ji", altName: "Kuil Senso-ji", city: "Tokyo, Japan" })
+  })
+
+  it("pins an approximate place found in the city, still asking for review", async () => {
+    const p = provider(() => [
+      { ...place("Medina", "Medina, Saudi Arabia", "city"), nearCity: true, resultType: "city" },
+      { ...place("Prophet's Mosque", "Medina, Saudi Arabia", "pm"), nearCity: true, resultType: "amenity" },
+    ])
+    const act = { ...activity("Masjid Nabawi"), place_query: "Al-Masjid an-Nabawi", city: "Medina, Saudi Arabia" }
+    const result = await resolveDraftLocations(draft([act]), "Umroh", p)
+    const out = result.days[0].activities[0]
+    expect(out.google_place_id).toBe("pm")
+    expect(out.lat).toBe(35)
+    expect(out.location_verification).toBe("needs_review")
+  })
+
+  it("does not pin on a whole-area result or a result outside the city search", async () => {
+    const p = provider(() => [
+      { ...place("Medina", "Medina, Saudi Arabia"), nearCity: true, resultType: "city" },
+      { ...place("Somewhere", "Elsewhere"), resultType: "amenity" },
+    ])
+    const result = await resolveDraftLocations(draft([activity("Masjid Nabawi")]), "Umroh", p)
+    expect(result.days[0].activities[0].lat).toBeNull()
+  })
+
+  it("looks long itineraries up in batches so one request never covers them all", async () => {
+    const p = provider((name) => [place(name, "Kyoto, Japan")])
+    const many = Array.from({ length: 60 }, (_, i) => activity(`Temple number ${i}`))
+    const result = await resolveDraftLocations(draft(many), "Kyoto, Japan", p)
+    expect(p.findPlaceCandidates).toHaveBeenCalledTimes(2)
+    expect(result.days[0].activities.every((a) => a.location_verification === "verified")).toBe(true)
+  })
 })
+

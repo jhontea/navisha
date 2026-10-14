@@ -1,11 +1,17 @@
 import type { TripDraft, ActivityDraft } from "../types"
-import { locationProvider, type LocationProvider } from "@/features/location/provider"
+import { locationProvider, type LocationProvider, type PlaceQuery } from "@/features/location/provider"
 import { normalize, tokens, weightedJaccard, type PlaceCandidate } from "@/features/location/placeMatching"
 
 const NORMAL_CONFIDENCE = 0.58
 const NORMAL_NAME_SCORE = 0.45
 const GLOBAL_CONFIDENCE = 0.72
 const GLOBAL_NAME_SCORE = 0.72
+
+/** Places per lookup request (the backend accepts up to 100). */
+const BATCH_SIZE = 50
+
+/** Result kinds that are a whole area, too coarse to pin an activity on. */
+const AREA_RESULT_TYPES = new Set(["city", "county", "state", "country", "postcode", "suburb", "district"])
 
 const CATEGORY_TYPES: Record<string, string[]> = {
   kuliner: ["bakery", "cafe", "food", "meal_takeaway", "restaurant"],
@@ -22,10 +28,20 @@ interface ScoredCandidate {
   nameScore: number
 }
 
+interface Target {
+  key: string
+  act: ActivityDraft
+  query: PlaceQuery
+}
+
 /**
- * Resolves AI place names only when a candidate is sufficiently similar to
- * the intended place. Ambiguous matches stay usable as itinerary items, but
- * carry no coordinates until the user confirms them in the activity form.
+ * Pins AI places on the map.
+ * - A candidate whose name matches the intended place (official name or the
+ *   display name) is applied and marked verified.
+ * - Otherwise, when the provider searched around the place's city, the best
+ *   specific result there is applied as an approximate pin, still marked
+ *   needs_review so the user is asked to check it.
+ * - Anything else keeps no coordinates and needs review.
  * The provider only finds candidates; choosing one is the same for every
  * provider.
  */
@@ -42,48 +58,63 @@ export async function resolveDraftLocations(
     })),
   }
 
-  const targets: { key: string; act: ActivityDraft; name: string }[] = []
+  const targets: Target[] = []
   for (const day of cloned.days) {
     for (const act of day.activities) {
       if (act.type !== "location") continue
       if (act.lat != null && act.lng != null) continue
-      const name = (act.location_name || act.title).trim()
+      const display = (act.location_name || act.title).trim()
+      const name = (act.place_query || display).trim()
       if (!name) continue
       markNeedsReview(act)
-      targets.push({ key: `${day.day_number}:${targets.length}`, act, name })
+      const key = `${day.day_number}:${targets.length}`
+      const altName = display && display !== name ? display : undefined
+      targets.push({ key, act, query: { key, name, altName, city: act.city?.trim() || undefined } })
     }
   }
   if (targets.length === 0) return cloned
 
-  const queries = targets.map(({ key, name }) => ({ key, name }))
-  let local: Record<string, PlaceCandidate[]> = {}
-  try {
-    local = await provider.findPlaceCandidates(queries, destination)
-  } catch {
-    // Fail open: unresolved activities remain reviewable and editable.
-  }
-  const unresolved = targets.filter(({ key, act, name }) => {
-    const best = chooseBest(local[key] ?? [], name, destination, act.category)
-    if (best) applyCandidate(act, best)
-    return !best
+  const local = await findInBatches(targets, (batch) => provider.findPlaceCandidates(batch, destination))
+  const unresolved = targets.filter(({ key, act, query }) => {
+    const candidates = local[key] ?? []
+    const best = chooseBest(candidates, query, destination, act.category)
+    if (best) {
+      applyCandidate(act, best)
+      return false
+    }
+    const approximate = chooseApproximate(candidates, query, destination, act.category)
+    if (approximate) applyApproximate(act, approximate)
+    return !approximate
   })
 
   // A specific airport/station may intentionally be outside the trip's main
   // destination. Permit a wider search only for a very close name.
   if (destination && unresolved.length > 0 && provider.findPlaceCandidatesGlobally) {
-    let global: Record<string, PlaceCandidate[]> = {}
-    try {
-      global = await provider.findPlaceCandidatesGlobally(unresolved.map(({ key, name }) => ({ key, name })))
-    } catch {
-      // Fail open, as above.
-    }
-    for (const { key, act, name } of unresolved) {
-      const best = chooseBest(global[key] ?? [], name, "", act.category, true)
+    const global = await findInBatches(unresolved, (batch) => provider.findPlaceCandidatesGlobally!(batch))
+    for (const { key, act, query } of unresolved) {
+      const best = chooseBest(global[key] ?? [], query, "", act.category, true)
       if (best) applyCandidate(act, best)
     }
   }
 
   return cloned
+}
+
+/** Looks places up in batches; a failed batch leaves its places for review. */
+async function findInBatches(
+  targets: Target[],
+  find: (batch: PlaceQuery[]) => Promise<Record<string, PlaceCandidate[]>>,
+): Promise<Record<string, PlaceCandidate[]>> {
+  const batches: PlaceQuery[][] = []
+  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+    batches.push(targets.slice(i, i + BATCH_SIZE).map((t) => t.query))
+  }
+  const results = await Promise.all(
+    batches.map((batch) =>
+      find(batch).catch(() => ({}) as Record<string, PlaceCandidate[]>), // fail open
+    ),
+  )
+  return Object.assign({}, ...results)
 }
 
 function markNeedsReview(act: ActivityDraft) {
@@ -95,9 +126,10 @@ function markNeedsReview(act: ActivityDraft) {
   act.location_confidence = null
 }
 
+/** The AI's display name is kept; the address shows the place found. */
 function applyCandidate(act: ActivityDraft, match: ScoredCandidate) {
   const { candidate } = match
-  act.location_name = candidate.name || act.location_name
+  act.location_name = act.location_name || candidate.name
   act.address = candidate.description
   act.lat = candidate.lat
   act.lng = candidate.lng
@@ -106,45 +138,74 @@ function applyCandidate(act: ActivityDraft, match: ScoredCandidate) {
   act.location_confidence = Math.round(match.score * 100)
 }
 
+function applyApproximate(act: ActivityDraft, match: ScoredCandidate) {
+  applyCandidate(act, match)
+  act.location_verification = "needs_review"
+}
+
+function rank(candidates: PlaceCandidate[], query: PlaceQuery, destination: string, category: string) {
+  return candidates
+    .map((candidate) => scoreCandidate(candidate, query, destination, category))
+    .sort((a, b) => b.score - a.score)
+}
+
 function chooseBest(
   candidates: PlaceCandidate[],
-  intendedName: string,
+  query: PlaceQuery,
   destination: string,
   category: string,
   globalFallback = false,
 ): ScoredCandidate | null {
-  const ranked = candidates
-    .map((candidate) => scoreCandidate(candidate, intendedName, destination, category))
-    .sort((a, b) => b.score - a.score)
-  const best = ranked[0]
+  const best = rank(candidates, query, destination, category)[0]
   if (!best) return null
 
   const minConfidence = globalFallback ? GLOBAL_CONFIDENCE : NORMAL_CONFIDENCE
   const minNameScore = globalFallback ? GLOBAL_NAME_SCORE : NORMAL_NAME_SCORE
-  return best.score >= minConfidence && best.nameScore >= minNameScore
-    ? best
-    : null
+  return best.score >= minConfidence && best.nameScore >= minNameScore ? best : null
+}
+
+/**
+ * Best specific place found inside the place's city when no name matched
+ * (OSM names often differ: "Prophet's Mosque" for "Al-Masjid an-Nabawi").
+ * Ties keep the provider's order, which is already ranked by relevance.
+ */
+function chooseApproximate(
+  candidates: PlaceCandidate[],
+  query: PlaceQuery,
+  destination: string,
+  category: string,
+): ScoredCandidate | null {
+  const specific = candidates.filter(
+    (c) => c.nearCity && !AREA_RESULT_TYPES.has(c.resultType ?? ""),
+  )
+  const scored = specific.map((candidate) => scoreCandidate(candidate, query, destination, category))
+  if (scored.length === 0) return null
+  return scored.reduce((best, next) => (next.nameScore > best.nameScore ? next : best))
 }
 
 export function scoreCandidate(
   candidate: PlaceCandidate,
-  intendedName: string,
+  query: PlaceQuery | string,
   destination: string,
   category: string,
 ): ScoredCandidate {
-  const nameScore = weightedJaccard(intendedName, candidate.name)
-  const destinationTokens = tokens(destination)
+  const q = typeof query === "string" ? { key: "", name: query } : query
+  const nameScore = Math.max(
+    weightedJaccard(q.name, candidate.name),
+    q.altName ? weightedJaccard(q.altName, candidate.name) : 0,
+  )
+  const areaTokens = tokens(q.city || destination)
   const descriptionTokens = new Set(tokens(candidate.description))
-  const destinationScore = destinationTokens.length === 0
+  const areaScore = areaTokens.length === 0
     ? 0
-    : destinationTokens.filter((token) => descriptionTokens.has(token)).length / destinationTokens.length
+    : areaTokens.filter((token) => descriptionTokens.has(token)).length / areaTokens.length
   const expectedTypes = CATEGORY_TYPES[normalize(category)] ?? []
   const categoryScore = expectedTypes.length > 0 && candidate.types?.some((type) => expectedTypes.includes(type))
     ? 1
     : 0
 
-  const score = destinationTokens.length > 0
-    ? nameScore * 0.78 + destinationScore * 0.17 + categoryScore * 0.05
+  const score = areaTokens.length > 0
+    ? nameScore * 0.78 + areaScore * 0.17 + categoryScore * 0.05
     : nameScore * 0.94 + categoryScore * 0.06
   return { candidate, score, nameScore }
 }

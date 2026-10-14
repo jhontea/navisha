@@ -12,6 +12,10 @@ export interface PlaceCandidate {
   externalId: string
   /** Provider place types (Google), used as a weak category signal. */
   types?: string[]
+  /** Provider result kind (Geoapify: amenity, building, street, city, ...). */
+  resultType?: string
+  /** True when the provider searched only around the place's city. */
+  nearCity?: boolean
 }
 
 const STOP_WORDS = new Set([

@@ -2,7 +2,7 @@
 
 import { Chip } from "@/components/Chip"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ExternalLink, MapPin, Route } from "lucide-react"
+import { AlertTriangle, ExternalLink, MapPin, Route } from "lucide-react"
 
 import { buttonVariants, Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
@@ -18,7 +18,7 @@ import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
  * Selecting a place highlights its marker and vice versa.
  */
 export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
-  const { isLoading, isError, byDay } = useTripLocations(tripId, days)
+  const { isLoading, isError, byDay, unpinned } = useTripLocations(tripId, days)
   const [activeDay, setActiveDay] = useState<string | null>(null) // null = all days
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const rowRefs = useRef<Map<string, HTMLLIElement | null>>(new Map())
@@ -63,7 +63,9 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
         <MapPin className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
         <p className="mt-2 text-sm font-medium text-foreground">No places on the map yet</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Add a location to an activity in the Itinerary and it will show up here, in order, for each day.
+          {unpinned > 0
+            ? `${unpinned} ${unpinned === 1 ? "place in this trip couldn't" : "places in this trip couldn't"} be found on the map automatically. Open ${unpinned === 1 ? "it" : "them"} in the Itinerary to pick the exact spot.`
+            : "Add a location to an activity in the Itinerary and it will show up here, in order, for each day."}
         </p>
       </div>
     )
@@ -98,6 +100,12 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
       </div>
 
       <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border bg-card lg:col-start-1 lg:row-start-2">
+        {unpinned > 0 && (
+          <p className="border-b bg-warning-bg px-4 py-2 text-xs text-foreground">
+            {unpinned} {unpinned === 1 ? "place isn't" : "places aren't"} on the map yet. Open {unpinned === 1 ? "it" : "them"} in
+            the Itinerary to pick the exact spot.
+          </p>
+        )}
         <ol className="min-h-0 flex-1 divide-y overflow-y-auto">
           {visibleByDay.map((d) => (
             <li key={d.dayId}>
@@ -132,6 +140,12 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-foreground">{p.title}</span>
                         {p.address && <span className="line-clamp-1 text-xs text-muted-foreground">{p.address}</span>}
+                        {p.approximate && (
+                          <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                            <AlertTriangle className="h-3 w-3 shrink-0 text-warning" aria-hidden="true" />
+                            Approximate pin, check it
+                          </span>
+                        )}
                       </span>
                     </button>
                     <Button
