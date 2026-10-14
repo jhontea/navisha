@@ -38,9 +38,9 @@ func ParseLanguage(s string) (lang Language, ok bool) {
 }
 
 type TripContext struct {
-	TripID        string // Phase 3E: for deterministic style variation
+	TripID string // Phase 3E: for deterministic style variation
 	// Language of the summary to write (set by the usecase, not the provider).
-	Language Language
+	Language      Language
 	Title         string
 	Destination   string
 	StartDate     time.Time
