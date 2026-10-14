@@ -11,7 +11,7 @@ export function CTASection() {
           Start planning <span className="opacity-70">your next trip</span>
         </h2>
         <p className="mx-auto mt-3 max-w-md font-semibold text-on-cover/80">Free to use. Sign in with Google and create your first trip.</p>
-        <Link href="/login" className={buttonVariants({ variant: "cover", size: "lg", className: "mt-7" })}>
+        <Link href="/login" prefetch={false} className={buttonVariants({ variant: "cover", size: "lg", className: "mt-7" })}>
           <GoogleIcon className="h-5 w-5 shrink-0" />
           Continue with Google
         </Link>

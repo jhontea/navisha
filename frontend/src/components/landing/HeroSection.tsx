@@ -45,7 +45,7 @@ export function HeroSection() {
               trip&apos;s currency. Start from scratch or let AI draft the days for you.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/login" className={buttonVariants({ variant: "cover", size: "lg", className: "w-full sm:w-auto" })}>
+              <Link href="/login" prefetch={false} className={buttonVariants({ variant: "cover", size: "lg", className: "w-full sm:w-auto" })}>
                 <GoogleIcon className="h-5 w-5 shrink-0" />
                 Continue with Google
               </Link>

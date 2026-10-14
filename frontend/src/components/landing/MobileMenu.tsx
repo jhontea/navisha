@@ -65,6 +65,7 @@ export function MobileMenu() {
           </a>
           <Link
             href="/login"
+            prefetch={false}
             role="menuitem"
             onClick={() => setOpen(false)}
             className={buttonVariants({ className: "mt-1 w-full" })}

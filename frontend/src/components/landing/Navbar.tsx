@@ -22,7 +22,7 @@ export function Navbar() {
           <a href="#how-it-works" className={NAV_LINK}>
             How it works
           </a>
-          <Link href="/login" className={buttonVariants({ className: "ml-2" })}>
+          <Link href="/login" prefetch={false} className={buttonVariants({ className: "ml-2" })}>
             Sign in
           </Link>
         </div>
