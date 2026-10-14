@@ -106,9 +106,9 @@ func (h *Handler) Create(c echo.Context, userID string) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
 	}
-	// Validate check-in before check-out.
-	if !in.CheckOut.After(in.CheckIn) {
-		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be after check-in")
+	// Same-day stays (day use) are allowed, as in the form and the usecase.
+	if in.CheckOut.Before(in.CheckIn) {
+		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be on or after check-in")
 	}
 	a, err := h.usecase.Create(c.Request().Context(), userID, tripID, in)
 	if err != nil {
@@ -136,8 +136,8 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
 	}
-	if !in.CheckOut.After(in.CheckIn) {
-		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be after check-in")
+	if in.CheckOut.Before(in.CheckIn) {
+		return echo.NewHTTPError(http.StatusBadRequest, "check-out must be on or after check-in")
 	}
 	a, err := h.usecase.Update(c.Request().Context(), userID, id, in)
 	if err != nil {
@@ -180,6 +180,8 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrInvalidName, Code: http.StatusBadRequest, Message: "name required"},
 		apperr.HTTPMapping{Err: ErrInvalidDates, Code: http.StatusBadRequest, Message: "invalid dates: check_out must be on or after check_in"},
 		apperr.HTTPMapping{Err: ErrInvalidType, Code: http.StatusBadRequest, Message: "invalid accommodation type: must be hotel, hostel, apartment, or other"},
+		apperr.HTTPMapping{Err: apperr.ErrUnsupportedCurrency, Code: http.StatusBadRequest, Message: "unsupported cost currency"},
+		apperr.HTTPMapping{Err: apperr.ErrRatesUnavailable, Code: http.StatusServiceUnavailable, Message: "Couldn't fetch exchange rates for the cost. Try again in a moment."},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 	)
 }

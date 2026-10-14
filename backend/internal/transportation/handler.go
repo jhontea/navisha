@@ -95,26 +95,34 @@ func (h *Handler) List(c echo.Context, userID string) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": resp})
 }
 
+// clean strips HTML from the text fields, then checks the required ones, so a
+// value made only of tags counts as empty.
+func (req *request) clean() *echo.HTTPError {
+	if len(req.Notes) > 5000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
+	}
+	req.FromLocation = strings.TrimSpace(sanitize.Text(req.FromLocation))
+	req.ToLocation = strings.TrimSpace(sanitize.Text(req.ToLocation))
+	req.Notes = sanitize.Text(req.Notes)
+	req.Label = sanitize.Text(req.Label)
+	if req.FromLocation == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "from_location is required")
+	}
+	if req.ToLocation == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "to_location is required")
+	}
+	return nil
+}
+
 func (h *Handler) Create(c echo.Context, userID string) error {
 	tripID := c.Param("trip_id")
 	var req request
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	// Loop 32: early validation.
-	if strings.TrimSpace(req.FromLocation) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "from_location is required")
+	if err := req.clean(); err != nil {
+		return err
 	}
-	if strings.TrimSpace(req.ToLocation) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "to_location is required")
-	}
-	if len(req.Notes) > 5000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
-	}
-	req.FromLocation = sanitize.Text(req.FromLocation)
-	req.ToLocation = sanitize.Text(req.ToLocation)
-	req.Notes = sanitize.Text(req.Notes)
-	req.Label = sanitize.Text(req.Label)
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")
@@ -132,19 +140,9 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	if strings.TrimSpace(req.FromLocation) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "from_location is required")
+	if err := req.clean(); err != nil {
+		return err
 	}
-	if strings.TrimSpace(req.ToLocation) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "to_location is required")
-	}
-	if len(req.Notes) > 5000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "notes are too long")
-	}
-	req.FromLocation = sanitize.Text(req.FromLocation)
-	req.ToLocation = sanitize.Text(req.ToLocation)
-	req.Notes = sanitize.Text(req.Notes)
-	req.Label = sanitize.Text(req.Label)
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")
@@ -199,7 +197,10 @@ func mapErr(err error) error {
 	return apperr.MapHTTP(err,
 		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "transportation not found"},
 		apperr.HTTPMapping{Err: ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
+		apperr.HTTPMapping{Err: ErrArrivalBeforeDeparture, Code: http.StatusBadRequest, Message: "arrival must be after departure"},
 		apperr.HTTPMapping{Err: ErrInvalidType, Code: http.StatusBadRequest, Message: "invalid type (expect flight|bus|train|ferry|ship|car|other)"},
+		apperr.HTTPMapping{Err: apperr.ErrUnsupportedCurrency, Code: http.StatusBadRequest, Message: "unsupported cost currency"},
+		apperr.HTTPMapping{Err: apperr.ErrRatesUnavailable, Code: http.StatusServiceUnavailable, Message: "Couldn't fetch exchange rates for the cost. Try again in a moment."},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 	)
 }

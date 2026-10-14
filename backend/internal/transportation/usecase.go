@@ -176,7 +176,7 @@ func validate(in CreateInput) error {
 	// only enforce when both supplied.
 	if in.DepartureDatetime != nil && in.ArrivalDatetime != nil &&
 		in.ArrivalDatetime.Before(*in.DepartureDatetime) {
-		return fmt.Errorf("arrival before departure")
+		return ErrArrivalBeforeDeparture
 	}
 	return nil
 }

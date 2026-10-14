@@ -49,35 +49,43 @@ func (h *Handler) List(c echo.Context, userID string) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": resp})
 }
 
+// clean strips HTML before the required checks (a tag-only title counts as
+// empty) and normalizes the currency code.
+func (r *expenseRequest) clean() *echo.HTTPError {
+	if len(r.Title) > 200 {
+		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
+	}
+	if len(r.Note) > 2000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "note is too long")
+	}
+	r.Title = strings.TrimSpace(sanitize.Text(r.Title))
+	r.Note = sanitize.Text(r.Note)
+	r.Currency = strings.ToUpper(strings.TrimSpace(r.Currency))
+	if r.Title == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	}
+	if r.Amount <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than 0")
+	}
+	if r.Currency == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "currency is required")
+	}
+	return nil
+}
+
 func (h *Handler) Create(c echo.Context, userID string) error {
 	tripID := c.Param("trip_id")
 	var req expenseRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	// Early validation (Iteration 7: user-friendly errors)
-	if strings.TrimSpace(req.Title) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	if err := req.clean(); err != nil {
+		return err
 	}
-	if req.Amount <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than 0")
-	}
-	if strings.TrimSpace(req.Currency) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "currency is required")
-	}
-	// Loop 33: additional validation.
-	if len(req.Title) > 200 {
-		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
-	}
-	if len(req.Note) > 2000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "note is too long")
-	}
-	req.Title = sanitize.Text(req.Title)
-	req.Note = sanitize.Text(req.Note)
 	e, err := h.usecase.Create(c.Request().Context(), userID, tripID, CreateInput{
 		Title:       req.Title,
 		Amount:      req.Amount,
-		Currency:    strings.ToUpper(req.Currency),
+		Currency:    req.Currency,
 		Category:    Category(req.Category),
 		ActivityID:  req.ActivityID,
 		ExpenseDate: req.ExpenseDate,
@@ -95,24 +103,13 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	if strings.TrimSpace(req.Title) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
+	if err := req.clean(); err != nil {
+		return err
 	}
-	if req.Amount <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "amount must be greater than 0")
-	}
-	if len(req.Title) > 200 {
-		return echo.NewHTTPError(http.StatusBadRequest, "title must be 200 characters or less")
-	}
-	if len(req.Note) > 2000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "note is too long")
-	}
-	req.Title = sanitize.Text(req.Title)
-	req.Note = sanitize.Text(req.Note)
 	e, err := h.usecase.Update(c.Request().Context(), userID, id, UpdateInput{
 		Title:       req.Title,
 		Amount:      req.Amount,
-		Currency:    strings.ToUpper(req.Currency),
+		Currency:    req.Currency,
 		Category:    Category(req.Category),
 		ActivityID:  req.ActivityID,
 		ExpenseDate: req.ExpenseDate,
@@ -176,6 +173,8 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrTripNotFound, Code: http.StatusNotFound, Message: "trip not found"},
 		apperr.HTTPMapping{Err: ErrInvalidCategory, Code: http.StatusBadRequest, Message: "invalid category"},
 		apperr.HTTPMapping{Err: ErrInvalidCurrency, Code: http.StatusBadRequest, Message: "invalid currency"},
+		apperr.HTTPMapping{Err: ErrInvalidDate, Code: http.StatusBadRequest, Message: "invalid expense_date (expect YYYY-MM-DD)"},
+		apperr.HTTPMapping{Err: apperr.ErrRatesUnavailable, Code: http.StatusServiceUnavailable, Message: "Couldn't fetch exchange rates. Try again in a moment."},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 	)
 }

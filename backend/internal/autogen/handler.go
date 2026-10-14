@@ -67,7 +67,7 @@ func (h *Handler) GenerateDayPreview(c echo.Context, userID string) error {
 
 	preview, err := h.usecase.GenerateDayPreview(c.Request().Context(), userID, input)
 	if err != nil {
-		if errors.Is(err, ErrLLMUnavailable) {
+		if refundable(err) {
 			h.quota.Refund(c, userID)
 		}
 		return mapErr(err)
@@ -84,26 +84,14 @@ type generateRequest struct {
 }
 
 func (h *Handler) Generate(c echo.Context, userID string) error {
-
 	var req generateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	// Validate required fields before consuming the rate-limit cooldown.
-	// Previously the cooldown was reserved at the top of the function, which
-	// meant a malformed request (missing destination, bad date) would consume
-	// the user's cooldown slot without actually generating a trip.
-	if strings.TrimSpace(req.Destination) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "destination is required")
-	}
-	if len(req.Destination) > 200 {
-		return echo.NewHTTPError(http.StatusBadRequest, "destination must be 200 characters or less")
-	}
-	if len(req.Description) > 2000 {
-		return echo.NewHTTPError(http.StatusBadRequest, "description is too long")
-	}
-	// Strip HTML/scripts from LLM-bound inputs to prevent prompt injection.
-	req.Destination = sanitize.Text(req.Destination)
+	// Strip HTML/scripts from LLM-bound inputs (prompt injection), then run
+	// the same checks the usecase runs, so an invalid request never consumes
+	// the user's daily AI quota.
+	req.Destination = strings.TrimSpace(sanitize.Text(req.Destination))
 	req.Description = sanitize.Text(req.Description)
 	start, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
@@ -113,22 +101,25 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
 	}
-
-	// ── Daily quota check (shared across all AI endpoints) ──
-	// Placed AFTER input validation so invalid requests don't consume quota.
-	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
-		return quotaErr
-	}
-
-	draft, err := h.usecase.GenerateDraft(c.Request().Context(), userID, GenerateInput{
+	input := GenerateInput{
 		Destination:  req.Destination,
 		Description:  req.Description,
 		StartDate:    start,
 		EndDate:      end,
 		BaseCurrency: req.BaseCurrency,
-	})
+	}
+	if err := ValidateInput(input); err != nil {
+		return mapErr(err)
+	}
+
+	// Daily quota check (shared across all AI endpoints).
+	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
+		return quotaErr
+	}
+
+	draft, err := h.usecase.GenerateDraft(c.Request().Context(), userID, input)
 	if err != nil {
-		if errors.Is(err, ErrLLMUnavailable) {
+		if refundable(err) {
 			h.quota.Refund(c, userID)
 		}
 		return mapErr(err)
@@ -199,4 +190,12 @@ func mapErr(err error) error {
 		slog.Error("autogen: internal error", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
+}
+
+// refundable reports whether a failed AI request gives its quota back. Only a
+// model that answered but declined the prompt (ErrInvalidPrompt) keeps it;
+// everything else (trip or day not found, forbidden, LLM failure) produced
+// nothing the user can use.
+func refundable(err error) bool {
+	return !errors.Is(err, ErrInvalidPrompt)
 }

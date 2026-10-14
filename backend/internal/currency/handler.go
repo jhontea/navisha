@@ -1,6 +1,7 @@
 package currency
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -56,6 +57,9 @@ func (h *Handler) Convert(c echo.Context) error {
 	}
 	amount, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid amount")
+	}
+	if math.IsNaN(amount) || math.IsInf(amount, 0) {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid amount")
 	}
 	if amount <= 0 {
