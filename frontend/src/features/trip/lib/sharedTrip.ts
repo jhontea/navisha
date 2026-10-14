@@ -1,7 +1,7 @@
 import { resolveTripCover } from "./cover"
 import { formatTripRange } from "./home"
-import { getTripDateMetrics } from "./status"
-import type { PublicItinerary } from "../types"
+import { getTripDateMetrics, toLocalISODate } from "./status"
+import type { PublicItinerary, PublicTripDay } from "../types"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v1"
 
@@ -40,4 +40,23 @@ export function sharedTripPreview(trip: Pick<
     description: `${parts.join(" · ")}. Day-by-day plan shared from Navisha.`,
     image: resolveTripCover(trip.cover_image_url, trip.description, 1200) || null,
   }
+}
+
+/**
+ * The day a shared trip opens on: today's day while the trip is under way,
+ * otherwise the first day.
+ */
+export function defaultOpenDayId(days: Pick<PublicTripDay, "id" | "date">[], today = new Date()): string | null {
+  const iso = toLocalISODate(today)
+  return (days.find((d) => d.date.slice(0, 10) === iso) ?? days[0])?.id ?? null
+}
+
+/** Short summary for a collapsed day header, e.g. "3 places · 1 note". */
+export function dayContentSummary(day: Pick<PublicTripDay, "activities">): string {
+  const places = day.activities.filter((a) => a.type !== "note").length
+  const notes = day.activities.length - places
+  const parts: string[] = []
+  if (places) parts.push(`${places} ${places === 1 ? "place" : "places"}`)
+  if (notes) parts.push(`${notes} ${notes === 1 ? "note" : "notes"}`)
+  return parts.join(" · ")
 }

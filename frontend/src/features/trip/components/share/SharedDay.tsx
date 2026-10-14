@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLink, MapPin } from "lucide-react"
+import { ChevronDown, ExternalLink, MapPin } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { formatWeekdayDate } from "@/lib/calendar"
@@ -13,45 +13,65 @@ import { buildStaticItems, extractTime, interleaveTimeline } from "@/features/ac
 import { formatActivityTimeRange } from "@/features/activity/lib/time"
 import { normalizeExternalUrl } from "@/features/activity/lib/externalUrl"
 import { buildMapsPinUrl, hasValidCoords } from "../../lib/mapsUrl"
+import { dayContentSummary } from "../../lib/sharedTrip"
 import type { PublicAccommodation, PublicTransportation, PublicTripActivity, PublicTripDay } from "../../types"
 
 /**
- * One day of a shared trip: header and a read-only timeline with transport
- * and stays placed between activities by time (same rule as the itinerary).
+ * One day of a shared trip: a header that opens or closes the day, and a
+ * read-only timeline with transport and stays placed between activities by
+ * time (same rule as the itinerary). A closed day keeps its timeline in the
+ * page, hidden.
  */
 export function SharedDay({
   day,
   transportations,
   accommodations,
+  open,
+  onOpenChange,
 }: {
   day: PublicTripDay
   transportations: PublicTransportation[]
   accommodations: PublicAccommodation[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }) {
   const { activeDayId, setActiveDayId, selectedActivityId, selectActivity } = useItineraryFocus()
   const entries = interleaveTimeline(day.activities, buildStaticItems(transportations, accommodations, day.date))
   const isActive = activeDayId === day.id
+  const summary = dayContentSummary(day)
 
   return (
     <section
       id={`day-${day.id}`}
       aria-labelledby={`day-heading-${day.id}`}
-      className={cn("scroll-mt-20 rounded-xl border bg-card", isActive && "lg:border-primary/40")}
+      className={cn("scroll-mt-20 rounded-xl border bg-card", isActive && open && "lg:border-primary/40")}
     >
-      {/* eslint-disable-next-line no-restricted-syntax -- day header that focuses the map on this day */}
+      {/* eslint-disable-next-line no-restricted-syntax -- collapsible day header; opening it also focuses the map on this day */}
       <button
         type="button"
-        onClick={() => setActiveDayId(day.id)}
-        className="flex min-h-12 w-full flex-col justify-center rounded-t-xl px-4 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:cursor-pointer"
+        onClick={() => {
+          if (!open) setActiveDayId(day.id)
+          onOpenChange(!open)
+        }}
+        aria-expanded={open}
+        aria-controls={`day-panel-${day.id}`}
+        className="flex min-h-12 w-full items-center gap-3 rounded-xl px-4 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >
-        <span id={`day-heading-${day.id}`} className="text-base font-semibold text-foreground">
-          Day {day.day_number}
-          <span className="font-normal text-muted-foreground"> · {formatWeekdayDate(day.date)}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span id={`day-heading-${day.id}`} className="text-base font-semibold text-foreground">
+            Day {day.day_number}
+            <span className="font-normal text-muted-foreground"> · {formatWeekdayDate(day.date)}</span>
+          </span>
+          {day.title && <span className="text-sm text-muted-foreground">{day.title}</span>}
+          {!open && summary && <span className="text-xs text-muted-foreground">{summary}</span>}
         </span>
-        {day.title && <span className="text-sm text-muted-foreground">{day.title}</span>}
+        <ChevronDown
+          className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200", open && "rotate-180")}
+          aria-hidden="true"
+        />
       </button>
 
-      <div className="border-t px-2 pb-1 pt-3 sm:px-4">
+      <div id={`day-panel-${day.id}`} hidden={!open} className="border-t px-2 pb-1 pt-3 sm:px-4">
         {entries.length === 0 ? (
           <p className="pb-3 pl-2 text-sm text-muted-foreground">Nothing planned for this day.</p>
         ) : (
