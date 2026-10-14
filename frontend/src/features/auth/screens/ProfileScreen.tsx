@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { PageHeader } from "@/components/PageHeader"
 import { UserAvatar } from "@/components/UserAvatar"
 import {
   ArrowLeftRight,
@@ -21,7 +22,7 @@ import { StatsSection } from "@/features/trip/components/StatsSection"
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center gap-3">
-      <h2 className="text-sm font-semibold text-muted-foreground">
+      <h2 className="font-display text-lg font-extrabold text-foreground">
         {children}
       </h2>
       <span className="h-px flex-1 bg-border/40" aria-hidden="true" />
@@ -35,21 +36,13 @@ export function ProfileScreen() {
 
   return (
     <div className="mx-auto w-full max-w-6xl animate-fade-in px-margin-mobile pb-28 pt-4 md:px-margin-desktop md:pb-8 md:pt-6">
-      <header className="mb-5">
-        <p className="mb-1 text-sm font-medium text-primary">
-          Account overview
-        </p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Your profile
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account and see your travel progress.
-        </p>
-      </header>
+      <PageHeader title="Your" accent="profile" description="Manage your account and see your travel progress." />
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="rounded-xl border bg-card">
-          <div className="p-6 text-center">
+        <aside className="overflow-hidden rounded-3xl border bg-card shadow-card">
+          {/* Dusk band behind the avatar, like a trip cover. */}
+          <div className="bg-cover-fallback h-24" aria-hidden="true" />
+          <div className="-mt-12 px-6 pb-6 text-center">
             {isLoading ? (
               <div className="flex min-h-[236px] flex-col items-center" aria-label="Loading profile">
                 <Skeleton variant="avatar" className="mb-4 h-20 w-20" />
@@ -64,7 +57,7 @@ export function ProfileScreen() {
                     key={user?.id}
                     src={user?.avatar_url}
                     name={user?.name}
-                    className="h-20 w-20"
+                    className="h-24 w-24 ring-4 ring-card"
                     textClassName="text-3xl"
                   />
                   <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground">
@@ -72,14 +65,14 @@ export function ProfileScreen() {
                   </span>
                 </div>
 
-                <h2 className="text-xl font-bold text-foreground">
+                <h2 className="font-display text-2xl font-extrabold text-foreground">
                   {user?.name ?? "Traveler"}
                 </h2>
                 {user?.email && (
                   <p className="mt-1 break-all text-sm text-muted-foreground">{user.email}</p>
                 )}
 
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
                   <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -119,7 +112,7 @@ variant="destructive" className="mt-5 w-full">
             <div id="account-heading">
               <SectionHeading>Preferences &amp; access</SectionHeading>
             </div>
-            <div className="divide-y overflow-hidden rounded-xl border bg-card">
+            <div className="divide-y overflow-hidden rounded-3xl border bg-card shadow-card">
               <Link
                 href="/currency"
                 className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
@@ -162,7 +155,7 @@ variant="destructive" className="mt-5 w-full">
 
           <section className="md:hidden" aria-label="Legal and support links">
             <SectionHeading>Legal &amp; support</SectionHeading>
-            <div className="divide-y overflow-hidden rounded-xl border bg-card">
+            <div className="divide-y overflow-hidden rounded-3xl border bg-card shadow-card">
               {[
                 { href: "/privacy", label: "Privacy Policy", icon: Shield },
                 { href: "/terms", label: "Terms of Service", icon: FileText },

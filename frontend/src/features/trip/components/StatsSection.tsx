@@ -22,12 +22,12 @@ export function StatsSection() {
   return (
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-busy={isLoading}>
       {tiles.map(({ label, value, Icon }) => (
-        <div key={label} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div key={label} className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-card">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
             <Icon className="h-4 w-4" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-2xl font-semibold leading-none text-foreground tabular-nums">
+            <p className="font-display text-3xl font-extrabold leading-none text-foreground tabular-nums">
               {isLoading ? "—" : value}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">{label}</p>

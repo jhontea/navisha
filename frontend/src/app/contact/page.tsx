@@ -1,5 +1,4 @@
-import { Footer } from "@/components/landing/Footer";
-import { BackLink } from "@/components/BackLink";
+import { PublicPage } from "@/components/landing/PublicPage";
 import { ArrowUpRight, Bug, Clock3, Headset, Mail, Scale, ShieldCheck } from "lucide-react";
 
 export const metadata = {
@@ -9,23 +8,13 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-        <BackLink href="/" label="Back to Home" className="mb-8" />
-
-        <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Contact Us
-        </h1>
-        <p className="mb-8 text-sm text-muted-foreground">
-          We&apos;d love to hear from you. Choose the right channel below.
-        </p>
-
-        <div className="space-y-4">
+    <PublicPage title="Contact" accent="us" intro="We'd love to hear from you. Choose the right channel below.">
+        <div className="grid gap-4 sm:grid-cols-2">
           {/* General */}
-          <div className="rounded-xl border bg-card p-6">
+          <div className="rounded-3xl border bg-card p-6 shadow-card">
             <div className="mb-3 flex items-center gap-3">
-              <Mail className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-foreground">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"><Mail className="h-5 w-5" aria-hidden="true" /></span>
+              <h2 className="font-display text-xl font-extrabold text-foreground">
                 General questions
               </h2>
             </div>
@@ -34,7 +23,7 @@ export default function ContactPage() {
             </p>
             <a
               href="mailto:hello@navisha.cloud"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-bold text-primary-soft-foreground hover:bg-primary-soft/70"
             >
               hello@navisha.cloud
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -42,10 +31,10 @@ export default function ContactPage() {
           </div>
 
           {/* Support */}
-          <div className="rounded-xl border bg-card p-6">
+          <div className="rounded-3xl border bg-card p-6 shadow-card">
             <div className="mb-3 flex items-center gap-3">
-              <Headset className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-foreground">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"><Headset className="h-5 w-5" aria-hidden="true" /></span>
+              <h2 className="font-display text-xl font-extrabold text-foreground">
                 Support
               </h2>
             </div>
@@ -55,7 +44,7 @@ export default function ContactPage() {
             </p>
             <a
               href="mailto:support@navisha.cloud"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-bold text-primary-soft-foreground hover:bg-primary-soft/70"
             >
               support@navisha.cloud
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -63,10 +52,10 @@ export default function ContactPage() {
           </div>
 
           {/* Privacy & Legal */}
-          <div className="rounded-xl border bg-card p-6">
+          <div className="rounded-3xl border bg-card p-6 shadow-card">
             <div className="mb-3 flex items-center gap-3">
-              <Scale className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-foreground">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"><Scale className="h-5 w-5" aria-hidden="true" /></span>
+              <h2 className="font-display text-xl font-extrabold text-foreground">
                 Privacy &amp; Legal
               </h2>
             </div>
@@ -76,14 +65,14 @@ export default function ContactPage() {
             <div className="flex flex-wrap gap-4">
               <a
                 href="mailto:privacy@navisha.cloud"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-bold text-primary-soft-foreground hover:bg-primary-soft/70"
               >
                 privacy@navisha.cloud
                 <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
               </a>
               <a
                 href="mailto:legal@navisha.cloud"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-bold text-primary-soft-foreground hover:bg-primary-soft/70"
               >
                 legal@navisha.cloud
                 <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -92,8 +81,8 @@ export default function ContactPage() {
           </div>
 
           {/* Response Time */}
-          <div className="rounded-2xl bg-muted/40 p-6">
-            <h2 className="mb-2 text-sm font-semibold text-foreground">
+          <div className="rounded-3xl border bg-card p-6 shadow-card">
+            <h2 className="mb-3 font-display text-xl font-extrabold text-foreground">
               What to Expect
             </h2>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -114,8 +103,6 @@ export default function ContactPage() {
             </ul>
           </div>
         </div>
-      </div>
-      <Footer />
-    </div>
+    </PublicPage>
   );
 }
