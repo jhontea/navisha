@@ -62,7 +62,7 @@ export function TripHeader({
           <img
             src={cover}
             srcSet={srcSet}
-            sizes="(min-width: 1200px) 1200px, 100vw"
+            sizes="(min-width: 1600px) 1600px, 100vw"
             alt=""
             fetchPriority="high"
             decoding="async"

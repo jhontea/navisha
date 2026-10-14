@@ -13,7 +13,7 @@ import { useDashboardTrips, useTrips } from "@/features/trip/hooks/useTrips"
 import { groupTrips, pickNextUp, tripStats } from "@/features/trip/lib/home"
 import type { Trip } from "@/features/trip/types"
 
-const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
 
 function TripGrid({ id, title, trips }: { id: string; title: string; trips: Trip[] }) {
   if (trips.length === 0) return null

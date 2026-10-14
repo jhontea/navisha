@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, type KeyboardEvent } from "react"
+import { useEffect, useRef, type KeyboardEvent } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -21,11 +21,13 @@ function parts(date: string) {
   const y = Number(m[1])
   const mo = Number(m[2]) - 1
   const d = Number(m[3])
-  return { d, month: MONTHS[mo], weekday: WEEKDAYS[new Date(Date.UTC(y, mo, d)).getUTCDay()] }
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, mo, d)).getUTCDay()]
+  return { d, month: MONTHS[mo], weekday, short: weekday.slice(0, 3) }
 }
 
 /**
- * Horizontal day picker: one circle per trip day (docs/DESIGN.md §5).
+ * Day picker: one rounded tile per trip day — weekday, date, and a dot when
+ * the day has plans (docs/DESIGN.md §5). The selected day is solid blue.
  * A radiogroup: Tab enters the selected day, arrow keys move and select.
  */
 export function DateCircles({
@@ -44,6 +46,11 @@ export function DateCircles({
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const selectedIndex = Math.max(0, days.findIndex((d) => d.id === value))
 
+  // Keep the selected day in view when it changes (e.g. today on a long trip).
+  useEffect(() => {
+    refs.current[selectedIndex]?.scrollIntoView({ block: "nearest", inline: "nearest" })
+  }, [selectedIndex])
+
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0
     if (!step) return
@@ -57,7 +64,7 @@ export function DateCircles({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 pb-3 pt-1 [scrollbar-width:none]", className)}
+      className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none]", className)}
     >
       {days.map((day, index) => {
         const p = parts(day.date)
@@ -76,25 +83,28 @@ export function DateCircles({
             onClick={() => onChange(day.id)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
-              "relative grid size-12 shrink-0 place-content-center rounded-full text-center leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "flex w-[3.75rem] shrink-0 flex-col items-center rounded-2xl border px-1 pb-2 pt-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               selected
-                ? "border border-primary/30 bg-primary-soft text-primary-soft-foreground"
-                : "border bg-card text-foreground hover:bg-primary-soft/60",
+                ? "border-primary bg-primary text-primary-foreground shadow-card"
+                : "bg-card text-foreground hover:border-primary/40 hover:bg-primary-soft/50",
             )}
           >
-            <span className="font-display text-lg font-extrabold">{p?.d ?? index + 1}</span>
-            <span className={cn("mt-0.5 text-xs", selected ? "text-primary-soft-foreground" : "text-muted-foreground")}>
-              {p?.month ?? ""}
+            <span
+              className={cn(
+                "text-xs font-bold uppercase tracking-wide",
+                selected ? "text-primary-foreground/85" : "text-muted-foreground",
+              )}
+            >
+              {p?.short ?? ""}
             </span>
-            {day.hasItems && (
-              <span
-                className={cn(
-                  "absolute -bottom-2.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full",
-                  selected ? "bg-primary" : "bg-primary/40",
-                )}
-                aria-hidden="true"
-              />
-            )}
+            <span className="font-display text-2xl font-extrabold leading-tight tabular-nums">{p?.d ?? index + 1}</span>
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                day.hasItems ? (selected ? "bg-primary-foreground" : "bg-primary") : "bg-transparent",
+              )}
+              aria-hidden="true"
+            />
           </button>
         )
       })}

@@ -113,7 +113,7 @@ export function ItineraryScreen() {
 
   return (
     <ItineraryFocusProvider initialDayId={initialDay(trip.days)}>
-      <main className="mx-auto grid w-full max-w-max-width gap-5 px-margin-mobile pb-6 pt-4 md:px-margin-desktop md:pb-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+      <main className="mx-auto grid w-full max-w-max-width gap-5 px-margin-mobile pb-6 pt-4 md:px-margin-desktop md:pb-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,37.5rem)_minmax(0,1fr)]">
         <div className="min-w-0">
           {trip.days.length === 0 ? (
             <EmptyState

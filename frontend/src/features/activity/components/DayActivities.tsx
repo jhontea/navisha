@@ -57,7 +57,8 @@ interface Props {
   onSelectModeChange: (on: boolean) => void
 }
 
-const MENU_ITEM = "min-h-11 gap-2.5 px-3 text-sm"
+const MENU_ITEM = "min-h-14 gap-3 px-2.5 py-2"
+const MENU_ICON = "flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"
 
 /**
  * One day's timeline: activities in their saved order with transport and
@@ -245,19 +246,23 @@ export function DayActivities({
             Add to Day {dayNumber}
             <ChevronDown className="opacity-70" aria-hidden="true" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
+          <DropdownMenuContent align="start" className="w-[min(22rem,calc(100vw-2rem))]">
             <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "add" })}>
-              <PenLine aria-hidden="true" />
+              <span className={MENU_ICON}>
+                <PenLine aria-hidden="true" />
+              </span>
               <span>
-                <span className="block font-medium">Add activity</span>
-                <span className="block text-xs text-muted-foreground">A place, a note, or a to-do list</span>
+                <span className="block font-bold text-foreground">Add activity</span>
+                <span className="block text-xs font-normal text-muted-foreground">A place, a note, or a to-do list</span>
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "ai" })}>
-              <Sparkles aria-hidden="true" />
+              <span className={MENU_ICON}>
+                <Sparkles aria-hidden="true" />
+              </span>
               <span>
-                <span className="block font-medium">Suggest with AI</span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="block font-bold text-foreground">Suggest with AI</span>
+                <span className="block text-xs font-normal text-muted-foreground">
                   {activities.length > 0 ? "Fill the gaps around your plan" : "Get a balanced day to review"}
                 </span>
               </span>
