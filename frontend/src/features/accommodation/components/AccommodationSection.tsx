@@ -8,7 +8,9 @@ import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
 import { dateSortKey } from "@/lib/calendar"
+import { linkedCost } from "@/lib/linkedCost"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
+import { useExpenses } from "@/features/expense/hooks/useExpenses"
 import {
   useAccommodations,
   useCreateAccommodation,
@@ -40,6 +42,9 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
   const createMut = useCreateAccommodation(tripId)
   const updateMut = useUpdateAccommodation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteAccommodation(tripId)
+  // The edit form shows the cost only once the expenses are known, so a
+  // save can never clear a cost it did not load.
+  const expenses = useExpenses(tripId)
   // The date picker opens on the trip, not on today's month.
   const tripStart = days.map((d) => d.date).sort()[0]
 
@@ -133,6 +138,9 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
         {sheet?.mode === "edit" && (
           <AccommodationForm
             initial={sheet.item}
+            tripBaseCurrency={tripBaseCurrency}
+            withCost={expenses.isSuccess}
+            initialCost={linkedCost(expenses.data?.items, "accommodation", sheet.item.id)}
             defaultDate={tripStart}
             searchContext={destination}
             isSubmitting={updateMut.isPending}

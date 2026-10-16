@@ -1,6 +1,7 @@
 "use client"
 
 import { SUPPORTED_CURRENCIES } from "@/lib/currency"
+import { costPayload, type LinkedCost } from "@/lib/linkedCost"
 import { Input } from "@/components/ui/input"
 import { Chip } from "@/components/Chip"
 import { Controller, useForm } from "react-hook-form"
@@ -99,6 +100,8 @@ interface Props {
   initial?: Accommodation
   tripBaseCurrency?: string
   withCost?: boolean
+  /** On edit: the cost already linked to this stay, to prefill. */
+  initialCost?: LinkedCost | null
   onSubmit: (input: CreateAccommodationInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
@@ -112,14 +115,16 @@ export function AccommodationForm({
   initial,
   tripBaseCurrency,
   withCost,
+  initialCost,
   onSubmit,
   onCancel,
   isSubmitting,
   defaultDate,
   searchContext,
 }: Props) {
-  const defaultCurrency =
-    (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
+  // A linked cost keeps the currency it was paid in.
+  const costCurrency = SUPPORTED_CURRENCIES.find((c) => c === initialCost?.currency)
+  const defaultCurrency = costCurrency ?? (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
   const {
     register,
     handleSubmit,
@@ -144,7 +149,7 @@ export function AccommodationForm({
       check_out_time: initial?.check_out_time ?? "",
       confirmation_number: initial?.confirmation_number ?? "",
       notes: initial?.notes ?? "",
-      amount: "",
+      amount: initialCost ? String(initialCost.amount) : "",
       currency: defaultCurrency,
     },
   })
@@ -168,11 +173,7 @@ export function AccommodationForm({
       confirmation_number: v.confirmation_number,
       notes: v.notes,
     }
-    const amount = v.amount ? Number(v.amount) : 0
-    const cost =
-      withCost && amount > 0 && v.currency
-        ? { amount, currency: v.currency }
-        : null
+    const cost = costPayload(v.amount, v.currency, !withCost ? "off" : initial ? "edit" : "add")
     await onSubmit({ ...entity, cost })
   }
 
@@ -365,7 +366,9 @@ export function AccommodationForm({
         <div className="rounded-2xl bg-muted p-4">
           <FormFieldLabel optional className="text-sm">Cost</FormFieldLabel>
           <FormFieldDescription className="mt-1">
-            Adds an expense to the trip budget when an amount is entered.
+            {initial
+              ? "Kept as an expense in the trip budget. Clear the amount to remove it."
+              : "Adds an expense to the trip budget when an amount is entered."}
           </FormFieldDescription>
           <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
             {/* Hidden field for RHF */}
@@ -374,7 +377,8 @@ export function AccommodationForm({
               type="text"
               inputMode="numeric"
               placeholder="0"
-              defaultValue=""
+              aria-label="Cost amount"
+              defaultValue={initialCost ? initialCost.amount.toLocaleString() : ""}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9.]/g, "")
                 const parts = raw.split(".")

@@ -49,6 +49,19 @@ func (cr *costRequest) toCost() (*Cost, *echo.HTTPError) {
 	return &Cost{Amount: cr.Amount, Currency: currency}, nil
 }
 
+// toUpdateCost reads the cost sent with an edit. No cost leaves the linked
+// expense alone (older clients); an amount of 0 removes it; a positive
+// amount sets it.
+func (cr *costRequest) toUpdateCost() (*Cost, *echo.HTTPError) {
+	if cr == nil {
+		return nil, nil
+	}
+	if cr.Amount == 0 {
+		return &Cost{}, nil
+	}
+	return cr.toCost()
+}
+
 type request struct {
 	Type              string       `json:"type"`
 	Label             string       `json:"label"`
@@ -168,12 +181,15 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := req.clean(); err != nil {
 		return err
 	}
-	// A cost only creates the linked expense on Create; after that the
-	// expense is edited on the Budget tab, so Update ignores it.
 	in, err := req.toInput()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid datetime (expect RFC3339)")
 	}
+	cost, herr := req.Cost.toUpdateCost()
+	if herr != nil {
+		return herr
+	}
+	in.Cost = cost
 	t, err := h.usecase.Update(c.Request().Context(), userID, id, in)
 	if err != nil {
 		return mapErr(err)

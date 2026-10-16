@@ -296,3 +296,72 @@ func TestUsecase_RebaseTx_ConvertErrorStops(t *testing.T) {
 		t.Fatalf("err = %v, want ErrRatesUnavailable", err)
 	}
 }
+
+// ---------- SyncLinkedExpenseTx ----------
+
+func TestSyncLinkedExpense_CreatesUpdatesAndRemoves(t *testing.T) {
+	repo := newMockRepo()
+	repo.trips["trip-1"] = tripMeta{owner: "user-1", base: "IDR"}
+	u := NewUsecase(repo, &mockConverter{rate: 1})
+	ctx := context.Background()
+
+	// First cost: a new expense linked to the transport, dated on travel day.
+	if err := u.SyncLinkedExpenseTx(ctx, nil, "user-1", "trip-1", LinkTransportation, "tr-1",
+		"Car", "IDR", "transport", 500_000, "2026-11-07"); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	created := repo.expenses["new-exp-id"]
+	if created == nil || created.TransportationID == nil || *created.TransportationID != "tr-1" ||
+		created.Title != "Car" || created.ExpenseDate.Format("2006-01-02") != "2026-11-07" {
+		t.Fatalf("created = %#v", created)
+	}
+
+	// The traveller renames it on the Budget tab, then edits the cost.
+	created.Title = "Bensin + tol"
+	if err := u.SyncLinkedExpenseTx(ctx, nil, "user-1", "trip-1", LinkTransportation, "tr-1",
+		"Car", "IDR", "transport", 750_000, "2026-11-07"); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	if len(repo.expenses) != 1 || created.Amount != 750_000 || created.ConvertedAmount != 750_000 || created.Title != "Bensin + tol" {
+		t.Fatalf("after update = %#v (count %d)", created, len(repo.expenses))
+	}
+
+	// Clearing the cost removes the expense; clearing again is a no-op.
+	for i := 0; i < 2; i++ {
+		if err := u.SyncLinkedExpenseTx(ctx, nil, "user-1", "trip-1", LinkTransportation, "tr-1",
+			"Car", "IDR", "transport", 0, ""); err != nil {
+			t.Fatalf("remove %d: %v", i, err)
+		}
+	}
+	if len(repo.expenses) != 0 {
+		t.Fatalf("expenses left = %d", len(repo.expenses))
+	}
+}
+
+func TestSyncLinkedExpense_KeepsStaysAndTransportApart(t *testing.T) {
+	repo := newMockRepo()
+	repo.trips["trip-1"] = tripMeta{owner: "user-1", base: "IDR"}
+	tr := "booking-1"
+	repo.expenses["transport-cost"] = &Expense{ID: "transport-cost", TransportationID: &tr, Title: "Car", Category: CategoryTransport}
+	u := NewUsecase(repo, &mockConverter{rate: 1})
+
+	// A stay that happens to share the id must get its own expense.
+	if err := u.SyncLinkedExpenseTx(context.Background(), nil, "user-1", "trip-1", LinkAccommodation, "booking-1",
+		"Mercure", "IDR", "accommodation", 1_000_000, "2026-11-07"); err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	if repo.expenses["transport-cost"].Amount != 0 || repo.expenses["new-exp-id"].AccommodationID == nil {
+		t.Fatalf("expenses = %#v", repo.expenses)
+	}
+}
+
+func TestSyncLinkedExpense_Forbidden(t *testing.T) {
+	repo := newMockRepo()
+	repo.trips["trip-1"] = tripMeta{owner: "user-other", base: "IDR"}
+	u := NewUsecase(repo, &mockConverter{rate: 1})
+	err := u.SyncLinkedExpenseTx(context.Background(), nil, "user-1", "trip-1", LinkTransportation, "tr-1",
+		"Car", "IDR", "transport", 1, "")
+	if !errors.Is(err, apperr.ErrForbidden) {
+		t.Fatalf("err = %v, want ErrForbidden", err)
+	}
+}

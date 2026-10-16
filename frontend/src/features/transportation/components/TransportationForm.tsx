@@ -9,6 +9,7 @@ import { FormActions } from "@/components/forms/FormActions"
 import { FormFieldError, FormFieldLabel } from "@/components/forms/FormFieldState"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency"
+import type { LinkedCost } from "@/lib/linkedCost"
 import { cn } from "@/lib/utils"
 
 import {
@@ -44,18 +45,29 @@ interface Props {
   lockType?: boolean
   tripBaseCurrency?: string
   withCost?: boolean
+  /** On edit: the cost already linked to this transport, to prefill. */
+  initialCost?: LinkedCost | null
   onSubmit: (input: CreateTransportationInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
 }
 
-export function TransportationForm({ initial, lockType, tripBaseCurrency, withCost, onSubmit, onCancel, isSubmitting }: Props) {
+export function TransportationForm({
+  initial,
+  lockType,
+  tripBaseCurrency,
+  withCost,
+  initialCost,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+}: Props) {
   const currency: CurrencyCode = SUPPORTED_CURRENCIES.includes(tripBaseCurrency as CurrencyCode)
     ? (tripBaseCurrency as CurrencyCode)
     : "IDR"
   const form = useForm<TransportFormValues>({
     resolver: zodResolver(transportFormSchema),
-    defaultValues: transportFormDefaults(initial, currency),
+    defaultValues: transportFormDefaults(initial, currency, initialCost),
   })
   const {
     register,
@@ -68,7 +80,7 @@ export function TransportationForm({ initial, lockType, tripBaseCurrency, withCo
 
   return (
     <form
-      onSubmit={handleSubmit((v) => onSubmit(transportInput(v, Boolean(withCost))))}
+      onSubmit={handleSubmit((v) => onSubmit(transportInput(v, !withCost ? "off" : initial ? "edit" : "add")))}
       className="space-y-6"
       aria-busy={isSubmitting}
     >
@@ -154,7 +166,7 @@ export function TransportationForm({ initial, lockType, tripBaseCurrency, withCo
           />
         </div>
 
-        <TransportDetailsFields form={form} withCost={withCost} />
+        <TransportDetailsFields form={form} withCost={withCost} editing={Boolean(initial)} />
 
         <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save transport"} />
       </fieldset>

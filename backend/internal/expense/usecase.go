@@ -26,16 +26,21 @@ type UsecaseInterface interface {
 }
 
 // LinkedExpenseCreator is the cross-domain contract that transportation /
-// accommodation use to attach an expense atomically with their own insert.
-// CreateLinkedExpenseTx runs inside the caller's transaction so a failure
-// rolls back both rows.
+// accommodation usecases call for a booking's Cost field. It runs inside the
+// caller's transaction so the booking and its cost commit together.
 type LinkedExpenseCreator interface {
-	CreateLinkedExpenseTx(
+	SyncLinkedExpenseTx(
 		ctx context.Context, tx pgx.Tx,
-		userID, tripID, title, currency, category string, amount float64,
-		expenseDate string, // YYYY-MM-DD, pass "" to default to today
+		userID, tripID, linkKind, bookingID, title, currency, category string,
+		amount float64, expenseDate string,
 	) error
 }
+
+// Booking kinds an expense can be linked to (SyncLinkedExpenseTx linkKind).
+const (
+	LinkTransportation = "transportation"
+	LinkAccommodation  = "accommodation"
+)
 
 type CreateInput struct {
 	Title       string
@@ -69,15 +74,25 @@ func NewUsecase(repo Repository, converter Converter) *Usecase {
 var _ UsecaseInterface = (*Usecase)(nil)
 var _ LinkedExpenseCreator = (*Usecase)(nil)
 
-// CreateLinkedExpenseTx is called by transportation / accommodation usecases
-// inside their transaction. We resolve the trip's base currency, run the
-// non-DB currency conversion outside any locks, then insert via tx so the
-// caller controls commit/rollback boundaries.
-func (u *Usecase) CreateLinkedExpenseTx(
+// SyncLinkedExpenseTx keeps the expense of a booking's Cost field in step
+// with it, inside the caller's transaction: amount > 0 updates the linked
+// expense (or creates it, titled and dated after the booking), amount <= 0
+// removes it. An edit only changes the amount and currency, so a title,
+// category or date changed on the Budget tab is kept.
+func (u *Usecase) SyncLinkedExpenseTx(
 	ctx context.Context, tx pgx.Tx,
-	userID, tripID, title, currency, category string, amount float64,
-	expenseDate string,
+	userID, tripID, linkKind, bookingID, title, currency, category string,
+	amount float64, expenseDate string,
 ) error {
+	var column string
+	switch linkKind {
+	case LinkTransportation:
+		column = "transportation_id"
+	case LinkAccommodation:
+		column = "accommodation_id"
+	default:
+		return fmt.Errorf("expense.SyncLinkedExpenseTx: unknown link kind %q", linkKind)
+	}
 	owner, base, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {
 		return err
@@ -85,30 +100,46 @@ func (u *Usecase) CreateLinkedExpenseTx(
 	if owner != userID {
 		return apperr.ErrForbidden
 	}
+
+	existing, err := u.repo.FindLinkedTx(ctx, tx, column, bookingID)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	if amount <= 0 {
+		if existing == nil {
+			return nil
+		}
+		return u.repo.DeleteTx(ctx, tx, existing.ID)
+	}
+
 	cat := Category(category)
+	if existing != nil {
+		cat = existing.Category
+		title = existing.Title
+	}
 	if err := validateInput(title, amount, currency, cat); err != nil {
 		return err
 	}
-
 	converted, _, err := u.converter.Convert(ctx, currency, base, amount)
 	if err != nil {
-		return convertErr("expense.CreateLinkedExpenseTx", err)
+		return convertErr("expense.SyncLinkedExpenseTx", err)
+	}
+	if existing != nil {
+		return u.repo.UpdateCostTx(ctx, tx, existing.ID, amount, currency, converted, base)
 	}
 
-	// Parse the caller-supplied date or default to today
+	// Date it on the travel / check-in day, or today when the booking has none.
 	var eDate time.Time
 	if expenseDate != "" {
-		var err error
 		eDate, err = time.Parse("2006-01-02", expenseDate)
 		if err != nil {
-			return fmt.Errorf("expense.CreateLinkedExpenseTx: %w %q: %w", ErrInvalidDate, expenseDate, err)
+			return fmt.Errorf("expense.SyncLinkedExpenseTx: %w %q: %w", ErrInvalidDate, expenseDate, err)
 		}
 	}
 	if eDate.IsZero() {
 		eDate = time.Now().UTC().Truncate(24 * time.Hour)
 	}
-
-	_, err = u.repo.CreateTx(ctx, tx, &Expense{
+	e := &Expense{
 		TripID:          tripID,
 		Title:           title,
 		Amount:          amount,
@@ -117,7 +148,13 @@ func (u *Usecase) CreateLinkedExpenseTx(
 		BaseCurrency:    base,
 		Category:        cat,
 		ExpenseDate:     eDate,
-	})
+	}
+	if column == "transportation_id" {
+		e.TransportationID = &bookingID
+	} else {
+		e.AccommodationID = &bookingID
+	}
+	_, err = u.repo.CreateTx(ctx, tx, e)
 	return err
 }
 

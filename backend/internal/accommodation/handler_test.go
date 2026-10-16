@@ -282,8 +282,9 @@ func TestHandler_Update(t *testing.T) {
 		{name: "forbidden", id: "stay-2", body: body(""), want: http.StatusForbidden},
 		{name: "empty type keeps existing", id: "stay-1", body: body(`"name":"New name"`), want: http.StatusOK, wantType: "apartment"},
 		{name: "explicit type replaces", id: "stay-1", body: body(`"accommodation_type":"other"`), want: http.StatusOK, wantType: "other"},
-		// Cost is accepted by the request type but ignored on update.
-		{name: "cost ignored on update", id: "stay-1", body: body(`"cost":{"amount":50,"currency":"USD"}`), want: http.StatusOK, wantType: "apartment"},
+		// No cost leaves the linked expense alone; a cost sets it, 0 removes it.
+		{name: "cost sets linked expense", id: "stay-1", body: body(`"cost":{"amount":50,"currency":"USD"}`), want: http.StatusOK, wantType: "apartment", wantCall: 1},
+		{name: "zero cost removes linked expense", id: "stay-1", body: body(`"cost":{"amount":0}`), want: http.StatusOK, wantType: "apartment", wantCall: 1},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -293,8 +294,11 @@ func TestHandler_Update(t *testing.T) {
 			if got := statusOf(t, rec, err); got != tc.want {
 				t.Fatalf("status = %d, want %d (err=%v)", got, tc.want, err)
 			}
-			if ec.calls != 0 {
-				t.Errorf("expense creator called %d times on update", ec.calls)
+			if ec.calls != tc.wantCall {
+				t.Errorf("expense sync called %d times on update, want %d", ec.calls, tc.wantCall)
+			}
+			if tc.wantCall > 0 && (ec.lastKind != "accommodation" || ec.lastBooking != "stay-1") {
+				t.Errorf("synced %s/%s, want accommodation/stay-1", ec.lastKind, ec.lastBooking)
 			}
 			if tc.want != http.StatusOK {
 				return

@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency"
+import { costPayload, type LinkedCost } from "@/lib/linkedCost"
 
 import type { CreateTransportationInput, Transportation } from "../types"
 
@@ -48,7 +49,11 @@ export function fromLocalInput(local: string | undefined): string | null {
   return withSec.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(withSec) ? withSec : `${withSec}Z`
 }
 
-export function transportFormDefaults(initial: Transportation | undefined, currency: CurrencyCode): TransportFormValues {
+export function transportFormDefaults(
+  initial: Transportation | undefined,
+  currency: CurrencyCode,
+  cost?: LinkedCost | null,
+): TransportFormValues {
   return {
     type: initial?.type ?? "flight",
     label: initial?.label ?? "",
@@ -59,14 +64,13 @@ export function transportFormDefaults(initial: Transportation | undefined, curre
     departure_datetime: toLocalInput(initial?.departure_datetime),
     arrival_datetime: toLocalInput(initial?.arrival_datetime),
     notes: initial?.notes ?? "",
-    amount: "",
-    currency,
+    amount: cost ? String(cost.amount) : "",
+    currency: cost && SUPPORTED_CURRENCIES.includes(cost.currency as CurrencyCode) ? (cost.currency as CurrencyCode) : currency,
   }
 }
 
-/** The API input; `cost` is set only when costs are enabled and an amount was entered. */
-export function transportInput(v: TransportFormValues, withCost: boolean): CreateTransportationInput {
-  const amount = v.amount ? Number(v.amount) : 0
+/** The API input; see costPayload for when `cost` is sent. */
+export function transportInput(v: TransportFormValues, costMode: "add" | "edit" | "off"): CreateTransportationInput {
   return {
     type: v.type,
     label: v.label,
@@ -77,6 +81,6 @@ export function transportInput(v: TransportFormValues, withCost: boolean): Creat
     departure_datetime: fromLocalInput(v.departure_datetime),
     arrival_datetime: fromLocalInput(v.arrival_datetime),
     notes: v.notes,
-    cost: withCost && amount > 0 && v.currency ? { amount, currency: v.currency } : null,
+    cost: costPayload(v.amount, v.currency, costMode),
   }
 }

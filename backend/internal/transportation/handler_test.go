@@ -375,3 +375,40 @@ func TestHandler_Create_TagOnlyLocation_400(t *testing.T) {
 	_, err := serve(t, h.Create, http.MethodPost, body, hOwner, map[string]string{"trip_id": hTrip})
 	assertHTTPCode(t, err, http.StatusBadRequest)
 }
+
+func TestHandler_Update_Cost(t *testing.T) {
+	tests := []struct {
+		name       string
+		cost       string // JSON, "" = field absent
+		wantCalls  int
+		wantAmount float64
+		wantCode   int
+	}{
+		{"no cost leaves the linked expense alone", "", 0, 0, http.StatusOK},
+		{"cost updates the linked expense", `,"cost":{"amount":750000,"currency":"idr"}`, 1, 750000, http.StatusOK},
+		{"zero cost removes it", `,"cost":{"amount":0,"currency":"IDR"}`, 1, 0, http.StatusOK},
+		{"negative cost rejected", `,"cost":{"amount":-1,"currency":"IDR"}`, 0, 0, http.StatusBadRequest},
+		{"cost without currency rejected", `,"cost":{"amount":5}`, 0, 0, http.StatusBadRequest},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h, _, exp := newHandlerFixture()
+			body := `{"type":"car","label":"Berangkat","from_location":"A","to_location":"B"` + tt.cost + `}`
+			rec, err := serve(t, h.Update, http.MethodPut, body, hOwner, map[string]string{"id": hItem})
+			if tt.wantCode != http.StatusOK {
+				assertHTTPCode(t, err, tt.wantCode)
+				return
+			}
+			if err != nil || rec.Code != http.StatusOK {
+				t.Fatalf("status = %d, err = %v", rec.Code, err)
+			}
+			if exp.calls != tt.wantCalls {
+				t.Fatalf("sync calls = %d, want %d", exp.calls, tt.wantCalls)
+			}
+			if tt.wantCalls > 0 && (exp.lastKind != "transportation" || exp.lastBooking != hItem ||
+				exp.lastTitle != "Berangkat" || exp.lastAmount != tt.wantAmount) {
+				t.Errorf("synced %s/%s %q %v", exp.lastKind, exp.lastBooking, exp.lastTitle, exp.lastAmount)
+			}
+		})
+	}
+}

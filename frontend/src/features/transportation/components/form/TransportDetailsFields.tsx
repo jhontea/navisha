@@ -23,9 +23,12 @@ const OPTIONAL_FIELDS = ["label", "operator", "reference_number", "amount", "not
 export function TransportDetailsFields({
   form,
   withCost,
+  editing,
 }: {
   form: UseFormReturn<TransportFormValues>
   withCost?: boolean
+  /** Editing a saved transport: the cost changes its existing expense. */
+  editing?: boolean
 }) {
   const {
     control,
@@ -36,7 +39,7 @@ export function TransportDetailsFields({
   } = form
   const [open, setOpen] = useState(() => {
     const v = getValues()
-    return Boolean(v.label || v.operator || v.reference_number || v.notes)
+    return Boolean(v.label || v.operator || v.reference_number || v.notes || v.amount)
   })
   const filledCount = watch([...OPTIONAL_FIELDS]).filter((value) => Boolean(value?.trim())).length
 
@@ -130,7 +133,11 @@ export function TransportDetailsFields({
               <FormFieldLabel optional className="text-sm">
                 Cost
               </FormFieldLabel>
-              <FormFieldDescription className="mt-1">Adds an expense to the trip budget when an amount is entered.</FormFieldDescription>
+              <FormFieldDescription className="mt-1">
+                {editing
+                  ? "Kept as an expense in the trip budget. Clear the amount to remove it."
+                  : "Adds an expense to the trip budget when an amount is entered."}
+              </FormFieldDescription>
               <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
                 <Input type="number" inputMode="decimal" placeholder="0" aria-label="Cost amount" {...register("amount")} />
                 <Controller

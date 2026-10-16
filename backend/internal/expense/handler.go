@@ -151,19 +151,21 @@ func (h *Handler) Summary(c echo.Context, userID string) error {
 
 func toResponse(e *Expense) map[string]any {
 	return map[string]any{
-		"id":               e.ID,
-		"trip_id":          e.TripID,
-		"activity_id":      e.ActivityID,
-		"title":            e.Title,
-		"amount":           e.Amount,
-		"currency":         e.Currency,
-		"converted_amount": e.ConvertedAmount,
-		"base_currency":    e.BaseCurrency,
-		"category":         string(e.Category),
-		"expense_date":     e.ExpenseDate.Format("2006-01-02"),
-		"note":             e.Note,
-		"created_at":       e.CreatedAt,
-		"updated_at":       e.UpdatedAt,
+		"id":                e.ID,
+		"trip_id":           e.TripID,
+		"activity_id":       e.ActivityID,
+		"transportation_id": e.TransportationID,
+		"accommodation_id":  e.AccommodationID,
+		"title":             e.Title,
+		"amount":            e.Amount,
+		"currency":          e.Currency,
+		"converted_amount":  e.ConvertedAmount,
+		"base_currency":     e.BaseCurrency,
+		"category":          string(e.Category),
+		"expense_date":      e.ExpenseDate.Format("2006-01-02"),
+		"note":              e.Note,
+		"created_at":        e.CreatedAt,
+		"updated_at":        e.UpdatedAt,
 	}
 }
 

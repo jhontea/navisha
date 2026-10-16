@@ -135,7 +135,7 @@ Multi-provider LLM client (`pkg/llm/`) supports DeepSeek and OpenRouter via conf
 ## Cross-Domain Pattern
 Domains communicate via **local interfaces** (not cross-imports):
 - `expense.Converter` interface → satisfied by `*currency.Usecase` — auto-convert expenses to trip base
-- `expense.LinkedExpenseCreator` interface → satisfied by `*expense.Usecase` — atomic expense creation inside transport/accommodation tx
+- `expense.LinkedExpenseCreator` interface → satisfied by `*expense.Usecase` — `SyncLinkedExpenseTx` creates, updates or removes a booking's cost expense (`expenses.transportation_id` / `accommodation_id`) inside the transport/accommodation tx
 - `summary.DataProvider` / `autogen.TripCreator` interfaces → satisfied by `*integration.Adapter` — cross-domain data assembly
 - `trip.Handler.SetOnDelete(fn)` — fire-and-forget delete hook (generic, reusable)
 
