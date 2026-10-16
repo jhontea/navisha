@@ -48,23 +48,20 @@ export function BoardingPass({
   const shift = daysBetween(t.departure_datetime, t.arrival_datetime)
   const date = formatWeekdayDate(t.departure_datetime)
 
+  const arriveValue = arrive && (
+    <>
+      {arrive}
+      {shift !== null && shift > 0 && (
+        <span className="ml-0.5 align-top text-xs text-muted-foreground">
+          +{shift}
+          <span className="sr-only"> {shift === 1 ? "day" : "days"} later</span>
+        </span>
+      )}
+    </>
+  )
+
+  // Times sit under their endpoint; the rest of the facts go below the tear line.
   const facts: { label: string; value: ReactNode }[] = []
-  if (depart) facts.push({ label: "Departs", value: depart })
-  if (arrive)
-    facts.push({
-      label: "Arrives",
-      value: (
-        <>
-          {arrive}
-          {shift !== null && shift > 0 && (
-            <span className="ml-0.5 align-top text-xs text-muted-foreground">
-              +{shift}
-              <span className="sr-only"> {shift === 1 ? "day" : "days"} later</span>
-            </span>
-          )}
-        </>
-      ),
-    })
   if (date && showDate) facts.push({ label: "Date", value: date })
   if (dayNumber) facts.push({ label: "Trip day", value: `Day ${dayNumber}` })
   if (t.reference_number) facts.push({ label: "Booking ref", value: t.reference_number })
@@ -100,13 +97,20 @@ export function BoardingPass({
           <Endpoint place={to} align="end" />
         </div>
       )}
+      {/* Own row under the places so both names stay level when only one time is known. */}
+      {(depart || arrive) && (
+        <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm">
+          <TimeFact label="Departs" value={depart} />
+          <TimeFact label="Arrives" value={arriveValue} align="end" />
+        </div>
+      )}
 
       {facts.length > 0 && (
         <div className="relative mt-4 border-t-2 border-dashed pt-3">
           {/* Notches of the tear line: the page background showing through. */}
           <span className="absolute -left-[1.6875rem] -top-2.5 size-5 rounded-full border bg-background" aria-hidden="true" />
           <span className="absolute -right-[1.6875rem] -top-2.5 size-5 rounded-full border bg-background" aria-hidden="true" />
-          <dl className="grid grid-cols-3 gap-x-2 gap-y-2">
+          <dl className="flex flex-wrap gap-x-6 gap-y-2">
             {facts.map((f) => (
               <div key={f.label} className="min-w-0">
                 <dt className="truncate text-xs text-muted-foreground">{f.label}</dt>
@@ -118,6 +122,16 @@ export function BoardingPass({
       )}
       {children}
     </article>
+  )
+}
+
+function TimeFact({ label, value, align = "start" }: { label: string; value: ReactNode; align?: "start" | "end" }) {
+  if (!value) return <span aria-hidden="true" />
+  return (
+    <p className={cn("min-w-0", align === "end" && "text-right")}>
+      <span className="text-xs text-muted-foreground">{label}</span>{" "}
+      <span className="font-bold text-foreground tabular-nums">{value}</span>
+    </p>
   )
 }
 
