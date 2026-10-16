@@ -409,7 +409,7 @@ func TestHandlerAutocompleteNearPrefersDestination(t *testing.T) {
 			}},
 		},
 		global: []Suggestion{
-			{Provider: "geoapify", ExternalID: "boise", Name: "Ancol Playground", CountryCode: "us"},
+			{Provider: "geoapify", ExternalID: "boise", Name: "Gordon S. Bowen Playground", Description: "Gordon S. Bowen Playground, Boise, ID 83720, United States", CountryCode: "us"},
 			{Provider: "geoapify", ExternalID: "ancol", Name: "Playground Ancol", CountryCode: "id"},
 			{Provider: "geoapify", ExternalID: "bandung", Name: "Playground Ancol Bandung", CountryCode: "id"},
 		},
@@ -466,7 +466,7 @@ type countryClient struct {
 
 func (f *countryClient) SearchCountry(_ context.Context, query, _, countryCode string, _ Point) ([]Suggestion, error) {
 	f.country = countryCode
-	return []Suggestion{{Provider: "geoapify", ExternalID: "majalengka", CountryCode: "ID"}}, nil
+	return []Suggestion{{Provider: "geoapify", ExternalID: "majalengka", CountryCode: countryCode}}, nil
 }
 
 func TestHandlerAutocompleteNearSearchesDestinationCountry(t *testing.T) {
@@ -496,5 +496,27 @@ func TestHandlerAutocompleteNearRanksFullMatchesFirst(t *testing.T) {
 	got := getAutocomplete(t, NewHandler(client), "query=alun-alun+majalengka&near=Jakarta,+Indonesia")
 	if len(got) != maxAutocompleteResults || got[0].ExternalID != "majalengka" || got[1].ExternalID != "tangerang-0" {
 		t.Fatalf("suggestions = %#v", got)
+	}
+}
+
+func TestHandlerAutocompleteNearOffersOtherCountriesOnFullMatch(t *testing.T) {
+	// A Japan trip; the user looks up a palace in Seoul.
+	client := &countryClient{nearAutocompleteClient: nearAutocompleteClient{
+		fakeNearClient: fakeNearClient{
+			cities: map[string]*Point{"tokyo, japan": {Lat: 35.68, Lng: 139.76, CountryCode: "JP"}},
+		},
+		global: []Suggestion{
+			{Provider: "geoapify", ExternalID: "seoul", Name: "Gyeongbokgung Palace", Description: "Gyeongbokgung Palace, Seoul, South Korea", CountryCode: "KR"},
+			{Provider: "geoapify", ExternalID: "busan", Name: "Palace Busan", Description: "Palace Busan, Busan, South Korea", CountryCode: "KR"},
+		},
+	}}
+	got := getAutocomplete(t, NewHandler(client), "query=gyeongbokgung+palace&near=Tokyo,+Japan")
+	ids := make([]string, len(got))
+	for i, s := range got {
+		ids[i] = s.ExternalID
+	}
+	// countryClient's SearchCountry answers "majalengka" (an in-country place).
+	if strings.Join(ids, ",") != "majalengka,seoul" {
+		t.Fatalf("suggestions = %v, want the in-country result first, then only the full match abroad", ids)
 	}
 }

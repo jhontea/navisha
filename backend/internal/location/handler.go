@@ -107,9 +107,11 @@ const maxAutocompleteResults = 8
 
 // autocompleteNear searches places for a trip at `near` (its destination,
 // e.g. "Special Capital Region of Jakarta, Java, Indonesia"). Places within
-// destinationRadiusMeters of it come first; places elsewhere are still
-// offered (a trip can start in another city), but only in the destination's
-// country, so "playground ancol" never lists Boise. When the destination
+// destinationRadiusMeters of it come first, then the rest of the
+// destination's country (a trip can start in another city). Places in other
+// countries are offered last, and only when they name every word of the
+// query: a Japan trip can still find "Gyeongbokgung Palace" in Seoul, but
+// "playground ancol" never lists a playground in Boise. When the destination
 // cannot be located, the destination is appended to the query text as
 // before.
 func (h *Handler) autocompleteNear(ctx context.Context, query, language, near string) ([]Suggestion, error) {
@@ -119,7 +121,7 @@ func (h *Handler) autocompleteNear(ctx context.Context, query, language, near st
 		center = h.cityCenter(ctx, searcher, near)
 	}
 
-	var nearby, global []Suggestion
+	var nearby, global, abroad []Suggestion
 	var nearErr, globalErr error
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -143,6 +145,14 @@ func (h *Handler) autocompleteNear(ctx context.Context, query, language, near st
 		}
 		global, globalErr = h.client.Autocomplete(ctx, query, "place", language)
 	}()
+	if _, ok := h.client.(CountrySearcher); ok && country != "" {
+		// The country search above cannot see other countries.
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			abroad, _ = h.client.Autocomplete(ctx, query, "place", language)
+		}()
+	}
 	wg.Wait()
 	if nearErr != nil && globalErr != nil {
 		return nil, nearErr
@@ -158,28 +168,6 @@ func (h *Handler) autocompleteNear(ctx context.Context, query, language, near st
 			}
 		}
 	}
-	seen := map[string]bool{}
-	var merged []Suggestion
-	add := func(s Suggestion) {
-		key := s.Provider + ":" + s.ExternalID
-		if !seen[key] {
-			seen[key] = true
-			merged = append(merged, s)
-		}
-	}
-	for _, s := range nearby {
-		add(s)
-	}
-	for _, s := range global {
-		if len(countries) > 0 && !countries[strings.ToLower(s.CountryCode)] {
-			continue
-		}
-		add(s)
-	}
-
-	// Results naming more of the query's words go first, nearby ones first
-	// among equals: "alun-alun majalengka" lists Majalengka's square before
-	// the squares around Jakarta that only match "alun".
 	words := wordSet(query)
 	matched := func(s Suggestion) int {
 		have := wordSet(s.Name + " " + s.Description)
@@ -191,7 +179,33 @@ func (h *Handler) autocompleteNear(ctx context.Context, query, language, near st
 		}
 		return n
 	}
-	sort.SliceStable(merged, func(i, j int) bool { return matched(merged[i]) > matched(merged[j]) })
+	foreign := func(s Suggestion) bool {
+		return len(countries) > 0 && !countries[strings.ToLower(s.CountryCode)]
+	}
+
+	seen := map[string]bool{}
+	var merged []Suggestion
+	for _, list := range [][]Suggestion{nearby, global, abroad} {
+		for _, s := range list {
+			key := s.Provider + ":" + s.ExternalID
+			if seen[key] || (foreign(s) && matched(s) < len(words)) {
+				continue
+			}
+			seen[key] = true
+			merged = append(merged, s)
+		}
+	}
+
+	// The destination's country first; within each, results naming more of
+	// the query's words first, nearby ones first among equals:
+	// "alun-alun majalengka" lists Majalengka's square before the squares
+	// around Jakarta that only match "alun".
+	sort.SliceStable(merged, func(i, j int) bool {
+		if fi, fj := foreign(merged[i]), foreign(merged[j]); fi != fj {
+			return fj
+		}
+		return matched(merged[i]) > matched(merged[j])
+	})
 	if len(merged) > maxAutocompleteResults {
 		merged = merged[:maxAutocompleteResults]
 	}
