@@ -83,6 +83,32 @@ type generateRequest struct {
 	BaseCurrency string `json:"base_currency"`
 	// TravelStyle picks a style block in the prompt; empty means balanced.
 	TravelStyle string `json:"travel_style"`
+
+	// Optional event-trip context (see GenerateInput).
+	Origin        *PlaceInput   `json:"origin"`
+	TransportMode string        `json:"transport_mode"`
+	Event         *eventRequest `json:"event"`
+	Travelers     *Travelers    `json:"travelers"`
+	BudgetAmount  float64       `json:"budget_amount"`
+	Needs         []string      `json:"needs"`
+}
+
+type eventRequest struct {
+	Name      string     `json:"name"`
+	Venue     PlaceInput `json:"venue"`
+	Date      string     `json:"date"` // YYYY-MM-DD
+	StartTime string     `json:"start_time"`
+	EndTime   string     `json:"end_time"`
+}
+
+// cleanPlace strips markup from a user place before it reaches the prompt.
+func cleanPlace(p *PlaceInput) *PlaceInput {
+	if p == nil {
+		return nil
+	}
+	p.Label = strings.TrimSpace(sanitize.Text(p.Label))
+	p.Address = strings.TrimSpace(sanitize.Text(p.Address))
+	return p
 }
 
 func (h *Handler) Generate(c echo.Context, userID string) error {
@@ -110,6 +136,25 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 		EndDate:      end,
 		BaseCurrency: req.BaseCurrency,
 		TravelStyle:  strings.ToLower(strings.TrimSpace(req.TravelStyle)),
+
+		Origin:        cleanPlace(req.Origin),
+		TransportMode: strings.ToLower(strings.TrimSpace(req.TransportMode)),
+		Travelers:     req.Travelers,
+		BudgetAmount:  req.BudgetAmount,
+		Needs:         req.Needs,
+	}
+	if ev := req.Event; ev != nil {
+		date, err := time.Parse("2006-01-02", ev.Date)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid event.date (expect YYYY-MM-DD)")
+		}
+		input.Event = &EventInput{
+			Name:      strings.TrimSpace(sanitize.Text(ev.Name)),
+			Venue:     *cleanPlace(&ev.Venue),
+			Date:      date,
+			StartTime: strings.TrimSpace(ev.StartTime),
+			EndTime:   strings.TrimSpace(ev.EndTime),
+		}
 	}
 	if err := ValidateInput(input); err != nil {
 		return mapErr(err)

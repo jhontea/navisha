@@ -55,6 +55,86 @@ func ValidateInput(in GenerateInput) error {
 	if !TravelStyles[strings.ToLower(strings.TrimSpace(in.TravelStyle))] {
 		return fmt.Errorf("%w: unknown travel style", ErrInvalidInput)
 	}
+	return validateTripContext(in)
+}
+
+// validateTripContext checks the optional event-trip fields. Each is skipped
+// when absent, so a plain destination request is unaffected.
+func validateTripContext(in GenerateInput) error {
+	if in.Origin != nil {
+		if err := validatePlace("origin", *in.Origin); err != nil {
+			return err
+		}
+	}
+	if !TransportModes[in.TransportMode] {
+		return fmt.Errorf("%w: unknown transport mode", ErrInvalidInput)
+	}
+	if ev := in.Event; ev != nil {
+		name := strings.TrimSpace(ev.Name)
+		if name == "" || !hasLetter.MatchString(name) {
+			return fmt.Errorf("%w: event name required", ErrInvalidInput)
+		}
+		if utf8.RuneCountInString(name) > MaxEventNameLen {
+			return fmt.Errorf("%w: event name too long (max %d)", ErrInvalidInput, MaxEventNameLen)
+		}
+		if err := validatePlace("event venue", ev.Venue); err != nil {
+			return err
+		}
+		if ev.Date.IsZero() || ev.Date.Before(in.StartDate) || ev.Date.After(in.EndDate) {
+			return fmt.Errorf("%w: event date must be within the trip dates", ErrInvalidInput)
+		}
+		start, startOK := dayMinutes(ev.StartTime)
+		end, endOK := dayMinutes(ev.EndTime)
+		if !startOK || !endOK {
+			return fmt.Errorf("%w: event times must be HH:MM", ErrInvalidInput)
+		}
+		if end <= start {
+			return fmt.Errorf("%w: event must end after it starts", ErrInvalidInput)
+		}
+	}
+	if tr := in.Travelers; tr != nil {
+		if tr.Adults < 1 || tr.Adults > MaxTravelers {
+			return fmt.Errorf("%w: adults must be 1-%d", ErrInvalidInput, MaxTravelers)
+		}
+		if tr.Children < 0 || tr.Children > MaxChildren {
+			return fmt.Errorf("%w: children must be 0-%d", ErrInvalidInput, MaxChildren)
+		}
+		if len(tr.ChildAges) != tr.Children {
+			return fmt.Errorf("%w: give one age per child", ErrInvalidInput)
+		}
+		for _, age := range tr.ChildAges {
+			if age < 0 || age > 17 {
+				return fmt.Errorf("%w: child age must be 0-17", ErrInvalidInput)
+			}
+		}
+	}
+	if in.BudgetAmount < 0 {
+		return fmt.Errorf("%w: budget cannot be negative", ErrInvalidInput)
+	}
+	seen := map[string]bool{}
+	for _, need := range in.Needs {
+		if !TripNeeds[need] || seen[need] {
+			return fmt.Errorf("%w: unknown or repeated need %q", ErrInvalidInput, need)
+		}
+		seen[need] = true
+	}
+	return nil
+}
+
+func validatePlace(field string, p PlaceInput) error {
+	label := strings.TrimSpace(p.Label)
+	if label == "" || !hasLetter.MatchString(label) {
+		return fmt.Errorf("%w: %s required", ErrInvalidInput, field)
+	}
+	if utf8.RuneCountInString(label) > MaxPlaceLabelLen || utf8.RuneCountInString(p.Address) > MaxPlaceLabelLen {
+		return fmt.Errorf("%w: %s too long (max %d)", ErrInvalidInput, field, MaxPlaceLabelLen)
+	}
+	if (p.Lat == nil) != (p.Lng == nil) {
+		return fmt.Errorf("%w: %s needs both lat and lng", ErrInvalidInput, field)
+	}
+	if p.hasCoords() && (*p.Lat < -90 || *p.Lat > 90 || *p.Lng < -180 || *p.Lng > 180) {
+		return fmt.Errorf("%w: %s coordinates out of range", ErrInvalidInput, field)
+	}
 	return nil
 }
 
@@ -162,10 +242,6 @@ func validateDraft(d *TripDraft, in GenerateInput) error {
 		day.DayNumber = i + 1
 		day.Date = in.StartDate.AddDate(0, 0, i).Format("2006-01-02")
 
-		// Cap and sanitize activities.
-		if len(day.Activities) > MaxActivitiesPerDay {
-			day.Activities = day.Activities[:MaxActivitiesPerDay]
-		}
 		valid := day.Activities[:0]
 		for _, a := range day.Activities {
 			if a.Type != "location" && a.Type != "note" {
@@ -196,7 +272,15 @@ func validateDraft(d *TripDraft, in GenerateInput) error {
 			}
 			valid = append(valid, a)
 		}
-		day.Activities = valid
+		var anchor *ActivityDraft
+		if in.Event != nil && day.Date == in.Event.Date.Format("2006-01-02") {
+			a, rest := eventAnchor(in.Event, valid)
+			anchor, valid = &a, rest
+		}
+		day.Activities = normalizeDaySchedule(valid, anchor, in.avoidsAirports())
+	}
+	if d.Budget == 0 && in.BudgetAmount > 0 {
+		d.Budget = in.BudgetAmount
 	}
 
 	// Log locations that appear unrelated to the destination (soft check —

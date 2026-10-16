@@ -368,6 +368,61 @@ func TestHandlerGenerate_Success(t *testing.T) {
 	}
 }
 
+const eventBody = `{"destination":"Ancol, Jakarta","start_date":"2026-11-07","end_date":"2026-11-08","base_currency":"IDR",
+	"origin":{"label":"<b>Majalengka</b>","address":"Majalengka, Jawa Barat","lat":-6.83,"lng":108.22},
+	"transport_mode":" Car ",
+	"event":{"name":"Fan <i>Meeting</i>","venue":{"label":"Beach City International Stadium","lat":-6.12,"lng":106.84},
+		"date":"2026-11-07","start_time":"14:00","end_time":"17:00"},
+	"travelers":{"adults":2,"children":1,"child_ages":[5]},
+	"budget_amount":3000000,"needs":["hotel_near_venue","kids_playground"]}`
+
+func TestHandlerGenerate_EventTripFields(t *testing.T) {
+	h, uc, _ := newTestHandler(t, 5, 0)
+	if _, err := do(t, h.Generate, http.MethodPost, reqOpts{body: eventBody, user: testUser}); err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	in := uc.genIn
+	if in.Origin == nil || in.Origin.Label != "Majalengka" || in.Origin.Lat == nil {
+		t.Errorf("origin = %+v, want sanitized with coordinates", in.Origin)
+	}
+	if in.TransportMode != "car" {
+		t.Errorf("transport mode = %q", in.TransportMode)
+	}
+	if in.Event == nil || in.Event.Name != "Fan Meeting" || in.Event.Date.Format("2006-01-02") != "2026-11-07" ||
+		in.Event.StartTime != "14:00" || in.Event.Venue.Label != "Beach City International Stadium" {
+		t.Errorf("event = %+v", in.Event)
+	}
+	if in.Travelers == nil || in.Travelers.Children != 1 || in.BudgetAmount != 3000000 || len(in.Needs) != 2 {
+		t.Errorf("input = %+v", in)
+	}
+}
+
+func TestHandlerGenerate_EventTripValidation(t *testing.T) {
+	tests := []struct {
+		name, from, to string
+		code           int
+		msg            string
+	}{
+		{"bad event date", `"date":"2026-11-07"`, `"date":"7 Nov"`, http.StatusBadRequest, "invalid event.date"},
+		{"event outside trip", `"date":"2026-11-07"`, `"date":"2026-11-09"`, http.StatusUnprocessableEntity, "within the trip dates"},
+		{"unknown need", `"kids_playground"]`, `"free_text"]`, http.StatusUnprocessableEntity, "need"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h, uc, fr := newTestHandler(t, 5, 0)
+			body := strings.Replace(eventBody, tt.from, tt.to, 1)
+			_, err := do(t, h.Generate, http.MethodPost, reqOpts{body: body, user: testUser})
+			he := wantHTTPErr(t, err, tt.code)
+			if msg := fmt.Sprint(he.Message); !strings.Contains(msg, tt.msg) {
+				t.Errorf("message = %v, want %q", he.Message, tt.msg)
+			}
+			if uc.genCalls != 0 || fr.used(testUser) != 0 {
+				t.Error("invalid event input must not reach the usecase or use quota")
+			}
+		})
+	}
+}
+
 func TestHandlerGenerate_QuotaExceeded_429(t *testing.T) {
 	h, uc, fr := newTestHandler(t, 3, 3)
 	_, err := do(t, h.Generate, http.MethodPost, reqOpts{

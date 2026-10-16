@@ -16,9 +16,50 @@ const MaxActivitiesPerDay = 6
 // MaxDestinationLen / MaxDescriptionLen bound the free-text inputs.
 const (
 	MaxDestinationLen    = 60
-	MaxDescriptionLen    = 100
+	MaxDescriptionLen    = 500
 	MaxDayInstructionLen = 500
+	MaxPlaceLabelLen     = 200
+	MaxEventNameLen      = 100
+	MaxTravelers         = 20
+	MaxChildren          = 10
 )
+
+// TransportModes are the accepted GenerateInput.TransportMode values ("" = not given).
+var TransportModes = map[string]bool{"": true, "car": true, "train": true, "plane": true, "bus": true}
+
+// TripNeeds are the accepted GenerateInput.Needs values. A fixed set keeps
+// free text (and prompt injection) out of the planning rules they map to.
+var TripNeeds = map[string]bool{
+	"hotel_near_venue": true, "kids_playground": true, "food_near_venue": true, "easy_parking": true,
+}
+
+// PlaceInput is a user-resolved place (autocomplete or Google Maps link).
+// Coordinates are optional: a typed address without a pick has none.
+type PlaceInput struct {
+	Label   string   `json:"label"`
+	Address string   `json:"address"`
+	Lat     *float64 `json:"lat"`
+	Lng     *float64 `json:"lng"`
+}
+
+func (p *PlaceInput) hasCoords() bool { return p != nil && p.Lat != nil && p.Lng != nil }
+
+// EventInput is the fixed anchor a trip is built around (a concert, fan
+// meeting, wedding): its venue, date and times are never moved by the model.
+type EventInput struct {
+	Name      string
+	Venue     PlaceInput
+	Date      time.Time
+	StartTime string // HH:MM
+	EndTime   string // HH:MM
+}
+
+// Travelers describes who is going; ChildAges has one entry per child.
+type Travelers struct {
+	Adults    int   `json:"adults"`
+	Children  int   `json:"children"`
+	ChildAges []int `json:"child_ages"`
+}
 
 // DayContext is the persisted context used to generate suggestions for one
 // itinerary day. Existing activities are anchors and are never replaced.
@@ -60,11 +101,26 @@ var TravelStyles = map[string]bool{
 // GenerateInput is the user-supplied form data for an auto-generate request.
 type GenerateInput struct {
 	Destination  string    // "Tokyo, Japan"
-	Description  string    // free-form intent, max 100 chars
+	Description  string    // free-form intent, max MaxDescriptionLen chars
 	StartDate    time.Time // inclusive
 	EndDate      time.Time // inclusive
 	BaseCurrency string    // ISO 4217, validated against supported list
 	TravelStyle  string    // Phase 3F: style variant (backpacker, cultural, luxury, nature, foodie, balanced)
+
+	// Optional structured context for event-centred trips. All zero = the
+	// plain destination trip the prompt always handled.
+	Origin        *PlaceInput // where the trip starts and ends (home address)
+	TransportMode string      // car | train | plane | bus
+	Event         *EventInput
+	Travelers     *Travelers
+	BudgetAmount  float64 // total budget in BaseCurrency; 0 = not given
+	Needs         []string
+}
+
+// avoidsAirports reports whether the trip is overland, so a draft must not
+// route it through an airport.
+func (in GenerateInput) avoidsAirports() bool {
+	return in.TransportMode != "" && in.TransportMode != "plane"
 }
 
 // TripDraft is the structured itinerary returned by the LLM (after validation).
