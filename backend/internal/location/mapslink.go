@@ -273,9 +273,11 @@ func followRedirect(ctx context.Context, httpClient *http.Client, raw string) (s
 	return current, nil
 }
 
-// ReverseGeocode asks Geoapify for an address at the given point. It returns
-// ok=false when the provider is not configured or lookup fails — callers
-// treat this as best-effort enrichment.
+// ReverseGeocode asks Geoapify for an address at the given point. The address
+// is empty when the nearest result is farther than maxAddressDistanceMeters
+// (the country is still returned). It returns ok=false when the provider is
+// not configured or lookup fails — callers treat this as best-effort
+// enrichment.
 func (c *GeoapifyClient) ReverseGeocode(ctx context.Context, lat, lng float64) (address, countryCode string, ok bool) {
 	if c.apiKey == "" {
 		return "", "", false
@@ -310,8 +312,9 @@ func (c *GeoapifyClient) ReverseGeocode(ctx context.Context, lat, lng float64) (
 
 	var payload struct {
 		Results []struct {
-			Formatted   string `json:"formatted"`
-			CountryCode string `json:"country_code"`
+			Formatted   string   `json:"formatted"`
+			CountryCode string   `json:"country_code"`
+			Distance    *float64 `json:"distance"` // metres from the point
 		} `json:"results"`
 	}
 	decoder := json.NewDecoder(io.LimitReader(resp.Body, 1<<20))
@@ -319,8 +322,19 @@ func (c *GeoapifyClient) ReverseGeocode(ctx context.Context, lat, lng float64) (
 		return "", "", false
 	}
 	first := payload.Results[0]
+	country := strings.ToUpper(first.CountryCode)
+	// The nearest known place is often another one a few hundred metres
+	// away ("Masjid Al Huriyah, ..." for a house). Its address would mislead,
+	// so it is only used when it is (almost) at the point.
+	if first.Distance != nil && *first.Distance > maxAddressDistanceMeters {
+		return "", country, true
+	}
 	if first.Formatted == "" {
 		return "", "", false
 	}
-	return first.Formatted, strings.ToUpper(first.CountryCode), true
+	return first.Formatted, country, true
 }
+
+// maxAddressDistanceMeters is how far ReverseGeocode's result may be from
+// the point for its address to be used.
+const maxAddressDistanceMeters = 50

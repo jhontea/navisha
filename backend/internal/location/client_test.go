@@ -46,16 +46,24 @@ func TestGeoapifyClientReverseGeocodeUsesReverseEndpoint(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		if r.URL.Query().Get("lat") != "-6.117791" || r.URL.Query().Get("lon") != "106.858039" {
-			t.Errorf("query = %s", r.URL.RawQuery)
+		if r.URL.Query().Get("lat") == "-6.735603" {
+			// Nearest known place is another one, 340 m away.
+			_, _ = w.Write([]byte(`{"results":[{"formatted":"Masjid Al Huriyah, 11, Sutawangi 45454, JR, Indonesia","country_code":"id","distance":339.98}]}`))
+			return
 		}
-		_, _ = w.Write([]byte(`{"results":[{"formatted":"Jalan Lodan Timur, Ancol, North Jakarta, Indonesia","country_code":"id"}]}`))
+		_, _ = w.Write([]byte(`{"results":[{"formatted":"Mason Pine Hotel, Jalan Parahyangan 1, Kota Baru Parahyangan, Cipeundeuy 40714, West Java, Indonesia","country_code":"id","distance":0}]}`))
 	}))
 	defer server.Close()
 
 	client := NewGeoapifyClient("test-key", server.URL+"/v1/geocode/autocomplete", time.Second)
-	address, country, ok := client.ReverseGeocode(context.Background(), -6.117791, 106.858039)
-	if !ok || address != "Jalan Lodan Timur, Ancol, North Jakarta, Indonesia" || country != "ID" {
+	address, country, ok := client.ReverseGeocode(context.Background(), -6.863947, 107.480111)
+	if !ok || address != "Mason Pine Hotel, Jalan Parahyangan 1, Kota Baru Parahyangan, Cipeundeuy 40714, West Java, Indonesia" || country != "ID" {
 		t.Fatalf("ReverseGeocode() = %q, %q, %v", address, country, ok)
+	}
+
+	// Too far to be the place: no address (the caller keeps coordinates), country kept.
+	address, country, ok = client.ReverseGeocode(context.Background(), -6.735603, 108.263293)
+	if !ok || address != "" || country != "ID" {
+		t.Fatalf("far ReverseGeocode() = %q, %q, %v", address, country, ok)
 	}
 }
