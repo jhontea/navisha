@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestParseMapsLink(t *testing.T) {
@@ -153,5 +154,21 @@ func TestFormatCoords(t *testing.T) {
 	got := formatCoords(-6.1291, 106.6535)
 	if !strings.Contains(got, "-6.129100") || !strings.Contains(got, "106.653500") {
 		t.Errorf("formatCoords = %q", got)
+	}
+}
+
+func TestResolveMapsLinkKeepsCoordinatesWhenNearestPlaceIsFar(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"results":[{"formatted":"Masjid Al Huriyah, 11, Sutawangi 45454, JR, Indonesia","country_code":"id","distance":339.98}]}`))
+	}))
+	defer server.Close()
+	client := NewGeoapifyClient("test-key", server.URL+"/v1/geocode/autocomplete", time.Second)
+
+	got, err := ResolveMapsLink(context.Background(), http.DefaultClient, client, "https://www.google.com/maps?q=-6.735603,108.263293")
+	if err != nil {
+		t.Fatalf("ResolveMapsLink: %v", err)
+	}
+	if got.Description != "-6.735603, 108.263293" || got.Name != got.Description || got.CountryCode != "ID" {
+		t.Fatalf("suggestion = %#v, want the coordinates as address, country ID", got)
 	}
 }
