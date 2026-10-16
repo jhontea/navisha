@@ -92,7 +92,7 @@ export function DateCircles({
             <span
               className={cn(
                 "text-xs font-bold uppercase leading-none tracking-wide",
-                selected ? "text-primary-foreground/85" : "text-muted-foreground",
+                selected ? "text-primary-foreground" : "text-muted-foreground",
               )}
             >
               {p?.short ?? ""}

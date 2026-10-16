@@ -34,7 +34,8 @@ test.describe("critical flows", () => {
     await page.getByRole("button", { name: "Create trip" }).click()
 
     await expect(page).toHaveURL(/\/trips\/[0-9a-f-]{36}$/)
-    await expect(page.getByText("E2E weekend in Kyoto").first()).toBeVisible()
+    // TripHeader renders one h1 for phones and one for desktop; check the shown one.
+    await expect(page.locator("h1:visible", { hasText: "E2E weekend in Kyoto" })).toBeVisible()
     await expect(page.getByRole("button", { name: /Day 1/ }).first()).toBeVisible()
   })
 
