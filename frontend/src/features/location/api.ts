@@ -10,9 +10,11 @@ export function searchLocationSuggestions(
   query: string,
   kind: LocationSearchKind,
   signal?: AbortSignal,
+  /** Trip destination: places near it are listed first (see backend autocompleteNear). */
+  near?: string,
 ) {
   return api.get<LocationSuggestionsResponse>("/locations/autocomplete", {
-    params: { query, kind, lang: "en" },
+    params: near ? { query, kind, lang: "en", near } : { query, kind, lang: "en" },
     signal,
   })
 }

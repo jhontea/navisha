@@ -85,7 +85,14 @@ func (h *Handler) Autocomplete(c echo.Context) error {
 		language = "en"
 	}
 
-	items, err := h.client.Autocomplete(c.Request().Context(), query, kind, language)
+	near := limitRunes(strings.TrimSpace(c.QueryParam("near")), 200)
+	var items []Suggestion
+	var err error
+	if kind == "place" && near != "" {
+		items, err = h.autocompleteNear(c.Request().Context(), query, language, near)
+	} else {
+		items, err = h.client.Autocomplete(c.Request().Context(), query, kind, language)
+	}
 	if err != nil {
 		if errors.Is(err, ErrNotConfigured) {
 			return echo.NewHTTPError(http.StatusServiceUnavailable, "Geoapify autocomplete is not configured")
@@ -93,6 +100,105 @@ func (h *Handler) Autocomplete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadGateway, "location provider is unavailable")
 	}
 	return c.JSON(http.StatusOK, map[string]any{"suggestions": items})
+}
+
+// maxAutocompleteResults caps the merged list autocompleteNear returns.
+const maxAutocompleteResults = 8
+
+// autocompleteNear searches places for a trip at `near` (its destination,
+// e.g. "Special Capital Region of Jakarta, Java, Indonesia"). Places within
+// destinationRadiusMeters of it come first; places elsewhere are still
+// offered (a trip can start in another city), but only in the destination's
+// country, so "playground ancol" never lists Boise. When the destination
+// cannot be located, the destination is appended to the query text as
+// before.
+func (h *Handler) autocompleteNear(ctx context.Context, query, language, near string) ([]Suggestion, error) {
+	searcher, ok := h.client.(NearSearcher)
+	var center *Point
+	if ok {
+		center = h.cityCenter(ctx, searcher, near)
+	}
+
+	var nearby, global []Suggestion
+	var nearErr, globalErr error
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		if center != nil {
+			nearby, nearErr = searcher.SearchNear(ctx, query, language, *center, destinationRadiusMeters)
+		} else {
+			nearby, nearErr = h.client.Autocomplete(ctx, query+", "+near, "place", language)
+		}
+	}()
+	country := ""
+	if center != nil {
+		country = center.CountryCode
+	}
+	go func() {
+		defer wg.Done()
+		if cs, ok := h.client.(CountrySearcher); ok && country != "" {
+			global, globalErr = cs.SearchCountry(ctx, query, language, country, *center)
+			return
+		}
+		global, globalErr = h.client.Autocomplete(ctx, query, "place", language)
+	}()
+	wg.Wait()
+	if nearErr != nil && globalErr != nil {
+		return nil, nearErr
+	}
+
+	countries := map[string]bool{}
+	if country != "" {
+		countries[strings.ToLower(country)] = true
+	} else if center != nil {
+		for _, s := range nearby {
+			if s.CountryCode != "" {
+				countries[strings.ToLower(s.CountryCode)] = true
+			}
+		}
+	}
+	seen := map[string]bool{}
+	var merged []Suggestion
+	add := func(s Suggestion) {
+		key := s.Provider + ":" + s.ExternalID
+		if !seen[key] {
+			seen[key] = true
+			merged = append(merged, s)
+		}
+	}
+	for _, s := range nearby {
+		add(s)
+	}
+	for _, s := range global {
+		if len(countries) > 0 && !countries[strings.ToLower(s.CountryCode)] {
+			continue
+		}
+		add(s)
+	}
+
+	// Results naming more of the query's words go first, nearby ones first
+	// among equals: "alun-alun majalengka" lists Majalengka's square before
+	// the squares around Jakarta that only match "alun".
+	words := wordSet(query)
+	matched := func(s Suggestion) int {
+		have := wordSet(s.Name + " " + s.Description)
+		n := 0
+		for w := range words {
+			if have[w] {
+				n++
+			}
+		}
+		return n
+	}
+	sort.SliceStable(merged, func(i, j int) bool { return matched(merged[i]) > matched(merged[j]) })
+	if len(merged) > maxAutocompleteResults {
+		merged = merged[:maxAutocompleteResults]
+	}
+	if merged == nil {
+		merged = []Suggestion{}
+	}
+	return merged, nil
 }
 
 // mapsLinkRequest is the body for POST /locations/link.

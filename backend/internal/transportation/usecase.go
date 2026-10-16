@@ -18,12 +18,12 @@ type UsecaseInterface interface {
 }
 
 // ExpenseCreator is the cross-domain hook this usecase calls inside its
-// transaction. expense.Usecase satisfies it via CreateLinkedExpenseTx.
+// transaction. expense.Usecase satisfies it via SyncLinkedExpenseTx.
 type ExpenseCreator interface {
-	CreateLinkedExpenseTx(
+	SyncLinkedExpenseTx(
 		ctx context.Context, tx pgx.Tx,
-		userID, tripID, title, currency, category string, amount float64,
-		expenseDate string,
+		userID, tripID, linkKind, bookingID, title, currency, category string,
+		amount float64, expenseDate string,
 	) error
 }
 
@@ -33,6 +33,9 @@ type Cost struct {
 	Amount   float64
 	Currency string
 }
+
+// linkKind names this booking kind to the expense domain.
+const linkKind = "transportation"
 
 type CreateInput struct {
 	Type              Type
@@ -116,8 +119,8 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 		if created.DepartureDatetime != nil {
 			departureDate = created.DepartureDatetime.Format("2006-01-02")
 		}
-		if err := u.expenseCreator.CreateLinkedExpenseTx(
-			ctx, tx, userID, tripID, title,
+		if err := u.expenseCreator.SyncLinkedExpenseTx(
+			ctx, tx, userID, tripID, linkKind, created.ID, title,
 			in.Cost.Currency, "transport", in.Cost.Amount, departureDate,
 		); err != nil {
 			return fmt.Errorf("transportation.Create linked expense: %w", err)
@@ -154,7 +157,38 @@ func (u *Usecase) Update(ctx context.Context, userID, id string, in UpdateInput)
 	existing.DepartureDatetime = in.DepartureDatetime
 	existing.ArrivalDatetime = in.ArrivalDatetime
 	existing.Notes = in.Notes
-	return u.repo.Update(ctx, existing)
+	if in.Cost == nil {
+		return u.repo.Update(ctx, existing)
+	}
+
+	// A cost was sent with the edit: save both together. An amount of 0
+	// removes the linked expense.
+	var updated *Transportation
+	err = dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		var err error
+		if updated, err = u.repo.UpdateTx(ctx, tx, existing); err != nil {
+			return err
+		}
+		title := updated.Label
+		if title == "" {
+			title = string(updated.Type)
+		}
+		var date string
+		if updated.DepartureDatetime != nil {
+			date = updated.DepartureDatetime.Format("2006-01-02")
+		}
+		if err := u.expenseCreator.SyncLinkedExpenseTx(
+			ctx, tx, userID, updated.TripID, linkKind, updated.ID, title,
+			in.Cost.Currency, "transport", in.Cost.Amount, date,
+		); err != nil {
+			return fmt.Errorf("transportation.Update linked expense: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
 }
 
 func (u *Usecase) Delete(ctx context.Context, userID, id string) error {

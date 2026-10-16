@@ -62,10 +62,12 @@ function formatGroupDate(dateStr: string): string {
 interface Props {
   tripId: string
   tripBaseCurrency: string
+  tripStartDate?: string
+  tripEndDate?: string
 }
 
 /** Expense list with category filter and sort; add and edit open in a sheet. */
-export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
+export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEndDate }: Props) {
   const { data, isLoading, isError } = useExpenses(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; expense: Expense } | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
@@ -289,6 +291,8 @@ export function ExpenseSection({ tripId, tripBaseCurrency }: Props) {
         {sheet?.mode === "add" && (
           <ExpenseForm
             tripBaseCurrency={tripBaseCurrency}
+            tripStartDate={tripStartDate}
+            tripEndDate={tripEndDate}
             isSubmitting={createMut.isPending}
             onCancel={() => setSheet(null)}
             onSubmit={async (input: CreateExpenseInput) => {

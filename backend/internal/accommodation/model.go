@@ -32,6 +32,8 @@ type Accommodation struct {
 	GooglePlaceID      string
 	CheckIn            time.Time
 	CheckOut           time.Time
+	CheckInTime        string // "HH:MM", "" when not set
+	CheckOutTime       string // "HH:MM", "" when not set
 	ConfirmationNumber string
 	Notes              string
 	CreatedAt          time.Time

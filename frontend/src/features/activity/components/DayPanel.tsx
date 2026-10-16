@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input"
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { Check, CheckSquare, LoaderCircle, MoreHorizontal, Pencil, X } from "lucide-react"
+import { ArrowDownUp, Check, CheckSquare, LoaderCircle, MoreHorizontal, Pencil, X } from "lucide-react"
 
 import { buttonVariants, Button } from "@/components/ui/button"
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useUpdateDayTitle } from "@/features/trip/hooks/useTrips"
 import type { Day } from "@/features/trip/types"
+import { useSortDayByTime } from "../hooks/useActivities"
 
 const DayActivities = dynamic(
   () => import("./DayActivities").then((module) => module.DayActivities),
@@ -60,6 +61,7 @@ export function DayPanel({
   const [titleDraft, setTitleDraft] = useState(title)
   const [titleError, setTitleError] = useState("")
   const updateTitle = useUpdateDayTitle(tripId)
+  const sortByTime = useSortDayByTime(dayId, tripId)
 
   useEffect(() => {
     if (editingTitle) return
@@ -135,6 +137,14 @@ export function DayPanel({
             <DropdownMenuItem className={MENU_ITEM} onClick={() => setSelectMode(true)}>
               <CheckSquare aria-hidden="true" />
               Select & copy
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className={MENU_ITEM}
+              disabled={!sortByTime.canSort || sortByTime.isPending}
+              onClick={() => void sortByTime.sort().catch(() => undefined)}
+            >
+              <ArrowDownUp aria-hidden="true" />
+              Sort by time
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

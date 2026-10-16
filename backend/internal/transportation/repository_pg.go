@@ -151,7 +151,20 @@ func (r *postgresRepository) Insert(ctx context.Context, t *Transportation) (*Tr
 }
 
 func (r *postgresRepository) Update(ctx context.Context, t *Transportation) (*Transportation, error) {
-	row := r.db.QueryRow(ctx,
+	return update(ctx, r.db, t)
+}
+
+func (r *postgresRepository) UpdateTx(ctx context.Context, tx pgx.Tx, t *Transportation) (*Transportation, error) {
+	return update(ctx, tx, t)
+}
+
+// queryRower is a pool or a transaction.
+type queryRower interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+func update(ctx context.Context, q queryRower, t *Transportation) (*Transportation, error) {
+	row := q.QueryRow(ctx,
 		`UPDATE transportations
 		    SET type = $2, label = $3, operator = $4, reference_number = $5,
 		        from_location = $6, to_location = $7, departure_datetime = $8,

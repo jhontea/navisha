@@ -21,6 +21,9 @@ export interface Expense {
   id: string
   trip_id: string
   activity_id: string | null
+  /** Set when this is the cost of a transport or stay (its Cost field). */
+  transportation_id?: string | null
+  accommodation_id?: string | null
   title: string
   amount: number
   currency: string

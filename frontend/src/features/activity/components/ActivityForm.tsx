@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarDays, ListChecks, MapPin, StickyNote } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -39,6 +40,8 @@ interface Props {
     date: string
     destination?: string
   }
+  /** Told whether anything was typed, so closing can ask before discarding it. */
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 /**
@@ -46,7 +49,7 @@ interface Props {
  * 1. Inline add form in the timeline (no `initial`, all 3 type tabs visible)
  * 2. Edit dialog (pass `initial` + `lockType=true`)
  */
-export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitting, context }: Props) {
+export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitting, context, onDirtyChange }: Props) {
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activityFormSchema),
     defaultValues: activityFormDefaults(initial),
@@ -56,9 +59,13 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = form
   const type = watch("type")
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+  }, [isDirty, onDirtyChange])
 
   const submit = async (v: ActivityFormValues) => {
     await onSubmit({

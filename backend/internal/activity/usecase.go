@@ -82,12 +82,13 @@ func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInp
 		return nil, err
 	}
 
-	// Place new activity at end of day's ordering.
-	existing, err := u.repo.ListIDsByDay(ctx, dayID)
+	existing, err := u.repo.ListByDay(ctx, dayID)
 	if err != nil {
 		return nil, err
 	}
 
+	// Insert at the end first, then move it into place by start time so a
+	// 11:00 lunch added after a 14:00 meeting lands before it.
 	a := &Activity{
 		DayID:      dayID,
 		Type:       in.Type,
@@ -97,7 +98,46 @@ func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInp
 		OrderIndex: len(existing),
 		Payload:    in.Payload,
 	}
-	return u.repo.Insert(ctx, a)
+	created, err := u.repo.Insert(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+	pos := insertPosition(existing, in.StartTime)
+	if pos == len(existing) {
+		return created, nil
+	}
+	orderMap := make(map[string]int, len(existing)+1)
+	for i, item := range existing {
+		if i < pos {
+			orderMap[item.ID] = i
+		} else {
+			orderMap[item.ID] = i + 1
+		}
+	}
+	orderMap[created.ID] = pos
+	if err := dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		return u.repo.BatchUpdateOrderTx(ctx, tx, orderMap)
+	}); err != nil {
+		return nil, err
+	}
+	created.OrderIndex = pos
+	return created, nil
+}
+
+// insertPosition returns where an activity starting at startTime ("HH:MM")
+// belongs in a day's ordered activities: before the first timed activity
+// that starts later. Untimed activities, and timed ones with no later
+// activity, go at the end.
+func insertPosition(existing []Activity, startTime string) int {
+	if startTime == "" {
+		return len(existing)
+	}
+	for i, item := range existing {
+		if item.StartTime != "" && item.StartTime > startTime {
+			return i
+		}
+	}
+	return len(existing)
 }
 
 // CreateMany validates and inserts activities for multiple days in one

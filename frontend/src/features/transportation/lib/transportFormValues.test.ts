@@ -25,14 +25,19 @@ describe("transportInput", () => {
   }
 
   it("adds a cost only when enabled and an amount is entered", () => {
-    expect(transportInput({ ...values, amount: "13000" }, true).cost).toEqual({ amount: 13000, currency: "JPY" })
-    expect(transportInput({ ...values, amount: "13000" }, false).cost).toBeNull()
-    expect(transportInput({ ...values, amount: "" }, true).cost).toBeNull()
-    expect(transportInput({ ...values, amount: "0" }, true).cost).toBeNull()
+    expect(transportInput({ ...values, amount: "13000" }, "add").cost).toEqual({ amount: 13000, currency: "JPY" })
+    expect(transportInput({ ...values, amount: "13000" }, "off").cost).toBeNull()
+    expect(transportInput({ ...values, amount: "" }, "add").cost).toBeNull()
+    expect(transportInput({ ...values, amount: "0" }, "add").cost).toBeNull()
+  })
+
+  it("on edit, sends the cost so it can be changed or cleared", () => {
+    expect(transportInput({ ...values, amount: "15000" }, "edit").cost).toEqual({ amount: 15000, currency: "JPY" })
+    expect(transportInput({ ...values, amount: "" }, "edit").cost).toEqual({ amount: 0, currency: "JPY" })
   })
 
   it("sends RFC3339 times and null for a missing arrival", () => {
-    const input = transportInput(values, false)
+    const input = transportInput(values, "off")
     expect(input.departure_datetime).toBe("2026-11-01T07:00:00Z")
     expect(input.arrival_datetime).toBeNull()
   })
@@ -52,6 +57,13 @@ describe("transportInput", () => {
       departure_datetime: "2026-11-01T06:30",
       arrival_datetime: "",
       currency: "IDR",
+    })
+  })
+
+  it("prefills the linked cost on edit", () => {
+    expect(transportFormDefaults(undefined, "IDR", { amount: 750000, currency: "USD" })).toMatchObject({
+      amount: "750000",
+      currency: "USD",
     })
   })
 })

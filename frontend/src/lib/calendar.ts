@@ -74,3 +74,20 @@ export function tripDayNumber(
 export function dateSortKey(value?: string | null): string {
   return value || "9999"
 }
+
+/** Today as "YYYY-MM-DD" in the user's local timezone. */
+export function localDateString(now = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+/**
+ * The date a new booking or expense of a trip starts on: today while the
+ * trip is under way, otherwise its first day. Today when the trip dates are
+ * unknown.
+ */
+export function defaultTripDate(start?: string | null, end?: string | null, today = localDateString()): string {
+  if (!start || !dateParts(start)) return today
+  if (end && today >= start && today <= end) return today
+  return start.slice(0, 10)
+}

@@ -23,6 +23,8 @@ interface Props extends DateRangeValue {
   startHint?: string
   endHint?: string
   durationUnit?: string
+  /** "YYYY-MM-DD" whose month the calendar opens on while no date is picked. */
+  defaultMonth?: string
 }
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
@@ -42,11 +44,12 @@ export function TravelDateRangePicker({
   startHint = "Choose the first day of your trip",
   endHint = "Choose the last day of your trip",
   durationUnit = "day",
+  defaultMonth,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [visibleMonth, setVisibleMonth] = useState(() =>
-    startOfMonth(parseISODate(startDate) ?? new Date()),
+    startOfMonth(parseISODate(startDate) ?? parseISODate(defaultMonth ?? "") ?? new Date()),
   )
 
   useEffect(() => {
@@ -70,11 +73,10 @@ export function TravelDateRangePicker({
   }, [isOpen])
 
   useEffect(() => {
-    if (isOpen && startDate) {
-      const selectedStart = parseISODate(startDate)
-      if (selectedStart) setVisibleMonth(startOfMonth(selectedStart))
-    }
-  }, [isOpen, startDate])
+    if (!isOpen) return
+    const anchor = parseISODate(startDate) ?? parseISODate(defaultMonth ?? "")
+    if (anchor) setVisibleMonth(startOfMonth(anchor))
+  }, [isOpen, startDate, defaultMonth])
 
   const calendarDays = useMemo(
     () => buildCalendarDays(visibleMonth),

@@ -36,5 +36,12 @@ type Repository interface {
 	// UpdateConvertedTx rewrites only converted_amount + base_currency.
 	UpdateConvertedTx(ctx context.Context, tx pgx.Tx, id string, converted float64, base string) error
 	Delete(ctx context.Context, id string) error
+	// FindLinkedTx returns the expense linked to a booking (column is
+	// "transportation_id" or "accommodation_id"), locked FOR UPDATE, or
+	// ErrNotFound.
+	FindLinkedTx(ctx context.Context, tx pgx.Tx, column, bookingID string) (*Expense, error)
+	// UpdateCostTx rewrites only the amount, its currency and its conversion.
+	UpdateCostTx(ctx context.Context, tx pgx.Tx, id string, amount float64, currency string, converted float64, base string) error
+	DeleteTx(ctx context.Context, tx pgx.Tx, id string) error
 	Summary(ctx context.Context, tripID, baseCurrency string) (*Summary, error)
 }

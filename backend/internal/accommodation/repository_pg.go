@@ -44,12 +44,14 @@ func (r *postgresRepository) Rollback(ctx context.Context, tx pgx.Tx) error {
 func (r *postgresRepository) InsertTx(ctx context.Context, tx pgx.Tx, a *Accommodation) (*Accommodation, error) {
 	row := tx.QueryRow(ctx,
 		`INSERT INTO accommodations (trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		                             check_in, check_out, confirmation_number, notes)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		                             check_in, check_out, confirmation_number, notes,
+		                             check_in_time, check_out_time)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULLIF($12, ''), NULLIF($13, ''))
 		 RETURNING id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		           check_in, check_out, confirmation_number, notes, created_at, updated_at`,
+		           check_in, check_out, confirmation_number, notes, created_at, updated_at,
+		        COALESCE(check_in_time, ''), COALESCE(check_out_time, '')`,
 		a.TripID, a.AccommodationType, a.Name, a.LocationName, a.Lat, a.Lng, a.GooglePlaceID,
-		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes)
+		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes, a.CheckInTime, a.CheckOutTime)
 	out, err := scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("accommodation.InsertTx: %w", err)
@@ -89,7 +91,8 @@ func (r *postgresRepository) FindAccommodationOwner(ctx context.Context, id stri
 func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Accommodation, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		        check_in, check_out, confirmation_number, notes, created_at, updated_at
+		        check_in, check_out, confirmation_number, notes, created_at, updated_at,
+		        COALESCE(check_in_time, ''), COALESCE(check_out_time, '')
 		 FROM accommodations
 		 WHERE trip_id = $1
 		 ORDER BY check_in ASC`, tripID)
@@ -112,7 +115,8 @@ func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Accommo
 func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Accommodation, error) {
 	row := r.db.QueryRow(ctx,
 		`SELECT id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		        check_in, check_out, confirmation_number, notes, created_at, updated_at
+		        check_in, check_out, confirmation_number, notes, created_at, updated_at,
+		        COALESCE(check_in_time, ''), COALESCE(check_out_time, '')
 		 FROM accommodations WHERE id = $1`, id)
 	a, err := scan(row)
 	if err != nil {
@@ -127,12 +131,14 @@ func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Accommod
 func (r *postgresRepository) Insert(ctx context.Context, a *Accommodation) (*Accommodation, error) {
 	row := r.db.QueryRow(ctx,
 		`INSERT INTO accommodations (trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		                             check_in, check_out, confirmation_number, notes)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		                             check_in, check_out, confirmation_number, notes,
+		                             check_in_time, check_out_time)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULLIF($12, ''), NULLIF($13, ''))
 		 RETURNING id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		           check_in, check_out, confirmation_number, notes, created_at, updated_at`,
+		           check_in, check_out, confirmation_number, notes, created_at, updated_at,
+		        COALESCE(check_in_time, ''), COALESCE(check_out_time, '')`,
 		a.TripID, a.AccommodationType, a.Name, a.LocationName, a.Lat, a.Lng, a.GooglePlaceID,
-		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes)
+		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes, a.CheckInTime, a.CheckOutTime)
 	out, err := scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("accommodation.Insert: %w", err)
@@ -141,17 +147,32 @@ func (r *postgresRepository) Insert(ctx context.Context, a *Accommodation) (*Acc
 }
 
 func (r *postgresRepository) Update(ctx context.Context, a *Accommodation) (*Accommodation, error) {
-	row := r.db.QueryRow(ctx,
+	return update(ctx, r.db, a)
+}
+
+func (r *postgresRepository) UpdateTx(ctx context.Context, tx pgx.Tx, a *Accommodation) (*Accommodation, error) {
+	return update(ctx, tx, a)
+}
+
+// queryRower is a pool or a transaction.
+type queryRower interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+func update(ctx context.Context, q queryRower, a *Accommodation) (*Accommodation, error) {
+	row := q.QueryRow(ctx,
 		`UPDATE accommodations
 		    SET accommodation_type = $2, name = $3, location_name = $4, lat = $5, lng = $6,
 		        google_place_id = $7, check_in = $8, check_out = $9,
 		        confirmation_number = $10, notes = $11,
+		        check_in_time = NULLIF($12, ''), check_out_time = NULLIF($13, ''),
 		        updated_at = NOW()
 		  WHERE id = $1
 		  RETURNING id, trip_id, accommodation_type, name, location_name, lat, lng, google_place_id,
-		            check_in, check_out, confirmation_number, notes, created_at, updated_at`,
+		            check_in, check_out, confirmation_number, notes, created_at, updated_at,
+		        COALESCE(check_in_time, ''), COALESCE(check_out_time, '')`,
 		a.ID, a.AccommodationType, a.Name, a.LocationName, a.Lat, a.Lng, a.GooglePlaceID,
-		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes)
+		a.CheckIn, a.CheckOut, a.ConfirmationNumber, a.Notes, a.CheckInTime, a.CheckOutTime)
 	out, err := scan(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -183,7 +204,7 @@ func scan(r row) (*Accommodation, error) {
 	err := r.Scan(
 		&a.ID, &a.TripID, &a.AccommodationType, &a.Name, &a.LocationName, &a.Lat, &a.Lng, &a.GooglePlaceID,
 		&a.CheckIn, &a.CheckOut, &a.ConfirmationNumber, &a.Notes,
-		&a.CreatedAt, &a.UpdatedAt,
+		&a.CreatedAt, &a.UpdatedAt, &a.CheckInTime, &a.CheckOutTime,
 	)
 	if err != nil {
 		return nil, err

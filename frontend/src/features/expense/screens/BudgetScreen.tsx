@@ -81,7 +81,7 @@ export function BudgetScreen() {
         </Link>
       </div>
 
-      <ExpenseSection tripId={id} tripBaseCurrency={trip.base_currency} />
+      <ExpenseSection tripId={id} tripBaseCurrency={trip.base_currency} tripStartDate={trip.start_date} tripEndDate={trip.end_date} />
 
       <ResponsiveSheet
         open={editingBudget}

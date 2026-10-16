@@ -33,4 +33,5 @@ type Repository interface {
 	Commit(ctx context.Context, tx pgx.Tx) error
 	Rollback(ctx context.Context, tx pgx.Tx) error
 	InsertTx(ctx context.Context, tx pgx.Tx, t *Transportation) (*Transportation, error)
+	UpdateTx(ctx context.Context, tx pgx.Tx, t *Transportation) (*Transportation, error)
 }

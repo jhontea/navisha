@@ -25,19 +25,23 @@ func (c Category) Valid() bool {
 
 // Expense represents a single trip expense entry.
 type Expense struct {
-	ID              string    // Unique expense ID
-	TripID          string    // Parent trip ID
-	ActivityID      *string   // Optional link to an activity
-	Title           string    // Human-readable description
-	Amount          float64   // Original amount in source currency
-	Currency        string    // Source currency code (e.g. "IDR")
-	ConvertedAmount float64   // Amount converted to trip base currency
-	BaseCurrency    string    // Trip's base currency
-	Category        Category  // Expense category
-	ExpenseDate     time.Time // Date of the expense (user-editable)
-	Note            string    // Optional notes
-	CreatedAt       time.Time // Record creation timestamp
-	UpdatedAt       time.Time // Last update timestamp
+	ID         string  // Unique expense ID
+	TripID     string  // Parent trip ID
+	ActivityID *string // Optional link to an activity
+	// TransportationID / AccommodationID link the expense a booking's Cost
+	// field keeps (one per booking); nil for expenses added on their own.
+	TransportationID *string
+	AccommodationID  *string
+	Title            string    // Human-readable description
+	Amount           float64   // Original amount in source currency
+	Currency         string    // Source currency code (e.g. "IDR")
+	ConvertedAmount  float64   // Amount converted to trip base currency
+	BaseCurrency     string    // Trip's base currency
+	Category         Category  // Expense category
+	ExpenseDate      time.Time // Date of the expense (user-editable)
+	Note             string    // Optional notes
+	CreatedAt        time.Time // Record creation timestamp
+	UpdatedAt        time.Time // Last update timestamp
 }
 
 // Summary represents aggregated expense data for a trip.

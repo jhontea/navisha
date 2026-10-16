@@ -24,13 +24,8 @@ import {
   type ExpenseCategory,
 } from "../types"
 import { getCategoryColor } from "../categoryColors"
+import { defaultTripDate } from "@/lib/calendar"
 
-// Returns today's date as YYYY-MM-DD in the user's local timezone.
-function localDateString(): string {
-  const d = new Date()
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
 
 const CATEGORY_OPTIONS = [
   { value: "food"          as ExpenseCategory, label: "Food",  placeholder: "e.g., Lunch at Ichiran" },
@@ -59,6 +54,9 @@ type FormValues = z.infer<typeof schema>
 interface Props {
   initial?: Expense
   tripBaseCurrency: string
+  /** Trip dates, so a new expense starts on a trip day instead of today. */
+  tripStartDate?: string
+  tripEndDate?: string
   onSubmit: (input: CreateExpenseInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
@@ -67,6 +65,8 @@ interface Props {
 export function ExpenseForm({
   initial,
   tripBaseCurrency,
+  tripStartDate,
+  tripEndDate,
   onSubmit,
   onCancel,
   isSubmitting,
@@ -82,7 +82,7 @@ export function ExpenseForm({
             ? (tripBaseCurrency as FormValues["currency"])
             : "IDR"),
         category: initial?.category ?? "food",
-        expense_date: initial?.expense_date ?? localDateString(),
+        expense_date: initial?.expense_date ?? defaultTripDate(tripStartDate, tripEndDate),
         note: initial?.note ?? "",
       },
     })

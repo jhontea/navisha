@@ -158,7 +158,8 @@ func (r *postgresRepository) loadPublicTransportations(ctx context.Context, trip
 }
 
 func (r *postgresRepository) loadPublicAccommodations(ctx context.Context, tripID string, out *PublicItinerary) error {
-	rows, err := r.db.Query(ctx, `SELECT id,accommodation_type,name,location_name,check_in::text,check_out::text
+	rows, err := r.db.Query(ctx, `SELECT id,accommodation_type,name,location_name,check_in::text,check_out::text,
+		COALESCE(check_in_time,''),COALESCE(check_out_time,'')
 		FROM accommodations WHERE trip_id=$1 ORDER BY check_in,created_at`, tripID)
 	if err != nil {
 		return fmt.Errorf("tripshare.loadPublicAccommodations: %w", err)
@@ -167,7 +168,7 @@ func (r *postgresRepository) loadPublicAccommodations(ctx context.Context, tripI
 	out.Accommodations = []PublicAccommodation{}
 	for rows.Next() {
 		var item PublicAccommodation
-		if err := rows.Scan(&item.ID, &item.AccommodationType, &item.Name, &item.LocationName, &item.CheckIn, &item.CheckOut); err != nil {
+		if err := rows.Scan(&item.ID, &item.AccommodationType, &item.Name, &item.LocationName, &item.CheckIn, &item.CheckOut, &item.CheckInTime, &item.CheckOutTime); err != nil {
 			return fmt.Errorf("tripshare.loadPublicAccommodations scan: %w", err)
 		}
 		out.Accommodations = append(out.Accommodations, item)

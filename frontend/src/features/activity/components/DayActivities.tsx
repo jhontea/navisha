@@ -14,7 +14,9 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSo
 import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, ChevronDown, PenLine, Plus, Sparkles } from "lucide-react"
 
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
+import { sheetCloseAction } from "@/lib/discardGuard"
 import { TimePills, type TimePill } from "@/components/TimePills"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { buttonVariants } from "@/components/ui/button"
@@ -34,12 +36,13 @@ import {
 import { useDayTimeline } from "../hooks/useDayTimeline"
 import { useActivitySelection } from "../hooks/useActivitySelection"
 import { useItineraryFocus } from "../ItineraryFocus"
+import { reorderAnnouncements, reorderInstructions } from "../lib/order"
 import { extractTime, interleaveTimeline } from "../lib/timeline"
 import type { Activity, ActivityListResponse, CreateActivityInput } from "../types"
 import { ActivityForm } from "./ActivityForm"
 import { DayAIPlanner } from "./DayAIPlanner"
 import { ActivitySelectToolbar } from "./timeline/ActivitySelectToolbar"
-import { SortableActivityRow } from "./timeline/SortableActivityRow"
+import { SortableActivityRow, dragHandleId } from "./timeline/SortableActivityRow"
 import { StayTimelineCard } from "./timeline/StayTimelineCard"
 import { TimelineIcon } from "./timeline/TimelineIcon"
 import { TimelineRow } from "./timeline/TimelineRow"
@@ -84,7 +87,24 @@ export function DayActivities({
 
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; activity: Activity } | { mode: "ai" } | null>(null)
   const [reorderKey, setReorderKey] = useState(0)
+  // The DndContext remounts after a drop; keyboard users get focus back on
+  // the handle they moved so they can keep reordering.
+  const [refocusId, setRefocusId] = useState<string | null>(null)
+  // dnd-kit's own live region goes with the remount, so the drop is announced here.
+  const [dropStatus, setDropStatus] = useState("")
   const [timeFocus, setTimeFocus] = useState<string | null>(null)
+  // Closing the activity sheet with X / Escape asks first when input was typed.
+  const [formDirty, setFormDirty] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const closeSheet = () => {
+    setSheet(null)
+    setFormDirty(false)
+    setConfirmDiscard(false)
+  }
+  const requestCloseFormSheet = () => {
+    if (sheetCloseAction(formDirty) === "confirm") setConfirmDiscard(true)
+    else closeSheet()
+  }
 
   const createMut = useCreateActivity(dayId, tripId)
   const updateMut = useUpdateActivity(sheet?.mode === "edit" ? sheet.activity.id : "", dayId, tripId)
@@ -102,6 +122,12 @@ export function DayActivities({
     document.getElementById(`activity-${selectedActivityId}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" })
   }, [selectedActivityId, activities])
 
+  useEffect(() => {
+    if (!refocusId) return
+    document.getElementById(dragHandleId(refocusId))?.focus({ preventScroll: true })
+    setRefocusId(null)
+  }, [refocusId, reorderKey])
+
   if (isLoading) {
     return (
       <div className="space-y-3 py-2" aria-label="Loading day activities">
@@ -114,6 +140,7 @@ export function DayActivities({
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e
+    const keyboard = e.activatorEvent instanceof KeyboardEvent
     if (!over || active.id === over.id) return
     const oldIdx = activities.findIndex((a) => a.id === active.id)
     const newIdx = activities.findIndex((a) => a.id === over.id)
@@ -127,6 +154,8 @@ export function DayActivities({
     requestAnimationFrame(() => {
       qc.setQueryData<ActivityListResponse>(["activities", "list", dayId], { items: reordered })
       setReorderKey((k) => k + 1)
+      if (keyboard) setRefocusId(String(active.id))
+      setDropStatus(`${activities[oldIdx].title} moved to position ${newIdx + 1} of ${activities.length}.`)
       reorderMut.mutate(
         { ids: newOrder },
         {
@@ -163,6 +192,9 @@ export function DayActivities({
 
   return (
     <div className="space-y-3">
+      <p role="status" className="sr-only">
+        {dropStatus}
+      </p>
       {selectMode && activities.length > 0 && (
         <ActivitySelectToolbar selection={selection} activityCount={activities.length} dayId={dayId} days={days} />
       )}
@@ -184,7 +216,13 @@ export function DayActivities({
       {entries.length === 0 ? (
         <p className="rounded-xl bg-muted px-4 py-6 text-center text-sm text-muted-foreground">Nothing planned for this day yet.</p>
       ) : (
-        <DndContext key={reorderKey} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <DndContext
+          key={reorderKey}
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={onDragEnd}
+          accessibility={{ announcements: reorderAnnouncements(activities), screenReaderInstructions: reorderInstructions }}
+        >
           <SortableContext items={activities.map((a) => a.id)} strategy={verticalListSortingStrategy}>
             <div>
               {entries.map((entry) => {
@@ -227,10 +265,10 @@ export function DayActivities({
                 return (
                   <TimelineRow
                     key={`accom-${entry.data.id}-${entry.event}`}
-                    time={null}
+                    time={entry.at ?? null}
                     icon={<TimelineIcon kind="stay" />}
                   >
-                    <StayTimelineCard a={entry.data} event={entry.event} />
+                    <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} />
                   </TimelineRow>
                 )
               })}
@@ -273,17 +311,18 @@ export function DayActivities({
 
       <ResponsiveSheet
         open={sheet?.mode === "add" || sheet?.mode === "edit"}
-        onOpenChange={(open) => !open && setSheet(null)}
+        onOpenChange={(open) => !open && requestCloseFormSheet()}
         title={sheet?.mode === "edit" ? "Edit activity" : `Add activity to Day ${dayNumber}`}
       >
         {sheet?.mode === "add" && (
           <ActivityForm
             context={{ dayNumber, date, destination }}
-            onCancel={() => setSheet(null)}
+            onCancel={closeSheet}
+            onDirtyChange={setFormDirty}
             isSubmitting={createMut.isPending}
             onSubmit={async (input: CreateActivityInput) => {
               await createMut.mutateAsync(input)
-              setSheet(null)
+              closeSheet()
             }}
           />
         )}
@@ -291,7 +330,8 @@ export function DayActivities({
           <ActivityForm
             initial={sheet.activity}
             lockType
-            onCancel={() => setSheet(null)}
+            onCancel={closeSheet}
+            onDirtyChange={setFormDirty}
             isSubmitting={updateMut.isPending}
             onSubmit={async (input: CreateActivityInput) => {
               await updateMut.mutateAsync({
@@ -300,11 +340,22 @@ export function DayActivities({
                 end_time: input.end_time,
                 payload: input.payload,
               })
-              setSheet(null)
+              closeSheet()
             }}
           />
         )}
       </ResponsiveSheet>
+
+      <ConfirmDialog
+        open={confirmDiscard}
+        onOpenChange={setConfirmDiscard}
+        title={sheet?.mode === "edit" ? "Discard your changes?" : "Discard this activity?"}
+        description="What you typed will be lost."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        destructive
+        onConfirm={closeSheet}
+      />
 
       <ResponsiveSheet
         open={sheet?.mode === "ai"}

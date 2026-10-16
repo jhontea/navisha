@@ -49,6 +49,19 @@ func (cr *costRequest) toCost() (*Cost, *echo.HTTPError) {
 	return &Cost{Amount: cr.Amount, Currency: currency}, nil
 }
 
+// toUpdateCost reads the cost sent with an edit. No cost leaves the linked
+// expense alone (older clients); an amount of 0 removes it; a positive
+// amount sets it.
+func (cr *costRequest) toUpdateCost() (*Cost, *echo.HTTPError) {
+	if cr == nil {
+		return nil, nil
+	}
+	if cr.Amount == 0 {
+		return &Cost{}, nil
+	}
+	return cr.toCost()
+}
+
 type request struct {
 	AccommodationType  string       `json:"accommodation_type"`
 	Name               string       `json:"name"`
@@ -56,8 +69,10 @@ type request struct {
 	Lat                *float64     `json:"lat"`
 	Lng                *float64     `json:"lng"`
 	GooglePlaceID      string       `json:"google_place_id"`
-	CheckIn            string       `json:"check_in"`  // YYYY-MM-DD
-	CheckOut           string       `json:"check_out"` // YYYY-MM-DD
+	CheckIn            string       `json:"check_in"`       // YYYY-MM-DD
+	CheckOut           string       `json:"check_out"`      // YYYY-MM-DD
+	CheckInTime        string       `json:"check_in_time"`  // HH:MM, optional
+	CheckOutTime       string       `json:"check_out_time"` // HH:MM, optional
 	ConfirmationNumber string       `json:"confirmation_number"`
 	Notes              string       `json:"notes"`
 	Cost               *costRequest `json:"cost"`
@@ -81,6 +96,8 @@ func (req *request) toInput() (CreateInput, error) {
 		GooglePlaceID:      req.GooglePlaceID,
 		CheckIn:            in,
 		CheckOut:           out,
+		CheckInTime:        req.CheckInTime,
+		CheckOutTime:       req.CheckOutTime,
 		ConfirmationNumber: req.ConfirmationNumber,
 		Notes:              req.Notes,
 	}, nil
@@ -107,6 +124,11 @@ func (req *request) validate() (CreateInput, *echo.HTTPError) {
 	case req.Lat != nil && (*req.Lat < -90 || *req.Lat > 90), req.Lng != nil && (*req.Lng < -180 || *req.Lng > 180):
 		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid coordinates")
 	}
+	req.CheckInTime = strings.TrimSpace(req.CheckInTime)
+	req.CheckOutTime = strings.TrimSpace(req.CheckOutTime)
+	if !validClock(req.CheckInTime) || !validClock(req.CheckOutTime) {
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid time (expect HH:MM)")
+	}
 	in, err := req.toInput()
 	if err != nil {
 		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid date (expect YYYY-MM-DD)")
@@ -115,7 +137,27 @@ func (req *request) validate() (CreateInput, *echo.HTTPError) {
 	if in.CheckOut.Before(in.CheckIn) {
 		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "check-out must be on or after check-in")
 	}
+	if in.CheckOut.Equal(in.CheckIn) && in.CheckInTime != "" && in.CheckOutTime != "" && in.CheckOutTime < in.CheckInTime {
+		return CreateInput{}, echo.NewHTTPError(http.StatusBadRequest, "check-out must be after check-in")
+	}
 	return in, nil
+}
+
+// validClock accepts "" (not set) or a 24-hour "HH:MM".
+func validClock(v string) bool {
+	if v == "" {
+		return true
+	}
+	_, err := time.Parse("15:04", v)
+	return err == nil && len(v) == 5
+}
+
+// nullableClock renders an unset time as JSON null.
+func nullableClock(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
 }
 
 func (h *Handler) List(c echo.Context, userID string) error {
@@ -159,12 +201,15 @@ func (h *Handler) Update(c echo.Context, userID string) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	// A cost only creates the linked expense on Create; after that the
-	// expense is edited on the Budget tab, so Update ignores it.
 	in, herr := req.validate()
 	if herr != nil {
 		return herr
 	}
+	cost, herr := req.Cost.toUpdateCost()
+	if herr != nil {
+		return herr
+	}
+	in.Cost = cost
 	a, err := h.usecase.Update(c.Request().Context(), userID, id, in)
 	if err != nil {
 		return mapErr(err)
@@ -192,6 +237,8 @@ func toResponse(a *Accommodation) map[string]any {
 		"google_place_id":     a.GooglePlaceID,
 		"check_in":            a.CheckIn.Format("2006-01-02"),
 		"check_out":           a.CheckOut.Format("2006-01-02"),
+		"check_in_time":       nullableClock(a.CheckInTime),
+		"check_out_time":      nullableClock(a.CheckOutTime),
 		"confirmation_number": a.ConfirmationNumber,
 		"notes":               a.Notes,
 		"created_at":          a.CreatedAt,

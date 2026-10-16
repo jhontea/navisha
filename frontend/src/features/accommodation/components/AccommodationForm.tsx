@@ -1,6 +1,7 @@
 "use client"
 
 import { SUPPORTED_CURRENCIES } from "@/lib/currency"
+import { costPayload, type LinkedCost } from "@/lib/linkedCost"
 import { Input } from "@/components/ui/input"
 import { Chip } from "@/components/Chip"
 import { Controller, useForm } from "react-hook-form"
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { FormField } from "@/components/forms/FormField"
 import { FormActions } from "@/components/forms/FormActions"
 import {
   FormFieldDescription,
@@ -35,10 +37,13 @@ import { TravelDateRangePicker } from "@/features/trip/components/TravelDateRang
 import {
   ACCOMMODATION_TYPES,
   ACCOMMODATION_TYPE_LABELS,
+  DEFAULT_CHECK_IN_TIME,
+  DEFAULT_CHECK_OUT_TIME,
   type AccommodationType,
   type Accommodation,
   type CreateAccommodationInput,
 } from "../types"
+import { stayNameFromPlace } from "../lib/stayName"
 
 const TYPE_ICON: Record<AccommodationType, typeof Hotel> = {
   hotel: Hotel,
@@ -48,6 +53,8 @@ const TYPE_ICON: Record<AccommodationType, typeof Hotel> = {
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/
+const optionalClock = z.string().regex(CLOCK, "Use HH:MM").or(z.literal("")).optional()
 
 const schema = z
   .object({
@@ -67,6 +74,8 @@ const schema = z
       .string()
       .min(1, "Check-out is required")
       .regex(ISO_DATE, "Use the date picker"),
+    check_in_time: optionalClock,
+    check_out_time: optionalClock,
     confirmation_number: z.string().max(200).optional(),
     notes: z.string().max(2000).optional(),
     amount: z.string().optional(),
@@ -76,6 +85,14 @@ const schema = z
     message: "Check-out must be on or after check-in",
     path: ["check_out"],
   })
+  .refine(
+    (d) =>
+      d.check_in !== d.check_out ||
+      !d.check_in_time ||
+      !d.check_out_time ||
+      d.check_out_time >= d.check_in_time,
+    { message: "Check-out must be after check-in", path: ["check_out_time"] },
+  )
 
 type FormValues = z.infer<typeof schema>
 
@@ -83,27 +100,38 @@ interface Props {
   initial?: Accommodation
   tripBaseCurrency?: string
   withCost?: boolean
+  /** On edit: the cost already linked to this stay, to prefill. */
+  initialCost?: LinkedCost | null
   onSubmit: (input: CreateAccommodationInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
+  /** "YYYY-MM-DD" the date picker opens on (the trip's first day). */
+  defaultDate?: string
+  /** Trip destination, to bias the location search. */
+  searchContext?: string
 }
 
 export function AccommodationForm({
   initial,
   tripBaseCurrency,
   withCost,
+  initialCost,
   onSubmit,
   onCancel,
   isSubmitting,
+  defaultDate,
+  searchContext,
 }: Props) {
-  const defaultCurrency =
-    (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
+  // A linked cost keeps the currency it was paid in.
+  const costCurrency = SUPPORTED_CURRENCIES.find((c) => c === initialCost?.currency)
+  const defaultCurrency = costCurrency ?? (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
   const {
     register,
     handleSubmit,
     control,
     clearErrors,
     setValue,
+    getValues,
     watch,
     formState: { errors },
   } = useForm<FormValues>({
@@ -117,9 +145,11 @@ export function AccommodationForm({
       google_place_id: initial?.google_place_id ?? "",
       check_in: initial?.check_in ?? "",
       check_out: initial?.check_out ?? "",
+      check_in_time: initial?.check_in_time ?? "",
+      check_out_time: initial?.check_out_time ?? "",
       confirmation_number: initial?.confirmation_number ?? "",
       notes: initial?.notes ?? "",
-      amount: "",
+      amount: initialCost ? String(initialCost.amount) : "",
       currency: defaultCurrency,
     },
   })
@@ -138,14 +168,12 @@ export function AccommodationForm({
       google_place_id: v.google_place_id,
       check_in: v.check_in,
       check_out: v.check_out,
+      check_in_time: v.check_in_time || null,
+      check_out_time: v.check_out_time || null,
       confirmation_number: v.confirmation_number,
       notes: v.notes,
     }
-    const amount = v.amount ? Number(v.amount) : 0
-    const cost =
-      withCost && amount > 0 && v.currency
-        ? { amount, currency: v.currency }
-        : null
+    const cost = costPayload(v.amount, v.currency, !withCost ? "off" : initial ? "edit" : "add")
     await onSubmit({ ...entity, cost })
   }
 
@@ -217,8 +245,12 @@ export function AccommodationForm({
                     Boolean(errors.location_name),
                   )}
                   placeholder="Search for a location…"
+                  searchContext={searchContext}
                   onPlaceSelect={(p) => {
                     field.onChange(p.location_name || p.address)
+                    // The place is usually the stay itself: name it after it.
+                    const name = stayNameFromPlace(getValues("name"), p)
+                    if (name) setValue("name", name, { shouldDirty: true, shouldValidate: true })
                     setValue("lat", String(p.lat))
                     setValue("lng", String(p.lng))
                     setValue("google_place_id", p.google_place_id)
@@ -247,6 +279,7 @@ export function AccommodationForm({
             endDate={checkOut}
             duration={stayNights}
             durationUnit="night"
+            defaultMonth={defaultDate}
             label="Stay dates"
             emptyText="Select check-in and check-out"
             endText="Select check-out"
@@ -273,6 +306,42 @@ export function AccommodationForm({
             </FormFieldError>
           )}
         </div>
+
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+          <FormField
+            label="Check-in time"
+            htmlFor="stay-check-in-time"
+            optional
+            error={errors.check_in_time?.message}
+            errorId="stay-check-in-time-error"
+          >
+            <Input
+              id="stay-check-in-time"
+              type="time"
+              aria-invalid={Boolean(errors.check_in_time)}
+              aria-describedby={fieldDescriptionIds("stay-times-description", "stay-check-in-time-error", Boolean(errors.check_in_time))}
+              {...register("check_in_time")}
+            />
+          </FormField>
+          <FormField
+            label="Check-out time"
+            htmlFor="stay-check-out-time"
+            optional
+            error={errors.check_out_time?.message}
+            errorId="stay-check-out-time-error"
+          >
+            <Input
+              id="stay-check-out-time"
+              type="time"
+              aria-invalid={Boolean(errors.check_out_time)}
+              aria-describedby={fieldDescriptionIds("stay-times-description", "stay-check-out-time-error", Boolean(errors.check_out_time))}
+              {...register("check_out_time")}
+            />
+          </FormField>
+          <FormFieldDescription id="stay-times-description" className="min-[380px]:col-span-2">
+            Leave empty for the usual {DEFAULT_CHECK_IN_TIME} check-in and {DEFAULT_CHECK_OUT_TIME} check-out.
+          </FormFieldDescription>
+        </div>
       </div>
 
       {/* Confirmation Number */}
@@ -297,7 +366,9 @@ export function AccommodationForm({
         <div className="rounded-2xl bg-muted p-4">
           <FormFieldLabel optional className="text-sm">Cost</FormFieldLabel>
           <FormFieldDescription className="mt-1">
-            Adds an expense to the trip budget when an amount is entered.
+            {initial
+              ? "Kept as an expense in the trip budget. Clear the amount to remove it."
+              : "Adds an expense to the trip budget when an amount is entered."}
           </FormFieldDescription>
           <div className="mt-3 grid grid-cols-[1fr_6rem] gap-3">
             {/* Hidden field for RHF */}
@@ -306,7 +377,8 @@ export function AccommodationForm({
               type="text"
               inputMode="numeric"
               placeholder="0"
-              defaultValue=""
+              aria-label="Cost amount"
+              defaultValue={initialCost ? initialCost.amount.toLocaleString() : ""}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9.]/g, "")
                 const parts = raw.split(".")

@@ -112,6 +112,9 @@ func (m *mockRepo) Rollback(_ context.Context, _ pgx.Tx) error {
 	m.rollbackCalls++
 	return nil
 }
+func (m *mockRepo) UpdateTx(_ context.Context, _ pgx.Tx, a *Accommodation) (*Accommodation, error) {
+	return m.Update(context.Background(), a)
+}
 func (m *mockRepo) InsertTx(_ context.Context, _ pgx.Tx, a *Accommodation) (*Accommodation, error) {
 	return m.Insert(context.Background(), a)
 }
@@ -124,15 +127,20 @@ type mockExpenseCreator struct {
 	lastTitle  string
 	lastAmount float64
 	err        error
+
+	lastKind    string
+	lastBooking string
 }
 
-func (m *mockExpenseCreator) CreateLinkedExpenseTx(
+func (m *mockExpenseCreator) SyncLinkedExpenseTx(
 	_ context.Context, _ pgx.Tx,
-	userID, tripID, title, _, _ string, amount float64, _ string,
+	userID, tripID, linkKind, bookingID, title, _, _ string, amount float64, _ string,
 ) error {
 	m.calls++
 	m.lastUser = userID
 	m.lastTrip = tripID
+	m.lastKind = linkKind
+	m.lastBooking = bookingID
 	m.lastTitle = title
 	m.lastAmount = amount
 	return m.err

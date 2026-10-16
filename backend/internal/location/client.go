@@ -37,6 +37,8 @@ type Suggestion struct {
 type Point struct {
 	Lat float64
 	Lng float64
+	// CountryCode is the ISO code of the area CityCenter located, when known.
+	CountryCode string
 }
 
 // NearSearcher finds places inside a radius around a point and locates
@@ -45,6 +47,12 @@ type Point struct {
 type NearSearcher interface {
 	SearchNear(ctx context.Context, query, language string, center Point, radiusMeters int) ([]Suggestion, error)
 	CityCenter(ctx context.Context, city, language string) (*Point, error)
+}
+
+// CountrySearcher autocompletes within one country, ranking places near
+// bias first. GeoapifyClient implements it.
+type CountrySearcher interface {
+	SearchCountry(ctx context.Context, query, language, countryCode string, bias Point) ([]Suggestion, error)
 }
 
 type AutocompleteClient interface {
@@ -128,6 +136,26 @@ func (c *GeoapifyClient) SearchNear(ctx context.Context, query, language string,
 	return items, err
 }
 
+// SearchCountry autocompletes query among places in countryCode, nearest
+// to bias first.
+func (c *GeoapifyClient) SearchCountry(ctx context.Context, query, language, countryCode string, bias Point) ([]Suggestion, error) {
+	if c.apiKey == "" {
+		return nil, ErrNotConfigured
+	}
+	endpoint, err := url.Parse(c.baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("location.GeoapifyClient.SearchCountry: parse base url: %w", err)
+	}
+	params := endpoint.Query()
+	params.Set("text", query)
+	params.Set("filter", "countrycode:"+strings.ToLower(countryCode))
+	params.Set("bias", fmt.Sprintf("proximity:%f,%f", bias.Lng, bias.Lat))
+	if language != "" {
+		params.Set("lang", language)
+	}
+	return c.fetch(ctx, endpoint, params, 8)
+}
+
 // CityCenter returns the coordinates of a city (or, failing that, any area
 // with that name), or nil when it cannot be found.
 func (c *GeoapifyClient) CityCenter(ctx context.Context, city, language string) (*Point, error) {
@@ -153,7 +181,7 @@ func (c *GeoapifyClient) CityCenter(ctx context.Context, city, language string) 
 		}
 		for _, item := range items {
 			if inRegion(item.Description, city) {
-				return &Point{Lat: item.Latitude, Lng: item.Longitude}, nil
+				return &Point{Lat: item.Latitude, Lng: item.Longitude, CountryCode: item.CountryCode}, nil
 			}
 		}
 	}

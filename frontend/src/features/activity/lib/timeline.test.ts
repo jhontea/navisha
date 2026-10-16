@@ -58,6 +58,14 @@ describe("buildStaticItems", () => {
     ])
   })
 
+  it("uses a stay's own check-in/check-out time over the usual one", () => {
+    const hotel = { ...stay("hotel", "2026-05-10", "2026-05-14"), check_in_time: "19:30", check_out_time: "10:00" }
+    const checkIn = buildStaticItems([transport("bus", "2026-05-10T15:00:00+00:00")], [hotel], "2026-05-10")
+    expect(checkIn.map((i) => (i.kind === "transport" ? i.data.id : `${i.data.id}:${i.at}`))).toEqual(["bus", "hotel:19:30"])
+    const checkOut = buildStaticItems([], [hotel], "2026-05-14")
+    expect(checkOut.map((i) => (i.kind === "accommodation" ? i.at : ""))).toEqual(["10:00"])
+  })
+
   it("places check-out (12:00) before check-in (14:00) on a changeover day", () => {
     const items = buildStaticItems(
       [],

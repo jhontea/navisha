@@ -124,12 +124,12 @@ export function GeoapifyAutocomplete({
       setError("")
       try {
         const context = searchContext?.trim()
-        const suggestions =
-          kind === "place" && context
-            ? await searchContextualAndGlobal(query, context, kind, controller.signal)
-            : (
-                await searchLocationSuggestions(query, kind, controller.signal)
-              ).suggestions
+        const { suggestions } = await searchLocationSuggestions(
+          query,
+          kind,
+          controller.signal,
+          kind === "place" && context ? context : undefined,
+        )
         setSuggestions(suggestions)
         setIsOpen(true)
         setActiveIndex(suggestions.length > 0 ? 0 : -1)
@@ -324,56 +324,6 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
       )}
     </div>
   )
-}
-
-async function searchContextualAndGlobal(
-  query: string,
-  context: string,
-  kind: LocationSearchKind,
-  signal: AbortSignal,
-) {
-  const [contextualResult, globalResult] = await Promise.allSettled([
-    searchLocationSuggestions(`${query}, ${context}`, kind, signal),
-    searchLocationSuggestions(query, kind, signal),
-  ])
-
-  if (contextualResult.status === "rejected" && globalResult.status === "rejected") {
-    throw contextualResult.reason
-  }
-
-  const contextual =
-    contextualResult.status === "fulfilled"
-      ? contextualResult.value.suggestions
-      : []
-  const global =
-    globalResult.status === "fulfilled" ? globalResult.value.suggestions : []
-
-  const unique = new Map<string, LocationSuggestion>()
-  for (const suggestion of [...contextual, ...global]) {
-    unique.set(`${suggestion.provider}:${suggestion.external_id}`, suggestion)
-  }
-
-  return Array.from(unique.values())
-    .map((suggestion, index) => ({
-      suggestion,
-      index,
-      relevance: getQueryRelevance(suggestion, query),
-    }))
-    .sort((a, b) => b.relevance - a.relevance || a.index - b.index)
-    .slice(0, 8)
-    .map(({ suggestion }) => suggestion)
-}
-
-function getQueryRelevance(suggestion: LocationSuggestion, query: string) {
-  const normalizedQuery = query.trim().toLocaleLowerCase()
-  const name = suggestion.name.trim().toLocaleLowerCase()
-  const description = suggestion.description.trim().toLocaleLowerCase()
-
-  if (name === normalizedQuery) return 4
-  if (name.startsWith(normalizedQuery)) return 3
-  if (description.startsWith(normalizedQuery)) return 2
-  if (name.includes(normalizedQuery) || description.includes(normalizedQuery)) return 1
-  return 0
 }
 
 function formatSuggestionTitle(

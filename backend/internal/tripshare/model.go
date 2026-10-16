@@ -50,6 +50,8 @@ type PublicAccommodation struct {
 	LocationName      string `json:"location_name"`
 	CheckIn           string `json:"check_in"`
 	CheckOut          string `json:"check_out"`
+	CheckInTime       string `json:"check_in_time,omitempty"`
+	CheckOutTime      string `json:"check_out_time,omitempty"`
 }
 
 type PublicItinerary struct {

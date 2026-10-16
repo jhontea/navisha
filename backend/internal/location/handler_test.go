@@ -3,6 +3,7 @@ package location
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -368,5 +369,132 @@ func TestInRegion_ChecksTheCountry(t *testing.T) {
 	}
 	if withCountryOf("Bali", "Badung, Bali, Indonesia") != "Bali, Indonesia" {
 		t.Error("destination should get the place's country")
+	}
+}
+
+// nearAutocompleteClient answers global searches with a far-away namesake
+// and near searches with the place in the destination.
+type nearAutocompleteClient struct {
+	fakeNearClient
+	global []Suggestion
+}
+
+func (f *nearAutocompleteClient) Autocomplete(_ context.Context, query, _, _ string) ([]Suggestion, error) {
+	f.record("global:" + query)
+	return f.global, nil
+}
+
+func getAutocomplete(t *testing.T, h *Handler, rawQuery string) []Suggestion {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/locations/autocomplete?"+rawQuery, nil)
+	rec := httptest.NewRecorder()
+	if err := h.Autocomplete(echo.New().NewContext(req, rec)); err != nil {
+		t.Fatalf("Autocomplete: %v", err)
+	}
+	var body struct {
+		Suggestions []Suggestion `json:"suggestions"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	return body.Suggestions
+}
+
+func TestHandlerAutocompleteNearPrefersDestination(t *testing.T) {
+	client := &nearAutocompleteClient{
+		fakeNearClient: fakeNearClient{
+			cities: map[string]*Point{"jakarta, indonesia": {Lat: -6.2, Lng: 106.8, CountryCode: "ID"}},
+			near: map[string][]Suggestion{"playground ancol": {
+				{Provider: "geoapify", ExternalID: "ancol", Name: "Playground Ancol", CountryCode: "id", NearCity: true},
+			}},
+		},
+		global: []Suggestion{
+			{Provider: "geoapify", ExternalID: "boise", Name: "Ancol Playground", CountryCode: "us"},
+			{Provider: "geoapify", ExternalID: "ancol", Name: "Playground Ancol", CountryCode: "id"},
+			{Provider: "geoapify", ExternalID: "bandung", Name: "Playground Ancol Bandung", CountryCode: "id"},
+		},
+	}
+	got := getAutocomplete(t, NewHandler(client), "query=playground+ancol&near=Jakarta,+Indonesia")
+	ids := make([]string, len(got))
+	for i, s := range got {
+		ids[i] = s.ExternalID
+	}
+	if strings.Join(ids, ",") != "ancol,bandung" {
+		t.Fatalf("suggestions = %v, want nearby first, no duplicate, no other country", ids)
+	}
+}
+
+func TestHandlerAutocompleteNearUnknownDestinationKeepsGlobal(t *testing.T) {
+	client := &nearAutocompleteClient{
+		global: []Suggestion{{Provider: "geoapify", ExternalID: "x", Name: "Somewhere", CountryCode: "us"}},
+	}
+	got := getAutocomplete(t, NewHandler(client), "query=somewhere&near=Atlantis")
+	if len(got) != 1 || got[0].ExternalID != "x" {
+		t.Fatalf("suggestions = %#v", got)
+	}
+	want := map[string]bool{"global:somewhere, Atlantis": true, "global:somewhere": true}
+	for _, q := range client.queries {
+		delete(want, q)
+	}
+	if len(want) != 0 {
+		t.Fatalf("queries = %v, missing %v", client.queries, want)
+	}
+}
+
+func TestHandlerAutocompleteNearDropsOtherCountriesWithoutNearbyMatch(t *testing.T) {
+	// Nothing called "playground ancol" around Jakarta: the far-away
+	// namesakes must still not be offered.
+	client := &nearAutocompleteClient{
+		fakeNearClient: fakeNearClient{
+			cities: map[string]*Point{"jakarta, indonesia": {Lat: -6.2, Lng: 106.8, CountryCode: "ID"}},
+		},
+		global: []Suggestion{
+			{Provider: "geoapify", ExternalID: "boise", CountryCode: "US"},
+			{Provider: "geoapify", ExternalID: "karachi", CountryCode: "PK"},
+		},
+	}
+	if got := getAutocomplete(t, NewHandler(client), "query=playground+ancol&near=Jakarta,+Indonesia"); len(got) != 0 {
+		t.Fatalf("suggestions = %#v, want none outside Indonesia", got)
+	}
+}
+
+// countryClient records SearchCountry calls.
+type countryClient struct {
+	nearAutocompleteClient
+	country string
+}
+
+func (f *countryClient) SearchCountry(_ context.Context, query, _, countryCode string, _ Point) ([]Suggestion, error) {
+	f.country = countryCode
+	return []Suggestion{{Provider: "geoapify", ExternalID: "majalengka", CountryCode: "ID"}}, nil
+}
+
+func TestHandlerAutocompleteNearSearchesDestinationCountry(t *testing.T) {
+	client := &countryClient{nearAutocompleteClient: nearAutocompleteClient{
+		fakeNearClient: fakeNearClient{
+			cities: map[string]*Point{"jakarta, indonesia": {Lat: -6.2, Lng: 106.8, CountryCode: "ID"}},
+		},
+	}}
+	got := getAutocomplete(t, NewHandler(client), "query=nanda+house&near=Jakarta,+Indonesia")
+	if client.country != "ID" || len(got) != 1 || got[0].ExternalID != "majalengka" {
+		t.Fatalf("country = %q, suggestions = %#v", client.country, got)
+	}
+}
+
+func TestHandlerAutocompleteNearRanksFullMatchesFirst(t *testing.T) {
+	near := make([]Suggestion, 0, 8)
+	for i := 0; i < 8; i++ {
+		near = append(near, Suggestion{Provider: "geoapify", ExternalID: fmt.Sprint("tangerang-", i), Name: "Alun-alun Tangerang", CountryCode: "ID"})
+	}
+	client := &nearAutocompleteClient{
+		fakeNearClient: fakeNearClient{
+			cities: map[string]*Point{"jakarta, indonesia": {Lat: -6.2, Lng: 106.8, CountryCode: "ID"}},
+			near:   map[string][]Suggestion{"alun-alun majalengka": near},
+		},
+		global: []Suggestion{{Provider: "geoapify", ExternalID: "majalengka", Name: "Alun-alun Majalengka", CountryCode: "ID"}},
+	}
+	got := getAutocomplete(t, NewHandler(client), "query=alun-alun+majalengka&near=Jakarta,+Indonesia")
+	if len(got) != maxAutocompleteResults || got[0].ExternalID != "majalengka" || got[1].ExternalID != "tangerang-0" {
+		t.Fatalf("suggestions = %#v", got)
 	}
 }

@@ -52,7 +52,8 @@ func (r *postgresRepository) FindExpenseOwner(ctx context.Context, expenseID str
 func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Expense, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT id, trip_id, activity_id, title, amount, currency,
-		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at
+		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at,
+		        transportation_id, accommodation_id
 		 FROM expenses
 		 WHERE trip_id = $1
 		 ORDER BY expense_date DESC, created_at DESC`, tripID)
@@ -75,7 +76,8 @@ func (r *postgresRepository) List(ctx context.Context, tripID string) ([]Expense
 func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Expense, error) {
 	row := r.db.QueryRow(ctx,
 		`SELECT id, trip_id, activity_id, title, amount, currency,
-		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at
+		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at,
+		        transportation_id, accommodation_id
 		 FROM expenses WHERE id = $1`, id)
 	e, err := scan(row)
 	if err != nil {
@@ -90,12 +92,15 @@ func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Expense,
 func (r *postgresRepository) Create(ctx context.Context, e *Expense) (*Expense, error) {
 	row := r.db.QueryRow(ctx,
 		`INSERT INTO expenses (trip_id, activity_id, title, amount, currency,
-		                       converted_amount, base_currency, category, expense_date, note)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		                       converted_amount, base_currency, category, expense_date, note,
+		                       transportation_id, accommodation_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		 RETURNING id, trip_id, activity_id, title, amount, currency,
-		           converted_amount, base_currency, category, expense_date, note, created_at, updated_at`,
+		           converted_amount, base_currency, category, expense_date, note, created_at, updated_at,
+		        transportation_id, accommodation_id`,
 		e.TripID, e.ActivityID, e.Title, e.Amount, e.Currency,
-		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note)
+		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note,
+		e.TransportationID, e.AccommodationID)
 	out, err := scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("expense.Create: %w", err)
@@ -106,12 +111,15 @@ func (r *postgresRepository) Create(ctx context.Context, e *Expense) (*Expense, 
 func (r *postgresRepository) CreateTx(ctx context.Context, tx pgx.Tx, e *Expense) (*Expense, error) {
 	row := tx.QueryRow(ctx,
 		`INSERT INTO expenses (trip_id, activity_id, title, amount, currency,
-		                       converted_amount, base_currency, category, expense_date, note)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		                       converted_amount, base_currency, category, expense_date, note,
+		                       transportation_id, accommodation_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		 RETURNING id, trip_id, activity_id, title, amount, currency,
-		           converted_amount, base_currency, category, expense_date, note, created_at, updated_at`,
+		           converted_amount, base_currency, category, expense_date, note, created_at, updated_at,
+		        transportation_id, accommodation_id`,
 		e.TripID, e.ActivityID, e.Title, e.Amount, e.Currency,
-		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note)
+		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note,
+		e.TransportationID, e.AccommodationID)
 	out, err := scan(row)
 	if err != nil {
 		return nil, fmt.Errorf("expense.CreateTx: %w", err)
@@ -127,7 +135,8 @@ func (r *postgresRepository) Update(ctx context.Context, e *Expense) (*Expense, 
 		        expense_date = $9, note = $10, updated_at = NOW()
 		  WHERE id = $1
 		  RETURNING id, trip_id, activity_id, title, amount, currency,
-		            converted_amount, base_currency, category, expense_date, note, created_at, updated_at`,
+		            converted_amount, base_currency, category, expense_date, note, created_at, updated_at,
+		        transportation_id, accommodation_id`,
 		e.ID, e.ActivityID, e.Title, e.Amount, e.Currency,
 		e.ConvertedAmount, e.BaseCurrency, string(e.Category), e.ExpenseDate, e.Note)
 	out, err := scan(row)
@@ -191,6 +200,48 @@ func (r *postgresRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// linkColumns are the booking link columns FindLinkedTx may filter on.
+var linkColumns = map[string]bool{"transportation_id": true, "accommodation_id": true}
+
+func (r *postgresRepository) FindLinkedTx(ctx context.Context, tx pgx.Tx, column, bookingID string) (*Expense, error) {
+	if !linkColumns[column] {
+		return nil, fmt.Errorf("expense.FindLinkedTx: unknown link column %q", column)
+	}
+	row := tx.QueryRow(ctx,
+		`SELECT id, trip_id, activity_id, title, amount, currency,
+		        converted_amount, base_currency, category, expense_date, note, created_at, updated_at,
+		        transportation_id, accommodation_id
+		 FROM expenses WHERE `+column+` = $1
+		 FOR UPDATE`, bookingID)
+	e, err := scan(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("expense.FindLinkedTx: %w", err)
+	}
+	return e, nil
+}
+
+func (r *postgresRepository) UpdateCostTx(ctx context.Context, tx pgx.Tx, id string, amount float64, currency string, converted float64, base string) error {
+	_, err := tx.Exec(ctx,
+		`UPDATE expenses
+		    SET amount = $2, currency = $3, converted_amount = $4, base_currency = $5, updated_at = NOW()
+		  WHERE id = $1`,
+		id, amount, currency, converted, base)
+	if err != nil {
+		return fmt.Errorf("expense.UpdateCostTx: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresRepository) DeleteTx(ctx context.Context, tx pgx.Tx, id string) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM expenses WHERE id = $1`, id); err != nil {
+		return fmt.Errorf("expense.DeleteTx: %w", err)
+	}
+	return nil
+}
+
 // Summary returns total + per-category totals in the trip's base currency.
 // Aggregates use `converted_amount` which is stored at insert time.
 func (r *postgresRepository) Summary(ctx context.Context, tripID, baseCurrency string) (*Summary, error) {
@@ -235,6 +286,7 @@ func scan(r row) (*Expense, error) {
 	err := r.Scan(
 		&e.ID, &e.TripID, &activity, &e.Title, &e.Amount, &e.Currency,
 		&e.ConvertedAmount, &e.BaseCurrency, &cat, &e.ExpenseDate, &e.Note, &e.CreatedAt, &e.UpdatedAt,
+		&e.TransportationID, &e.AccommodationID,
 	)
 	if err != nil {
 		return nil, err

@@ -8,7 +8,9 @@ import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
 import { dateSortKey } from "@/lib/calendar"
+import { linkedCost } from "@/lib/linkedCost"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
+import { useExpenses } from "@/features/expense/hooks/useExpenses"
 import {
   useCreateTransportation,
   useDeleteTransportation,
@@ -38,6 +40,9 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
   const createMut = useCreateTransportation(tripId)
   const updateMut = useUpdateTransportation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteTransportation(tripId)
+  // The edit form shows the cost only once the expenses are known, so a
+  // save can never clear a cost it did not load.
+  const expenses = useExpenses(tripId)
 
   // Chronological; undated entries last.
   const pendingDeletes = usePendingDeletes()
@@ -128,6 +133,9 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
           <TransportationForm
             initial={sheet.item}
             lockType
+            tripBaseCurrency={tripBaseCurrency}
+            withCost={expenses.isSuccess}
+            initialCost={linkedCost(expenses.data?.items, "transportation", sheet.item.id)}
             isSubmitting={updateMut.isPending}
             onCancel={() => setSheet(null)}
             onSubmit={async (input) => {

@@ -114,6 +114,32 @@ func (m *mockRepo) CreateTx(_ context.Context, _ pgx.Tx, e *Expense) (*Expense, 
 	return m.Create(context.Background(), e)
 }
 
+func (m *mockRepo) FindLinkedTx(_ context.Context, _ pgx.Tx, column, bookingID string) (*Expense, error) {
+	for _, e := range m.expenses {
+		link := e.TransportationID
+		if column == "accommodation_id" {
+			link = e.AccommodationID
+		}
+		if link != nil && *link == bookingID {
+			return e, nil
+		}
+	}
+	return nil, ErrNotFound
+}
+
+func (m *mockRepo) UpdateCostTx(_ context.Context, _ pgx.Tx, id string, amount float64, currency string, converted float64, base string) error {
+	e, ok := m.expenses[id]
+	if !ok {
+		return ErrNotFound
+	}
+	e.Amount, e.Currency, e.ConvertedAmount, e.BaseCurrency = amount, currency, converted, base
+	return nil
+}
+
+func (m *mockRepo) DeleteTx(_ context.Context, _ pgx.Tx, id string) error {
+	return m.Delete(context.Background(), id)
+}
+
 func (m *mockRepo) ListForRebaseTx(_ context.Context, _ pgx.Tx, tripID string) ([]Expense, error) {
 	if m.listErr != nil {
 		return nil, m.listErr

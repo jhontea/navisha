@@ -92,8 +92,8 @@ export function SharedDay({
               )
             }
             return (
-              <TimelineRow key={`stay-${entry.data.id}-${entry.event}`} time={null} icon={<TimelineIcon kind="stay" />}>
-                <StayTimelineCard a={entry.data} event={entry.event} />
+              <TimelineRow key={`stay-${entry.data.id}-${entry.event}`} time={entry.at ?? null} icon={<TimelineIcon kind="stay" />}>
+                <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} />
               </TimelineRow>
             )
           })
