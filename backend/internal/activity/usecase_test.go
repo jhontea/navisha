@@ -14,7 +14,7 @@ import (
 func TestUsecase_Create_Success(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["day-1"] = "user-1"
-	repo.dayIDs["day-1"] = []string{} // empty → new activity gets order_index=0
+	// no existing activities → new activity gets order_index=0
 	u := NewUsecase(repo)
 
 	payload, _ := json.Marshal(NotePayload{Content: "test"})
@@ -37,7 +37,7 @@ func TestUsecase_Create_Success(t *testing.T) {
 func TestUsecase_Create_AppendsToEnd(t *testing.T) {
 	repo := newMockRepo()
 	repo.dayOwners["day-1"] = "user-1"
-	repo.dayIDs["day-1"] = []string{"a", "b", "c"} // 3 existing
+	repo.listByDayResult = []Activity{{ID: "a"}, {ID: "b"}, {ID: "c"}} // 3 existing
 	u := NewUsecase(repo)
 
 	got, err := u.Create(context.Background(), "user-1", "day-1", CreateInput{
@@ -49,6 +49,56 @@ func TestUsecase_Create_AppendsToEnd(t *testing.T) {
 	}
 	if got.OrderIndex != 3 {
 		t.Errorf("order_index = %d, want 3 (after 3 existing)", got.OrderIndex)
+	}
+}
+
+func TestUsecase_Create_InsertsByStartTime(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["day-1"] = "user-1"
+	repo.listByDayResult = []Activity{
+		{ID: "breakfast", StartTime: "08:00"},
+		{ID: "meeting", StartTime: "14:00"},
+		{ID: "dinner", StartTime: "19:00"},
+	}
+	u := NewUsecase(repo)
+
+	got, err := u.Create(context.Background(), "user-1", "day-1", CreateInput{
+		Type: TypeNote, Title: "Lunch", StartTime: "11:00",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if got.OrderIndex != 1 {
+		t.Errorf("order_index = %d, want 1 (between 08:00 and 14:00)", got.OrderIndex)
+	}
+	want := map[string]int{"breakfast": 0, "new-act-id": 1, "meeting": 2, "dinner": 3}
+	gotOrder := map[string]int{}
+	for _, u := range repo.orderUpdates {
+		gotOrder[u.id] = u.order
+	}
+	for id, order := range want {
+		if gotOrder[id] != order {
+			t.Errorf("order of %s = %d, want %d", id, gotOrder[id], order)
+		}
+	}
+}
+
+func TestInsertPosition(t *testing.T) {
+	day := []Activity{{StartTime: "08:00"}, {StartTime: ""}, {StartTime: "14:00"}}
+	cases := []struct {
+		start string
+		want  int
+	}{
+		{"", 3},      // untimed → end
+		{"07:00", 0}, // before everything
+		{"11:00", 2}, // skips the untimed note, lands before 14:00
+		{"14:00", 3}, // ties go after the existing one
+		{"20:00", 3},
+	}
+	for _, c := range cases {
+		if got := insertPosition(day, c.start); got != c.want {
+			t.Errorf("insertPosition(%q) = %d, want %d", c.start, got, c.want)
+		}
 	}
 }
 

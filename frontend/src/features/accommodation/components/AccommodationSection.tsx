@@ -28,16 +28,20 @@ interface Props {
   tripBaseCurrency: string
   /** Trip days, to label bookings with their day number. */
   days?: { date: string; day_number: number }[]
+  /** Trip destination, to bias the location search. */
+  destination?: string
 }
 
 /** Stay list; add and edit open in a sheet (bottom sheet on phones). */
-export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Props) {
+export function AccommodationSection({ tripId, tripBaseCurrency, days = [], destination }: Props) {
   const { data, isLoading, isError } = useAccommodations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Accommodation } | null>(null)
 
   const createMut = useCreateAccommodation(tripId)
   const updateMut = useUpdateAccommodation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteAccommodation(tripId)
+  // The date picker opens on the trip, not on today's month.
+  const tripStart = days.map((d) => d.date).sort()[0]
 
   // Chronological; undated entries last.
   const pendingDeletes = usePendingDeletes()
@@ -116,6 +120,8 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
           <AccommodationForm
             tripBaseCurrency={tripBaseCurrency}
             withCost
+            defaultDate={tripStart}
+            searchContext={destination}
             isSubmitting={createMut.isPending}
             onCancel={() => setSheet(null)}
             onSubmit={async (input: CreateAccommodationInput) => {
@@ -127,6 +133,8 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [] }: Pr
         {sheet?.mode === "edit" && (
           <AccommodationForm
             initial={sheet.item}
+            defaultDate={tripStart}
+            searchContext={destination}
             isSubmitting={updateMut.isPending}
             onCancel={() => setSheet(null)}
             onSubmit={async (input) => {

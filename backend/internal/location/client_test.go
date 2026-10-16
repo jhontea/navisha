@@ -39,3 +39,23 @@ func TestGeoapifyClientRequiresAPIKey(t *testing.T) {
 		t.Fatalf("Autocomplete() error = %v, want ErrNotConfigured", err)
 	}
 }
+
+func TestGeoapifyClientReverseGeocodeUsesReverseEndpoint(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/geocode/reverse" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("lat") != "-6.117791" || r.URL.Query().Get("lon") != "106.858039" {
+			t.Errorf("query = %s", r.URL.RawQuery)
+		}
+		_, _ = w.Write([]byte(`{"results":[{"formatted":"Jalan Lodan Timur, Ancol, North Jakarta, Indonesia","country_code":"id"}]}`))
+	}))
+	defer server.Close()
+
+	client := NewGeoapifyClient("test-key", server.URL+"/v1/geocode/autocomplete", time.Second)
+	address, country, ok := client.ReverseGeocode(context.Background(), -6.117791, 106.858039)
+	if !ok || address != "Jalan Lodan Timur, Ancol, North Jakarta, Indonesia" || country != "ID" {
+		t.Fatalf("ReverseGeocode() = %q, %q, %v", address, country, ok)
+	}
+}

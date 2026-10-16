@@ -1,5 +1,5 @@
 import type { Transportation } from "@/features/transportation/types"
-import type { Accommodation } from "@/features/accommodation/types"
+import { DEFAULT_CHECK_IN_TIME, DEFAULT_CHECK_OUT_TIME, type Accommodation } from "@/features/accommodation/types"
 import type { Activity } from "../types"
 
 /**
@@ -12,6 +12,9 @@ export type TimelineTransport = Pick<
 > & { type: string; reference_number?: string }
 export type TimelineStay = Pick<Accommodation, "id" | "name" | "location_name" | "check_in" | "check_out"> & {
   confirmation_number?: string
+  /** "HH:MM" set on the stay; overrides the guessed time. */
+  check_in_time?: string | null
+  check_out_time?: string | null
 }
 
 /** Read-only items shown on a day's timeline next to its activities. */
@@ -21,13 +24,13 @@ export type StaticTimelineItem<T extends TimelineTransport = Transportation, S e
       kind: "accommodation"
       data: S
       event: "check_in" | "check_out"
-      /** "HH:MM" the stay sorts at on this day (it has no time of its own). */
+      /** "HH:MM" the stay sorts at and shows on this day. */
       at?: string
     }
 
-// Stays have dates but no times; place them at typical hotel times.
-const CHECK_IN_TIME = "14:00"
-const CHECK_OUT_TIME = "12:00"
+// Stays without times of their own sit at typical hotel times.
+const CHECK_IN_TIME = DEFAULT_CHECK_IN_TIME
+const CHECK_OUT_TIME = DEFAULT_CHECK_OUT_TIME
 
 /**
  * Extract "HH:MM" literally from an ISO datetime string — no timezone conversion.
@@ -89,7 +92,7 @@ function minutesOf(time: string): number {
 const CONNECTION_MINUTES = 180
 
 /**
- * When a stay's check-in/out sorts on `date`. Stays have no time, so they sit
+ * When a stay's check-in/out sorts on `date` if it has no time set. They sit
  * at typical hotel times (check-out 12:00, check-in 14:00), but never on the
  * wrong side of the day's travel:
  * - check-out comes before the first transport leaving that day;
@@ -137,8 +140,13 @@ export function buildStaticItems<T extends TimelineTransport, S extends Timeline
   for (const t of today) items.push({ kind: "transport", data: t })
   const { checkIn, checkOut } = stayTimes(today, date)
   for (const a of accommodations) {
-    if (dateMatches(a.check_in, date)) items.push({ kind: "accommodation", data: a, event: "check_in", at: checkIn })
-    if (dateMatches(a.check_out, date)) items.push({ kind: "accommodation", data: a, event: "check_out", at: checkOut })
+    // A time the traveller set wins over the guess.
+    if (dateMatches(a.check_in, date)) {
+      items.push({ kind: "accommodation", data: a, event: "check_in", at: a.check_in_time?.slice(0, 5) || checkIn })
+    }
+    if (dateMatches(a.check_out, date)) {
+      items.push({ kind: "accommodation", data: a, event: "check_out", at: a.check_out_time?.slice(0, 5) || checkOut })
+    }
   }
   return items.sort((a, b) => staticSortKey(a).localeCompare(staticSortKey(b)))
 }

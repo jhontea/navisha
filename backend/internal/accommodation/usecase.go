@@ -41,6 +41,8 @@ type CreateInput struct {
 	GooglePlaceID      string
 	CheckIn            time.Time
 	CheckOut           time.Time
+	CheckInTime        string
+	CheckOutTime       string
 	ConfirmationNumber string
 	Notes              string
 	Cost               *Cost
@@ -98,6 +100,8 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 		Lng:                in.Lng,
 		GooglePlaceID:      in.GooglePlaceID,
 		CheckIn:            in.CheckIn,
+		CheckInTime:        in.CheckInTime,
+		CheckOutTime:       in.CheckOutTime,
 		CheckOut:           in.CheckOut,
 		ConfirmationNumber: in.ConfirmationNumber,
 		Notes:              in.Notes,
@@ -160,6 +164,8 @@ func (u *Usecase) Update(ctx context.Context, userID, id string, in UpdateInput)
 	existing.GooglePlaceID = in.GooglePlaceID
 	existing.CheckIn = in.CheckIn
 	existing.CheckOut = in.CheckOut
+	existing.CheckInTime = in.CheckInTime
+	existing.CheckOutTime = in.CheckOutTime
 	existing.ConfirmationNumber = in.ConfirmationNumber
 	existing.Notes = in.Notes
 	return u.repo.Update(ctx, existing)

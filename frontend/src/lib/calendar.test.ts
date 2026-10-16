@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   dateSortKey,
   daysBetween,
+  defaultTripDate,
+  localDateString,
   formatClock,
   formatShortRange,
   formatWeekdayDate,
@@ -53,5 +55,21 @@ describe("calendar helpers", () => {
 
   it("sorts undated items last", () => {
     expect(["2026-05-11", "", "2026-05-10"].map(dateSortKey).sort()).toEqual(["2026-05-10", "2026-05-11", "9999"])
+  })
+})
+
+describe("defaultTripDate", () => {
+  it("uses the trip's first day before and after the trip", () => {
+    expect(defaultTripDate("2026-11-07", "2026-11-08", "2026-10-16")).toBe("2026-11-07")
+    expect(defaultTripDate("2026-11-07", "2026-11-08", "2026-12-01")).toBe("2026-11-07")
+  })
+
+  it("uses today during the trip, and when the trip has no dates", () => {
+    expect(defaultTripDate("2026-11-07", "2026-11-08", "2026-11-08")).toBe("2026-11-08")
+    expect(defaultTripDate(undefined, undefined, "2026-10-16")).toBe("2026-10-16")
+  })
+
+  it("formats today in local time", () => {
+    expect(localDateString(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05")
   })
 })

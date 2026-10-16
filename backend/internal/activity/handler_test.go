@@ -149,6 +149,7 @@ func TestHandler_Create(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := seededRepo()
+			repo.listByDayResult = []Activity{{ID: "act-1", DayID: "day-1"}, {ID: "act-3", DayID: "day-1"}}
 			h := NewHandler(NewUsecase(repo))
 			rec, err := callHandler(t, h.Create, http.MethodPost, tc.body, handlerTestUser, map[string]string{"day_id": tc.dayID})
 			if got := statusOf(t, rec, err); got != tc.want {

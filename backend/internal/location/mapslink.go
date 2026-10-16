@@ -280,7 +280,8 @@ func (c *GeoapifyClient) ReverseGeocode(ctx context.Context, lat, lng float64) (
 	if c.apiKey == "" {
 		return "", "", false
 	}
-	endpoint, err := url.Parse("https://api.geoapify.com/v1/reversegeocoding")
+	// Same API family as autocomplete: .../v1/geocode/reverse.
+	endpoint, err := url.Parse(strings.Replace(c.baseURL, "/autocomplete", "/reverse", 1))
 	if err != nil {
 		return "", "", false
 	}

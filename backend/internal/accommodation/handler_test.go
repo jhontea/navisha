@@ -122,6 +122,9 @@ var commonValidationCases = []struct {
 	{"bad date format", body(`"check_in":"01/03/2026"`)},
 	{"check_out before check_in", body(`"check_in":"2026-03-05"`)},
 	{"invalid accommodation type", body(`"accommodation_type":"castle"`)},
+	{"bad check-in time", body(`"check_in_time":"2pm"`)},
+	{"out of range check-out time", body(`"check_out_time":"25:00"`)},
+	{"same-day check-out before check-in", body(`"check_out":"2026-03-01","check_in_time":"14:00","check_out_time":"10:00"`)},
 	{"html-only name sanitized to empty", body(`"name":"<b></b>"`)},
 }
 
@@ -195,6 +198,19 @@ func TestHandler_Create(t *testing.T) {
 				}
 				if b["lat"] != nil || b["lng"] != nil {
 					t.Errorf("lat/lng = %v/%v, want null", b["lat"], b["lng"])
+				}
+				if b["check_in_time"] != nil || b["check_out_time"] != nil {
+					t.Errorf("times = %v/%v, want null when not set", b["check_in_time"], b["check_out_time"])
+				}
+			},
+		},
+		{
+			name: "check-in and check-out times round-trip", tripID: "trip-1",
+			body: body(`"check_in_time":" 15:00 ","check_out_time":"11:00"`),
+			want: http.StatusCreated,
+			verify: func(t *testing.T, b map[string]any, _ *mockExpenseCreator, _ *mockRepo) {
+				if b["check_in_time"] != "15:00" || b["check_out_time"] != "11:00" {
+					t.Errorf("times = %v/%v, want 15:00/11:00", b["check_in_time"], b["check_out_time"])
 				}
 			},
 		},

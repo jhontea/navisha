@@ -21,6 +21,8 @@ interface SortableActivityRowProps {
   onFocus: () => void
 }
 
+export const dragHandleId = (activityId: string) => `drag-${activityId}`
+
 /**
  * An activity on the timeline. The rail icon is the drag handle; in select
  * mode it is replaced by a checkbox and reordering is off.
@@ -63,6 +65,8 @@ export function SortableActivityRow({
       kind={activity.type}
       dragHandleProps={{ ...attributes, ...listeners }}
       dragHandleRef={setActivatorNodeRef}
+      dragHandleId={dragHandleId(activity.id)}
+      dragLabel={`Reorder ${activity.title}`}
     />
   )
 

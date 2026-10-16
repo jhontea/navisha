@@ -13,6 +13,7 @@ import type {
   UpdateActivityInput,
 } from "../types"
 import type { TripOverviewResponse } from "@/features/trip/overview"
+import { insertAtOrderIndex, isSortedByStartTime, sortByStartTime } from "../lib/order"
 
 const listKey = (dayId: string) => ["activities", "list", dayId] as const
 
@@ -48,9 +49,11 @@ export function useCreateActivity(dayId: string, tripId: string) {
   return useMutation({
     mutationFn: (input: CreateActivityInput) => activityApi.create(dayId, input),
     onSuccess: (created) => {
+      // The server slots it in by start time, shifting later activities.
       qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) => ({
-        items: current ? [...current.items, created] : [created],
+        items: current ? insertAtOrderIndex(current.items, created) : [created],
       }))
+      qc.invalidateQueries({ queryKey: listKey(dayId), refetchType: "active" })
       updateOverviewActivityCount(qc, tripId, dayId, 1)
       invalidateActivityViews(qc, dayId, tripId)
     },
@@ -95,6 +98,23 @@ export function useReorderActivities(dayId: string, tripId: string) {
       invalidateActivityViews(qc, dayId, tripId)
     },
   })
+}
+
+/** "Sort by time" for a day: reorders its activities by start time. */
+export function useSortDayByTime(dayId: string, tripId: string) {
+  const qc = useQueryClient()
+  const { data } = useActivities(dayId)
+  const reorder = useReorderActivities(dayId, tripId)
+  const items = data?.items ?? []
+  return {
+    canSort: items.length > 1 && !isSortedByStartTime(items),
+    isPending: reorder.isPending,
+    sort: () => {
+      const sorted = sortByStartTime(items)
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), { items: sorted })
+      return reorder.mutateAsync({ ids: sorted.map((a) => a.id) })
+    },
+  }
 }
 
 function updateOverviewActivityCount(

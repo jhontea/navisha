@@ -206,6 +206,8 @@ export interface PublicAccommodation {
   location_name: string
   check_in: string
   check_out: string
+  check_in_time?: string
+  check_out_time?: string
 }
 
 export interface PublicItinerary {

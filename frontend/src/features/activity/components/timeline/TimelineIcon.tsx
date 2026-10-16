@@ -24,11 +24,16 @@ export function TimelineIcon({
   transportType,
   dragHandleProps,
   dragHandleRef,
+  dragHandleId,
+  dragLabel = "Drag to reorder",
 }: {
   kind: Kind
   transportType?: string
   dragHandleProps?: HTMLAttributes<HTMLDivElement>
   dragHandleRef?: Ref<HTMLDivElement>
+  /** Lets the timeline give focus back to the handle after a drop. */
+  dragHandleId?: string
+  dragLabel?: string
 }) {
   const Icon =
     kind === "transport"
@@ -52,9 +57,10 @@ export function TimelineIcon({
   return (
     <div
       ref={dragHandleRef}
+      id={dragHandleId}
       role="button"
       tabIndex={0}
-      aria-label="Drag to reorder"
+      aria-label={dragLabel}
       className="flex h-11 w-11 touch-none cursor-grab items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
       {...dragHandleProps}
     >
