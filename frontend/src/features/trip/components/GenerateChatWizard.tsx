@@ -1,6 +1,7 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
 import { useEffect, useRef, useState } from "react"
@@ -9,11 +10,20 @@ import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { TravelDateRangePicker } from "./TravelDateRangePicker"
+import { TripDetailsStep } from "./TripDetailsStep"
 import type { GenerateTripInput, TravelStyle } from "../types"
+import {
+  MAX_DESCRIPTION,
+  emptyTripDetails,
+  parseBudget,
+  tripDetailsRecap,
+  tripDetailsToInput,
+  validateTripDetails,
+  type TripDetailsForm,
+} from "../lib/tripDetails"
 
 const MAX_DAYS = 10
 const MAX_DESTINATION = 60
-const MAX_DESCRIPTION = 100
 
 // Quick-start prompt chips for the description step. Reduces cold-start
 // friction: users tap a style instead of typing from scratch. Values are kept
@@ -41,8 +51,8 @@ const TRAVEL_STYLES: { value: TravelStyle; label: string }[] = [
   { value: "luxury", label: "Luxury" },
 ]
 
-// Steps in the conversation. Each maps to one field of GenerateTripInput.
-type StepId = "destination" | "description" | "dates" | "currency" | "review"
+// Steps in the conversation. Each maps to one or more fields of GenerateTripInput.
+type StepId = "destination" | "description" | "dates" | "details" | "currency" | "review"
 
 interface ChatMessage {
   from: "bot" | "user"
@@ -86,6 +96,8 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   const [startDate, setStartDate] = useState(initialValues?.start_date ?? "")
   const [endDate, setEndDate] = useState(initialValues?.end_date ?? "")
   const [currency, setCurrency] = useState(initialValues?.base_currency ?? "IDR")
+  const [details, setDetails] = useState<TripDetailsForm>(() => emptyTripDetails())
+  const [budgetText, setBudgetText] = useState("")
 
   // Current input field bindings
   const [draftText, setDraftText] = useState(initialValues?.destination ?? "")
@@ -154,16 +166,49 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     }
     setError(null)
     pushUser(`${startDate} → ${endDate} (${span} days)`)
+    // Default the event to the first day, or keep it if still inside the trip.
+    setDetails((d) => ({
+      ...d,
+      eventDate: d.eventDate && d.eventDate >= startDate && d.eventDate <= endDate ? d.eventDate : startDate,
+    }))
+    setStep("details")
+    pushBot(
+      "Is the trip built around an event, like a concert or fan meeting? Add where you leave from, the event and who's coming (optional).",
+    )
+  }
+
+  const handleDetails = (skip: boolean) => {
+    if (skip) {
+      setDetails(emptyTripDetails(startDate))
+      setError(null)
+      pushUser("No extra details")
+    } else {
+      const problem = validateTripDetails(details, startDate, endDate)
+      if (problem) {
+        setError(problem)
+        return
+      }
+      setError(null)
+      const rows = tripDetailsRecap(details)
+      pushUser(rows.length > 0 ? rows.map((r) => r.value).join(" · ") : "No extra details")
+    }
     setStep("currency")
-    pushBot("Last one — which currency would you like to use for budget estimates?")
+    pushBot("Last one — which currency would you like to use for budget estimates? Add your total budget if you have one.")
   }
 
   const handleCurrency = () => {
+    const budget = parseBudget(budgetText)
+    if (budget === null) {
+      setError("Budget must be a number.")
+      return
+    }
     setError(null)
-    pushUser(currency)
+    pushUser(budget ? `${currency} · budget ${budget.toLocaleString()}` : currency)
     setStep("review")
     pushBot("All set! Here's a recap. If it looks good, click Generate Itinerary.")
   }
+
+  const budget = parseBudget(budgetText)
 
   const handleGenerate = () => {
     if (disabled) return
@@ -174,6 +219,8 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       end_date: endDate,
       base_currency: currency,
       travel_style: travelStyle,
+      ...tripDetailsToInput(details),
+      ...(budget ? { budget_amount: budget } : {}),
     })
   }
 
@@ -186,12 +233,14 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     setEndDate("")
     setCurrency("IDR")
     setTravelStyle("balanced")
+    setDetails(emptyTripDetails())
+    setBudgetText("")
     setDraftText("")
     setError(null)
   }
 
   // Step progress indicator
-  const STEPS: StepId[] = ["destination", "description", "dates", "currency", "review"]
+  const STEPS: StepId[] = ["destination", "description", "dates", "details", "currency", "review"]
   const stepIdx = STEPS.indexOf(step)
 
   return (
@@ -282,15 +331,20 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                 </div>
               </div>
               <div className="relative">
-                <Input
+                <Textarea
                   autoFocus
-                  className={cn(inputBase, draftText.length > 0 && "pr-9")}
+                  rows={3}
+                  className={cn("resize-none", draftText.length > 0 && "pr-9")}
                   placeholder="e.g. foodie, adventure, budget-friendly"
                   maxLength={MAX_DESCRIPTION}
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && hasDraftText) handleDescription(false)
+                    // Enter sends; Shift+Enter adds a line.
+                    if (e.key === "Enter" && !e.shiftKey && hasDraftText) {
+                      e.preventDefault()
+                      handleDescription(false)
+                    }
                   }}
                 />
                 {draftText.length > 0 && (
@@ -301,7 +355,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
                       setError(null)
                     }}
                     aria-label="Clear input"
-variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+variant="ghost" size="icon-xs" className="absolute right-2 top-2 text-muted-foreground">
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
                   </Button>
                 )}
@@ -361,6 +415,30 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-
             </div>
           )}
 
+          {step === "details" && (
+            <div className="space-y-4">
+              <TripDetailsStep
+                value={details}
+                onChange={(d) => {
+                  setDetails(d)
+                  setError(null)
+                }}
+                destination={destination}
+                startDate={startDate}
+                endDate={endDate}
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button type="button" onClick={() => handleDetails(true)} variant="ghost" className="text-muted-foreground">
+                  Skip
+                </Button>
+                <Button type="button" onClick={() => handleDetails(false)}>
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                  Continue
+                </Button>
+              </div>
+            </div>
+          )}
+
           {step === "currency" && (
             <div className="space-y-2">
               <div className="relative">
@@ -381,6 +459,20 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-
                 </NativeSelect>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </div>
+              <Input
+                className={inputBase}
+                inputMode="numeric"
+                aria-label="Total budget (optional)"
+                placeholder={`Total budget in ${currency} (optional)`}
+                value={budgetText}
+                onChange={(e) => {
+                  setBudgetText(e.target.value)
+                  setError(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCurrency()
+                }}
+              />
               <div className="flex justify-end">
                 <Button type="button" onClick={handleCurrency}>
                   <Send className="h-3.5 w-3.5" aria-hidden="true" />
@@ -400,7 +492,11 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-1/2 -translate-y-
             <Recap label="Style" value={TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"} />
             {description && <Recap label="Preferences" value={description} />}
             <Recap label="Dates" value={`${startDate} → ${endDate} (${span} day${span > 1 ? "s" : ""})`} />
+            {tripDetailsRecap(details).map((r) => (
+              <Recap key={r.label} label={r.label} value={r.value} />
+            ))}
             <Recap label="Currency" value={currency} />
+            {budget ? <Recap label="Budget" value={`${currency} ${budget.toLocaleString()}`} /> : null}
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button size="lg" onClick={handleGenerate} disabled={disabled}>

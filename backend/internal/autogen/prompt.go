@@ -17,7 +17,7 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 - Hanya merespons permintaan perencanaan perjalanan (destinasi, itinerary, aktivitas, akomodasi, transportasi).
 - Jika user meminta hal di luar travel planning, tolak dengan sopan dan arahkan untuk memberikan topik perjalanan.
 - Selalu respons dalam Bahasa Indonesia.
-- Jadwalkan aktivitas antara pukul 08:00 dan 21:00 waktu lokal.
+- Jadwalkan aktivitas antara pukul 08:00 dan 21:00 waktu lokal, kecuali hari perjalanan yang diatur di KONTEKS PERJALANAN.
 
 ## ATURAN KETAT OUTPUT
 - Keluarkan HANYA JSON valid sesuai schema yang diberikan. Tanpa teks lain, tanpa markdown fence.
@@ -31,8 +31,10 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
 ## ATURAN ITINERARY
 - Jumlah hari trip HARUS sama persis dengan rentang tanggal yang diberikan (maksimum %d hari).
 - Setiap "day_number" dimulai dari 1 dan berurutan. "date" harus cocok dengan tanggal hari tersebut (YYYY-MM-DD).
-- SETIAP hari berisi 4 sampai %d aktivitas, dengan minimal 2 aktivitas lokasi ("location").
+- SETIAP hari berisi 4 sampai %[2]d aktivitas, dengan minimal 2 aktivitas lokasi ("location").
   Jangan biarkan hari kosong — isi dengan tempat wisata, kuliner, atau aktivitas relevan.
+  Pengecualian: hari perjalanan dari/ke asal (lihat KONTEKS PERJALANAN) cukup 2 sampai %[2]d aktivitas.
+- Jam aktivitas dalam satu hari TIDAK BOLEH bertumpuk; "end_time" selalu setelah "start_time".
 - Tipe aktivitas HANYA boleh "location" (tempat yang dikunjungi) atau "note" (catatan/tips).
   Untuk tipe "location", WAJIB isi "title" dengan nama tempat nyata, "location_name" yang deskriptif,
   dan "start_time"/"end_time" yang realistis (format HH:MM 24-jam). JANGAN biarkan field kosong.
@@ -86,6 +88,8 @@ momen terbaik, kontras), BUKAN dari kata sifat kosong.
   yang kamu YAKIN ada, atau jadikan tipe "note".
 - Perjalanan antarkota/rute ("Perjalanan Jeddah ke Makkah"), istirahat, check-in tanpa nama hotel,
   dan kegiatan tanpa tempat spesifik → tipe "note", bukan "location".
+- Perjalanan dari/ke kota asal user (mis. "Berangkat dari Majalengka") boleh dan sebaiknya muncul sebagai "note"
+  dengan jam berangkat dan perkiraan tiba, walau kota asal berada di luar destinasi.
 - "location_name": nama tempat untuk ditampilkan ke user (boleh bahasa Indonesia), TANPA akhiran kota.
 - "place_query": nama resmi tempat PERSIS seperti di Google Maps/OpenStreetMap — nama internasional
   (bahasa Inggris) atau nama lokal resminya, TANPA kota. Contoh: "Al-Masjid an-Nabawi",
@@ -233,6 +237,9 @@ func BuildPrompt(in GenerateInput) (system, user string) {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf(systemPromptBase, MaxTripDays, MaxActivitiesPerDay))
 
+	// Inject the event-trip context (origin, event anchor, travellers, needs)
+	sb.WriteString(tripContextRules(in))
+
 	// Inject travel style
 	style := in.TravelStyle
 	if style == "" {
@@ -261,6 +268,7 @@ func BuildPrompt(in GenerateInput) (system, user string) {
 	ub.WriteString(fmt.Sprintf("- Tanggal selesai: %s\n", in.EndDate.Format("2006-01-02")))
 	ub.WriteString(fmt.Sprintf("- Total hari: %d (buat tepat %d hari)\n", days, days))
 	ub.WriteString(fmt.Sprintf("- Mata uang: %s\n", in.BaseCurrency))
+	ub.WriteString(tripContextFacts(in))
 	ub.WriteString("\nTanggal per hari:\n")
 	for i := 0; i < days; i++ {
 		d := in.StartDate.AddDate(0, 0, i)

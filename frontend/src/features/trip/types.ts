@@ -89,7 +89,44 @@ export interface GenerateTripInput {
   base_currency: string
   /** Shapes the whole itinerary; empty means balanced. */
   travel_style?: TravelStyle
+  // Optional context for a trip built around one event (all omitted = plain trip).
+  /** Where the trip starts and ends, e.g. home. */
+  origin?: GeneratePlace
+  transport_mode?: TransportMode
+  /** Fixed anchor: the model never moves its venue or times. */
+  event?: GenerateEvent
+  travelers?: GenerateTravelers
+  /** Total budget in base_currency. */
+  budget_amount?: number
+  needs?: TripNeed[]
 }
+
+/** A place the user picked (autocomplete or Maps link) or just typed. */
+export interface GeneratePlace {
+  label: string
+  address?: string
+  lat?: number
+  lng?: number
+}
+
+export type TransportMode = "car" | "train" | "plane" | "bus"
+
+export interface GenerateEvent {
+  name: string
+  venue: GeneratePlace
+  date: string // YYYY-MM-DD, within the trip
+  start_time: string // HH:MM
+  end_time: string
+}
+
+export interface GenerateTravelers {
+  adults: number
+  children: number
+  /** One age per child. */
+  child_ages: number[]
+}
+
+export type TripNeed = "hotel_near_venue" | "kids_playground" | "food_near_venue" | "easy_parking"
 
 export type TravelStyle =
   | "balanced"
