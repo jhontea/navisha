@@ -46,16 +46,22 @@ func TestGeoapifyClientReverseGeocodeUsesReverseEndpoint(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		if r.URL.Query().Get("lat") != "-6.117791" || r.URL.Query().Get("lon") != "106.858039" {
-			t.Errorf("query = %s", r.URL.RawQuery)
+		if r.URL.Query().Get("lat") == "-6.2" {
+			// A street, with no place name.
+			_, _ = w.Write([]byte(`{"results":[{"formatted":"Jalan Lodan Timur, Ancol, North Jakarta, Indonesia","country_code":"id"}]}`))
+			return
 		}
-		_, _ = w.Write([]byte(`{"results":[{"formatted":"Jalan Lodan Timur, Ancol, North Jakarta, Indonesia","country_code":"id"}]}`))
+		// The nearest place is someone else's: its name must not lead the address.
+		_, _ = w.Write([]byte(`{"results":[{"name":"Ombak Laut","formatted":"Ombak Laut, Jembatan Carnaval No.7, Pademangan, North Jakarta 14430, Java, Indonesia","address_line2":"Jembatan Carnaval No.7, Pademangan, North Jakarta 14430, Java, Indonesia","country_code":"id"}]}`))
 	}))
 	defer server.Close()
 
 	client := NewGeoapifyClient("test-key", server.URL+"/v1/geocode/autocomplete", time.Second)
 	address, country, ok := client.ReverseGeocode(context.Background(), -6.117791, 106.858039)
-	if !ok || address != "Jalan Lodan Timur, Ancol, North Jakarta, Indonesia" || country != "ID" {
+	if !ok || address != "Jembatan Carnaval No.7, Pademangan, North Jakarta 14430, Java, Indonesia" || country != "ID" {
 		t.Fatalf("ReverseGeocode() = %q, %q, %v", address, country, ok)
+	}
+	if address, _, _ := client.ReverseGeocode(context.Background(), -6.2, 106.8); address != "Jalan Lodan Timur, Ancol, North Jakarta, Indonesia" {
+		t.Fatalf("street ReverseGeocode() = %q", address)
 	}
 }

@@ -310,8 +310,10 @@ func (c *GeoapifyClient) ReverseGeocode(ctx context.Context, lat, lng float64) (
 
 	var payload struct {
 		Results []struct {
-			Formatted   string `json:"formatted"`
-			CountryCode string `json:"country_code"`
+			Name         string `json:"name"`
+			Formatted    string `json:"formatted"`
+			AddressLine2 string `json:"address_line2"`
+			CountryCode  string `json:"country_code"`
 		} `json:"results"`
 	}
 	decoder := json.NewDecoder(io.LimitReader(resp.Body, 1<<20))
@@ -319,8 +321,15 @@ func (c *GeoapifyClient) ReverseGeocode(ctx context.Context, lat, lng float64) (
 		return "", "", false
 	}
 	first := payload.Results[0]
-	if first.Formatted == "" {
+	// The nearest result is often another place a few hundred metres away
+	// ("Masjid Al Huriyah, 11, Sutawangi ..." for a house): keep its street
+	// address and drop its name.
+	address = first.Formatted
+	if first.Name != "" && first.AddressLine2 != "" {
+		address = first.AddressLine2
+	}
+	if address == "" {
 		return "", "", false
 	}
-	return first.Formatted, strings.ToUpper(first.CountryCode), true
+	return address, strings.ToUpper(first.CountryCode), true
 }
