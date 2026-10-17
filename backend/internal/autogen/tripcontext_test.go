@@ -166,7 +166,7 @@ func TestValidateDraft_EventAnchorAndTimes(t *testing.T) {
 	want1 := []string{
 		"Berangkat dari Majalengka 06:00-09:30",
 		"Makan siang di Bandar Djakarta 11:00-12:30",
-		"Fan Meeting di Beach City International Stadium 14:00-17:00",
+		"Fan Meeting 14:00-17:00", // the user's event name, not the model's title
 		"Bawa jaket -",
 	}
 	if strings.Join(day1, "|") != strings.Join(want1, "|") {
@@ -231,5 +231,53 @@ func TestHaversine(t *testing.T) {
 	km := haversineKm(-6.1754, 106.8272, -6.9025, 107.6188)
 	if km < 110 || km > 125 {
 		t.Errorf("haversine = %.1f km", km)
+	}
+}
+
+// A travel/queue block the model put in the event slot must not take over
+// the event (seen in manual testing: "Menuju venue, parkir, dan antre masuk"
+// at 14:00-17:00 replaced "Fan Meeting Byeon Woo Seok").
+func TestValidateDraft_QueueBlockInEventSlotIsNotTheEvent(t *testing.T) {
+	in := fanMeetingInput()
+	in.Event.Name = "Fan Meeting Byeon Woo Seok"
+	queue := act("note", "Menuju venue, parkir, dan antre masuk", "14:00", "17:00")
+	queue.Notes = "Tiba pukul 13.00."
+	draft := &TripDraft{Days: []DayDraft{{Activities: []ActivityDraft{
+		act("location", "Makan siang", "10:30", "11:30"),
+		queue,
+	}}, {}}}
+	if err := validateDraft(draft, in); err != nil {
+		t.Fatal(err)
+	}
+	day := draft.Days[0].Activities
+	if len(day) != 2 {
+		t.Fatalf("want lunch + event, got %+v", day)
+	}
+	ev := day[1]
+	if ev.Title != "Fan Meeting Byeon Woo Seok" || ev.LocationName != "Beach City International Stadium" {
+		t.Errorf("event anchor = %+v", ev)
+	}
+	if strings.Contains(ev.Notes, "13.00") {
+		t.Errorf("the queue block's notes must not become the event's: %q", ev.Notes)
+	}
+}
+
+func TestMatchesEvent(t *testing.T) {
+	ev := fanMeetingInput().Event
+	atVenue := act("location", "Nonton di stadion", "14:00", "17:00")
+	atVenue.LocationName = "Beach City International Stadium"
+	for _, tt := range []struct {
+		name string
+		a    ActivityDraft
+		want bool
+	}{
+		{"title names the event", act("location", "fan meeting seru", "15:00", "18:00"), true},
+		{"at the venue in the event slot", atVenue, true},
+		{"same slot elsewhere", act("note", "Antre masuk", "14:00", "17:00"), false},
+		{"at the venue another time", func() ActivityDraft { a := atVenue; a.StartTime = "12:00"; return a }(), false},
+	} {
+		if got := matchesEvent(tt.a, ev); got != tt.want {
+			t.Errorf("%s: matchesEvent = %v, want %v", tt.name, got, tt.want)
+		}
 	}
 }

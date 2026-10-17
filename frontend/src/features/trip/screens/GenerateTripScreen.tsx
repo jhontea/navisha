@@ -33,7 +33,7 @@ import {
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
 import { getDefaultTripCover } from "@/features/trip/lib/cover"
-import { suggestionKey } from "@/features/trip/lib/suggestionKey"
+import { curateDraft } from "@/features/trip/lib/draftBookings"
 import { AlertCircle, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
@@ -154,13 +154,7 @@ function GenerateTripPageContent() {
       // Filter the AI draft to only the user's selected places before
       // resolving/creating. Days are preserved (contiguity required) but
       // may end up empty if the user deselected everything in a day.
-      const curatedDraft: typeof result.draft = {
-        ...result.draft,
-        days: result.draft.days.map((d) => ({
-          ...d,
-          activities: d.activities.filter((a) => selectedKeys.has(suggestionKey(a))),
-        })),
-      }
+      const curatedDraft = curateDraft(result.draft, selectedKeys)
       // The AI's destination is already a clean place name ("Makkah & Madinah,
       // Saudi Arabia"); the wizard text ("Umroh") can geocode to a street.
       const tripDestination = result.draft.destination?.trim() || destination

@@ -237,6 +237,7 @@ func validateDraft(d *TripDraft, in GenerateInput) error {
 		d.Days = d.Days[:expectedDays]
 	}
 
+	legSlots := validateBookings(d, in)
 	for i := range d.Days {
 		day := &d.Days[i]
 		day.DayNumber = i + 1
@@ -277,7 +278,7 @@ func validateDraft(d *TripDraft, in GenerateInput) error {
 			a, rest := eventAnchor(in.Event, valid)
 			anchor, valid = &a, rest
 		}
-		day.Activities = normalizeDaySchedule(valid, anchor, in.avoidsAirports())
+		day.Activities = normalizeDaySchedule(valid, anchor, legSlots[day.Date], in.avoidsAirports())
 	}
 	if d.Budget == 0 && in.BudgetAmount > 0 {
 		d.Budget = in.BudgetAmount

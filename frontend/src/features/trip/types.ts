@@ -175,6 +175,52 @@ export interface TripDraft {
   budget: number
   days: DayDraft[]
   tips: string[]
+  // Saved as transport, stay and planned-budget rows, not as activities.
+  // Optional: drafts from before these fields existed have none.
+  transport_legs?: TransportLegDraft[]
+  lodging?: LodgingDraft[]
+  budget_breakdown?: BudgetBreakdown
+}
+
+export interface TransportLegDraft {
+  mode: "car" | "train" | "flight" | "bus"
+  label: string
+  from_location: string
+  to_location: string
+  departure_date: string // YYYY-MM-DD
+  departure_time: string // HH:MM
+  arrival_date: string
+  arrival_time: string
+  /** Whole leg, in the trip currency. */
+  estimated_cost: number
+  notes: string
+}
+
+export interface LodgingDraft {
+  name: string
+  location_name: string
+  place_query: string
+  city: string
+  check_in_date: string // YYYY-MM-DD
+  check_in_time: string // HH:MM or ""
+  check_out_date: string
+  check_out_time: string
+  estimated_cost_per_night: number
+  notes: string
+  /** Filled by resolveDraftLocations when the hotel is found on the map. */
+  address: string
+  lat: number | null
+  lng: number | null
+  google_place_id: string
+}
+
+/** Planned spend per expense category, in the trip currency. */
+export interface BudgetBreakdown {
+  transport: number
+  accommodation: number
+  food: number
+  activity: number
+  other: number
 }
 
 // Response envelope from POST /trips/generate
