@@ -63,11 +63,15 @@ jobs:
           tags: |
             ghcr.io/jhontea/navisha-frontend:${{ github.sha }}
             ghcr.io/jhontea/navisha-frontend:latest
+          # The Google settings are read from repository secrets first (where they
+          # are kept), then variables. The other NEXT_PUBLIC_* stay on variables
+          # only: older secrets with those names were never used and are not
+          # switched on here.
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.navisha.cloud/api/v1' }}
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '' }}
-            NEXT_PUBLIC_LOCATION_PROVIDER=${{ vars.NEXT_PUBLIC_LOCATION_PROVIDER || 'geoapify' }}
-            NEXT_PUBLIC_MAP_PROVIDER=${{ vars.NEXT_PUBLIC_MAP_PROVIDER || 'maplibre' }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '' }}
+            NEXT_PUBLIC_LOCATION_PROVIDER=${{ secrets.NEXT_PUBLIC_LOCATION_PROVIDER || vars.NEXT_PUBLIC_LOCATION_PROVIDER || 'geoapify' }}
+            NEXT_PUBLIC_MAP_PROVIDER=${{ secrets.NEXT_PUBLIC_MAP_PROVIDER || vars.NEXT_PUBLIC_MAP_PROVIDER || 'maplibre' }}
             NEXT_PUBLIC_LOCATION_PHOTOS_ENABLED=${{ vars.NEXT_PUBLIC_LOCATION_PHOTOS_ENABLED || 'false' }}
             NEXT_PUBLIC_MAP_TILE_URL=${{ vars.NEXT_PUBLIC_MAP_TILE_URL || '/api/map-tiles/{z}/{x}/{y}' }}
             NEXT_PUBLIC_MAP_ATTRIBUTION=${{ vars.NEXT_PUBLIC_MAP_ATTRIBUTION || 'OpenStreetMap contributors CARTO' }}
