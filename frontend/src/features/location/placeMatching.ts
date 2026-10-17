@@ -62,3 +62,26 @@ export function weightedJaccard(left: string, right: string): number {
   }
   return unionWeight === 0 ? 0 : intersectionWeight / unionWeight
 }
+
+/**
+ * Which autocomplete predictions are worth a Place Details call. Details are
+ * the costly, Pro-tier request, so only the prediction whose name best
+ * matches is fetched — plus the runners-up that tie with it (up to `max`),
+ * when the name alone cannot tell them apart.
+ */
+export function pickForDetails<T>(
+  predictions: T[],
+  intendedName: string,
+  label: (prediction: T) => string,
+  max = 2,
+): T[] {
+  const scored = predictions
+    .map((prediction) => ({ prediction, score: weightedJaccard(intendedName, label(prediction)) }))
+    .sort((a, b) => b.score - a.score)
+  if (scored.length === 0) return []
+  const best = scored[0].score
+  return scored
+    .filter((s) => s.score === best)
+    .slice(0, max)
+    .map((s) => s.prediction)
+}
