@@ -12,9 +12,11 @@ const eventCategory = "budaya"
 // normalizeDaySchedule applies the same time rules as the day preview to one
 // day of a full-trip draft: timed activities need HH:MM times that end after
 // they start and must not overlap; activities with no times at all are kept
-// after the timed ones (a half-filled or malformed time is dropped). When the event falls on this day its anchor is placed first and wins
-// every clash. Activities are capped at MaxActivitiesPerDay.
-func normalizeDaySchedule(acts []ActivityDraft, anchor *ActivityDraft, noAirport bool) []ActivityDraft {
+// after the timed ones (a half-filled or malformed time is dropped). When
+// the event falls on this day its anchor is placed first and wins every
+// clash; blocked holds the slots of the day's transport legs, which no
+// activity may overlap. Activities are capped at MaxActivitiesPerDay.
+func normalizeDaySchedule(acts []ActivityDraft, anchor *ActivityDraft, blocked [][2]int, noAirport bool) []ActivityDraft {
 	timed := make([]ActivityDraft, 0, len(acts)+1)
 	untimed := []ActivityDraft{}
 	occupied := [][2]int{}
@@ -24,6 +26,7 @@ func normalizeDaySchedule(acts []ActivityDraft, anchor *ActivityDraft, noAirport
 		occupied = append(occupied, [2]int{start, end})
 		timed = append(timed, *anchor)
 	}
+	occupied = append(occupied, blocked...)
 
 	sorted := append([]ActivityDraft(nil), acts...)
 	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].StartTime < sorted[j].StartTime })

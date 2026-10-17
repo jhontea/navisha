@@ -19,8 +19,8 @@ var roadSpeedKmh = map[string]float64{"car": 60, "bus": 50, "train": 70}
 
 // needRules maps each TripNeeds value to the planning rule it adds.
 var needRules = map[string]string{
-	"hotel_near_venue": `- Sertakan SATU hotel bernama (category "akomodasi", tipe "location") dalam radius ±3 km dari venue untuk malam menginap.
-  Check-in dijadwalkan setelah tiba di area venue (atau setelah acara bila acara di hari pertama), bukan sebelum berangkat.`,
+	"hotel_near_venue": `- Isi "lodging" dengan SATU hotel bernama dalam radius ±3 km dari venue untuk malam menginap.
+  Check-in setelah tiba di area venue (atau setelah acara bila acara di hari pertama), bukan sebelum berangkat.`,
 	"kids_playground": `- Sertakan SATU playground/area bermain anak bernama (tipe "location") dalam radius ±5 km dari venue, di luar jam acara.`,
 	"food_near_venue": `- Pilih tempat makan dalam radius ±3 km dari venue; jangan ke pusat kota yang jauh hanya untuk makan.`,
 	"easy_parking":    `- Utamakan tempat dengan parkir mobil yang mudah, dan sebut info parkir di "notes".`,
@@ -56,9 +56,9 @@ func tripContextRules(in GenerateInput) string {
 	if in.Origin != nil {
 		b.WriteString(`
 - User BERANGKAT dari kota asal di pesan user dan PULANG ke sana. Hari pertama dan hari terakhir adalah hari perjalanan:
-  - Hari pertama dimulai dengan "note" berangkat dari kota asal (jam berangkat realistis, boleh mulai 04:00),
-    berisi perkiraan durasi dan waktu tiba. Belum ada hotel sebelum tiba: JANGAN berasumsi user sudah menginap.
-  - Hari terakhir diakhiri dengan "note" perjalanan pulang ke kota asal (boleh selesai sampai 23:59).
+  - "transport_legs" WAJIB berisi leg berangkat dari kota asal pada hari pertama (jam berangkat realistis, boleh
+    mulai 04:00) dan leg pulang ke kota asal pada hari terakhir (boleh tiba sampai 23:59), dengan moda transport user.
+    Aktivitas hari pertama baru dimulai setelah jam tiba. Belum ada hotel sebelum tiba: JANGAN berasumsi user sudah menginap.
   - Pada hari perjalanan cukup 2 aktivitas atau lebih; jangan memadatkan aktivitas sampai user kelelahan di jalan.
   - Durasi perjalanan memakai perkiraan di pesan user bila ada, ditambah buffer macet/istirahat.`)
 	}
@@ -73,8 +73,8 @@ func tripContextRules(in GenerateInput) string {
 	}
 	if in.BudgetAmount > 0 {
 		b.WriteString(`
-- "budget" adalah estimasi total untuk seluruh rombongan dan TIDAK BOLEH melebihi anggaran user.
-  Sebut perkiraan biaya (bensin/tol/tiket, hotel, makan) di "notes" atau "tips" bila relevan.`)
+- "budget" adalah estimasi total untuk seluruh rombongan dan TIDAK BOLEH melebihi anggaran user;
+  "budget_breakdown" merinci anggaran itu per kategori.`)
 	}
 	for _, need := range in.Needs {
 		if rule, ok := needRules[need]; ok {

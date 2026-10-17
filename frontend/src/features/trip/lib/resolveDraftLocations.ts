@@ -1,4 +1,4 @@
-import type { TripDraft, ActivityDraft } from "../types"
+import type { TripDraft, ActivityDraft, LodgingDraft } from "../types"
 import { locationProvider, type LocationProvider, type PlaceQuery } from "@/features/location/provider"
 import { normalize, tokens, weightedJaccard, type PlaceCandidate } from "@/features/location/placeMatching"
 
@@ -56,7 +56,11 @@ export async function resolveDraftLocations(
       ...day,
       activities: day.activities.map((act) => ({ ...act })),
     })),
+    lodging: draft.lodging?.map((st) => ({ ...st })),
   }
+  // Hotels are looked up like activity places; only a verified match is
+  // copied back (a stay has no "needs review" state to flag a rough pin).
+  const stayActs = (cloned.lodging ?? []).map(stayAsActivity)
 
   const targets: Target[] = []
   for (const day of cloned.days) {
@@ -72,6 +76,15 @@ export async function resolveDraftLocations(
       targets.push({ key, act, query: { key, name, altName, city: act.city?.trim() || undefined } })
     }
   }
+  stayActs.forEach((act, i) => {
+    if (act.lat != null && act.lng != null) return
+    const name = (act.place_query || act.location_name).trim()
+    if (!name) return
+    markNeedsReview(act)
+    const key = `stay:${i}`
+    const altName = act.location_name && act.location_name !== name ? act.location_name : undefined
+    targets.push({ key, act, query: { key, name, altName, city: act.city?.trim() || undefined } })
+  })
   if (targets.length === 0) return cloned
 
   const local = await findInBatches(targets, (batch) => provider.findPlaceCandidates(batch, destination))
@@ -97,7 +110,33 @@ export async function resolveDraftLocations(
     }
   }
 
+  stayActs.forEach((act, i) => {
+    const st = cloned.lodging![i]
+    if (act.location_verification !== "verified" || act.lat == null || act.lng == null) return
+    st.lat = act.lat
+    st.lng = act.lng
+    st.address = act.address
+    st.google_place_id = act.google_place_id
+  })
   return cloned
+}
+
+function stayAsActivity(st: LodgingDraft): ActivityDraft {
+  return {
+    type: "location",
+    title: st.name,
+    start_time: "",
+    end_time: "",
+    location_name: st.location_name || st.name,
+    place_query: st.place_query,
+    city: st.city,
+    address: st.address,
+    lat: st.lat,
+    lng: st.lng,
+    google_place_id: st.google_place_id,
+    category: "akomodasi",
+    notes: "",
+  }
 }
 
 /** Looks places up in batches; a failed batch leaves its places for review. */

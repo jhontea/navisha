@@ -145,7 +145,7 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 
 	// Auto-generate trip domain (F5). Reuses the LLM client and an
 	// integration adapter that persists the approved draft via trip + activity.
-	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase)
+	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase, transportationUsecase, accommodationUsecase)
 	autogenDayContext := integration.NewAutogenDayContextProvider(tripUsecase, activityUsecase)
 	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel()).
 		WithDayContextProvider(autogenDayContext)

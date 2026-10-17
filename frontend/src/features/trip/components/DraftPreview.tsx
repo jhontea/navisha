@@ -2,9 +2,10 @@
 
 import { SelectableRow } from "@/components/SelectableRow"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Banknote, CalendarDays, List, MapPin, StickyNote } from "lucide-react"
+import { Banknote, BedDouble, Bus, CalendarDays, Car, List, MapPin, Plane, StickyNote, TrainFront } from "lucide-react"
 import type { TripDraft } from "../types"
 import { suggestionKey } from "../lib/suggestionKey"
+import { budgetRows, draftKeys, legKey, nights, stayKey } from "../lib/draftBookings"
 import { Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
 import { formatMoney } from "@/lib/money"
@@ -26,10 +27,10 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
 
   // Build the full key set once per draft. useMemo so identity is stable
   // across re-renders (avoids resetting selection on parent re-render).
-  const allKeys = useMemo(
-    () => new Set(draft.days.flatMap((d) => d.activities.map(suggestionKey))),
-    [draft],
-  )
+  const allKeys = useMemo(() => new Set(draftKeys(draft)), [draft])
+  const legs = draft.transport_legs ?? []
+  const stays = draft.lodging ?? []
+  const budget = budgetRows(draft.budget_breakdown)
 
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set(allKeys))
 
@@ -71,6 +72,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
   }, [allKeys])
 
   const selectedCount = selectedKeys.size
+  const totalItems = allKeys.size
 
   return (
     <div className="space-y-6">
@@ -98,22 +100,93 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
             </span>
           )}
         </div>
+        {budget.length > 0 && (
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 border-t pt-4 text-sm sm:grid-cols-3">
+            {budget.map((row) => (
+              <div key={row.label} className="flex justify-between gap-2">
+                <dt className="text-muted-foreground">{row.label}</dt>
+                <dd className="font-medium text-foreground tabular-nums">{formatMoney(row.amount, draft.base_currency)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
 
       {/* Curation toolbar */}
-      {totalActivities > 0 && (
+      {totalItems > 0 && (
         <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-2xl border bg-card shadow-card px-4 py-1.5 shadow-card">
           <span className="text-sm text-muted-foreground tabular-nums">
             <span className="font-semibold text-foreground">{selectedCount}</span>
-            {" "}of {totalActivities} places selected
+            {" "}of {totalItems} selected
           </span>
           <Button
             type="button"
             onClick={toggleAll}
             variant="ghost" size="sm" className="text-primary"
           >
-            {selectedCount === totalActivities ? "Clear all" : "Select all"}
+            {selectedCount === totalItems ? "Clear all" : "Select all"}
           </Button>
+        </div>
+      )}
+
+      {/* Bookings: saved as transport and stay records, not activities */}
+      {(legs.length > 0 || stays.length > 0) && (
+        <div className="space-y-4 rounded-2xl border bg-card p-4 shadow-card md:p-5">
+          {legs.length > 0 && (
+            <section aria-labelledby="draft-legs" className="space-y-2">
+              <h3 id="draft-legs" className="text-base font-semibold text-foreground">Getting there</h3>
+              <ul className="space-y-2">
+                {legs.map((leg, i) => {
+                  const Icon = LEG_ICONS[leg.mode] ?? Car
+                  return (
+                    <li key={i}>
+                      <SelectableRow selected={selectedKeys.has(legKey(i))} onToggle={() => toggle(legKey(i))}>
+                        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-foreground">{leg.label}</span>
+                          <span className="block text-sm text-muted-foreground tabular-nums">
+                            {formatWeekdayDate(leg.departure_date) ?? leg.departure_date} · {leg.departure_time}–
+                            {leg.arrival_date !== leg.departure_date ? `${formatWeekdayDate(leg.arrival_date) ?? leg.arrival_date} ` : ""}
+                            {leg.arrival_time}
+                            {leg.estimated_cost > 0 && ` · ~${formatMoney(leg.estimated_cost, draft.base_currency)}`}
+                          </span>
+                          {leg.notes && <span className="mt-0.5 block text-sm text-muted-foreground">{leg.notes}</span>}
+                        </span>
+                      </SelectableRow>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )}
+          {stays.length > 0 && (
+            <section aria-labelledby="draft-stays" className="space-y-2">
+              <h3 id="draft-stays" className="text-base font-semibold text-foreground">Stay</h3>
+              <ul className="space-y-2">
+                {stays.map((st, i) => {
+                  const n = nights(st.check_in_date, st.check_out_date)
+                  return (
+                    <li key={i}>
+                      <SelectableRow selected={selectedKeys.has(stayKey(i))} onToggle={() => toggle(stayKey(i))}>
+                        <BedDouble className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-foreground">{st.name}</span>
+                          <span className="block text-sm text-muted-foreground tabular-nums">
+                            {formatWeekdayDate(st.check_in_date) ?? st.check_in_date}
+                            {st.check_in_time && ` ${st.check_in_time}`} → {formatWeekdayDate(st.check_out_date) ?? st.check_out_date}
+                            {st.check_out_time && ` ${st.check_out_time}`} · {n} {n === 1 ? "night" : "nights"}
+                            {st.estimated_cost_per_night > 0 &&
+                              ` · ~${formatMoney(st.estimated_cost_per_night, draft.base_currency)}/night`}
+                          </span>
+                          {st.notes && <span className="mt-0.5 block text-sm text-muted-foreground">{st.notes}</span>}
+                        </span>
+                      </SelectableRow>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )}
         </div>
       )}
 
@@ -191,3 +264,5 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
     </div>
   )
 }
+
+const LEG_ICONS: Record<string, typeof Car> = { car: Car, bus: Bus, train: TrainFront, flight: Plane }

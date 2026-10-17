@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import type { LocationProvider, PlaceQuery } from "@/features/location/provider"
 import type { PlaceCandidate } from "@/features/location/placeMatching"
 import { weightedJaccard } from "@/features/location/placeMatching"
-import type { ActivityDraft, TripDraft } from "../types"
+import type { ActivityDraft, LodgingDraft, TripDraft } from "../types"
 import { resolveDraftLocations } from "./resolveDraftLocations"
 
 function activity(title: string, location_name = title): ActivityDraft {
@@ -153,3 +153,37 @@ describe("resolveDraftLocations", () => {
   })
 })
 
+function stay(name: string): LodgingDraft {
+  return {
+    name,
+    location_name: name,
+    place_query: name,
+    city: "Kyoto, Japan",
+    check_in_date: "2026-11-10",
+    check_in_time: "15:00",
+    check_out_date: "2026-11-11",
+    check_out_time: "11:00",
+    estimated_cost_per_night: 0,
+    notes: "",
+    address: "",
+    lat: null,
+    lng: null,
+    google_place_id: "",
+  }
+}
+
+describe("resolveDraftLocations lodging", () => {
+  it("pins a hotel that matches by name", async () => {
+    const p = provider(() => [place("Hotel Granvia Kyoto", "Shimogyo, Kyoto, Japan", "hotel-1")])
+    const result = await resolveDraftLocations({ ...draft([]), lodging: [stay("Hotel Granvia Kyoto")] }, "Kyoto, Japan", p)
+    expect(result.lodging?.[0]).toMatchObject({ lat: 35, lng: 135.7, google_place_id: "hotel-1", address: "Shimogyo, Kyoto, Japan" })
+  })
+
+  it("leaves a hotel without coordinates when only a rough match exists", async () => {
+    const p = provider(() => [{ ...place("Kyoto Tower", "Shimogyo, Kyoto, Japan"), nearCity: true }])
+    const input = { ...draft([]), lodging: [stay("Hotel Granvia Kyoto")] }
+    const result = await resolveDraftLocations(input, "Kyoto, Japan", p)
+    expect(result.lodging?.[0].lat).toBeNull()
+    expect(input.lodging[0].lat).toBeNull() // the input draft is not mutated
+  })
+})

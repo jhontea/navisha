@@ -135,6 +135,86 @@ type TripDraft struct {
 	Budget       float64    `json:"budget"`
 	Days         []DayDraft `json:"days"`
 	Tips         []string   `json:"tips"`
+
+	// Bookings and the planned budget split. They are saved as transport,
+	// stay and budget_categories rows, never as itinerary activities (the day
+	// timeline already shows bookings next to activities).
+	TransportLegs   []TransportLegDraft `json:"transport_legs"`
+	Lodging         []LodgingDraft      `json:"lodging"`
+	BudgetBreakdown BudgetBreakdown     `json:"budget_breakdown"`
+}
+
+// MaxTransportLegs / MaxLodging cap the bookings in one draft.
+const (
+	MaxTransportLegs = 6
+	MaxLodging       = 3
+)
+
+// LegModes are the accepted TransportLegDraft.Mode values. They match
+// transportation.Type names.
+var LegModes = map[string]bool{"car": true, "train": true, "flight": true, "bus": true}
+
+// TransportLegDraft is one journey: home to the destination, back, or
+// between cities. Dates are YYYY-MM-DD and times HH:MM, local wall clock.
+type TransportLegDraft struct {
+	Mode          string  `json:"mode"`
+	Label         string  `json:"label"`
+	FromLocation  string  `json:"from_location"`
+	ToLocation    string  `json:"to_location"`
+	DepartureDate string  `json:"departure_date"`
+	DepartureTime string  `json:"departure_time"`
+	ArrivalDate   string  `json:"arrival_date"`
+	ArrivalTime   string  `json:"arrival_time"`
+	EstimatedCost float64 `json:"estimated_cost"` // whole leg, in the trip currency
+	Notes         string  `json:"notes"`
+}
+
+// LodgingDraft is one stay. Lat/Lng/Address/GooglePlaceID are filled by the
+// frontend resolver, like activity locations; the model's values are dropped.
+type LodgingDraft struct {
+	Name                  string   `json:"name"`
+	LocationName          string   `json:"location_name"`
+	PlaceQuery            string   `json:"place_query"`
+	City                  string   `json:"city"`
+	CheckInDate           string   `json:"check_in_date"`
+	CheckInTime           string   `json:"check_in_time"`
+	CheckOutDate          string   `json:"check_out_date"`
+	CheckOutTime          string   `json:"check_out_time"`
+	EstimatedCostPerNight float64  `json:"estimated_cost_per_night"`
+	Notes                 string   `json:"notes"`
+	Address               string   `json:"address"`
+	Lat                   *float64 `json:"lat"`
+	Lng                   *float64 `json:"lng"`
+	GooglePlaceID         string   `json:"google_place_id"`
+}
+
+// BudgetBreakdown is the planned spend per expense category, in the trip
+// currency. Keys match the trip's budget_categories.
+type BudgetBreakdown struct {
+	Transport     float64 `json:"transport"`
+	Accommodation float64 `json:"accommodation"`
+	Food          float64 `json:"food"`
+	Activity      float64 `json:"activity"`
+	Other         float64 `json:"other"`
+}
+
+// Categories returns the non-zero amounts keyed by expense category.
+func (b BudgetBreakdown) Categories() map[string]float64 {
+	out := map[string]float64{}
+	for k, v := range map[string]float64{
+		"transport": b.Transport, "accommodation": b.Accommodation, "food": b.Food,
+		"activity": b.Activity, "other": b.Other,
+	} {
+		if v > 0 {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+// Total sums the breakdown.
+func (b BudgetBreakdown) Total() float64 {
+	return b.Transport + b.Accommodation + b.Food + b.Activity + b.Other
 }
 
 // DayDraft is one day of the generated itinerary.
