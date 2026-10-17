@@ -93,6 +93,8 @@ export interface GenerateTripInput {
   /** Where the trip starts and ends, e.g. home. */
   origin?: GeneratePlace
   transport_mode?: TransportMode
+  /** When to leave the origin on the first day, HH:MM. Needs origin. */
+  depart_time?: string
   /** Fixed anchor: the model never moves its venue or times. */
   event?: GenerateEvent
   travelers?: GenerateTravelers

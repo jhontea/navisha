@@ -122,3 +122,22 @@ describe("parseBudget", () => {
 it("allows a 500-character description, matching the backend", () => {
   expect(MAX_DESCRIPTION).toBe(500)
 })
+
+describe("departure time", () => {
+  it("is sent and recapped with a starting point", () => {
+    const form = { ...fanMeeting(), departTime: "07:30" }
+    expect(validateTripDetails(form, START, END)).toBeNull()
+    expect(tripDetailsToInput(form).depart_time).toBe("07:30")
+    expect(tripDetailsRecap(form)[0]).toEqual({ label: "From", value: "Majalengka · Car · leave ~07:30" })
+  })
+
+  it("is dropped without a starting point", () => {
+    const form = { ...fanMeeting(), origin: { text: "", picked: null }, departTime: "07:30" }
+    expect(tripDetailsToInput(form).depart_time).toBeUndefined()
+    expect(validateTripDetails(form, START, END)).toBeNull()
+  })
+
+  it("must be HH:MM", () => {
+    expect(validateTripDetails({ ...fanMeeting(), departTime: "7:3" }, START, END)).toMatch(/HH:MM/)
+  })
+})

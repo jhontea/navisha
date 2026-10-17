@@ -91,6 +91,7 @@ type generateRequest struct {
 	Travelers     *Travelers    `json:"travelers"`
 	BudgetAmount  float64       `json:"budget_amount"`
 	Needs         []string      `json:"needs"`
+	DepartTime    string        `json:"depart_time"` // HH:MM, optional
 }
 
 type eventRequest struct {
@@ -142,6 +143,7 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 		Travelers:     req.Travelers,
 		BudgetAmount:  req.BudgetAmount,
 		Needs:         req.Needs,
+		DepartTime:    strings.TrimSpace(req.DepartTime),
 	}
 	if ev := req.Event; ev != nil {
 		date, err := time.Parse("2006-01-02", ev.Date)

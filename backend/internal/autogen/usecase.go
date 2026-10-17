@@ -41,6 +41,14 @@ type Usecase struct {
 	creator            TripCreator
 	model              string
 	dayContextProvider DayContextProvider
+	places             NearbyPlacesFinder
+}
+
+// WithNearbyPlaces lets drafts around an event pick hotels, food and
+// playgrounds from real places near the venue.
+func (u *Usecase) WithNearbyPlaces(finder NearbyPlacesFinder) *Usecase {
+	u.places = finder
+	return u
 }
 
 func (u *Usecase) WithDayContextProvider(provider DayContextProvider) *Usecase {
@@ -67,6 +75,7 @@ func (u *Usecase) GenerateDraft(ctx context.Context, userID string, in GenerateI
 		return nil, err
 	}
 
+	in.Nearby = findVenuePlaces(ctx, u.places, in)
 	system, user := BuildPrompt(in)
 	temp := TemperatureForDraft(in)
 	content, err := u.llm.ChatCompletion(ctx, llm.ChatRequest{

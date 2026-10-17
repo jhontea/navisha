@@ -30,6 +30,8 @@ func validateBookings(d *TripDraft, in GenerateInput) map[string][][2]int {
 		eventSlot[1], _ = dayMinutes(ev.EndTime)
 	}
 
+	keepDepartTime(d.TransportLegs, first, in.DepartTime)
+
 	slots := map[string][][2]int{}
 	legs := make([]TransportLegDraft, 0, len(d.TransportLegs))
 	for _, leg := range d.TransportLegs {
@@ -145,6 +147,42 @@ func checkOutTime(st LodgingDraft, legs []TransportLegDraft) string {
 		}
 	}
 	return standardCheckOut
+}
+
+// departTimeSlack is how far the first leg may leave from the user's
+// departure time before it is moved to it.
+const departTimeSlack = 60
+
+// keepDepartTime moves the earliest leg leaving on the first day to the
+// user's departure time when the model strayed more than departTimeSlack
+// from it, shifting its arrival by the same amount.
+func keepDepartTime(legs []TransportLegDraft, firstDate, want string) {
+	wantMin, ok := dayMinutes(want)
+	if !ok {
+		return
+	}
+	idx, earliest := -1, 0
+	for i, leg := range legs {
+		dep, ok := dayMinutes(strings.TrimSpace(leg.DepartureTime))
+		if ok && leg.DepartureDate == firstDate && (idx < 0 || dep < earliest) {
+			idx, earliest = i, dep
+		}
+	}
+	if idx < 0 {
+		return
+	}
+	delta := wantMin - earliest
+	if delta >= -departTimeSlack && delta <= departTimeSlack {
+		return
+	}
+	leg := &legs[idx]
+	leg.DepartureTime = want
+	arr, err := time.Parse(dateLayout+" 15:04", leg.ArrivalDate+" "+strings.TrimSpace(leg.ArrivalTime))
+	if err != nil {
+		return // invalid arrival; the leg is dropped later
+	}
+	arr = arr.Add(time.Duration(delta) * time.Minute)
+	leg.ArrivalDate, leg.ArrivalTime = arr.Format(dateLayout), arr.Format("15:04")
 }
 
 func optionalTime(v string) bool {

@@ -53,6 +53,16 @@ export function TripDetailsStep({ value, onChange, destination, startDate, endDa
             placeholder="Home address or a Google Maps link"
           />
         </FormField>
+        {value.origin.text.trim() && (
+          <FormField label="Leave around" htmlFor="details-depart-time" optional>
+            <Input
+              id="details-depart-time"
+              type="time"
+              value={value.departTime}
+              onChange={(e) => set({ departTime: e.target.value })}
+            />
+          </FormField>
+        )}
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Transport">
           {TRANSPORT_MODES.map((m) => (
             <Chip

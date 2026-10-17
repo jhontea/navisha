@@ -148,7 +148,8 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 	autogenCreator := integration.NewAutogenCreator(tripUsecase, activityUsecase, transportationUsecase, accommodationUsecase)
 	autogenDayContext := integration.NewAutogenDayContextProvider(tripUsecase, activityUsecase)
 	autogenUsecase := autogen.NewUsecase(llmClient, autogenCreator, cfg.ActiveModel()).
-		WithDayContextProvider(autogenDayContext)
+		WithDayContextProvider(autogenDayContext).
+		WithNearbyPlaces(integration.NewAutogenPlaces(locationClient))
 	autogenHandler := autogen.NewHandler(autogenUsecase).
 		WithQuota(aiQuota)
 

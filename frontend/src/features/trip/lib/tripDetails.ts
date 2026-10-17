@@ -38,6 +38,8 @@ export interface PlaceField {
 export interface TripDetailsForm {
   origin: PlaceField
   transportMode: TransportMode | ""
+  /** Leave the starting point around this time (HH:MM); "" = let the plan pick. */
+  departTime: string
   eventName: string
   venue: PlaceField
   eventDate: string
@@ -54,6 +56,7 @@ export function emptyTripDetails(eventDate = ""): TripDetailsForm {
   return {
     origin: { text: "", picked: null },
     transportMode: "",
+    departTime: "",
     eventName: "",
     venue: { text: "", picked: null },
     eventDate,
@@ -94,6 +97,7 @@ function hasEventInput(f: TripDetailsForm): boolean {
  */
 export function validateTripDetails(f: TripDetailsForm, startDate: string, endDate: string): string | null {
   if (f.origin.text.trim().length > MAX_PLACE_LABEL) return `Starting point is too long (max ${MAX_PLACE_LABEL}).`
+  if (f.origin.text.trim() && f.departTime && !TIME_RE.test(f.departTime)) return "Enter the departure time as HH:MM."
   if (hasEventInput(f)) {
     if (!f.eventName.trim()) return "Add the event name."
     if (f.eventName.trim().length > MAX_EVENT_NAME) return `Event name is too long (max ${MAX_EVENT_NAME}).`
@@ -122,6 +126,7 @@ export function tripDetailsToInput(f: TripDetailsForm): Partial<GenerateTripInpu
   const out: Partial<GenerateTripInput> = {}
   const origin = toPlace(f.origin)
   if (origin) out.origin = origin
+  if (origin && f.departTime) out.depart_time = f.departTime
   if (f.transportMode) out.transport_mode = f.transportMode
   if (hasEventInput(f)) {
     const event: GenerateEvent = {
@@ -151,7 +156,8 @@ export function tripDetailsRecap(f: TripDetailsForm): { label: string; value: st
   const input = tripDetailsToInput(f)
   if (input.origin) {
     const mode = TRANSPORT_MODES.find((m) => m.value === input.transport_mode)?.label
-    rows.push({ label: "From", value: mode ? `${input.origin.label} · ${mode}` : input.origin.label })
+    const parts = [input.origin.label, mode, input.depart_time && `leave ~${input.depart_time}`].filter(Boolean)
+    rows.push({ label: "From", value: parts.join(" · ") })
   } else if (input.transport_mode) {
     rows.push({ label: "Transport", value: TRANSPORT_MODES.find((m) => m.value === input.transport_mode)!.label })
   }
