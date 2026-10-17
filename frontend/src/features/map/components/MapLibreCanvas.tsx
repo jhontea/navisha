@@ -8,6 +8,7 @@ import { ExternalLink } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
 
 import { colorForDay } from "./mapColors"
+import { INK, LABEL_SHADOW, MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PRIMARY, STAY, shortLabel } from "./pinStyle"
 import type { MapRendererProps } from "./MapCanvas"
 
 const DEFAULT_TILE_URL = "/api/map-tiles/{z}/{x}/{y}"
@@ -25,17 +26,6 @@ const OPENFREEMAP_STYLE_URL =
 
 type Props = MapRendererProps
 
-// Soft palette (docs/DESIGN.md §2). Markers are DOM nodes styled inline, so
-// the token values are mirrored here.
-const INK = "#23324D"
-const PRIMARY = "#3673DB"
-const STAY = "#0E2B53"
-/** Show a name label above each pin while the view stays readable. */
-const MAX_LABELLED_POINTS = 10
-
-function shortLabel(title: string): string {
-  return title.length > 22 ? `${title.slice(0, 21).trimEnd()}…` : title
-}
 
 interface ProjectedRoute {
   id: string
@@ -184,7 +174,7 @@ export function MapLibreCanvas({
               fontSize: "12px",
               fontWeight: "700",
               whiteSpace: "nowrap",
-              boxShadow: "0 2px 8px rgb(35 50 77 / 0.18)",
+              boxShadow: LABEL_SHADOW,
               fontFamily: "var(--font-sans), system-ui, sans-serif",
             })
             pin.appendChild(label)
@@ -205,7 +195,7 @@ export function MapLibreCanvas({
             fontWeight: "800",
             cursor: "pointer",
             pointerEvents: "auto",
-            boxShadow: "0 2px 8px rgb(35 50 77 / 0.3)",
+            boxShadow: PIN_SHADOW,
             zIndex: "2",
           })
           pin.appendChild(markerElement)
@@ -327,9 +317,7 @@ export function MapLibreCanvas({
       markerElsRef.current.forEach((el, id) => {
         const isSelected = id === selectedActivityId
         el.style.borderWidth = isSelected ? "3px" : "2.5px"
-        el.style.boxShadow = isSelected
-          ? `0 0 0 4px ${PRIMARY}59, 0 4px 12px rgb(35 50 77 / 0.35)`
-          : "0 2px 8px rgb(35 50 77 / 0.3)"
+        el.style.boxShadow = isSelected ? PIN_SELECTED_SHADOW : PIN_SHADOW
         // Raise the whole pin (label included) above its neighbours.
         if (el.parentElement) el.parentElement.style.zIndex = isSelected ? "10" : "2"
       })
