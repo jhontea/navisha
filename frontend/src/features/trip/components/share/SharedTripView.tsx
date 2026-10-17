@@ -20,6 +20,7 @@ import { defaultOpenDayId } from "../../lib/sharedTrip"
 import { splitTripTitle } from "../../lib/title"
 import type { PublicItinerary } from "../../types"
 import { SharedDay } from "./SharedDay"
+import { LG_MEDIA_QUERY, useMediaQuery, useOnceTrue } from "@/lib/useMediaQuery"
 
 const SharedTripMap = dynamic(() => import("../SharedTripMap").then((m) => m.SharedTripMap), {
   ssr: false,
@@ -107,6 +108,11 @@ function Body({ trip }: { trip: PublicItinerary }) {
   const activeDay = trip.days.find((d) => d.id === activeDayId) ?? trip.days[0]
   const dayHasPlaces = (d: PublicItinerary["days"][number]) => d.activities.some((a) => hasValidCoords(a.payload.lat, a.payload.lng))
   const hasPlaces = trip.days.some(dayHasPlaces)
+  // The desktop side map mounts only on wide screens (a hidden Google map is
+  // still loaded and billed), and stays mounted across days without places.
+  const isWide = useMediaQuery(LG_MEDIA_QUERY)
+  const activeDayHasPlaces = activeDay ? dayHasPlaces(activeDay) : true
+  const sideMapMounted = useOnceTrue(isWide && activeDayHasPlaces)
 
   useEffect(() => {
     const id = defaultOpenDayId(trip.days)
@@ -180,7 +186,7 @@ function Body({ trip }: { trip: PublicItinerary }) {
           <SharedDay key={activeDay.id} day={activeDay} transportations={transportations} accommodations={accommodations} />
         </div>
 
-        {hasPlaces && (
+        {hasPlaces && isWide && (
           <aside
             aria-label="Map of the selected day"
             className="sticky top-20 hidden h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-2xl border bg-card shadow-card lg:flex"
@@ -189,17 +195,23 @@ function Body({ trip }: { trip: PublicItinerary }) {
               {activeDay ? `Day ${activeDay.day_number} map` : "Map"}
             </p>
             <div className="relative min-h-0 flex-1">
-              {activeDay && !dayHasPlaces(activeDay) ? (
-                <p className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-                  No places with a location on Day {activeDay.day_number}.
-                </p>
-              ) : (
+              {sideMapMounted && (
                 <SharedTripMap
                   days={trip.days}
                   dayId={activeDayId}
                   selectedActivityId={selectedActivityId}
                   onSelectActivity={selectActivity}
                 />
+              )}
+              {activeDay && !activeDayHasPlaces && (
+                <p
+                  className={cn(
+                    "flex items-center justify-center p-6 text-center text-sm text-muted-foreground",
+                    sideMapMounted ? "absolute inset-0 z-10 bg-card/80 backdrop-blur-sm" : "h-full",
+                  )}
+                >
+                  No places with a location on Day {activeDay.day_number}.
+                </p>
               )}
             </div>
           </aside>
