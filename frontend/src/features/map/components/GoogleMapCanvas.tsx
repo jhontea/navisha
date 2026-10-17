@@ -6,8 +6,8 @@ import {
   APIProvider,
   Map as GoogleMap,
   AdvancedMarker,
+  ControlPosition,
   InfoWindow,
-  Pin,
   useMap,
 } from "@vis.gl/react-google-maps"
 import { LoaderCircle, MapPin } from "lucide-react"
@@ -15,9 +15,16 @@ import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
 import type { LocationPoint } from "../hooks/useTripLocations"
 import type { MapRendererProps } from "./MapCanvas"
 import { colorForDay } from "./mapColors"
+import { MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PIN_SIZE, STAY, shortLabel } from "./pinStyle"
+import { cn } from "@/lib/utils"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
-const MAP_ID = "cc475d9a8bf16e26f8975c02"
+// "Navisha Web Vector" map ID in the navisha Cloud project. Its base look
+// (soft land, water and parks, no POI labels) is the "Navisha Soft" style
+// linked to it in the Cloud console; with a map ID, JSON `styles` set here
+// would be ignored. Vector: the cloud style format does not apply to the old
+// raster ID (cc475d9a8bf16e26f8975c02).
+const MAP_ID = "cc475d9a8bf16e267491d389"
 
 type Props = MapRendererProps & { visiblePoints: LocationPoint[] }
 
@@ -40,7 +47,14 @@ export function GoogleMapCanvas(rendererProps: MapRendererProps) {
         }}
         defaultZoom={11}
         gestureHandling="greedy"
-        disableDefaultUI={false}
+        // Only zoom: the page has its own fullscreen toggle, and Street View or
+        // map types do not fit a trip overview.
+        disableDefaultUI
+        zoomControl
+        // Top right like the MapLibre map: the bottom edge sits under the tab bar.
+        zoomControlOptions={{ position: ControlPosition.RIGHT_TOP }}
+        // Google's own place popups would compete with our pins.
+        clickableIcons={false}
       >
         <GeocodingLayer {...props} />
       </GoogleMap>
@@ -189,6 +203,8 @@ function Markers({
     if ((map.getZoom() ?? 0) < 13) map.setZoom(13)
   }, [map, points, selectedActivityId])
 
+  const labelled = points.length <= MAX_LABELLED_POINTS
+
   return (
     <>
       {points.map((point, index) => {
@@ -197,20 +213,24 @@ function Markers({
         const glyph = isStay ? "H" : String(points.slice(0, index + 1).filter((p) => p.kind !== "stay").length)
         return (
           <AdvancedMarker
-            key={point.activityId}
+            key={`${point.activityId}:${index}`}
             position={{ lat: point.lat, lng: point.lng }}
+            // Bottom of the content, raised by half the circle: the circle's
+            // centre sits on the coordinate (same as the MapLibre pins).
+            anchorPoint={["50%", `calc(100% - ${PIN_SIZE / 2}px)`]}
+            zIndex={isSelected ? 10 : 2}
             onClick={() => {
               setOpenIndex(openIndex === index ? null : index)
               onSelectActivity(point)
             }}
             title={point.title}
           >
-            <Pin
-              background={isStay ? "#0E2B53" : colorForDay(point.dayNumber)}
-              borderColor={isSelected ? "#3673DB" : "#ffffff"}
-              glyphColor="#ffffff"
+            <PinContent
+              label={labelled ? shortLabel(point.title) : null}
               glyph={glyph}
-              scale={isSelected ? 1.35 : 1}
+              color={isStay ? STAY : colorForDay(point.dayNumber)}
+              square={isStay}
+              selected={isSelected}
             />
           </AdvancedMarker>
         )
@@ -220,18 +240,20 @@ function Markers({
           position={{ lat: points[openIndex].lat, lng: points[openIndex].lng }}
           onCloseClick={() => setOpenIndex(null)}
         >
-          <div className="space-y-1 pr-2">
-            <p className="text-sm font-semibold">{points[openIndex].title}</p>
+          <div className="max-w-60 space-y-1 pr-2 font-sans text-foreground">
+            <p className="font-display text-sm font-extrabold">{points[openIndex].title}</p>
             <p className="text-xs text-muted-foreground">
               Day {points[openIndex].dayNumber}
             </p>
             {points[openIndex].address && (
-              <p className="text-xs">{points[openIndex].address}</p>
+              <p className="text-xs text-muted-foreground">{points[openIndex].address}</p>
             )}
             <Button
               type="button"
               onClick={() => onOpenInMaps(points[openIndex])}
-size="xs" className="mt-1">
+              size="xs"
+              className="mt-1"
+            >
               <MapPin className="h-3.5 w-3.5" />
               Open in Google Maps
             </Button>
@@ -239,6 +261,42 @@ size="xs" className="mt-1">
         </InfoWindow>
       )}
     </>
+  )
+}
+
+/** Name pill above a numbered circle (stays: rounded square "H"), as in MapLibreCanvas. */
+function PinContent({
+  label,
+  glyph,
+  color,
+  square,
+  selected,
+}: {
+  label: string | null
+  glyph: string
+  color: string
+  square: boolean
+  selected: boolean
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {label && (
+        <span className="whitespace-nowrap rounded-full bg-white px-2.5 py-0.5 font-sans text-xs font-bold text-foreground shadow-[0_2px_8px_rgb(35_50_77/0.18)]">
+          {label}
+        </span>
+      )}
+      <span
+        className={cn(
+          "flex size-[30px] items-center justify-center border-white font-sans text-xs font-extrabold text-white",
+          square ? "rounded-[10px]" : "rounded-full",
+          selected ? "border-[3px]" : "border-[2.5px]",
+        )}
+        // Per-day colour and selection ring are data-driven.
+        style={{ background: color, boxShadow: selected ? PIN_SELECTED_SHADOW : PIN_SHADOW }}
+      >
+        {glyph}
+      </span>
+    </div>
   )
 }
 

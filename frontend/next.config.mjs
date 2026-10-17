@@ -79,11 +79,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://static.cloudflareinsights.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.gstatic.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
-              "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com https://tiles.openfreemap.org",
+              `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://*.gstatic.com https://*.google.com https://lh3.googleusercontent.com`,
+              "connect-src 'self' data: blob: http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://cloudflareinsights.com https://tiles.openfreemap.org",
               // MapLibre spawns its tile worker from a blob: URL. Without an
               // explicit worker-src, the script-src fallback blocks it and
               // vector tiles never load.
@@ -105,11 +105,11 @@ const nextConfig = {
                 key: 'Content-Security-Policy-Report-Only',
                 value: [
                   "default-src 'self'",
-                  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://static.cloudflareinsights.com",
+                  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.gstatic.com https://static.cloudflareinsights.com",
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                   "font-src 'self' https://fonts.gstatic.com",
-                  `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com`,
-                  "connect-src 'self' http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://cloudflareinsights.com https://tiles.openfreemap.org",
+                  `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://*.gstatic.com https://*.google.com https://lh3.googleusercontent.com`,
+                  "connect-src 'self' data: blob: http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://cloudflareinsights.com https://tiles.openfreemap.org",
                   "worker-src 'self' blob:",
                   "frame-src 'self' https://accounts.google.com",
                   "object-src 'none'",
