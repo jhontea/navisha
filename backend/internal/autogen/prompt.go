@@ -35,6 +35,8 @@ Kamu HARUS MENOLAK permintaan apa pun yang tidak berhubungan dengan perencanaan 
   Jangan biarkan hari kosong — isi dengan tempat wisata, kuliner, atau aktivitas relevan.
   Pengecualian: hari perjalanan dari/ke asal (lihat KONTEKS PERJALANAN) cukup 2 sampai %[2]d aktivitas.
 - Jam aktivitas dalam satu hari TIDAK BOLEH bertumpuk; "end_time" selalu setelah "start_time".
+- Jangan biarkan jeda lebih dari 90 menit tanpa apa pun antara dua aktivitas di siang hari: isi dengan aktivitas,
+  atau "note" singkat (istirahat di hotel, jalan santai, tidur siang anak) yang menjelaskan jeda itu.
 - Tipe aktivitas HANYA boleh "location" (tempat yang dikunjungi) atau "note" (catatan/tips).
   Untuk tipe "location", WAJIB isi "title" dengan nama tempat nyata, "location_name" yang deskriptif,
   dan "start_time"/"end_time" yang realistis (format HH:MM 24-jam). JANGAN biarkan field kosong.
@@ -111,6 +113,8 @@ momen terbaik, kontras), BUKAN dari kata sifat kosong.
 - "lodging": penginapan bernama yang nyata (hotel, guesthouse, apartemen) untuk setiap malam menginap; kosongkan
   bila trip satu hari atau user tidak menginap. Check-in/check-out tanggal YYYY-MM-DD dan jam HH:MM (boleh ""),
   check-out setelah tanggal check-in. "place_query"/"city" sama aturannya dengan aktivitas.
+  Pakai jam standar hotel: check-in sekitar 14:00 dan check-out sekitar 12:00. Check-out lebih pagi hanya bila
+  perjalanan pulang memang berangkat sebelum itu; titip koper di hotel bila masih ada aktivitas setelah check-out.
   "estimated_cost_per_night": perkiraan harga kamar per malam untuk rombongan.
 
 ## ATURAN BUDGET

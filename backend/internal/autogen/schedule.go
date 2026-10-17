@@ -83,10 +83,11 @@ func isAnchor(a ActivityDraft, anchor *ActivityDraft) bool {
 	return anchor != nil && a.Title == anchor.Title && a.StartTime == anchor.StartTime && a.EndTime == anchor.EndTime
 }
 
-// eventAnchor builds the fixed event activity from user input. It reuses the
-// model's copy (title, notes) when the model kept the event, but name, venue
-// and times always come from the user. The matched activity is removed from
-// acts so it is not scheduled twice.
+// eventAnchor builds the fixed event activity from user input: title, venue
+// and times always come from the user. When the model wrote the event itself
+// its notes are kept and that activity is removed from acts so it is not
+// scheduled twice. Anything else in the event slot (a "queue at the gate"
+// block the model put there) loses the clash in normalizeDaySchedule.
 func eventAnchor(ev *EventInput, acts []ActivityDraft) (ActivityDraft, []ActivityDraft) {
 	anchor := ActivityDraft{
 		Type:         "location",
@@ -110,9 +111,6 @@ func eventAnchor(ev *EventInput, acts []ActivityDraft) (ActivityDraft, []Activit
 	for _, a := range acts {
 		if !matched && matchesEvent(a, ev) {
 			matched = true
-			if t := strings.TrimSpace(a.Title); t != "" {
-				anchor.Title = t
-			}
 			if n := strings.TrimSpace(a.Notes); n != "" {
 				anchor.Notes = n
 			}
@@ -126,18 +124,19 @@ func eventAnchor(ev *EventInput, acts []ActivityDraft) (ActivityDraft, []Activit
 	return anchor, rest
 }
 
+// matchesEvent reports whether the model's activity is the event itself: its
+// title names the event, or it sits at the venue in exactly the event slot.
+// Same times alone are not enough (that was a travel or queue block).
 func matchesEvent(a ActivityDraft, ev *EventInput) bool {
-	if a.StartTime == ev.StartTime && a.EndTime == ev.EndTime {
+	contains := func(hay, needle string) bool {
+		needle = strings.ToLower(strings.TrimSpace(needle))
+		return needle != "" && strings.Contains(strings.ToLower(hay), needle)
+	}
+	if contains(a.Title, ev.Name) {
 		return true
 	}
-	hay := strings.ToLower(a.Title + " " + a.LocationName + " " + a.PlaceQuery)
-	for _, needle := range []string{ev.Name, ev.Venue.Label} {
-		needle = strings.ToLower(strings.TrimSpace(needle))
-		if needle != "" && strings.Contains(hay, needle) {
-			return true
-		}
-	}
-	return false
+	sameSlot := a.StartTime == ev.StartTime && a.EndTime == ev.EndTime
+	return sameSlot && contains(a.LocationName+" "+a.PlaceQuery, ev.Venue.Label)
 }
 
 func mentionsAirport(a ActivityDraft) bool {

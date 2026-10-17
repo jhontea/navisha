@@ -97,6 +97,7 @@ func validateBookings(d *TripDraft, in GenerateInput) map[string][][2]int {
 		if st.LocationName == "" {
 			st.LocationName = st.Name
 		}
+		st.CheckOutTime = checkOutTime(st, legs)
 		if st.EstimatedCostPerNight < 0 {
 			st.EstimatedCostPerNight = 0
 		}
@@ -120,6 +121,30 @@ func validateBookings(d *TripDraft, in GenerateInput) map[string][][2]int {
 		d.Budget = total
 	}
 	return slots
+}
+
+// standardCheckOut is used when the model picks an early check-out (before
+// earliestCheckOut) that nothing in the plan needs.
+const (
+	standardCheckOut = "12:00"
+	earliestCheckOut = 10 * 60
+)
+
+// checkOutTime keeps a check-out before 10:00 only when a kept leg leaves on
+// the check-out day before noon; otherwise it moves to the usual 12:00.
+// (Models like to check out at 08:30 and then spend the morning nearby.)
+func checkOutTime(st LodgingDraft, legs []TransportLegDraft) string {
+	out, ok := dayMinutes(st.CheckOutTime)
+	if !ok || out >= earliestCheckOut {
+		return st.CheckOutTime
+	}
+	noon, _ := dayMinutes(standardCheckOut)
+	for _, leg := range legs {
+		if dep, _ := dayMinutes(leg.DepartureTime); leg.DepartureDate == st.CheckOutDate && dep < noon {
+			return st.CheckOutTime
+		}
+	}
+	return standardCheckOut
 }
 
 func optionalTime(v string) bool {

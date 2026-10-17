@@ -153,3 +153,44 @@ func TestJSONSchema_HasBookings(t *testing.T) {
 		t.Error("strict schema must require budget_breakdown")
 	}
 }
+
+func TestValidateBookings_EarlyCheckOutMovesToNoon(t *testing.T) {
+	in := fanMeetingInput()
+	stay := func(out string) LodgingDraft {
+		return LodgingDraft{Name: "Mercure Ancol", CheckInDate: "2026-11-07", CheckInTime: "14:00", CheckOutDate: "2026-11-08", CheckOutTime: out}
+	}
+	for _, tt := range []struct {
+		name string
+		out  string
+		legs []TransportLegDraft
+		want string
+	}{
+		{"early with nothing needing it", "08:30", nil, "12:00"},
+		{"early because the drive home leaves early", "08:30", []TransportLegDraft{leg("car", "Ancol", "Majalengka", "2026-11-08", "09:00", "2026-11-08", "13:00")}, "08:30"},
+		{"early with an afternoon drive", "08:30", []TransportLegDraft{leg("car", "Ancol", "Majalengka", "2026-11-08", "13:30", "2026-11-08", "17:30")}, "12:00"},
+		{"normal time kept", "11:00", nil, "11:00"},
+		{"blank kept", "", nil, ""},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &TripDraft{TransportLegs: tt.legs, Lodging: []LodgingDraft{stay(tt.out)}}
+			validateBookings(d, in)
+			if got := d.Lodging[0].CheckOutTime; got != tt.want {
+				t.Errorf("check-out = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBuildPrompt_QueueGapAndHotelTimeRules(t *testing.T) {
+	system, _ := BuildPrompt(fanMeetingInput())
+	for _, want := range []string{
+		"SELESAI tepat saat acara mulai",
+		"judul nama acara",
+		"jeda lebih dari 90 menit",
+		"check-out sekitar 12:00",
+	} {
+		if !strings.Contains(system, want) {
+			t.Errorf("system prompt missing %q", want)
+		}
+	}
+}

@@ -51,7 +51,9 @@ func tripContextRules(in GenerateInput) string {
   Jangan memindahkan, memperpendek, atau menggandakan acara; tidak ada aktivitas lain yang bertumpuk dengan jam acara.
 - Seluruh itinerary berpusat di sekitar venue. Rekomendasi makan, hotel, dan tempat bermain diprioritaskan
   dalam radius ±5 km dari venue; JANGAN mengirim user ke pusat kota atau tempat jauh lain (mis. ±15 km lebih).
-- Rencanakan tiba di area venue minimal 60–90 menit sebelum acara mulai (antre masuk, parkir, makan).`)
+- Rencanakan tiba di area venue minimal 60–90 menit sebelum acara mulai (antre masuk, parkir, makan).
+  Parkir dan antre masuk adalah "note" TERSENDIRI yang SELESAI tepat saat acara mulai; jangan pernah menaruhnya
+  di jam acara. Aktivitas acara diberi judul nama acara itu sendiri.`)
 	}
 	if in.Origin != nil {
 		b.WriteString(`
