@@ -13,6 +13,7 @@ import type { Day } from "@/features/trip/types"
 import { DayPanel } from "@/features/activity/components/DayPanel"
 import { ItineraryFocusProvider, useItineraryFocus } from "@/features/activity/ItineraryFocus"
 import { TripOverview } from "@/features/trip/components/TripOverview"
+import { LG_MEDIA_QUERY, useMediaQuery } from "@/lib/useMediaQuery"
 
 // The side map only renders on wide screens; keep map libraries out of the
 // initial bundle.
@@ -24,6 +25,9 @@ const DayMap = dynamic(() => import("@/features/map/components/DayMap").then((m)
 /** Map of the selected day, beside the timeline on desktop (split view). */
 function ItineraryMapPane({ tripId, days }: { tripId: string; days: Day[] }) {
   const { activeDayId, selectedActivityId, selectActivity } = useItineraryFocus()
+  // Mount only on wide screens: a hidden map is still loaded (and billed).
+  const isWide = useMediaQuery(LG_MEDIA_QUERY)
+  if (!isWide) return null
   return (
     <aside
       className="sticky top-[8.5rem] hidden h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border shadow-card lg:block"

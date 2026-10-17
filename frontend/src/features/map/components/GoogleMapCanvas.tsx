@@ -28,24 +28,26 @@ const MAP_ID = "cc475d9a8bf16e267491d389"
 
 type Props = MapRendererProps & { visiblePoints: LocationPoint[] }
 
+/** Indonesia, for a map that mounts before it has any place to show. */
+const FALLBACK_CENTER = { lat: -2.5, lng: 118 }
+
 /** Google Maps renderer behind <MapCanvas> (NEXT_PUBLIC_MAP_PROVIDER=google). */
 export function GoogleMapCanvas(rendererProps: MapRendererProps) {
   const visiblePoints = useMemo(
     () => rendererProps.visibleByDay.flatMap((day) => day.points),
     [rendererProps.visibleByDay],
   )
-  if (visiblePoints.length === 0) return null
+  // No early return for zero points: the map stays mounted (and keeps its
+  // view) while a day has nothing to show; a new map would be a new billed load.
+  const first = visiblePoints[0]
   const props: Props = { ...rendererProps, visiblePoints }
   return (
     <APIProvider apiKey={API_KEY}>
       <GoogleMap
         mapId={MAP_ID}
         style={{ width: "100%", height: "100%" }}
-        defaultCenter={{
-          lat: props.visiblePoints[0].lat || 0,
-          lng: props.visiblePoints[0].lng || 0,
-        }}
-        defaultZoom={11}
+        defaultCenter={first ? { lat: first.lat || 0, lng: first.lng || 0 } : FALLBACK_CENTER}
+        defaultZoom={first ? 11 : 4}
         gestureHandling="greedy"
         // Only zoom: the page has its own fullscreen toggle, and Street View or
         // map types do not fit a trip overview.
