@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps"
 
 import { Input } from "@/components/ui/input"
-import { weightedJaccard, type PlaceCandidate } from "../placeMatching"
+import { pickForDetails, type PlaceCandidate } from "../placeMatching"
 import type { DestinationSearchProps, LocationProvider, PlaceQuery, PlaceSearchProps } from "./types"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
@@ -194,10 +194,14 @@ function waitForPlaces(): Promise<typeof google.maps.places | null> {
   })
 }
 
-function firstPredictionId(places: typeof google.maps.places, input: string): Promise<string | null> {
+function firstPredictionId(
+  places: typeof google.maps.places,
+  input: string,
+  sessionToken: google.maps.places.AutocompleteSessionToken,
+): Promise<string | null> {
   const service = new places.AutocompleteService()
   return new Promise((resolve) => {
-    service.getPlacePredictions({ input }, (predictions, status) => {
+    service.getPlacePredictions({ input, sessionToken }, (predictions, status) => {
       resolve(status === google.maps.places.PlacesServiceStatus.OK && predictions?.length ? predictions[0].place_id ?? null : null)
     })
   })
@@ -207,9 +211,10 @@ function getPredictions(
   service: google.maps.places.AutocompleteService,
   input: string,
   restriction: google.maps.LatLngBoundsLiteral | null,
+  sessionToken: google.maps.places.AutocompleteSessionToken,
 ): Promise<google.maps.places.AutocompletePrediction[]> {
   return new Promise((resolve) => {
-    const request: google.maps.places.AutocompleteRequest = { input }
+    const request: google.maps.places.AutocompleteRequest = { input, sessionToken }
     if (restriction) request.locationRestriction = restriction
     service.getPlacePredictions(request, (predictions, status) => {
       resolve(status === google.maps.places.PlacesServiceStatus.OK && predictions ? predictions : [])
@@ -217,10 +222,15 @@ function getPredictions(
   })
 }
 
-function getPlaceDetails(service: google.maps.places.PlacesService, placeId: string): Promise<PlaceCandidate | null> {
+function getPlaceDetails(
+  service: google.maps.places.PlacesService,
+  placeId: string,
+  sessionToken?: google.maps.places.AutocompleteSessionToken,
+): Promise<PlaceCandidate | null> {
   return new Promise((resolve) => {
     service.getDetails(
-      { placeId, fields: ["name", "formatted_address", "geometry", "place_id", "types"] },
+      // Basic fields only: contact, atmosphere or photo fields bill higher SKUs.
+      { placeId, fields: ["name", "formatted_address", "geometry", "place_id", "types"], sessionToken },
       (place, status) => {
         const location = place?.geometry?.location
         if (status !== google.maps.places.PlacesServiceStatus.OK || !place || !location) {
@@ -240,23 +250,25 @@ function getPlaceDetails(service: google.maps.places.PlacesService, placeId: str
   })
 }
 
-/** Top three predictions (closest names first) with their details. */
+/**
+ * The best-named prediction (or the few that tie with it) with its details.
+ * One session token covers the autocomplete call and the first details call,
+ * so they are billed as one session instead of separately.
+ */
 async function searchCandidates(
+  places: typeof google.maps.places,
   autocomplete: google.maps.places.AutocompleteService,
   details: google.maps.places.PlacesService,
   input: string,
   restriction: google.maps.LatLngBoundsLiteral | null,
   intendedName: string,
 ): Promise<PlaceCandidate[]> {
-  const predictions = await getPredictions(autocomplete, input, restriction)
-  const likely = predictions
-    .sort(
-      (a, b) =>
-        weightedJaccard(intendedName, b.structured_formatting?.main_text ?? b.description) -
-        weightedJaccard(intendedName, a.structured_formatting?.main_text ?? a.description),
-    )
-    .slice(0, 3)
-  const settled = await Promise.allSettled(likely.map((prediction) => getPlaceDetails(details, prediction.place_id)))
+  const sessionToken = new places.AutocompleteSessionToken()
+  const predictions = await getPredictions(autocomplete, input, restriction, sessionToken)
+  const likely = pickForDetails(predictions, intendedName, (p) => p.structured_formatting?.main_text ?? p.description)
+  const settled = await Promise.allSettled(
+    likely.map((prediction, i) => getPlaceDetails(details, prediction.place_id, i === 0 ? sessionToken : undefined)),
+  )
   return settled.flatMap((result) => (result.status === "fulfilled" && result.value ? [result.value] : []))
 }
 
@@ -287,7 +299,9 @@ async function candidatesFor(
   const autocomplete = new places.AutocompleteService()
   const details = new places.PlacesService(document.createElement("div"))
   const entries = await Promise.all(
-    queries.map(async (query) => [query.key, await searchCandidates(autocomplete, details, input(query), restriction, query.name)] as const),
+    queries.map(
+      async (query) => [query.key, await searchCandidates(places, autocomplete, details, input(query), restriction, query.name)] as const,
+    ),
   )
   return Object.fromEntries(entries)
 }
@@ -302,12 +316,13 @@ export const googleLocationProvider: LocationProvider = {
   async resolveDestination(destination) {
     const places = await waitForPlaces()
     if (!places) return null
-    const placeId = await firstPredictionId(places, destination)
+    const sessionToken = new places.AutocompleteSessionToken()
+    const placeId = await firstPredictionId(places, destination, sessionToken)
     if (!placeId) return { description: destination }
     return new Promise((resolve) => {
       const service = new places.PlacesService(document.createElement("div"))
       // Only the address: photo fields would bill Places Photo usage.
-      service.getDetails({ placeId, fields: ["formatted_address"] }, (place) => {
+      service.getDetails({ placeId, fields: ["formatted_address"], sessionToken }, (place) => {
         resolve({ description: place?.formatted_address ?? destination })
       })
     })
