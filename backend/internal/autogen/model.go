@@ -115,6 +115,23 @@ type GenerateInput struct {
 	Travelers     *Travelers
 	BudgetAmount  float64 // total budget in BaseCurrency; 0 = not given
 	Needs         []string
+	// DepartTime is when the user wants to leave the origin on the first
+	// day (HH:MM); "" = not given.
+	DepartTime string
+
+	// Nearby are real places around the event venue, found by the usecase
+	// before the LLM call (not user input). The model picks from them.
+	Nearby []VenuePlace
+}
+
+// hasNeed reports whether the user ticked need.
+func (in GenerateInput) hasNeed(need string) bool {
+	for _, n := range in.Needs {
+		if n == need {
+			return true
+		}
+	}
+	return false
 }
 
 // avoidsAirports reports whether the trip is overland, so a draft must not
@@ -172,20 +189,23 @@ type TransportLegDraft struct {
 // LodgingDraft is one stay. Lat/Lng/Address/GooglePlaceID are filled by the
 // frontend resolver, like activity locations; the model's values are dropped.
 type LodgingDraft struct {
-	Name                  string   `json:"name"`
-	LocationName          string   `json:"location_name"`
-	PlaceQuery            string   `json:"place_query"`
-	City                  string   `json:"city"`
-	CheckInDate           string   `json:"check_in_date"`
-	CheckInTime           string   `json:"check_in_time"`
-	CheckOutDate          string   `json:"check_out_date"`
-	CheckOutTime          string   `json:"check_out_time"`
-	EstimatedCostPerNight float64  `json:"estimated_cost_per_night"`
-	Notes                 string   `json:"notes"`
-	Address               string   `json:"address"`
-	Lat                   *float64 `json:"lat"`
-	Lng                   *float64 `json:"lng"`
-	GooglePlaceID         string   `json:"google_place_id"`
+	Name                  string  `json:"name"`
+	LocationName          string  `json:"location_name"`
+	PlaceQuery            string  `json:"place_query"`
+	City                  string  `json:"city"`
+	CheckInDate           string  `json:"check_in_date"`
+	CheckInTime           string  `json:"check_in_time"`
+	CheckOutDate          string  `json:"check_out_date"`
+	CheckOutTime          string  `json:"check_out_time"`
+	EstimatedCostPerNight float64 `json:"estimated_cost_per_night"`
+	Notes                 string  `json:"notes"`
+	// CandidateID is the model's pick from GenerateInput.Nearby ("H1");
+	// it is resolved to coordinates and cleared during validation.
+	CandidateID   string   `json:"candidate_id,omitempty"`
+	Address       string   `json:"address"`
+	Lat           *float64 `json:"lat"`
+	Lng           *float64 `json:"lng"`
+	GooglePlaceID string   `json:"google_place_id"`
 }
 
 // BudgetBreakdown is the planned spend per expense category, in the trip
@@ -237,8 +257,10 @@ type ActivityDraft struct {
 	LocationName string `json:"location_name"`
 	// PlaceQuery is the place's official name as it appears on maps (English
 	// or local), without the city; City is where it is. Both feed geocoding.
-	PlaceQuery           string   `json:"place_query,omitempty"`
-	City                 string   `json:"city,omitempty"`
+	PlaceQuery string `json:"place_query,omitempty"`
+	City       string `json:"city,omitempty"`
+	// CandidateID: see LodgingDraft.CandidateID.
+	CandidateID          string   `json:"candidate_id,omitempty"`
 	Address              string   `json:"address"`
 	Lat                  *float64 `json:"lat"`
 	Lng                  *float64 `json:"lng"`

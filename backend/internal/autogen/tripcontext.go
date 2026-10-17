@@ -58,8 +58,10 @@ func tripContextRules(in GenerateInput) string {
 	if in.Origin != nil {
 		b.WriteString(`
 - User BERANGKAT dari kota asal di pesan user dan PULANG ke sana. Hari pertama dan hari terakhir adalah hari perjalanan:
-  - "transport_legs" WAJIB berisi leg berangkat dari kota asal pada hari pertama (jam berangkat realistis, boleh
-    mulai 04:00) dan leg pulang ke kota asal pada hari terakhir (boleh tiba sampai 23:59), dengan moda transport user.
+  - "transport_legs" WAJIB berisi leg berangkat dari kota asal pada hari pertama dan leg pulang ke kota asal pada
+    hari terakhir (boleh tiba sampai 23:59), dengan moda transport user. Jam berangkat hari pertama mengikuti
+    "jam berangkat" di pesan user (selisih maksimal 30 menit); bila hanya ada "saran jam berangkat", pakai itu;
+    bila tidak ada keduanya, pilih jam realistis (boleh mulai 04:00).
     Aktivitas hari pertama baru dimulai setelah jam tiba. Belum ada hotel sebelum tiba: JANGAN berasumsi user sudah menginap.
   - Pada hari perjalanan cukup 2 aktivitas atau lebih; jangan memadatkan aktivitas sampai user kelelahan di jalan.
   - Durasi perjalanan memakai perkiraan di pesan user bila ada, ditambah buffer macet/istirahat.`)
@@ -83,6 +85,7 @@ func tripContextRules(in GenerateInput) string {
 			b.WriteString("\n" + rule)
 		}
 	}
+	b.WriteString(venuePlaceRules(in.Nearby))
 	return b.String()
 }
 
@@ -97,6 +100,11 @@ func tripContextFacts(in GenerateInput) string {
 	}
 	if label, ok := transportLabels[in.TransportMode]; ok {
 		b.WriteString(fmt.Sprintf("- Moda transport: %s\n", label))
+	}
+	if in.DepartTime != "" {
+		b.WriteString(fmt.Sprintf("- Jam berangkat dari asal (hari pertama): sekitar %s\n", in.DepartTime))
+	} else if t := suggestedDeparture(in); t != "" {
+		b.WriteString(fmt.Sprintf("- Saran jam berangkat (hari pertama): sekitar %s, supaya tiba ±90 menit sebelum acara\n", t))
 	}
 	if ev := in.Event; ev != nil {
 		b.WriteString(fmt.Sprintf("- ACARA UTAMA (anchor, jangan diubah): %s\n", strings.TrimSpace(ev.Name)))
@@ -127,6 +135,7 @@ func tripContextFacts(in GenerateInput) string {
 		}
 		b.WriteString(fmt.Sprintf("- Kebutuhan: %s\n", strings.Join(labels, ", ")))
 	}
+	b.WriteString(venuePlaceFacts(in.Nearby))
 	return b.String()
 }
 
@@ -166,4 +175,39 @@ func haversineKm(lat1, lng1, lat2, lng2 float64) float64 {
 	dLng := (lng2 - lng1) * rad
 	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1*rad)*math.Cos(lat2*rad)*math.Sin(dLng/2)*math.Sin(dLng/2)
 	return 2 * earthKm * math.Asin(math.Sqrt(a))
+}
+
+// Inputs to suggestedDeparture: the buffer before the event starts, the
+// traffic margin on top of the free-flow estimate, and the earliest time
+// worth suggesting.
+const (
+	arrivalBufferMinutes = 90
+	trafficFactor        = 1.25
+	earliestDeparture    = 4 * 60
+)
+
+// suggestedDeparture works out when to leave so an overland trip arrives
+// arrivalBufferMinutes before an event on the first day, rounded down to
+// the half hour. "" when that cannot be estimated or means leaving before
+// earliestDeparture.
+func suggestedDeparture(in GenerateInput) string {
+	ev := in.Event
+	if ev == nil || in.Origin == nil || !ev.Date.Equal(in.StartDate) || !in.Origin.hasCoords() || !ev.Venue.hasCoords() {
+		return ""
+	}
+	speed, ok := roadSpeedKmh[in.TransportMode]
+	if !ok {
+		return ""
+	}
+	start, ok := dayMinutes(ev.StartTime)
+	if !ok {
+		return ""
+	}
+	road := haversineKm(*in.Origin.Lat, *in.Origin.Lng, *ev.Venue.Lat, *ev.Venue.Lng) * 1.25
+	leave := start - int(math.Ceil(road/speed*60*trafficFactor)) - arrivalBufferMinutes
+	if leave < earliestDeparture {
+		return "" // a night drive; the model plans it from the travel estimate
+	}
+	leave = leave / 30 * 30
+	return fmt.Sprintf("%02d:%02d", leave/60, leave%60)
 }

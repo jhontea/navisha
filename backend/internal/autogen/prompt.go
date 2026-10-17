@@ -320,6 +320,7 @@ func JSONSchema() any {
 		"city":          map[string]any{"type": "string", "description": cityDescription},
 		"category":      map[string]any{"type": "string", "enum": []string{"kuliner", "wisata alam", "budaya", "belanja", "transportasi", "akomodasi"}},
 		"notes":         map[string]any{"type": "string"},
+		"candidate_id":  map[string]any{"type": "string", "description": candidateIDDescription},
 	}
 
 	dayProps := map[string]any{
@@ -331,7 +332,7 @@ func JSONSchema() any {
 			"items": map[string]any{
 				"type":                 "object",
 				"properties":           activityProps,
-				"required":             []string{"type", "title", "start_time", "end_time", "location_name", "place_query", "city", "category", "notes"},
+				"required":             []string{"type", "title", "start_time", "end_time", "location_name", "place_query", "city", "category", "notes", "candidate_id"},
 				"additionalProperties": false,
 			},
 		},
@@ -394,8 +395,9 @@ func JSONSchema() any {
 					"check_out_time":           map[string]any{"type": "string", "description": "HH:MM atau kosong"},
 					"estimated_cost_per_night": map[string]any{"type": "number"},
 					"notes":                    map[string]any{"type": "string"},
+					"candidate_id":             map[string]any{"type": "string", "description": candidateIDDescription},
 				},
-				"required":             []string{"name", "location_name", "place_query", "city", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "estimated_cost_per_night", "notes"},
+				"required":             []string{"name", "location_name", "place_query", "city", "check_in_date", "check_in_time", "check_out_date", "check_out_time", "estimated_cost_per_night", "notes", "candidate_id"},
 				"additionalProperties": false,
 			},
 		},
@@ -433,6 +435,8 @@ func JSONSchema() any {
 const placeQueryDescription = "Nama resmi tempat seperti di Google Maps/OpenStreetMap (bahasa Inggris atau nama lokal resmi), tanpa kota. Kosong untuk note."
 
 const cityDescription = "Kota tempat itu berada, bahasa Inggris, format \"Kota, Provinsi, Negara\" (mis. \"Ubud, Bali, Indonesia\", \"Medina, Saudi Arabia\"). Kosong untuk note."
+
+const candidateIDDescription = "Kode tempat dari DAFTAR TEMPAT NYATA (mis. \"H1\", \"F3\", \"P2\") bila tempat diambil dari daftar itu; kosong bila tidak."
 
 // EstimateTokenCount gives a rough token estimate (1 token ≈ 4 chars).
 func EstimateTokenCount(system, user string) int {

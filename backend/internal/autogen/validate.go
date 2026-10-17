@@ -108,6 +108,14 @@ func validateTripContext(in GenerateInput) error {
 			}
 		}
 	}
+	if in.DepartTime != "" {
+		if in.Origin == nil {
+			return fmt.Errorf("%w: departure time needs a starting point", ErrInvalidInput)
+		}
+		if _, ok := dayMinutes(in.DepartTime); !ok {
+			return fmt.Errorf("%w: departure time must be HH:MM", ErrInvalidInput)
+		}
+	}
 	if in.BudgetAmount < 0 {
 		return fmt.Errorf("%w: budget cannot be negative", ErrInvalidInput)
 	}
@@ -283,6 +291,7 @@ func validateDraft(d *TripDraft, in GenerateInput) error {
 	if d.Budget == 0 && in.BudgetAmount > 0 {
 		d.Budget = in.BudgetAmount
 	}
+	applyVenuePlaces(d, in)
 
 	// Log locations that appear unrelated to the destination (soft check —
 	// doesn't reject, just gives ops visibility into hallucination frequency).

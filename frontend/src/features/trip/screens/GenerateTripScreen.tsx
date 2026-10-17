@@ -31,6 +31,7 @@ import {
   useAutogenQuota,
 } from "@/features/trip/hooks/useTrips"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
+import { flagFarFromVenue, type VenueAnchor } from "@/features/trip/lib/venueRadius"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
 import { getDefaultTripCover } from "@/features/trip/lib/cover"
 import { curateDraft } from "@/features/trip/lib/draftBookings"
@@ -63,6 +64,9 @@ function GenerateTripPageContent() {
   const [formError, setFormError] = useState<string | null>(null)
   const [pendingDays, setPendingDays] = useState(4)
   const [destination, setDestination] = useState("")
+  // The event venue, when picked with coordinates: places pinned far from it
+  // while the trip stays there are flagged for review.
+  const [venue, setVenue] = useState<VenueAnchor | null>(null)
   const [resolving, setResolving] = useState(false)
   // Curation: which AI-suggested places the user wants to keep. Lifted here so
   // handleCreate can filter the draft before resolving/creating. Default empty
@@ -118,6 +122,8 @@ function GenerateTripPageContent() {
     generatingRef.current = true
     setFormError(null)
     setDestination(input.destination)
+    const ev = input.event
+    setVenue(ev?.venue.lat != null && ev.venue.lng != null ? { lat: ev.venue.lat, lng: ev.venue.lng, date: ev.date } : null)
 
     const start = new Date(input.start_date)
     const end = new Date(input.end_date)
@@ -161,7 +167,7 @@ function GenerateTripPageContent() {
       let draft = curatedDraft
       let description = tripDestination
       try {
-        draft = await resolveDraftLocations(curatedDraft, tripDestination)
+        draft = flagFarFromVenue(await resolveDraftLocations(curatedDraft, tripDestination), venue)
         if (!result.draft.destination?.trim()) {
           const meta = await resolveDestinationMeta(destination)
           if (meta) description = meta.description
@@ -186,7 +192,7 @@ function GenerateTripPageContent() {
         err instanceof ApiError ? err.message : "Couldn't create the trip. Nothing was saved, so try again.",
       )
     }
-  }, [result, destination, create, router, selectedKeys])
+  }, [result, destination, venue, create, router, selectedKeys])
 
   const saving = create.isPending || resolving
   const noSelection = result !== null && selectedKeys.size === 0
