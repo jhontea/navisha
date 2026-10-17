@@ -4,9 +4,9 @@ import { memo, type ComponentType } from "react"
 import { Bed, Building2, Hotel, House, MapPin } from "lucide-react"
 
 import { BookingCard } from "@/components/BookingCard"
-import { FactBox } from "@/components/FactBox"
 import { StatusChip } from "@/components/StatusChip"
 import { formatWeekdayDate, nightsBetween, tripDayNumber } from "@/lib/calendar"
+import { cn } from "@/lib/utils"
 import { ACCOMMODATION_TYPE_LABELS, type Accommodation } from "../types"
 
 interface Props {
@@ -23,7 +23,11 @@ const TYPE_ICON: Record<string, ComponentType<{ className?: string }>> = {
   other: Bed,
 }
 
-/** One stay: name and type, address, then check-in / check-out / nights / days as fact boxes. */
+/**
+ * One stay: name and type, address, then check-in → check-out laid out like
+ * the transport boarding pass (dates under their side, nights in between),
+ * and trip days / booking ref on a row below.
+ */
 export const AccommodationCard = memo(function AccommodationCard({
   accommodation: a,
   days = [],
@@ -42,10 +46,7 @@ export const AccommodationCard = memo(function AccommodationCard({
         : null
 
   const facts = [
-    { label: "Check-in", value: formatWeekdayDate(a.check_in) },
-    { label: "Check-out", value: formatWeekdayDate(a.check_out) },
-    { label: "Nights", value: nights !== null ? String(nights) : null },
-    { label: "Trip days", value: dayRange },
+    { label: dayRange?.includes("–") ? "Trip days" : "Trip day", value: dayRange },
     { label: "Booking ref", value: a.confirmation_number || null },
   ].filter((f): f is { label: string; value: string } => Boolean(f.value))
 
@@ -66,14 +67,62 @@ export const AccommodationCard = memo(function AccommodationCard({
       onEdit={onEdit}
       onDelete={onDelete}
     >
+      <div className="mt-3 flex items-center gap-3 rounded-xl bg-muted px-3 py-2.5">
+        <StayEnd label="Check-in" date={formatWeekdayDate(a.check_in)} time={a.check_in_time} timePrefix="from" />
+        <div className="flex min-w-8 flex-1 items-center gap-1 text-muted-foreground">
+          <span className="h-px flex-1 border-t-2 border-dotted border-current" aria-hidden="true" />
+          {nights !== null && (
+            <span className="shrink-0 rounded-full bg-card px-2 py-0.5 text-xs font-bold text-foreground">
+              {nights} {nights === 1 ? "night" : "nights"}
+            </span>
+          )}
+          <span className="h-px flex-1 border-t-2 border-dotted border-current" aria-hidden="true" />
+        </div>
+        <StayEnd label="Check-out" date={formatWeekdayDate(a.check_out)} time={a.check_out_time} timePrefix="by" align="end" />
+      </div>
       {facts.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 px-1">
           {facts.map((f) => (
-            <FactBox key={f.label} label={f.label} value={f.value} />
+            <div key={f.label} className="flex min-w-0 items-baseline gap-1.5">
+              <dt className="text-xs text-muted-foreground">{f.label}</dt>
+              <dd className="truncate text-sm font-bold text-foreground tabular-nums">{f.value}</dd>
+            </div>
           ))}
+        </dl>
+      )}
+      {a.notes && (
+        // Padding on the wrapper: on the clamped element it would show a sliver of the 4th line.
+        <div className="mt-3 rounded-xl bg-muted px-3 py-2">
+          <p className="line-clamp-3 text-sm text-muted-foreground">{a.notes}</p>
         </div>
       )}
-      {a.notes && <p className="mt-3 line-clamp-3 rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">{a.notes}</p>}
     </BookingCard>
   )
 })
+
+function StayEnd({
+  label,
+  date,
+  time,
+  timePrefix,
+  align = "start",
+}: {
+  label: string
+  date: string | null
+  time: string | null | undefined
+  timePrefix: string
+  align?: "start" | "end"
+}) {
+  const clock = time?.slice(0, 5)
+  return (
+    <div className={cn("min-w-0 shrink-0", align === "end" && "text-right")}>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-bold text-foreground tabular-nums">{date ?? "—"}</p>
+      {clock && (
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {timePrefix} {clock}
+        </p>
+      )}
+    </div>
+  )
+}

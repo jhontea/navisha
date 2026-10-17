@@ -276,9 +276,15 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
           {error ? (
             <p role="alert" className="px-3 py-2 text-sm text-destructive">{error}</p>
           ) : suggestions.length === 0 && !isLoading ? (
-            <p role="status" className="px-3 py-2 text-sm text-muted-foreground">
-              No locations found
-            </p>
+            <div role="status" className="px-3 py-2 text-sm">
+              <p className="text-muted-foreground">No locations found</p>
+              {kind === "place" && (
+                <p className="mt-1 text-foreground">
+                  Can&apos;t find it? In Google Maps, tap <span className="font-bold">Share</span>, copy the
+                  link and paste it here.
+                </p>
+              )}
+            </div>
           ) : (
             suggestions.map((suggestion, index) => {
               const primaryText = formatSuggestionTitle(suggestion, kind)
@@ -317,9 +323,10 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
               )
             })
           )}
-          <p className="border-t px-3 py-1.5 text-right text-xs text-muted-foreground">
-            Powered by Geoapify
-          </p>
+          <div className="flex items-center justify-between gap-3 border-t px-3 py-1.5 text-xs text-muted-foreground">
+            <span className="min-w-0 truncate">{kind === "place" && suggestions.length > 0 && !error ? "Tip: you can paste a Google Maps link" : ""}</span>
+            <span className="shrink-0">Powered by Geoapify</span>
+          </div>
         </div>
       )}
     </div>
