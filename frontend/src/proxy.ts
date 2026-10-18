@@ -6,7 +6,7 @@ const OPEN_PATHS = ["/", "/privacy", "/terms", "/contact"]
 // Public but redirect to /trips (home) if already logged in
 const AUTH_PATHS = ["/login", "/auth/callback"]
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hasToken = request.cookies.has("access_token")
 

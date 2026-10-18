@@ -4,7 +4,7 @@ import type { Metadata } from "next"
 import { SharedTripPage } from "@/features/trip/components/share/SharedTripPage"
 import { fetchSharedTrip, sharedTripPreview } from "@/features/trip/lib/sharedTrip"
 
-type Props = { params: { token: string } }
+type Props = { params: Promise<{ token: string }> }
 
 // One API call per request, shared by generateMetadata and the page.
 const getSharedTrip = cache(fetchSharedTrip)
@@ -15,7 +15,8 @@ const getSharedTrip = cache(fetchSharedTrip)
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const robots = { index: false, follow: false }
-  const result = await getSharedTrip(params.token)
+  const { token } = await params
+  const result = await getSharedTrip(token)
   if (result?.status !== "ready") return { title: "Shared trip", robots }
 
   const { title, description, image } = sharedTripPreview(result.trip)
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** Rendered on the server with the trip, so visitors see it without a loading state. */
 export default async function SharedTripRoute({ params }: Props) {
-  const result = await getSharedTrip(params.token)
-  return <SharedTripPage token={params.token} initial={result ?? undefined} />
+  const { token } = await params
+  const result = await getSharedTrip(token)
+  return <SharedTripPage token={token} initial={result ?? undefined} />
 }
