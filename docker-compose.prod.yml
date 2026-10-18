@@ -34,8 +34,14 @@ services:
     image: ghcr.io/jhontea/navisha-backend:${IMAGE_TAG:-latest}
     container_name: navisha-backend
     restart: unless-stopped
+    # Docker sends SIGTERM, then SIGKILL after this period. Must exceed the
+    # 25s shutdown timeout in backend/cmd/server/main.go.
+    stop_grace_period: 30s
     env_file:
       - ./backend/.env
+    environment:
+      # Soft heap limit for the Go GC, about 80% of the 256M limit below.
+      GOMEMLIMIT: 200MiB
     ports:
       - "127.0.0.1:8090:8090"
     depends_on:
