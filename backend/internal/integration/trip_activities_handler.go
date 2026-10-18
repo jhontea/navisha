@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/activity"
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
-	"github.com/ahmadhafizh/navisha/backend/internal/trip"
+	"github.com/jhontea/navisha/backend/internal/activity"
+	"github.com/jhontea/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/internal/trip"
 	"github.com/labstack/echo/v4"
 )
 

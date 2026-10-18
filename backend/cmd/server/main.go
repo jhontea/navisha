@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/config"
-	"github.com/ahmadhafizh/navisha/backend/internal/currency"
-	"github.com/ahmadhafizh/navisha/backend/internal/migrate"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jhontea/navisha/backend/config"
+	"github.com/jhontea/navisha/backend/internal/currency"
+	"github.com/jhontea/navisha/backend/internal/migrate"
 	"github.com/redis/go-redis/v9"
 )
 

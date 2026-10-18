@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
-	"github.com/ahmadhafizh/navisha/backend/internal/trip"
+	"github.com/jhontea/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/internal/trip"
 	"github.com/labstack/echo/v4"
 )
 

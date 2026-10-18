@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/apperr"
 	"github.com/labstack/echo/v4"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/currency"
 	"github.com/jackc/pgx/v5"
+	"github.com/jhontea/navisha/backend/internal/currency"
 )
 
 // mockRepo records calls and returns canned values. tx parameter is unused —

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	"github.com/jhontea/navisha/backend/pkg/jwt"
 	"github.com/labstack/echo/v4"
 )
 

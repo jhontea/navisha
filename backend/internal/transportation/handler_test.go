@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
 )
 

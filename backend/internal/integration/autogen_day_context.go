@@ -6,9 +6,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/activity"
-	"github.com/ahmadhafizh/navisha/backend/internal/autogen"
-	"github.com/ahmadhafizh/navisha/backend/internal/trip"
+	"github.com/jhontea/navisha/backend/internal/activity"
+	"github.com/jhontea/navisha/backend/internal/autogen"
+	"github.com/jhontea/navisha/backend/internal/trip"
 )
 
 type AutogenDayContextProvider struct {

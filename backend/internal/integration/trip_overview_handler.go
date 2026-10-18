@@ -9,10 +9,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
-	"github.com/ahmadhafizh/navisha/backend/internal/trip"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jhontea/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/internal/trip"
 	"github.com/labstack/echo/v4"
 )
 

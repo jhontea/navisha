@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/destination"
-	"github.com/ahmadhafizh/navisha/backend/pkg/money"
+	"github.com/jhontea/navisha/backend/pkg/destination"
+	"github.com/jhontea/navisha/backend/pkg/money"
 )
 
 // hashSeed returns a uint32 hash for use in deterministic selection.

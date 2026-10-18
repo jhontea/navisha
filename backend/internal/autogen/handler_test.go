@@ -15,9 +15,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
-	"github.com/ahmadhafizh/navisha/backend/internal/quota"
+	"github.com/jhontea/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/internal/quota"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 )

@@ -1,4 +1,4 @@
-module github.com/ahmadhafizh/navisha/backend
+module github.com/jhontea/navisha/backend
 
 go 1.25.0
 

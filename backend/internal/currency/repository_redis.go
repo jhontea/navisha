@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	pkgcurrency "github.com/ahmadhafizh/navisha/backend/pkg/currency"
+	pkgcurrency "github.com/jhontea/navisha/backend/pkg/currency"
 	"github.com/redis/go-redis/v9"
 )
 

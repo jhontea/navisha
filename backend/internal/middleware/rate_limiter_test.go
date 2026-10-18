@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	jwtpkg "github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	jwtpkg "github.com/jhontea/navisha/backend/pkg/jwt"
 	"github.com/labstack/echo/v4"
 )
 

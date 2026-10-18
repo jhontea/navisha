@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/apperr"
 )
 
 func TestTypeValid(t *testing.T) {

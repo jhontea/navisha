@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/config"
-	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jhontea/navisha/backend/config"
+	appMiddleware "github.com/jhontea/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"

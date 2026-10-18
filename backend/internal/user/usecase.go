@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
-	"github.com/ahmadhafizh/navisha/backend/pkg/oauth"
+	"github.com/jhontea/navisha/backend/pkg/jwt"
+	"github.com/jhontea/navisha/backend/pkg/oauth"
 	gooauth2 "golang.org/x/oauth2"
 )
 

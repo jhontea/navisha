@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/location"
+	"github.com/jhontea/navisha/backend/internal/location"
 )
 
 // place is one search result, reduced to what the comparison needs.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
+	"github.com/jhontea/navisha/backend/pkg/llm"
 )
 
 // ErrForbidden is returned when the user does not own the trip.

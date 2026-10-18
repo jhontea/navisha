@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	"github.com/jhontea/navisha/backend/pkg/jwt"
 )
 
 // newJWTService creates a JWT service using the global config.

@@ -3,8 +3,8 @@ package tripshare
 import (
 	"net/http"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
 )
 

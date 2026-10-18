@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	"github.com/jhontea/navisha/backend/pkg/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 )

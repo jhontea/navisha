@@ -11,8 +11,8 @@ import (
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 
-	"github.com/ahmadhafizh/navisha/backend/config"
-	appMiddleware "github.com/ahmadhafizh/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/config"
+	appMiddleware "github.com/jhontea/navisha/backend/internal/middleware"
 )
 
 // initSentry turns on error reporting when SENTRY_DSN is set; otherwise it

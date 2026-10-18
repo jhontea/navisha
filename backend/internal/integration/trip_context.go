@@ -7,12 +7,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/accommodation"
-	"github.com/ahmadhafizh/navisha/backend/internal/activity"
-	"github.com/ahmadhafizh/navisha/backend/internal/expense"
-	"github.com/ahmadhafizh/navisha/backend/internal/summary"
-	"github.com/ahmadhafizh/navisha/backend/internal/transportation"
-	"github.com/ahmadhafizh/navisha/backend/internal/trip"
+	"github.com/jhontea/navisha/backend/internal/accommodation"
+	"github.com/jhontea/navisha/backend/internal/activity"
+	"github.com/jhontea/navisha/backend/internal/expense"
+	"github.com/jhontea/navisha/backend/internal/summary"
+	"github.com/jhontea/navisha/backend/internal/transportation"
+	"github.com/jhontea/navisha/backend/internal/trip"
 )
 
 // TripContextProvider implements summary.TripDataProvider by reading from the

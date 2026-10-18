@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/autogen"
-	"github.com/ahmadhafizh/navisha/backend/internal/location"
+	"github.com/jhontea/navisha/backend/internal/autogen"
+	"github.com/jhontea/navisha/backend/internal/location"
 )
 
 // categorySearcher is the part of location.GeoapifyClient the finder uses.
