@@ -7,7 +7,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +24,13 @@ func main() {
 	// Structured JSON logger (Phase 3D).
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
+
+	// Container limits: GOMAXPROCS follows the cgroup CPU quota (Go 1.25+),
+	// the memory limit comes from GOMEMLIMIT (docker-compose.prod.yml).
+	slog.Info("runtime limits",
+		"gomaxprocs", runtime.GOMAXPROCS(0),
+		"memory_limit_bytes", debug.SetMemoryLimit(-1),
+	)
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -142,17 +152,24 @@ func main() {
 		}
 	}()
 
+	// Docker stops containers with SIGTERM; Ctrl+C sends os.Interrupt locally.
+	// Without SIGTERM here the process died mid-request on every deploy.
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	sig := <-quit
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Must stay below stop_grace_period in docker-compose.prod.yml (30s).
+	const shutdownTimeout = 25 * time.Second
+	slog.Info("shutting down", "signal", sig.String(), "timeout", shutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
+		// Requests still running past the timeout (long LLM calls) are cut.
+		// Return normally so the deferred DB, Redis and Sentry cleanup runs.
 		slog.Error("server shutdown error", "error", err)
-		os.Exit(1)
+		return
 	}
-	slog.Info("server stopped")
+	slog.Info("shutdown complete")
 }
 
 func databaseRegion(host string) string {
