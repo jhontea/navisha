@@ -8,9 +8,9 @@ const TILE_COORDINATE = /^\d+$/
 
 export async function GET(
   _request: Request,
-  { params }: { params: { z: string; x: string; y: string } },
+  { params }: { params: Promise<{ z: string; x: string; y: string }> },
 ) {
-  const { z, x, y } = params
+  const { z, x, y } = await params
   if (![z, x, y].every((value) => TILE_COORDINATE.test(value))) {
     return NextResponse.json({ message: "Invalid tile coordinates" }, { status: 400 })
   }
