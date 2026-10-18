@@ -1,6 +1,6 @@
 # Navisha — Frontend
 
-Next.js 14 App Router frontend for the Navisha travel itinerary app.
+Next.js 16 App Router frontend for the Navisha travel itinerary app.
 
 ## Quick Start
 

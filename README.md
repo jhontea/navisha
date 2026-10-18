@@ -43,7 +43,7 @@
 | Layer | Technology |
 |-------|-----------|
 | Backend | Go 1.25+, Echo v4, pgx v5 (PostgreSQL 17), Redis 7 |
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI) |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, coss ui (Base UI) |
 | AI / LLM | DeepSeek V4, OpenRouter (multi-provider fallback) |
 | Maps | MapLibre GL JS + OpenStreetMap, optional Google Maps JS API |
 | Currency | CurrencyFreaks API |
@@ -162,15 +162,14 @@ navisha/
 │   ├── migrations/       # Numbered SQL migration files
 │   ├── pkg/              # Shared packages (jwt, llm, currency, oauth)
 │   └── config/           # Typed config struct + YAML
-├── frontend/             # Next.js 14 web app
+├── frontend/             # Next.js 16 web app
 │   ├── src/app/          # App Router pages
 │   ├── src/features/     # Feature-slice architecture
 │   ├── src/components/   # Shared UI components
 │   └── src/lib/          # Utilities, API client, categories
 ├── deploy/               # Nginx config for production
 ├── docker-compose.dev.yml  # Dev infrastructure (PostgreSQL + Redis)
-├── docker-compose.yml    # Full stack in containers
-└── docker-compose.prod.yml
+└── docker-compose.prod.yml # Production (images from GHCR)
 ```
 
 ## Links
