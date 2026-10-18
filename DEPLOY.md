@@ -1,439 +1,120 @@
-# Deployment Guide — navisha.cloud
+# Deployment — navisha.cloud
 
-VPS: `202.155.13.11`  
-Domain: `navisha.cloud` (frontend), `api.navisha.cloud` (backend API)  
+Frontend di `navisha.cloud`, API di `api.navisha.cloud`. Database: Neon (PostgreSQL serverless, di luar VPS).
 
-### Cloudflare public HTML cache
+## Alur deploy
 
-The production zone has an active Cache Rule named `Cache public HTML`:
+1. PR di-merge ke `main`.
+2. Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) menjalankan CI, lalu membangun dan mendorong image `navisha-backend` dan `navisha-frontend` ke GHCR (`ghcr.io/jhontea/*`).
+3. Job deploy SSH ke VPS, `git reset --hard origin/main`, `docker login ghcr.io`, lalu `docker compose -f docker-compose.prod.yml pull` dan `up -d --no-build`.
 
-```text
-(http.host eq "navisha.cloud" and http.request.method in {"GET" "HEAD"} and http.request.uri.path in {"/" "/privacy" "/terms" "/contact"})
-```
+VPS **tidak pernah build image**. Deploy manual pun cukup mengulang langkah 3 di bagian [Deploy manual](#deploy-manual).
 
-Set **Cache eligibility** to `Eligible for cache` and **Edge TTL** to
-`Ignore cache-control header and use this TTL: 1 hour`. Keep `/login`,
-`/share/*`, dashboard routes, and API routes outside this rule because their
-responses can depend on cookies or private data.
-Database: Neon (external, serverless PostgreSQL)
+Deploy juga bisa dijalankan manual dari tab **Actions** → **Deploy to VPS** → **Run workflow**.
 
-## Architecture
+## Arsitektur
 
 ```
 Internet
-    │
-    ▼
-Nginx (SSL termination, reverse proxy)
-    ├── navisha.cloud  ─────────────► Docker: navisha-frontend (port 3000)
-    ├── api.navisha.cloud  ─────────► Docker: navisha-backend  (port 8090)
-    │                                         │
-    │                                         ├── Docker: redis-navisha (internal)
-    │                                         └── Neon PostgreSQL (external)
-    └── dozzle.navisha.cloud  ──────► Docker: navisha-dozzle   (port 8888)
+  │
+  ▼
+Nginx (TLS, reverse proxy) — konfigurasi: deploy/nginx/navisha.conf
+  ├── navisha.cloud        → navisha-frontend  (127.0.0.1:3000)
+  ├── api.navisha.cloud    → navisha-backend   (127.0.0.1:8090)
+  │                              ├── redis-navisha (internal)
+  │                              └── Neon PostgreSQL (eksternal)
+  └── dozzle.navisha.cloud → navisha-dozzle    (127.0.0.1:8888)
 ```
 
----
+Semua service didefinisikan di [`docker-compose.prod.yml`](docker-compose.prod.yml).
 
-## 1. First-Time VPS Setup
+## Setup VPS (sekali)
 
-SSH into the VPS, then run:
+1. Install Docker Engine dengan Compose v2, Nginx, dan Certbot.
+2. Clone repo ke `/opt/navisha` memakai SSH key read-only (deploy key GitHub sudah cukup).
+3. Pastikan `git fetch origin main` berjalan tanpa prompt, karena deploy memakai `git reset --hard`.
+4. Pasang konfigurasi Nginx dari `deploy/nginx/navisha.conf`, lalu jalankan Certbot untuk domain `navisha.cloud`, `www.navisha.cloud`, `api.navisha.cloud`, dan `dozzle.navisha.cloud`.
 
-```bash
-# System update
-sudo apt update && sudo apt upgrade -y
+## Konfigurasi
 
-# Install Docker
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-newgrp docker
+### Secrets di VPS
 
-# Install Docker Compose v2
-sudo apt install docker-compose-plugin -y
+**`/opt/navisha/.env.deploy`** (dibaca workflow, tidak ikut container):
 
-# Install Nginx + Certbot
-sudo apt install nginx certbot python3-certbot-nginx -y
-```
+| Variabel     | Isi                                                          |
+|--------------|--------------------------------------------------------------|
+| `GHCR_USER`  | Username GitHub yang punya akses baca package                |
+| `GHCR_TOKEN` | Token GitHub dengan izin baca package (GHCR)                 |
 
-> **BuildKit** sudah aktif by default di Docker Engine 23+. Kalau pakai versi lama, enable dengan:
-> ```bash
-> export DOCKER_BUILDKIT=1
-> ```
+**`backend/.env`** (dibaca container backend lewat `env_file`): salin dari `backend/.env.example` dan isi nilai production. Daftar lengkap variabel ada di file itu. Yang wajib untuk production:
 
----
+- `APP_ENV=production`, `TRUST_PROXY`, `SHARE_LINK_SECRET`, `JWT_SECRET`, `JWT_REFRESH_SECRET`
+- `DATABASE_URL` dari Neon, dengan `?sslmode=require`
+- `REDIS_URL=redis://redis:6379` (nama service Docker, bukan `localhost`)
+- `FRONTEND_URL=https://navisha.cloud`, `COOKIE_DOMAIN=.navisha.cloud`
+- Kredensial Google OAuth, serta API key peta, lokasi, dan LLM yang dipakai
 
-## 2. DNS Configuration
+Generate secret dengan `openssl rand -base64 48`.
 
-Arahkan DNS records ke IP VPS (`202.155.13.11`):
+### Build args frontend (GitHub, bukan VPS)
 
-| Type | Name              | Value           |
-|------|-------------------|-----------------|
-| A    | navisha.cloud     | 202.155.13.11   |
-| A    | www.navisha.cloud | 202.155.13.11   |
-| A    | api.navisha.cloud | 202.155.13.11   |
+Variabel `NEXT_PUBLIC_*` dimasukkan saat image dibangun, jadi disimpan di **Settings → Secrets and variables → Actions** pada repo GitHub. Daftar lengkapnya ada di blok `build-args` di `deploy.yml`. Cukup cek di sana, jangan menyalin daftar ini ke dokumen lain.
 
-Tunggu propagasi DNS sebelum lanjut ke langkah SSL.
+### Layanan pihak ketiga
 
----
+- **Google OAuth:** tambahkan redirect URI `https://api.navisha.cloud/api/v1/auth/google/callback`, dan origin `https://navisha.cloud` serta `https://www.navisha.cloud`.
+- **Google Maps API key:** batasi ke HTTP referrer `https://navisha.cloud/*` dan `https://www.navisha.cloud/*`, dan batasi API ke Maps JavaScript API dan Places API. Key tetap terlihat di bundle JavaScript, jadi pembatasan domain ini wajib.
+- **Cloudflare Cache Rule** untuk halaman publik:
 
-## 3. Setup SSH Key untuk Git (di VPS)
+  ```text
+  (http.host eq "navisha.cloud" and http.request.method in {"GET" "HEAD"} and http.request.uri.path in {"/" "/privacy" "/terms" "/contact"})
+  ```
 
-Agar VPS bisa clone/pull via SSH (lebih aman daripada HTTPS + token):
+  Set **Cache eligibility** ke `Eligible for cache` dan **Edge TTL** ke `Ignore cache-control header and use this TTL: 1 hour`. Jangan masukkan `/login`, `/share/*`, route dashboard, atau route API, karena respons-nya bisa bergantung pada cookie atau data pribadi.
 
-### 3a. Generate SSH Key di VPS
+## Deploy manual
 
-```bash
-ssh-keygen -t ed25519 -C "navisha-vps-deploy"
-```
-
-Ini akan membuat dua file:
-- `~/.ssh/id_ed25519` — private key (jangan pernah share)
-- `~/.ssh/id_ed25519.pub` — public key (ini yang didaftarkan ke GitHub)
-
-### 3b. Tambahkan Public Key ke GitHub
-
-```bash
-cat ~/.ssh/id_ed25519.pub
-```
-
-Copy outputnya, lalu:
-1. Buka GitHub → **Settings** → **SSH and GPG keys** → **New SSH key**
-2. Paste public key di sana
-3. Klik **Add SSH key**
-
-Alternatif: kalau repo ini private dan deploy-only, bisa pakai **Deploy Keys** yang lebih terbatas:
-1. Buka repo di GitHub → **Settings** → **Deploy keys** → **Add deploy key**
-2. Paste public key, centang **Allow write access** jika perlu
-3. Klik **Add key**
-
-### 3c. Test Koneksi SSH ke GitHub
-
-```bash
-ssh -T git@github.com
-# Output: Hi username! You've successfully authenticated...
-```
-
----
-
-## 4. Clone Repository
-
-```bash
-mkdir -p /opt/navisha
-git clone git@github.com:jhontea/navisha.git /opt/navisha
-cd /opt/navisha
-```
-
----
-
-## 5. Configure Environment Variables
-
-### Backend
-
-```bash
-cp backend/.env.example backend/.env
-nano backend/.env
-```
-
-Isi dengan nilai production:
-
-```env
-DATABASE_URL=postgres://<user>:<password>@<host>/neondb?sslmode=require
-REDIS_URL=redis://redis:6379
-JWT_SECRET=<random string panjang, minimal 32 karakter>
-JWT_REFRESH_SECRET=<random string lain, minimal 32 karakter>
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-GOOGLE_REDIRECT_URL=https://api.navisha.cloud/api/v1/auth/google/callback
-FRONTEND_URL=https://navisha.cloud
-COOKIE_DOMAIN=.navisha.cloud
-CURRENCYFREAKS_API_KEY=<your-currencyfreaks-key>
-```
-
-> **Penting:** `REDIS_URL` pakai `redis://redis:6379` (service name Docker), bukan `localhost`.
-> `DATABASE_URL` adalah connection string dari Neon dashboard, pastikan sudah include `?sslmode=require`.
-
-Generate JWT secret yang aman:
-```bash
-openssl rand -base64 48
-```
-
-### Frontend
-
-`NEXT_PUBLIC_*` vars harus di-pass sebagai build args saat `docker compose ... --build` karena Next.js embed nilainya langsung ke dalam JS bundle. Buat file `.env.prod` di root project:
-
-```bash
-cat > /opt/navisha/.env.prod << 'EOF'
-NEXT_PUBLIC_API_URL=https://api.navisha.cloud/api/v1
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<your-google-maps-key>
-EOF
-
-# Tambahkan ke .gitignore jika belum ada
-echo ".env.prod" >> /opt/navisha/.gitignore
-```
-
-> File ini tidak perlu untuk runtime — hanya dipakai saat build.
-
----
-
-## 6. Google Cloud Console — Update OAuth
-
-Sebelum deploy, update di [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → OAuth 2.0 Client:
-
-**Authorized redirect URIs** — tambahkan:
-```
-https://api.navisha.cloud/api/v1/auth/google/callback
-```
-
-**Authorized JavaScript origins** — tambahkan:
-```
-https://navisha.cloud
-https://www.navisha.cloud
-```
-
----
-
-## 7. Google Maps API Key — Restrict di Production
-
-Di Google Cloud Console → APIs & Services → Credentials → klik Maps API key:
-
-1. **Application restrictions** → pilih **HTTP referrers (websites)**
-2. Tambahkan allowed referrers:
-   - `https://navisha.cloud/*`
-   - `https://www.navisha.cloud/*`
-3. **API restrictions** → Restrict key → centang:
-   - Maps JavaScript API
-   - Places API
-
-Key akan ter-embed di JavaScript bundle (karena `NEXT_PUBLIC_`), tapi hanya bisa digunakan dari domain navisha.cloud.
-
----
-
-## 8. Setup Nginx
-
-```bash
-# Copy nginx config
-sudo cp /opt/navisha/deploy/nginx/navisha.conf /etc/nginx/sites-available/navisha
-sudo ln -s /etc/nginx/sites-available/navisha /etc/nginx/sites-enabled/
-
-# Test config
-sudo nginx -t
-
-# Reload nginx
-sudo systemctl reload nginx
-```
-
----
-
-## 9. Setup Dozzle (Docker Log Viewer)
-
-Dozzle berjalan sebagai container dan diakses via `dozzle.navisha.cloud`. Sudah ditambahkan di `docker-compose.prod.yml` pada port `127.0.0.1:8888`.
-
-> **Catatan:** Dozzle berjalan tanpa autentikasi. Pastikan domain ini tidak dishare ke publik, atau pertimbangkan untuk menambahkan basic auth di masa depan.
-
-### 9a. Tambahkan DNS Record
-
-| Type | Name                  | Value         |
-|------|-----------------------|---------------|
-| A    | dozzle.navisha.cloud  | 202.155.13.11 |
-
-Tunggu propagasi DNS, lalu jalankan Dozzle bersama service lainnya via `docker compose` (langkah 10).
-
----
-
-## 10. SSL Certificate (Let's Encrypt)
-
-```bash
-sudo certbot --nginx -d navisha.cloud -d www.navisha.cloud -d api.navisha.cloud -d dozzle.navisha.cloud
-```
-
-Certbot otomatis mengupdate nginx config dengan SSL dan setup auto-renewal.
-
-Verifikasi auto-renewal berjalan:
-```bash
-sudo certbot renew --dry-run
-```
-
----
-
-## 11. Build & Run (First Deploy)
+Hanya dipakai jika workflow tidak bisa dijalankan. Image harus sudah ada di GHCR.
 
 ```bash
 cd /opt/navisha
+git fetch origin main && git reset --hard origin/main
 
-# Load frontend build args
-export $(cat .env.prod | xargs)
+set -a && source .env.deploy && set +a
+echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-# Build dan jalankan semua service
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d --no-build
+docker image prune -f
 ```
 
-Cek status:
+Restart satu service saja: tambahkan nama service di akhir `up` (misalnya `backend`).
+
+Cek status dan log:
+
 ```bash
 docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs backend
-docker compose -f docker-compose.prod.yml logs frontend
+docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
-> **Catatan BuildKit cache:** Build pertama akan mengunduh semua dependency. Build berikutnya
-> jauh lebih cepat karena Go module cache dan npm cache disimpan oleh Docker BuildKit.
+Migrasi database berjalan otomatis saat backend start. Tidak ada langkah migrasi terpisah.
 
----
+## Keamanan
 
-## 12. Deploy Update (Subsequent Deployments)
-
-```bash
-cd /opt/navisha
-
-# Pull latest code
-git pull origin main
-
-# Load frontend build args
-export $(cat .env.prod | xargs)
-
-# Rebuild dan restart
-# --no-deps hanya rebuild service yang berubah (opsional)
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-Jika hanya backend yang berubah:
-```bash
-docker compose -f docker-compose.prod.yml up -d --build backend
-```
-
-Jika hanya frontend yang berubah:
-```bash
-export $(cat .env.prod | xargs)
-docker compose -f docker-compose.prod.yml up -d --build frontend
-```
-
----
-
-## 13. Auto-Deploy via GitHub Actions (CI/CD)
-
-Workflow `.github/workflows/deploy.yml` otomatis men-deploy ke VPS setiap ada
-commit baru di branch `main` (termasuk hasil **merge pull request**). Workflow
-ini SSH ke VPS lalu menjalankan langkah deploy yang sama seperti Bagian 12.
-
-### 13a. Daftarkan Secrets di GitHub
-
-Buka repo di GitHub → **Settings** → **Secrets and variables** → **Actions** →
-**New repository secret**, lalu tambahkan:
-
-| Secret          | Nilai                                                        |
-|-----------------|-------------------------------------------------------------|
-| `VPS_HOST`      | `202.155.13.11`                                             |
-| `VPS_USER`      | User SSH di VPS (mis. `root` atau user deploy)              |
-| `VPS_SSH_KEY`   | **Private key** SSH (isi lengkap file, termasuk header/footer) |
-| `VPS_SSH_PORT`  | (Opsional) Port SSH, default `22`                          |
-
-### 13b. Siapkan SSH Key untuk GitHub Actions
-
-Sebaiknya buat key khusus untuk CI (jangan pakai key personal). Di VPS:
-
-```bash
-# Generate key khusus CI (tanpa passphrase agar bisa non-interactive)
-ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/gh_actions -N ""
-
-# Izinkan key ini login ke VPS
-cat ~/.ssh/gh_actions.pub >> ~/.ssh/authorized_keys
-
-# Tampilkan PRIVATE key — copy seluruh output ke secret VPS_SSH_KEY
-cat ~/.ssh/gh_actions
-```
-
-> Pastikan `git` di VPS sudah bisa `git fetch origin main` tanpa prompt (lihat
-> Bagian 3 — SSH key VPS → GitHub). Workflow melakukan `git reset --hard origin/main`
-> sehingga perubahan lokal yang tidak ter-commit di VPS akan ditimpa.
-
-### 13c. Cara Kerja
-
-1. PR di-merge ke `main` → event `push` pada branch `main` memicu workflow.
-2. GitHub Actions SSH ke VPS, `git reset --hard origin/main`, load `.env.prod`,
-   lalu `docker compose -f docker-compose.prod.yml up -d --build`.
-3. `concurrency` memastikan hanya satu deploy berjalan dalam satu waktu.
-4. Bisa juga dijalankan manual lewat tab **Actions** → **Deploy to VPS** →
-   **Run workflow** (`workflow_dispatch`).
-
-### 13d. Catatan Keamanan
-
-- Workflow hanya jalan saat push ke `main`. Karena hanya merge ke `main` yang
-  memicu deploy, lindungi branch `main` dengan **branch protection rule** (wajib
-  PR + review) agar tidak ada yang push langsung tanpa review.
-- `VPS_SSH_KEY` adalah kredensial sensitif — disimpan sebagai encrypted secret,
-  tidak pernah muncul di log. Jangan pernah commit private key ke repo.
-
----
-
-## Deploy App Lain di VPS yang Sama
-
-
-Masing-masing app punya direktori dan compose file sendiri:
-
-```
-/opt/
-├── navisha/
-│   └── docker-compose.prod.yml   (ports: 3000, 8090)
-└── app-lain/
-    └── docker-compose.prod.yml   (ports: 3001, 8091)
-```
-
-Tambahkan nginx server block baru di `/etc/nginx/sites-available/app-lain` dengan subdomain/domain berbeda, lalu jalankan certbot untuk SSL-nya.
-
----
+- Workflow deploy hanya berjalan dari `main`. Lindungi `main` dengan branch protection (PR dan review wajib).
+- `VPS_SSH_KEY` dan `GHCR_TOKEN` adalah kredensial. Jangan pernah di-commit atau ditampilkan di log.
+- Dozzle membaca Docker socket dan tidak punya autentikasi. Jangan dibuka ke publik. Versinya belum di-pin (`amir20/dozzle:latest`).
 
 ## Troubleshooting
 
-**Backend tidak bisa connect ke Redis:**
-```bash
-# Cek apakah service redis jalan
-docker compose -f docker-compose.prod.yml ps redis
-# Pastikan REDIS_URL=redis://redis:6379 (bukan localhost)
-```
+**Deploy gagal di langkah login GHCR:** cek `GHCR_USER` dan `GHCR_TOKEN` di `/opt/navisha/.env.deploy`, dan pastikan token belum kedaluwarsa.
 
-**Backend tidak bisa connect ke Neon:**
-```bash
-# Cek DATABASE_URL format, pastikan ada ?sslmode=require
-# Cek koneksi keluar dari container
-docker compose -f docker-compose.prod.yml logs backend
-docker exec navisha-backend wget -qO- https://neon.tech 2>&1 | head -5
-```
+**Backend tidak bisa connect ke Redis:** pastikan `REDIS_URL=redis://redis:6379` dan service `redis` sehat (`docker compose -f docker-compose.prod.yml ps redis`).
 
-**Frontend menampilkan API URL kosong / salah:**
-```bash
-# NEXT_PUBLIC_ vars harus sudah di-export SEBELUM docker compose up --build
-# Verifikasi sebelum build:
-echo $NEXT_PUBLIC_API_URL
-echo $NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+**Backend tidak bisa connect ke Neon:** pastikan `DATABASE_URL` punya `?sslmode=require`. Cek log backend.
 
-# Jika salah, rebuild frontend dengan nilai yang benar:
-export $(cat .env.prod | xargs)
-docker compose -f docker-compose.prod.yml up -d --build frontend
-```
+**Nginx 502 Bad Gateway:** pastikan container berjalan dan port `3000` / `8090` terikat di `127.0.0.1` (`sudo ss -tlnp | grep -E '3000|8090'`).
 
-**Frontend build gagal (npm ci):**
-```bash
-# Cek apakah package-lock.json sinkron dengan package.json
-# Jalankan `npm install` lokal lalu commit package-lock.json yang baru
-```
+**Container restart terus (OOM):** cek `docker stats --no-stream` dan `docker inspect navisha-backend | jq '.[0].State'`.
 
-**Nginx 502 Bad Gateway:**
-```bash
-# Pastikan container jalan
-docker compose -f docker-compose.prod.yml ps
-# Cek port binding
-sudo ss -tlnp | grep -E '3000|8090'
-```
-
-**Resource limit OOM (container restart loop):**
-```bash
-# Cek memory usage
-docker stats --no-stream
-# Lihat alasan restart
-docker inspect navisha-backend | jq '.[0].State'
-```
-
-**View logs:**
-```bash
-docker compose -f docker-compose.prod.yml logs -f backend
-docker compose -f docker-compose.prod.yml logs -f frontend
-sudo tail -f /var/log/nginx/error.log
-```
+**Log Nginx:** `sudo tail -f /var/log/nginx/error.log`.

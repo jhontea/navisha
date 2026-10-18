@@ -3,6 +3,7 @@
 > **Tanggal:** 2026-10-13
 > **Cara:** setiap halaman dibuka di browser pada lebar **390px** (mobile) dan **1440px** (desktop), lalu diukur otomatis dengan skrip di halaman (ukuran font yang ter-render, elemen blur/gradient, ukuran target sentuh, overflow horizontal).
 > **Screenshot:** disimpan lokal di `design-audit/baseline/` (di-gitignore karena berisi data trip asli). Dokumen ini hanya berisi temuan.
+> **Status:** Arsip. Temuan baseline V1, sudah digantikan oleh V2.
 > **Acuan:** fase D0 di [PLANNING_REFACTOR_REDESIGN.md](../PLANNING_REFACTOR_REDESIGN.md).
 
 ## 1. Angka per halaman (mobile 390px)

@@ -1,7 +1,7 @@
 # Navisha — Design Foundation V2 · "Soft"
 
 > **Status:** fondasi yang dipilih (2026-10-14). Arah: **Soft** dari ronde 4 eksplorasi. V1 (token) dan V2 (komponen di §5) sudah diterapkan; semua komponen bisa dilihat di `/dev/ui`.
-> **Menggantikan:** [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) setelah fase V1 diterapkan. Aturan aksesibilitas, larangan hex di komponen, dan palet kategori expense dari dokumen lama tetap berlaku.
+> **Menggantikan:** dokumen V1 (`DESIGN_SYSTEM.md`, sudah dihapus). Aturan kategori expense dan larangan dari V1 ada di §12.
 > **Acuan visual:** mockup `design-audit/v2-trip/index.html` (opsi Soft) · referensi user `design-audit/references/` · plan [PLANNING_REDESIGN_V2.md](PLANNING_REDESIGN_V2.md) · cover [design/COVER_PROMPTS.md](design/COVER_PROMPTS.md)
 
 ---
@@ -54,7 +54,7 @@ Status selalu berupa **chip bulat** (teks + latar lembut), misalnya `4/6 siap`. 
 
 ### 2.3 Kategori expense
 
-Palet dari V1 **tidak berubah** (urutan dan aturannya ada di [DESIGN_SYSTEM.md §2](DESIGN_SYSTEM.md)). Ditambah varian dark: Stay `#5b9be6`, Transport `#2fcb93`, Food `#f08457`, Activity `#8b7ce0`, Gift `#ee95b7`, Shopping `#f5b52e`, Other `#9aa1ab`.
+Palet dari V1 **tidak berubah** (urutan dan aturannya ada di §12.1). Ditambah varian dark: Stay `#5b9be6`, Transport `#2fcb93`, Food `#f08457`, Activity `#8b7ce0`, Gift `#ee95b7`, Shopping `#f5b52e`, Other `#9aa1ab`.
 
 ### 2.4 Cover & area di atas cover
 
@@ -236,3 +236,33 @@ Tidak ada animasi dekoratif. Semua mengikuti `prefers-reduced-motion`.
 3. `tailwind.config.ts`: `primary-soft`, `on-cover`, `map-*`, radius §4.1, fontSize §3.
 4. `/dev/ui` menampilkan semua token dan komponen §5 di light dan dark.
 5. Cover: `getDefaultTripCover()` memakai default + fallback CSS (§7).
+
+## 12. Aturan kategori expense & larangan
+
+Bagian ini dipindahkan dari dokumen V1 (`DESIGN_SYSTEM.md`, sudah dihapus) dan tetap berlaku.
+
+### 12.1 Palet kategori
+
+Satu palet untuk chip, ikon, chart, dan peta, **dalam urutan tetap** (sudah divalidasi untuk pemisahan warna pada buta warna).
+
+| Urutan | Kategori | Class | Hex (light) |
+|---|---|---|---|
+| 1 | Stay (`accommodation`) | `bg-cat-stay` / `text-cat-stay` | `#2a78d6` |
+| 2 | Transport | `cat-transport` | `#1baf7a` |
+| 3 | Food | `cat-food` | `#eb6834` |
+| 4 | Activity | `cat-activity` | `#4a3aa7` |
+| 5 | Gift (`souvenir`) | `cat-gift` | `#e87ba4` |
+| 6 | Shopping | `cat-shopping` | `#eda100` |
+| 7 | Other | `cat-other` | `#7d8590` (netral) |
+
+- Pakai map di `features/expense/categoryColors.ts` (`CATEGORY_COLORS`, `CATEGORY_ORDER`, `categoryRank`). Jangan tulis warna kategori sendiri.
+- Chart **tidak boleh mengurutkan ulang** segmen berdasarkan jumlah. Pakai `CATEGORY_ORDER`, dengan celah 2px antar segmen.
+- Warna kategori hanya untuk **tanda** (titik, ikon, batang). Teks label dan angka tetap `foreground` / `muted-foreground`. Transport, Gift, dan Shopping kontrasnya < 3:1 di atas putih, jadi selalu ada label teks.
+- Latar lembut: `bg-cat-*/10`.
+
+### 12.2 Larangan
+
+- Hex di komponen (`bg-[#FFEDD5]`, `text-[#7C3AED]`). Lint memberi warning. Tambahkan token jika memang perlu warna baru.
+- Token warna di luar daftar §2. Token lama (`chromatic-*`, `on-*`, `surface-*` sisa MD3) sudah dihapus dari config.
+- `text-[Npx]`. Pakai skala §3. Teks di bawah 12px dilarang.
+- Utilitas lama `glass*`, `shadow-soft`, `soft-shadow`, `shadow-chromatic`, `trip-card-shadow`, `text-gradient*`, dan `input-base` sudah dihapus dari `globals.css`. Jangan dipakai lagi.

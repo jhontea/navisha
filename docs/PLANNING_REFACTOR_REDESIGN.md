@@ -1,7 +1,7 @@
 # Planning — Refactor Kode & Redesign Tampilan
 
 > **Tanggal:** 2026-10-13
-> **Status:** Rancangan / menunggu keputusan
+> **Status:** Diarsipkan. Bagian B (Redesign V1) sudah diterapkan dan digantikan oleh [PLANNING_REDESIGN_V2.md](PLANNING_REDESIGN_V2.md). Status bagian A (refactor) tidak dilacak lagi di sini.
 > **Ringkasan:** Dua bagian kerja yang bisa jalan paralel:
 > **A. Refactor** (backend Go + frontend Next.js), supaya kode lebih modular, mudah dibaca dan dirawat, efisien, dan minim bug.
 > **B. Redesign** (UI/UX), supaya tampilan konsisten, jelas, tidak terasa "AI slop", dan nyaman di desktop maupun mobile.

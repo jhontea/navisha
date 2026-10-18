@@ -16,11 +16,11 @@
       "warn",
       {
         "selector": "Literal[value=/text-\\[\\d+(\\.\\d+)?px\\]/], TemplateElement[value.raw=/text-\\[\\d+(\\.\\d+)?px\\]/]",
-        "message": "Use the type scale (text-xs, text-sm, text-base, …) instead of text-[Npx]. See docs/DESIGN_SYSTEM.md."
+        "message": "Use the type scale (text-xs, text-sm, text-base, …) instead of text-[Npx]. See docs/DESIGN.md §12."
       },
       {
         "selector": "Literal[value=/-\\[#[0-9a-fA-F]{3,8}\\]/], TemplateElement[value.raw=/-\\[#[0-9a-fA-F]{3,8}\\]/]",
-        "message": "Use a color token (bg-primary, text-muted-foreground, bg-cat-*, …) instead of a hex value. See docs/DESIGN_SYSTEM.md."
+        "message": "Use a color token (bg-primary, text-muted-foreground, bg-cat-*, …) instead of a hex value. See docs/DESIGN.md §12."
       }
     ]
   },
@@ -37,11 +37,11 @@
           "warn",
           {
             "selector": "Literal[value=/text-\\[\\d+(\\.\\d+)?px\\]/], TemplateElement[value.raw=/text-\\[\\d+(\\.\\d+)?px\\]/]",
-            "message": "Use the type scale (text-xs, text-sm, text-base, …) instead of text-[Npx]. See docs/DESIGN_SYSTEM.md."
+            "message": "Use the type scale (text-xs, text-sm, text-base, …) instead of text-[Npx]. See docs/DESIGN.md §12."
           },
           {
             "selector": "Literal[value=/-\\[#[0-9a-fA-F]{3,8}\\]/], TemplateElement[value.raw=/-\\[#[0-9a-fA-F]{3,8}\\]/]",
-            "message": "Use a color token (bg-primary, text-muted-foreground, bg-cat-*, …) instead of a hex value. See docs/DESIGN_SYSTEM.md."
+            "message": "Use a color token (bg-primary, text-muted-foreground, bg-cat-*, …) instead of a hex value. See docs/DESIGN.md §12."
           },
           {
             "selector": "JSXOpeningElement[name.name=/^(button|select|textarea)$/]",

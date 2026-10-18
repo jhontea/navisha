@@ -13,7 +13,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Expense category colors (D1, docs/DESIGN_SYSTEM.md) ──
+        // ── Expense category colors (D1, docs/DESIGN.md §12) ──
         cat: {
           stay: "hsl(var(--cat-stay))",
           transport: "hsl(var(--cat-transport))",
