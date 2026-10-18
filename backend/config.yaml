@@ -60,7 +60,7 @@ rate_limit:
   enabled: true
   auth_per_minute: 20
   llm_per_minute: 5
-  general_per_min: 100
+  general_per_minute: 100
 
 app:
   environment: development
