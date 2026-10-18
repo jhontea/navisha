@@ -1,12 +1,12 @@
 # Navisha — Backend
 
-Go API server for the Navisha travel itinerary app. Echo framework, Clean Architecture, PostgreSQL 16, Redis 7.
+Go API server for the Navisha travel itinerary app. Echo framework, Clean Architecture, PostgreSQL 17, Redis 7.
 
 ## Quick Start
 
 ```bash
 # Start infrastructure
-docker-compose up -d                    # from repo root
+docker compose -f docker-compose.dev.yml up -d   # from repo root
 
 # Configure
 cp .env.example .env                    # fill in secrets
@@ -22,7 +22,7 @@ go run ./cmd/server                     # → http://localhost:8090
 - **No ORM** — raw SQL via `pgx` driver with `pgxpool` connection pooling
 - **Dependency Injection** — constructor pattern, wired in `cmd/server/main.go`, zero global state
 - **Cross-domain via interfaces** — domains define local interfaces satisfied by other domains' usecases (no cross-imports)
-- **Migration-driven schema** — numbered SQL files in `migrations/`, auto-run on startup with `AUTO_MIGRATE=true`
+- **Migration-driven schema** — numbered SQL files in `migrations/`, run automatically on every startup
 
 ### Domain Map
 

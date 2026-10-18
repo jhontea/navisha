@@ -5,7 +5,7 @@ import type { ComponentType } from "react"
  * Canonical category color map — single source of truth.
  * Used by ExpenseSection, ExpenseForm, BudgetForm, BudgetSummary.
  *
- * Colors come from the --cat-* tokens (docs/DESIGN_SYSTEM.md). `text` tints
+ * Colors come from the --cat-* tokens (docs/DESIGN.md §12). `text` tints
  * icons only; labels and values use text tokens (text-foreground /
  * text-muted-foreground), never the category color.
  */

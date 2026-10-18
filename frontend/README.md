@@ -27,11 +27,11 @@ Backend must be running at `http://localhost:8090` (see root `README.md` for set
 npm run dev      # Development server
 npm run build    # Production build
 npm run lint     # ESLint (next lint)
-npx tsc --noEmit # Type check
+npm run typecheck # Type check
 ```
 
 ## Related Docs
 
 - Root project: [`../README.md`](../README.md)
 - Agent context: [`./CLAUDE.md`](./CLAUDE.md)
-- Design system: [`./template/DESIGN.md`](./template/DESIGN.md)
+- Design system: [`../docs/DESIGN.md`](../docs/DESIGN.md)

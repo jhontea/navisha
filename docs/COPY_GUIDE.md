@@ -1,6 +1,6 @@
 # Navisha Copy Guide
 
-> Aturan menulis teks di UI. Bahasa UI: **English** (keputusan 2026-10-13). Pasangan dari [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
+> Aturan menulis teks di UI. Bahasa UI: **English** (keputusan 2026-10-13). Pasangan dari [DESIGN.md](DESIGN.md).
 
 ## 1. Glosarium
 

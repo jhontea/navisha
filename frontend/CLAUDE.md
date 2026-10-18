@@ -85,7 +85,7 @@ frontend/
 - No cross-feature imports — `trip/` must not import from `auth/`
 
 ### Styling
-- Follow `docs/DESIGN.md` (V2 "Soft": tokens, fonts, radius, components, checklist) and `docs/COPY_GUIDE.md` (glossary, button/error copy). `docs/DESIGN_SYSTEM.md` still holds the expense category rules.
+- Follow `docs/DESIGN.md` (V2 "Soft": tokens, fonts, radius, components, checklist) and `docs/COPY_GUIDE.md` (glossary, button/error copy). Expense category rules are in `docs/DESIGN.md` §12.
 - No `text-[Npx]` and no hex colors in classes (lint fails: `--max-warnings 0`); legacy `glass*` / `text-gradient*` / `chromatic-*` / MD3 tokens are gone, only the tokens in `tailwind.config.ts` exist
 - Tailwind only — no inline styles
 - `cn()` from `lib/utils.ts` for conditional class merging

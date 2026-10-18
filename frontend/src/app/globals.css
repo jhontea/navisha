@@ -85,7 +85,7 @@ html {
     --success-foreground: 0 0% 100%;
     --success-bg: 148 45.5% 93.5%;
 
-    /* ── Expense categories (fixed order, CVD-checked; DESIGN_SYSTEM.md §2) ── */
+    /* ── Expense categories (fixed order, CVD-checked; DESIGN.md §12.1) ── */
     --cat-stay: 213 68% 50%;      /* #2a78d6 */
     --cat-transport: 159 73% 40%; /* #1baf7a */
     --cat-food: 17 82% 56%;       /* #eb6834 */

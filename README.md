@@ -42,7 +42,7 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Go 1.25+, Echo v4, pgx v5 (PostgreSQL 16), Redis 7 |
+| Backend | Go 1.25+, Echo v4, pgx v5 (PostgreSQL 17), Redis 7 |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, coss ui (Base UI) |
 | AI / LLM | DeepSeek V4, OpenRouter (multi-provider fallback) |
 | Maps | MapLibre GL JS + OpenStreetMap, optional Google Maps JS API |
@@ -67,7 +67,7 @@
 
 - Go 1.25+
 - Node.js 22+
-- PostgreSQL 16+ and Redis 7+ (via Docker, or installed natively)
+- PostgreSQL 17+ and Redis 7+ (via Docker, or installed natively)
 - Google OAuth credentials (login is Google-only)
 - Geoapify API key for the default location autocomplete provider
 - Optional: Google Cloud project with Maps JS API when Google mode is enabled
@@ -175,15 +175,15 @@ navisha/
 
 ## Links
 
-- [Privacy Policy](https://navisha.app/privacy)
-- [Terms of Service](https://navisha.app/terms)
-- [Contact](https://navisha.app/contact)
+- [Privacy Policy](https://navisha.cloud/privacy)
+- [Terms of Service](https://navisha.cloud/terms)
+- [Contact](https://navisha.cloud/contact)
 
 ## Roadmap
 
 Core features (trips, itinerary, map, transport, stay, budget, currency
 converter, AI generation and summary, share links) are shipped. Current work
-is tracked in [docs/PLANNING_REFACTOR_REDESIGN.md](docs/PLANNING_REFACTOR_REDESIGN.md).
+is tracked in [docs/PLANNING_REDESIGN_V2.md](docs/PLANNING_REDESIGN_V2.md).
 
 ---
 
