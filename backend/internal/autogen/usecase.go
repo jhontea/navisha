@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
+	"github.com/jhontea/navisha/backend/pkg/llm"
 )
 
 // ErrLLMUnavailable signals a transient LLM failure (network, timeout, decode,

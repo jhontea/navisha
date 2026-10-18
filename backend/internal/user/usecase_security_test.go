@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	jwtpkg "github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	jwtpkg "github.com/jhontea/navisha/backend/pkg/jwt"
 )
 
 type sessionRepoMock struct {

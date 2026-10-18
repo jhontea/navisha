@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
+	"github.com/jhontea/navisha/backend/pkg/llm"
 )
 
 // --- fakes ---

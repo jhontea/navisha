@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/destination"
+	"github.com/jhontea/navisha/backend/pkg/destination"
 )
 
 const systemPromptBase = `Kamu adalah AI perencana perjalanan (travel planner) yang ahli dan teliti.

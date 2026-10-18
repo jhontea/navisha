@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/autogen"
-	"github.com/ahmadhafizh/navisha/backend/internal/location"
+	"github.com/jhontea/navisha/backend/internal/autogen"
+	"github.com/jhontea/navisha/backend/internal/location"
 )
 
 type fakeCategorySearcher struct {

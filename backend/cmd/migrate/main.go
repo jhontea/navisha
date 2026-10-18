@@ -11,9 +11,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/ahmadhafizh/navisha/backend/config"
-	"github.com/ahmadhafizh/navisha/backend/internal/migrate"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jhontea/navisha/backend/config"
+	"github.com/jhontea/navisha/backend/internal/migrate"
 )
 
 func main() {

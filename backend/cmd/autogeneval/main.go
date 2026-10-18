@@ -26,10 +26,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/ahmadhafizh/navisha/backend/config"
-	"github.com/ahmadhafizh/navisha/backend/internal/autogen"
-	"github.com/ahmadhafizh/navisha/backend/internal/location"
-	"github.com/ahmadhafizh/navisha/backend/pkg/llm"
+	"github.com/jhontea/navisha/backend/config"
+	"github.com/jhontea/navisha/backend/internal/autogen"
+	"github.com/jhontea/navisha/backend/internal/location"
+	"github.com/jhontea/navisha/backend/pkg/llm"
 )
 
 type evalCase struct {

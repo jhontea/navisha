@@ -3,7 +3,7 @@ package currency
 import (
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/apperr"
 )
 
 // ErrUnsupported is the shared apperr sentinel, so other domains can tell a bad

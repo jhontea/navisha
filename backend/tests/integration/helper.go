@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/pkg/jwt"
+	"github.com/jhontea/navisha/backend/pkg/jwt"
 )
 
 // TestContext holds shared state for integration tests.

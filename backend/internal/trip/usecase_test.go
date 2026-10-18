@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/apperr"
 )
 
 // ---------- pure helpers ----------

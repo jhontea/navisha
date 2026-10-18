@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/currency"
-	"github.com/ahmadhafizh/navisha/backend/pkg/dbtx"
-	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
 	"github.com/jackc/pgx/v5"
+	"github.com/jhontea/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/currency"
+	"github.com/jhontea/navisha/backend/pkg/dbtx"
+	"github.com/jhontea/navisha/backend/pkg/sanitize"
 )
 
 const (

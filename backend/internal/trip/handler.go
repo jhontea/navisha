@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ahmadhafizh/navisha/backend/internal/apperr"
-	"github.com/ahmadhafizh/navisha/backend/internal/middleware"
-	"github.com/ahmadhafizh/navisha/backend/pkg/sanitize"
+	"github.com/jhontea/navisha/backend/internal/apperr"
+	"github.com/jhontea/navisha/backend/internal/middleware"
+	"github.com/jhontea/navisha/backend/pkg/sanitize"
 	"github.com/labstack/echo/v4"
 )
 
