@@ -41,12 +41,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
   const userID = useAuthStore((state) => state.user?.id ?? null)
   const [restoredUserID, setRestoredUserID] = useState<string | null>(null)
+  // A different (or no) user: forget the previous restore before effects run,
+  // so persistence never subscribes against another user's cache.
+  const [prevUserID, setPrevUserID] = useState(userID)
+  if (prevUserID !== userID) {
+    setPrevUserID(userID)
+    setRestoredUserID(null)
+  }
 
   useEffect(() => {
-    if (!userID) {
-      setRestoredUserID(null)
-      return
-    }
+    if (!userID) return
 
     let active = true
     void restorePersistedQueries(queryClient, userID)

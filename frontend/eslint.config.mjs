@@ -29,18 +29,6 @@ export default [
     },
   },
   {
-    // Rules from eslint-config-next 16 (React Compiler checks). They flag existing
-    // patterns in ~25 files; turned off for the Next 16 upgrade and tracked for a
-    // follow-up refactor, not silently ignored.
-    rules: {
-      "react-hooks/set-state-in-effect": "off",
-      "react-hooks/static-components": "off",
-      "react-hooks/purity": "off",
-      "react-hooks/refs": "off",
-      "react-hooks/incompatible-library": "off",
-    },
-  },
-  {
     files: ["src/**/*.tsx"],
     ignores: ["src/components/**"],
     rules: {

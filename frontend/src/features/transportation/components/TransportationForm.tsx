@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Boxes, Bus, Car, Plane, Ship, Train, TramFront } from "lucide-react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 
 import { Chip } from "@/components/Chip"
 import { FormActions } from "@/components/forms/FormActions"
@@ -74,9 +74,10 @@ export function TransportationForm({
     handleSubmit,
     control,
     setValue,
-    watch,
     formState: { errors },
   } = form
+  const departure = useWatch({ control, name: "departure_datetime" })
+  const arrival = useWatch({ control, name: "arrival_datetime" })
 
   return (
     <form
@@ -156,8 +157,8 @@ export function TransportationForm({
           <input type="hidden" {...register("departure_datetime")} />
           <input type="hidden" {...register("arrival_datetime")} />
           <TransportationScheduleFields
-            departure={watch("departure_datetime")}
-            arrival={watch("arrival_datetime") ?? ""}
+            departure={departure}
+            arrival={arrival ?? ""}
             disabled={isSubmitting}
             departureError={errors.departure_datetime?.message}
             arrivalError={errors.arrival_datetime?.message}

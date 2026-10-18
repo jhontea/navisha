@@ -3,8 +3,9 @@ import type { ReactNode } from "react"
 import { daysBetween, formatClock, formatWeekdayDate } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
 import { parsePlace, type PlaceLabel } from "../lib/place"
-import { transportIcon, transportTypeLabel } from "../lib/transportType"
+import { transportTypeLabel } from "../lib/transportType"
 import type { Transportation } from "../types"
+import { TransportIcon } from "./TransportIcon"
 
 /**
  * A transport booking drawn as a boarding pass (docs/DESIGN.md §5): number and
@@ -39,7 +40,6 @@ export function BoardingPass({
   children?: ReactNode
   className?: string
 }) {
-  const Icon = transportIcon(t.type)
   const typeLabel = transportTypeLabel(t.type)
   const from = parsePlace(t.from_location)
   const to = parsePlace(t.to_location)
@@ -75,7 +75,7 @@ export function BoardingPass({
     >
       <header className="flex items-center gap-2">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
-          <Icon className="h-4 w-4" aria-hidden="true" />
+          <TransportIcon type={t.type} className="h-4 w-4" aria-hidden="true" />
         </span>
         <p className="min-w-0 flex-1 truncate text-sm font-extrabold text-foreground">{title}</p>
         {t.operator && (
@@ -91,7 +91,7 @@ export function BoardingPass({
           <Endpoint place={from} />
           <div className="flex min-w-10 flex-1 items-center gap-1 text-muted-foreground" aria-hidden="true">
             <span className="h-px flex-1 border-t-2 border-dotted border-current" />
-            <Icon className="h-4 w-4 text-primary" />
+            <TransportIcon type={t.type} className="h-4 w-4 text-primary" />
             <span className="h-px flex-1 border-t-2 border-dotted border-current" />
           </div>
           <Endpoint place={to} align="end" />

@@ -75,7 +75,8 @@ function GeocodingLayer({
   const [resolved, setResolved] = useState<
     Record<string, { lat: number; lng: number }>
   >({})
-  const [loading, setLoading] = useState(false)
+  // pendingKey whose geocoding has finished (or given up).
+  const [settledKey, setSettledKey] = useState("")
   const needGeocode = visiblePoints.filter(
     (point) =>
       !hasValidCoords(point.lat, point.lng) &&
@@ -83,11 +84,12 @@ function GeocodingLayer({
       !resolved[point.activityId],
   )
   const pendingKey = needGeocode.map((point) => point.activityId).join("|")
+  const loading = map != null && pendingKey !== "" && settledKey !== pendingKey
 
   useEffect(() => {
     if (!map || pendingKey === "") return
     let cancelled = false
-    setLoading(true)
+    const key = pendingKey
 
     const run = async () => {
       let attempts = 0
@@ -96,8 +98,9 @@ function GeocodingLayer({
         attempts += 1
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
-      if (cancelled || attempts > 50) {
-        setLoading(false)
+      if (cancelled) return
+      if (attempts > 50) {
+        setSettledKey(key)
         return
       }
 
@@ -125,7 +128,7 @@ function GeocodingLayer({
       if (Object.keys(next).length > 0) {
         setResolved((current) => ({ ...current, ...next }))
       }
-      setLoading(false)
+      setSettledKey(key)
     }
 
     void run()

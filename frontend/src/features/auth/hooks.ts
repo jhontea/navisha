@@ -85,17 +85,23 @@ export function useLogout() {
  * Note: if this proactive refresh is missed and the access token expires,
  * lib/api.ts also performs an on-demand refresh-and-retry on any 401
  * before bouncing the user to /login?reason=session-expired. This hook
- * only runs on the client — it does NOT cover server-side `middleware.ts`
+ * only runs on the client — it does NOT cover server-side `proxy.ts`
  * route checks, which still rely on the cookie alone.
  *
  * Mount this once in the dashboard layout.
  */
 export function useTokenRefresh() {
-  const lastActivityRef = useRef<number>(Date.now())
-  const lastAttemptRef = useRef<number>(Date.now())
+  // Set to the mount time in the effect below: Date.now() is not allowed
+  // during render.
+  const lastActivityRef = useRef(0)
+  const lastAttemptRef = useRef(0)
   const refreshInFlightRef = useRef(false)
 
   useEffect(() => {
+    const mountedAt = Date.now()
+    lastActivityRef.current = mountedAt
+    lastAttemptRef.current = mountedAt
+
     const onActivity = () => {
       lastActivityRef.current = Date.now()
     }

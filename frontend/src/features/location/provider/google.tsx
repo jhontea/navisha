@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps"
 
 import { Input } from "@/components/ui/input"
+import { useLatestRef } from "@/lib/useLatestRef"
 import { pickForDetails, type PlaceCandidate } from "../placeMatching"
 import type { DestinationSearchProps, LocationProvider, PlaceQuery, PlaceSearchProps } from "./types"
 
@@ -46,8 +47,7 @@ function PlaceAutocompleteInput({
   const places = useMapsLibrary("places")
   const inputRef = useRef<HTMLInputElement>(null)
   // Latest callback in a ref so the widget is not re-attached on every render.
-  const onSelectRef = useRef(onPlaceSelect)
-  onSelectRef.current = onPlaceSelect
+  const onSelectRef = useLatestRef(onPlaceSelect)
 
   useEffect(() => {
     if (!places || !inputRef.current) return
@@ -66,7 +66,7 @@ function PlaceAutocompleteInput({
       })
     })
     return () => google.maps.event.removeListener(listener)
-  }, [places])
+  }, [places, onSelectRef])
 
   return (
     <Input
@@ -128,8 +128,7 @@ function DestinationAutocompleteInput({
 }: DestinationSearchProps & { autoFocus?: boolean }) {
   const places = useMapsLibrary("places")
   const inputRef = useRef<HTMLInputElement>(null)
-  const onSelectRef = useRef(onSelect)
-  onSelectRef.current = onSelect
+  const onSelectRef = useLatestRef(onSelect)
 
   useEffect(() => {
     if (!places || !inputRef.current) return

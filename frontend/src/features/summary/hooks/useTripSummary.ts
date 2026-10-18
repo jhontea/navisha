@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ApiError } from "@/lib/api"
-import { useEffect, useState } from "react"
+import { useSyncExternalStore } from "react"
 
 import { summaryApi } from "../api"
 import type { SummaryLanguage } from "../types"
@@ -53,24 +53,41 @@ export function useGenerateSummary(tripId: string) {
 
 const LANGUAGE_KEY = "navisha:summary-language"
 
+// Used when storage is blocked (private mode): the choice still applies for
+// this page, it just is not remembered.
+let languageFallback: SummaryLanguage | null = null
+const languageListeners = new Set<() => void>()
+
+function readLanguage(): SummaryLanguage {
+  try {
+    const saved = window.localStorage.getItem(LANGUAGE_KEY)
+    if (saved === "id" || saved === "en") return saved
+  } catch {
+    // Storage blocked; fall through.
+  }
+  return languageFallback ?? "id"
+}
+
+function subscribeLanguage(onChange: () => void) {
+  languageListeners.add(onChange)
+  window.addEventListener("storage", onChange)
+  return () => {
+    languageListeners.delete(onChange)
+    window.removeEventListener("storage", onChange)
+  }
+}
+
 /** The summary language this browser last picked (Indonesian by default). */
 export function useSummaryLanguage() {
-  const [language, setLanguage] = useState<SummaryLanguage>("id")
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(LANGUAGE_KEY)
-      if (saved === "id" || saved === "en") setLanguage(saved)
-    } catch {
-      // Storage blocked (private mode); keep the default.
-    }
-  }, [])
+  const language = useSyncExternalStore(subscribeLanguage, readLanguage, (): SummaryLanguage => "id")
   const choose = (next: SummaryLanguage) => {
-    setLanguage(next)
+    languageFallback = next
     try {
       window.localStorage.setItem(LANGUAGE_KEY, next)
     } catch {
       // Not remembered, still used for this generation.
     }
+    languageListeners.forEach((listener) => listener())
   }
   return [language, choose] as const
 }
