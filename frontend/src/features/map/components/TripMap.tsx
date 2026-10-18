@@ -84,7 +84,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
   return (
     // One map element: first on phones, the wide right column from lg (order
     // swap, so the map is never mounted twice).
-    <div className="grid gap-4 lg:h-[calc(100vh-11rem)] lg:min-h-[34rem] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
+    <div className="grid gap-4 lg:h-[calc(100vh-11rem)] lg:min-h-136 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
       <div className="relative h-[62vh] min-h-80 overflow-hidden rounded-2xl border bg-card shadow-card lg:order-2 lg:h-auto">
         <MapCanvas
           visibleByDay={visibleByDay}
@@ -97,7 +97,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
         <div
           role="group"
           aria-label="Show day"
-          className="absolute left-3 right-14 top-3 z-10 flex gap-2 overflow-x-auto p-0.5 [scrollbar-width:none]"
+          className="absolute left-3 right-14 top-3 z-10 flex gap-2 overflow-x-auto p-0.5 scrollbar-none"
         >
           <Chip pressed={activeDay === null} onClick={() => setActiveDay(null)} className="shadow-card">
             All days
@@ -162,7 +162,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
                       type="button"
                       onClick={() => handleSelect(p)}
                       aria-pressed={selectedActivityId === p.activityId}
-                      className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-xl px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-xl px-2 py-2 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <PointBadge point={p} number={placeNumber(p)} />
                       <span className="min-w-0">

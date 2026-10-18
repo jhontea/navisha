@@ -213,10 +213,10 @@ function RecentConversions({
               <button
                 type="button"
                 onClick={() => onReuse(r)}
-                className="min-w-0 flex-1 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="min-w-0 flex-1 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={`Reuse conversion ${r.amount} ${r.from} to ${r.to}`}
               >
-                <p className="break-words text-sm text-foreground">
+                <p className="wrap-break-word text-sm text-foreground">
                   <span className="tabular-nums">{fmt(r.amount)}</span> {r.from}
                   <span className="mx-1.5 text-muted-foreground">→</span>
                   <span className="font-semibold tabular-nums">{fmt(r.convertedAmount)}</span> {r.to}

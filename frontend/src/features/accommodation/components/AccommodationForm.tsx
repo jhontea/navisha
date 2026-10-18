@@ -216,7 +216,7 @@ export function AccommodationForm({
                 aria-invalid={Boolean(errors.name)}
                 aria-describedby={errors.name ? "stay-name-error" : undefined}
                 className={cn("h-auto", 
-                  "w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
+                  "w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60",
                   errors.name ? "border-destructive ring-1 ring-destructive/20" : "border-border",
                 )}
                 placeholder="e.g. Park Hyatt Tokyo"
@@ -353,7 +353,7 @@ export function AccommodationForm({
             id="stay-confirmation"
             aria-invalid={Boolean(errors.confirmation_number)}
             aria-describedby={errors.confirmation_number ? "stay-confirmation-error" : undefined}
-            className="h-auto w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60"
+            className="h-auto w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-60"
             placeholder="Optional: 1234-ABCD"
             {...register("confirmation_number")}
           />
@@ -390,7 +390,7 @@ export function AccommodationForm({
                 e.target.value = formatted
                 setValue("amount", normalised || "", { shouldValidate: false })
               }}
-              className="h-auto w-full px-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              className="h-auto w-full px-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all"
             />
             <Controller
               control={control}

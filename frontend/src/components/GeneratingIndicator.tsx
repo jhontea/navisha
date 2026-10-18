@@ -56,7 +56,7 @@ export function GeneratingIndicator({
         className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
         aria-live="polite"
       >
-        <Loader2 className="h-3.5 w-3.5 flex-shrink-0 animate-spin" />
+        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
         <span key={message} className="animate-in fade-in truncate duration-500">
           {message}
         </span>

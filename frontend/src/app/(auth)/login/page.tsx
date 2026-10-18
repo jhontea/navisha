@@ -73,12 +73,12 @@ export default async function LoginPage({ searchParams }: Props) {
             </p>
           </section>
 
-          <div className="bg-cover-fallback relative hidden min-h-[32rem] overflow-hidden rounded-3xl lg:block">
+          <div className="bg-cover-fallback relative hidden min-h-128 overflow-hidden rounded-3xl lg:block">
             {COVER && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={COVER} alt="" className="absolute inset-0 h-full w-full object-cover object-[75%_50%]" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/15 to-transparent" aria-hidden="true" />
+            <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/15 to-transparent" aria-hidden="true" />
             <div className="absolute bottom-10 left-10 max-w-sm text-on-cover">
               <p className="font-display text-3xl font-extrabold leading-tight">
                 Every day of the trip, <span className="opacity-70">on one map.</span>

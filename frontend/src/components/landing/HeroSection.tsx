@@ -32,7 +32,7 @@ export function HeroSection() {
             className="absolute inset-0 h-full w-full object-cover object-[70%_50%]"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" aria-hidden="true" />
+        <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" aria-hidden="true" />
 
         <div className="relative grid items-center gap-10 px-6 py-12 sm:px-10 md:py-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:px-14 lg:py-20">
           <div className="text-on-cover">
@@ -64,7 +64,7 @@ export function HeroSection() {
 
           {/* Product shot: the same boarding pass the app draws. */}
           <div className="hidden lg:block" aria-hidden="true">
-            <BoardingPass transportation={SAMPLE_FLIGHT} dayNumber={1} className="ml-auto max-w-sm rotate-[-2deg] shadow-overlay" />
+            <BoardingPass transportation={SAMPLE_FLIGHT} dayNumber={1} className="ml-auto max-w-sm -rotate-2 shadow-overlay" />
           </div>
         </div>
       </div>

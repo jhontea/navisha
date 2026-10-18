@@ -26,7 +26,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
       type="button"
       aria-pressed={pressed}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex shrink-0 items-center gap-1.5 border text-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         variant === "filter"
           ? cn(
               "h-9 rounded-full px-3.5 font-semibold",

@@ -231,7 +231,7 @@ function DailyCard({ daily, currency }: { daily: DailyTotals; currency: string }
                 key={d.date}
                 tabIndex={0}
                 aria-label={label}
-                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 rounded focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span
                   role="tooltip"

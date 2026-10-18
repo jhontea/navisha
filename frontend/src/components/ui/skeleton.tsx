@@ -7,7 +7,7 @@ interface SkeletonProps {
 
 /** Placeholder block with a shimmer while content loads. */
 export function Skeleton({ className, variant = "default" }: SkeletonProps) {
-  const baseClass = "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent"
+  const baseClass = "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer before:bg-linear-to-r before:from-transparent before:via-white/30 before:to-transparent"
 
   const variants: Record<string, string> = {
     default: "rounded-lg bg-muted/50",

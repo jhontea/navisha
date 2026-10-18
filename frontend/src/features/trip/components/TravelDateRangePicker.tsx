@@ -112,7 +112,7 @@ export function TravelDateRangePicker({
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         disabled={disabled}
-        className={`flex w-full items-center gap-3 rounded-xl border bg-card px-4 py-2.5 text-left transition-all hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`flex w-full items-center gap-3 rounded-xl border bg-card px-4 py-2.5 text-left transition-all hover:border-primary/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
           hasError ? "border-destructive" : "border-border"
         } disabled:cursor-not-allowed disabled:opacity-60`}
         aria-haspopup="dialog"
@@ -198,7 +198,7 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
                   key={value}
                   type="button"
                   onClick={() => selectDate(date)}
-                  className={`relative flex h-9 items-center justify-center text-sm transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  className={`relative flex h-9 items-center justify-center text-sm transition-colors focus-visible:z-10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
                     isStart || isEnd
                       ? "rounded-full bg-primary font-bold text-primary-foreground"
                       : `${

@@ -271,7 +271,7 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
         <div
           id={listboxId}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl"
+          className="absolute left-0 right-0 top-full z-100 mt-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl"
         >
           {error ? (
             <p role="alert" className="px-3 py-2 text-sm text-destructive">{error}</p>
@@ -298,7 +298,7 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
                 type="button"
                 role="option"
                 aria-selected={activeIndex === index}
-                className={`flex w-full items-start gap-2 rounded-md px-3 py-2 text-left focus:outline-none ${
+                className={`flex w-full items-start gap-2 rounded-md px-3 py-2 text-left focus:outline-hidden ${
                   activeIndex === index ? "bg-accent" : "hover:bg-accent"
                 }`}
                 onMouseDown={(event) => event.preventDefault()}

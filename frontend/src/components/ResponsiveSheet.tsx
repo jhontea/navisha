@@ -41,8 +41,8 @@ export function ResponsiveSheet({
           // Enter/exit: slide up from the bottom on phones, fade and scale from
           // `sm` up. Base UI sets data-starting-style / data-ending-style.
           "transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none",
-          "data-[starting-style]:translate-y-full data-[ending-style]:translate-y-full",
-          "sm:data-[starting-style]:-translate-y-1/2 sm:data-[ending-style]:-translate-y-1/2 sm:data-[starting-style]:scale-95 sm:data-[ending-style]:scale-95 sm:data-[starting-style]:opacity-0 sm:data-[ending-style]:opacity-0",
+          "data-starting-style:translate-y-full data-ending-style:translate-y-full",
+          "sm:data-starting-style:-translate-y-1/2 sm:data-ending-style:-translate-y-1/2 sm:data-starting-style:scale-95 sm:data-ending-style:scale-95 sm:data-starting-style:opacity-0 sm:data-ending-style:opacity-0",
           className ?? "",
         ].join(" ")}
       >

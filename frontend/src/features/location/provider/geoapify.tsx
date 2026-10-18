@@ -22,7 +22,7 @@ function PlaceSearch(props: PlaceSearchProps) {
       ariaRequired={props.ariaRequired}
       searchContext={props.searchContext}
       kind="place"
-      className="rounded-xl border border-input bg-card px-4 py-2 text-base focus:border-primary focus:outline-none"
+      className="rounded-xl border border-input bg-card px-4 py-2 text-base focus:border-primary focus:outline-hidden"
       onSelect={(suggestion) =>
         props.onPlaceSelect({
           location_name: suggestion.name,

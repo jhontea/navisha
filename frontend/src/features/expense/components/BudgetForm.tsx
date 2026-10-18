@@ -104,7 +104,7 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
                     onChange={(e) => setCategories((cur) => ({ ...cur, [category]: clean(e.target.value) }))}
                     placeholder="0"
                     aria-label={`${cfg.label} planned amount`}
-                    className="h-auto w-36 min-w-0 bg-transparent text-right text-base tabular-nums text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
+                    className="h-auto w-36 min-w-0 bg-transparent text-right text-base tabular-nums text-foreground outline-hidden placeholder:text-muted-foreground md:text-sm"
                   />
                 </label>
               )

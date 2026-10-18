@@ -196,7 +196,7 @@ export function LocationFields({
         open={detailsOpen}
         onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
       >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
           <span>
             <span className="block text-sm font-medium text-foreground">Additional details</span>
             <span className="block text-xs text-muted-foreground">Address, link, and notes</span>

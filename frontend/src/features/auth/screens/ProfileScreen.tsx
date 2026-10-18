@@ -115,7 +115,7 @@ variant="destructive" className="mt-5 w-full">
             <div className="divide-y overflow-hidden rounded-3xl border bg-card shadow-card">
               <Link
                 href="/currency"
-                className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
@@ -164,7 +164,7 @@ variant="destructive" className="mt-5 w-full">
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                 >
                   <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="flex-1 text-sm text-foreground">{item.label}</span>
