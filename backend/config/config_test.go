@@ -3,6 +3,8 @@ package config
 import (
 	"strings"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func validProductionConfig() Config {
@@ -67,5 +69,35 @@ func TestValidateE2EAuthOnlyInTestEnvironment(t *testing.T) {
 	cfg.App.E2EAuth = true
 	if err := cfg.Validate(); err != nil {
 		t.Errorf("APP_ENV=test with E2E_AUTH=true: %v", err)
+	}
+}
+
+// The committed config.yaml must decode into Config. A misspelled key
+// silently decodes to 0: rate_limit.general_per_min once turned the general
+// rate limit off in production. Reads the file directly (not Load) so no
+// .env secrets are pulled into the test.
+func TestConfigYAMLRateLimitsDecode(t *testing.T) {
+	v := viper.New()
+	v.SetConfigFile("../config.yaml")
+	if err := v.ReadInConfig(); err != nil {
+		t.Fatalf("read config.yaml: %v", err)
+	}
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		t.Fatalf("unmarshal config.yaml: %v", err)
+	}
+
+	rl := cfg.RateLimit
+	if !rl.Enabled {
+		t.Error("rate_limit.enabled = false, want true")
+	}
+	for key, got := range map[string]int{
+		"auth_per_minute":    rl.AuthPerMinute,
+		"llm_per_minute":     rl.LLMPerMinute,
+		"general_per_minute": rl.GeneralPerMin,
+	} {
+		if got <= 0 {
+			t.Errorf("rate_limit.%s = %d, want > 0", key, got)
+		}
 	}
 }
