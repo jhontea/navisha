@@ -1,0 +1,31 @@
+name: govulncheck
+
+# Weekly scan of the Go backend for known vulnerabilities reachable from our
+# code. Kept off pull requests so a newly published, unrelated advisory never
+# blocks a PR. Also runnable on demand from the Actions tab.
+on:
+  schedule:
+    - cron: "0 2 * * 1" # Mondays 02:00 UTC (09:00 WIB)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
