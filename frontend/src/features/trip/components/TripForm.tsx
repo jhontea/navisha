@@ -76,7 +76,7 @@ interface Props {
 
 // Form field shape shared with Input (44px, rounded-xl, card fill; 16px text).
 const inputBase =
-  "h-11 w-full rounded-xl border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive"
+  "h-11 w-full rounded-xl border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-destructive"
 
 export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
@@ -176,7 +176,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               <DestinationAutocomplete
                 id="destination"
                 // The wrapper draws the field border; the inner input stays bare.
-                className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0"
+                className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-hidden placeholder:text-muted-foreground focus-visible:ring-0"
                 placeholder="Search city, province, or country"
                 value={field.value ?? ""}
                 onChange={field.onChange}
@@ -258,7 +258,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             role="switch"
             aria-checked={generateWithAI}
             onClick={() => setGenerateWithAI((enabled) => !enabled)}
-            className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
               generateWithAI
                 ? "border-primary/40 bg-primary/5"
                 : "bg-background hover:bg-muted/50"
@@ -282,7 +282,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               }`}
             >
               <span
-                className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-xs transition-transform ${
                   generateWithAI ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -328,7 +328,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             inputMode="numeric"
             aria-invalid={Boolean(errors.budget)}
             aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
-            className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0"
+            className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-hidden placeholder:text-muted-foreground focus-visible:ring-0"
             placeholder="e.g., 10,000,000"
             {...register("budget", {
               onChange: (e) => {

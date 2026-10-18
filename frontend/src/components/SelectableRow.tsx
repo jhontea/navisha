@@ -25,7 +25,7 @@ export function SelectableRow({
       onClick={onToggle}
       disabled={disabled}
       className={cn(
-        "flex min-h-11 w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60",
+        "flex min-h-11 w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60",
         selected ? "border-primary/40 bg-primary-soft/60" : "bg-card text-muted-foreground hover:bg-muted",
       )}
     >

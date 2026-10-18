@@ -70,7 +70,7 @@ export function TripHeader({
           />
         )}
         {/* Keeps the title readable on the left of any cover. */}
-        <div className="absolute inset-0 hidden bg-gradient-to-r from-black/40 via-black/10 to-transparent md:block" aria-hidden="true" />
+        <div className="absolute inset-0 hidden bg-linear-to-r from-black/40 via-black/10 to-transparent md:block" aria-hidden="true" />
 
         <div className="absolute inset-x-3 top-3 flex items-center gap-2 md:inset-x-5 md:top-5">
           <Link
@@ -112,7 +112,7 @@ export function TripHeader({
 
         {/* Desktop: title on the cover, clear of the tabs that overlap the bottom edge. */}
         <div className="absolute bottom-12 left-8 hidden max-w-[60%] flex-col items-start gap-1.5 text-on-cover md:flex">
-          <h1 className="line-clamp-2 font-display text-3xl font-extrabold leading-tight [text-wrap:balance] lg:text-hero">
+          <h1 className="line-clamp-2 font-display text-3xl font-extrabold leading-tight text-balance lg:text-hero">
             {main}
             {rest && <span className="opacity-70"> {rest}</span>}
           </h1>
@@ -125,7 +125,7 @@ export function TripHeader({
 
       {/* Phones: title under the cover. */}
       <div className="px-margin-mobile pt-4 md:hidden">
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground [text-wrap:balance]">
+        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground text-balance">
           {main}
           {rest && <span className="text-muted-foreground"> {rest}</span>}
         </h1>

@@ -34,7 +34,7 @@ export function SharedTripView({ trip }: { trip: PublicItinerary }) {
   return (
     <ItineraryFocusProvider initialDayId={trip.days[0]?.id ?? null}>
       <div className="min-h-screen bg-background pb-12">
-        <header className="sticky top-0 z-30 bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm">
           <div className="mx-auto flex h-16 max-w-max-width items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop">
             <Link href="/" className="flex min-h-11 items-center gap-2 rounded-full" aria-label="Navisha home">
               <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
@@ -73,12 +73,12 @@ function Hero({ trip }: { trip: PublicItinerary }) {
     <section className="bg-cover-fallback relative mt-2 overflow-hidden rounded-3xl">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover object-[75%_50%]" />}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/15 to-transparent" aria-hidden="true" />
+      <div className="absolute inset-0 bg-linear-to-r from-black/45 via-black/15 to-transparent" aria-hidden="true" />
       <div className="relative flex min-h-56 flex-col justify-end gap-2 p-5 text-on-cover md:min-h-64 md:p-8">
         <span className="self-start rounded-full bg-cover-button/90 px-3 py-1 text-xs font-extrabold text-cover-button-foreground">
           {tripTimingLabel(metrics)}
         </span>
-        <h1 className="max-w-3xl font-display text-3xl font-extrabold leading-tight [text-wrap:balance] md:text-hero">
+        <h1 className="max-w-3xl font-display text-3xl font-extrabold leading-tight text-balance md:text-hero">
           {main}
           {rest && <span className="opacity-70"> {rest}</span>}
         </h1>
@@ -147,7 +147,7 @@ function Body({ trip }: { trip: PublicItinerary }) {
 
       {mobileView === "map" && (
         <div className="flex flex-col gap-3 lg:hidden">
-          <div role="group" aria-label="Show day" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+          <div role="group" aria-label="Show day" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
             <Chip pressed={mobileMapDay === null} onClick={() => setMobileMapDay(null)}>
               All days
             </Chip>
@@ -207,7 +207,7 @@ function Body({ trip }: { trip: PublicItinerary }) {
                 <p
                   className={cn(
                     "flex items-center justify-center p-6 text-center text-sm text-muted-foreground",
-                    sideMapMounted ? "absolute inset-0 z-10 bg-card/80 backdrop-blur-sm" : "h-full",
+                    sideMapMounted ? "absolute inset-0 z-10 bg-card/80 backdrop-blur-xs" : "h-full",
                   )}
                 >
                   No places with a location on Day {activeDay.day_number}.

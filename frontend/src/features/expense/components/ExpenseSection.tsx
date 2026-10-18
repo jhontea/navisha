@@ -207,7 +207,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
       </div>
 
       {presentCategories.length > 1 && (
-        <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible" role="group" aria-label="Filter by category">
+        <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none lg:flex-wrap lg:overflow-visible" role="group" aria-label="Filter by category">
           {[null, ...presentCategories].map((category) => {
             const pressed = activeFilter === category
             const label = category ? getCategoryColor(category).label : "All"
@@ -257,7 +257,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
                   type="button"
                   onClick={() => toggleGroup(group.date)}
                   aria-expanded={!isCollapsed}
-                  className="-mx-1 mb-1 flex min-h-11 w-[calc(100%+0.5rem)] items-center justify-between gap-3 rounded-lg px-1 text-sm hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="-mx-1 mb-1 flex min-h-11 w-[calc(100%+0.5rem)] items-center justify-between gap-3 rounded-lg px-1 text-sm hover:bg-muted/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span className="flex items-center gap-2 font-display font-extrabold text-foreground">
                     <ChevronDown

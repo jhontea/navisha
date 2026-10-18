@@ -1,15 +1,15 @@
 # Frontend — Claude Context
 
 ## Stack
-Next.js 14 (App Router), TypeScript, Tailwind CSS v3, coss ui (Base UI–backed), Zustand, TanStack Query
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, coss ui (Base UI–backed), Zustand, TanStack Query
 
 ## Libraries
 
 | Library | Purpose |
 |---------|---------|
-| Next.js 14 | Framework, App Router, SSR |
+| Next.js 16 | Framework, App Router, SSR |
 | TypeScript 5 | Type safety |
-| Tailwind CSS 3 | Utility-first styling |
+| Tailwind CSS 4 | Utility-first styling |
 | coss ui | Accessible UI primitives built on Base UI, shadcn-style CLI install — files in `components/ui/`, do not modify generated files |
 | TanStack Query v5 | Server state: caching, loading/error states, background refetch |
 | Zustand v4 | Client/UI state: current user, UI toggles |

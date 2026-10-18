@@ -28,7 +28,7 @@ export function TimePills({
   "aria-label"?: string
 }) {
   return (
-    <div aria-label={ariaLabel} role="group" className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none]", className)}>
+    <div aria-label={ariaLabel} role="group" className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 py-1 scrollbar-none", className)}>
       {items.map((item) => {
         const pressed = item.id === value
         return (
@@ -39,7 +39,7 @@ export function TimePills({
             aria-label={item.description ? `${item.label}, ${item.description}` : undefined}
             onClick={() => onChange(item.id)}
             className={cn(
-              "h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-sm font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-sm font-bold tabular-nums transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
               pressed
                 ? "border-transparent bg-primary-soft text-primary-soft-foreground"
                 : "bg-card text-foreground hover:bg-muted",

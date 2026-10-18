@@ -108,8 +108,8 @@ export function BoardingPass({
       {facts.length > 0 && (
         <div className="relative mt-4 border-t-2 border-dashed pt-3">
           {/* Notches of the tear line: the page background showing through. */}
-          <span className="absolute -left-[1.6875rem] -top-2.5 size-5 rounded-full border bg-background" aria-hidden="true" />
-          <span className="absolute -right-[1.6875rem] -top-2.5 size-5 rounded-full border bg-background" aria-hidden="true" />
+          <span className="absolute -left-6.75 -top-2.5 size-5 rounded-full border bg-background" aria-hidden="true" />
+          <span className="absolute -right-6.75 -top-2.5 size-5 rounded-full border bg-background" aria-hidden="true" />
           <dl className="flex flex-wrap gap-x-6 gap-y-2">
             {facts.map((f) => (
               <div key={f.label} className="min-w-0">

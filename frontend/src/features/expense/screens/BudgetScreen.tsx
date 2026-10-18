@@ -74,7 +74,7 @@ export function BudgetScreen() {
         />
         <Link
           href="/currency"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-primary-soft-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-primary-soft-foreground hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
           Currency converter

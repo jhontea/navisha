@@ -174,7 +174,7 @@ export function ExpenseForm({
             placeholder={CATEGORY_OPTIONS.find((o) => o.value === selectedCategory)?.placeholder ?? "e.g., Entry fee"}
             className={cn("h-auto", 
               "w-full py-2.5 rounded-xl border bg-card text-foreground",
-              "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
+              "focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all",
               "placeholder:text-muted-foreground/60",
               selectedCategory ? "pl-10 pr-4" : "px-4",
               errors.title ? "border-destructive" : "border-border",
@@ -215,7 +215,7 @@ export function ExpenseForm({
                 }}
                 className={cn("h-auto", 
                   "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
-                  "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
+                  "focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all",
                   "placeholder:text-muted-foreground/60",
                   errors.amount ? "border-destructive" : "border-border",
                 )}
@@ -236,7 +236,7 @@ export function ExpenseForm({
                     aria-describedby={errors.currency ? "expense-currency-error" : undefined}
                     className={cn(
                       "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
-                      "focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none",
+                      "focus:border-primary focus:ring-1 focus:ring-primary outline-hidden appearance-none",
                                           )}
                   >
                     {SUPPORTED_CURRENCIES.map((c) => (
@@ -268,7 +268,7 @@ export function ExpenseForm({
             type="date"
             className={cn("h-auto", 
               "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
-              "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
+              "focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all",
                             "border-border",
             )}
             onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker?.() } catch {} }}
@@ -288,7 +288,7 @@ export function ExpenseForm({
           placeholder="e.g., Split with 3 friends, or referral code used"
           className={cn(
             "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground resize-none",
-            "focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all",
+            "focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all",
             "placeholder:text-muted-foreground/60 text-sm",
             "border-border",
           )}

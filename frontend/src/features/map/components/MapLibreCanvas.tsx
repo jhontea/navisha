@@ -344,7 +344,7 @@ export function MapLibreCanvas({
         {routeOverlay.routes.length > 0 && (
           <svg
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+            className="pointer-events-none absolute inset-0 z-1 h-full w-full"
             viewBox={`0 0 ${routeOverlay.width} ${routeOverlay.height}`}
             preserveAspectRatio="none"
           >

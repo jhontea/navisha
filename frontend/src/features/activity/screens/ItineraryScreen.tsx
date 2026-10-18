@@ -30,7 +30,7 @@ function ItineraryMapPane({ tripId, days }: { tripId: string; days: Day[] }) {
   if (!isWide) return null
   return (
     <aside
-      className="sticky top-[8.5rem] hidden h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border shadow-card lg:block"
+      className="sticky top-34 hidden h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border shadow-card lg:block"
       aria-label="Map of the selected day"
     >
       <DayMap
@@ -58,7 +58,7 @@ function DayView({ tripId, days, destination }: { tripId: string; days: Day[]; d
 
   return (
     <>
-      <div className="sticky top-0 z-20 -mx-margin-mobile mb-3 bg-background/95 px-margin-mobile pt-2 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none">
+      <div className="sticky top-0 z-20 -mx-margin-mobile mb-3 bg-background/95 px-margin-mobile pt-2 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none">
         <DateCircles
           aria-label="Trip day"
           days={days.map((d) => ({ id: d.id, date: d.date, hasItems: (counts[d.id] ?? 0) > 0 }))}
@@ -133,7 +133,7 @@ export function ItineraryScreen() {
 
           {/* Trip overview (the former Overview tab), collapsed so the day stays the main content. */}
           <details className="group mt-4 rounded-2xl border bg-card shadow-card">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-5 py-3 font-display text-base font-extrabold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-5 py-3 font-display text-base font-extrabold text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
               Trip overview
               <ChevronDown
                 className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"

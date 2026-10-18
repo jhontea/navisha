@@ -79,7 +79,7 @@ export function DayMap({
               <div
                 className={cn(
                   "flex flex-col items-center justify-center gap-2 p-6 text-center",
-                  mapMounted ? "absolute inset-0 z-10 bg-card/80 backdrop-blur-sm" : "h-full",
+                  mapMounted ? "absolute inset-0 z-10 bg-card/80 backdrop-blur-xs" : "h-full",
                 )}
               >
                 <MapPin className="h-6 w-6 text-muted-foreground" aria-hidden="true" />

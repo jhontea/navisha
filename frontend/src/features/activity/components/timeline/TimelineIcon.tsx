@@ -61,7 +61,7 @@ export function TimelineIcon({
       role="button"
       tabIndex={0}
       aria-label={dragLabel}
-      className="flex h-11 w-11 touch-none cursor-grab items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+      className="flex h-11 w-11 touch-none cursor-grab items-center justify-center rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
       {...dragHandleProps}
     >
       {circle}

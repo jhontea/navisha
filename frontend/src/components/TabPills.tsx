@@ -27,7 +27,7 @@ export function TabPills({
   "aria-label": string
 }) {
   return (
-    <nav aria-label={ariaLabel} className={cn("max-w-full overflow-x-auto [scrollbar-width:none]", className)}>
+    <nav aria-label={ariaLabel} className={cn("max-w-full overflow-x-auto scrollbar-none", className)}>
       <ul className="inline-flex gap-1 rounded-full bg-card p-1 shadow-card">
         {items.map(({ href, label, icon: Icon, active, onIntent }) => (
           <li key={href}>
@@ -38,7 +38,7 @@ export function TabPills({
               onFocus={onIntent}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                 active
                   ? "bg-primary-soft text-primary-soft-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",

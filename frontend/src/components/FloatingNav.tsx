@@ -40,7 +40,7 @@ export function FloatingNav({
               aria-current={active ? "page" : undefined}
               aria-label={active ? undefined : label}
               className={cn(
-                "flex h-12 items-center justify-center gap-1.5 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "flex h-12 items-center justify-center gap-1.5 rounded-full text-sm font-bold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                 active
                   ? "bg-primary-soft px-4 text-primary-soft-foreground"
                   : "w-12 text-muted-foreground hover:text-foreground",

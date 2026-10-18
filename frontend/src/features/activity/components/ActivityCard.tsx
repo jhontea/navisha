@@ -157,7 +157,7 @@ function ActivityBody({ activity }: { activity: Activity }) {
                   rel="noopener noreferrer"
                   aria-label="Open in Google Maps"
                   onClick={(e) => e.stopPropagation()}
-                  className="-my-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="-my-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-primary hover:bg-primary/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
@@ -171,7 +171,7 @@ function ActivityBody({ activity }: { activity: Activity }) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(event) => event.stopPropagation()}
-              className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-primary hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               Open link
               <ExternalLink className="h-3 w-3" aria-hidden="true" />

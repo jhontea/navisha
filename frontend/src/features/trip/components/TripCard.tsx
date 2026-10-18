@@ -50,12 +50,12 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
+      className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
     >
       <TripCover
         trip={trip}
         sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 480px"
-        className="aspect-[16/9] w-full rounded-xl [&_img]:object-[75%_50%]"
+        className="aspect-video w-full rounded-xl [&_img]:object-[75%_50%]"
       />
       <div className="flex flex-1 flex-col gap-1 px-2.5 pb-2 pt-3">
         <h3 className="line-clamp-2 font-display text-lg font-extrabold leading-snug text-foreground">{trip.title}</h3>

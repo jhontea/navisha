@@ -171,7 +171,7 @@ export function DayPanel({
               aria-invalid={Boolean(titleError)}
               aria-describedby={titleError ? `day-title-error-${dayId}` : undefined}
               placeholder="e.g. Arrival & Shibuya nights"
-              className="h-10 min-w-0 flex-1 rounded-full border bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:opacity-60"
+              className="h-10 min-w-0 flex-1 rounded-full border bg-background px-4 text-sm text-foreground outline-hidden focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:opacity-60"
             />
             <Button
               type="button"

@@ -64,7 +64,7 @@ export function DateCircles({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn("-mx-1 flex gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none]", className)}
+      className={cn("-mx-1 flex gap-1.5 overflow-x-auto px-1 py-1 scrollbar-none", className)}
     >
       {days.map((day, index) => {
         const p = parts(day.date)
@@ -83,7 +83,7 @@ export function DateCircles({
             onClick={() => onChange(day.id)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
-              "flex size-[3.75rem] shrink-0 flex-col items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "flex size-15 shrink-0 flex-col items-center justify-center rounded-full border transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               selected
                 ? "border-primary bg-primary text-primary-foreground shadow-card"
                 : "bg-card text-foreground hover:border-primary/40 hover:bg-primary-soft/50",

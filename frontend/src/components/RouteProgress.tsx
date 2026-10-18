@@ -63,10 +63,10 @@ export function RouteProgress() {
   if (!visible) return null
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[1000] h-0.5 overflow-hidden bg-transparent">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-1000 h-0.5 overflow-hidden bg-transparent">
       <div
         className={`h-full bg-primary ${
-          settling ? "w-full duration-300 ease-out" : "w-2/3 duration-[900ms] ease-out"
+          settling ? "w-full duration-300 ease-out" : "w-2/3 duration-900 ease-out"
         } transition-[width]`}
       />
     </div>

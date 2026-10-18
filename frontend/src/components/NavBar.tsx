@@ -51,14 +51,14 @@ export function NavBar() {
     <>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-primary-foreground"
       >
         Skip to main content
       </a>
 
       <header
         className={cn(
-          "sticky top-0 z-50 h-16 items-center bg-background/90 backdrop-blur",
+          "sticky top-0 z-50 h-16 items-center bg-background/90 backdrop-blur-sm",
           inTrip ? "hidden md:flex" : "flex",
         )}
       >
@@ -67,7 +67,7 @@ export function NavBar() {
             href="/trips"
             onMouseEnter={prefetchTrips}
             onFocus={prefetchTrips}
-            className="flex h-11 shrink-0 items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="flex h-11 shrink-0 items-center gap-2 rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
               <Compass className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
@@ -85,7 +85,7 @@ export function NavBar() {
                   onFocus={link.onIntent}
                   aria-current={link.active ? "page" : undefined}
                   className={cn(
-                    "inline-flex h-10 items-center rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "inline-flex h-10 items-center rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                     link.active
                       ? "bg-primary-soft text-primary-soft-foreground"
                       : "text-muted-foreground hover:bg-card hover:text-foreground",
@@ -103,7 +103,7 @@ export function NavBar() {
             aria-label={isLoading ? "Loading profile" : `Profile: ${user?.name ?? "Account"}`}
             className={cn(
               "ml-auto flex h-11 shrink-0 items-center gap-2 rounded-full p-1 text-sm font-bold transition-colors md:pr-4",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               sections.profile ? "bg-primary-soft text-primary-soft-foreground" : "text-foreground hover:bg-card",
             )}
           >

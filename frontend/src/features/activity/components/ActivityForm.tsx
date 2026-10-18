@@ -132,7 +132,7 @@ function AddingTo({ context }: { context: NonNullable<Props["context"]> }) {
   return (
     <aside
       aria-label="Activity context"
-      className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.04] p-3 sm:grid-cols-2"
+      className="grid gap-2 rounded-xl border border-primary/15 bg-primary/4 p-3 sm:grid-cols-2"
     >
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
         <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />

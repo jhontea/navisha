@@ -49,7 +49,7 @@ export function SortableActivityRow({
       aria-checked={isSelected}
       aria-label={isSelected ? `Deselect ${activity.title}` : `Select ${activity.title}`}
       onClick={onToggleSelect}
-      className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span
         className={cn(

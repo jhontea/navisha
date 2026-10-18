@@ -149,7 +149,7 @@ function GeocodingLayer({
   return (
     <>
       {displayable.length === 0 && needGeocode.length > 0 && loading && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-xs">
           <LoaderCircle className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
           <p className="mt-2 text-sm font-medium text-muted-foreground">
             Resolving locations…
