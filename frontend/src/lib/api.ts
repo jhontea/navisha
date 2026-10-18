@@ -68,6 +68,8 @@ function bailToLoginOnError(): never {
     toast("Your session has expired. Redirecting to login…", "info", 2500)
     // Let the toast paint before the reload so the user sees the message.
     window.setTimeout(() => {
+      // Full reload on purpose: clears in-memory state and the cached session.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- hard navigation is required here
       window.location.href = `/login?reason=session-expired`
     }, 1200)
   }

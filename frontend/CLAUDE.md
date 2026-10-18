@@ -52,7 +52,7 @@ frontend/
 │   │   ├── api.ts                  # Typed fetch wrapper (credentials: include, ApiError)
 │   │   ├── currency.ts             # Supported currencies, flags, labels
 │   │   └── utils.ts                # cn(), formatCurrency(), formatDate(), formatDateRange()
-│   └── middleware.ts               # Auth guard: redirect unauthenticated → /login
+│   └── proxy.ts                    # Auth guard (Next 16 "proxy", formerly middleware.ts): redirect unauthenticated → /login
 └── public/
 ```
 
@@ -93,7 +93,7 @@ frontend/
 - Themes: **light is the default**; dark is opt-in via `ThemeToggle` (cookie `navisha-theme`, applied by an inline script in `app/layout.tsx` before paint, never from the OS setting). Use tokens only so both themes work; check new UI in both.
 - Fonts: `font-sans` (Nunito Sans) everywhere, `font-display` (Nunito) for titles and big numbers.
 
-## Auth Guard (middleware.ts)
+## Auth Guard (proxy.ts)
 
 ```
 /                   → always public (landing page)
@@ -101,7 +101,7 @@ frontend/
 /dashboard, /trips  → protected; no cookie → redirect /login
 ```
 
-Cookie `access_token` is httpOnly — middleware checks for its presence only (cannot read value from JS).
+Cookie `access_token` is httpOnly — proxy checks for its presence only (cannot read value from JS).
 
 ## API Base URL
 `http://localhost:8090/api/v1` (dev) — set via `NEXT_PUBLIC_API_URL` env var
