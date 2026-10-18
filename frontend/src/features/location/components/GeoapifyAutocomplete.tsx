@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useEffect, useId, useRef, useState } from "react"
 import { Loader2, MapPin, X } from "lucide-react"
+import { useLatestRef } from "@/lib/useLatestRef"
 import { resolveMapsLink, searchLocationSuggestions } from "../api"
 import type { LocationSearchKind, LocationSuggestion } from "../types"
 
@@ -54,10 +55,8 @@ export function GeoapifyAutocomplete({
   const selectedValueRef = useRef(value)
   // Stash latest callbacks in refs so the search effect doesn't need them as
   // dependencies (parents pass inline closures that change every render).
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
-  const onSelectRef = useRef(onSelect)
-  onSelectRef.current = onSelect
+  const onChangeRef = useLatestRef(onChange)
+  const onSelectRef = useLatestRef(onSelect)
   // When a suggestion is chosen, the parent often sets the value twice
   // (once to the full description via onChange, then again to the short name
   // via onSelect). This flag suppresses the search effect for exactly one
@@ -80,22 +79,12 @@ export function GeoapifyAutocomplete({
     }
     const query = value.trim()
     if (query === selectedValueRef.current) return
-    if (query.length < 3) {
-      setSuggestions([])
-      setIsOpen(false)
-      setActiveIndex(-1)
-      setError("")
-      return
-    }
+    // Too short to search; the input handler already cleared the list.
+    if (query.length < 3) return
 
     // Pasted Google Maps link → resolve directly instead of suggesting.
     if (isMapsLink(query)) {
       const controller = new AbortController()
-      setIsLoading(true)
-      setError("")
-      setIsOpen(false)
-      setSuggestions([])
-      setActiveIndex(-1)
       ;(async () => {
         try {
           const { suggestion } = await resolveMapsLink(query, controller.signal)
@@ -152,7 +141,7 @@ export function GeoapifyAutocomplete({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [kind, searchContext, value])
+  }, [kind, searchContext, value, onChangeRef, onSelectRef])
 
   const choose = (suggestion: LocationSuggestion) => {
     selectedValueRef.current = suggestion.description
@@ -223,6 +212,14 @@ export function GeoapifyAutocomplete({
         onChange={(event) => {
           selectedValueRef.current = ""
           setActiveIndex(-1)
+          const query = event.target.value.trim()
+          const mapsLink = isMapsLink(query)
+          if (query.length < 3 || mapsLink) {
+            setSuggestions([])
+            setIsOpen(false)
+            setError("")
+          }
+          if (mapsLink) setIsLoading(true)
           onChange(event.target.value)
         }}
         onFocus={() => {

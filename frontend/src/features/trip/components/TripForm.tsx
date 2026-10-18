@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/NativeSelect"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
@@ -96,7 +96,6 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     control,
     clearErrors,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<FormValues>({
 
@@ -104,11 +103,11 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     defaultValues: buildDefaults(initial),
   })
 
-  const startDate = watch("start_date")
-  const endDate = watch("end_date")
+  const startDate = useWatch({ control, name: "start_date" })
+  const endDate = useWatch({ control, name: "end_date" })
   const tripDuration = getInclusiveDayCount(startDate, endDate)
-  const destination = watch("destination")
-  const baseCurrency = watch("base_currency")
+  const destination = useWatch({ control, name: "destination" })
+  const baseCurrency = useWatch({ control, name: "base_currency" })
 
   const continueWithAI = () => {
     const params = new URLSearchParams()

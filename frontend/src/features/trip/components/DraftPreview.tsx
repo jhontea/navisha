@@ -35,9 +35,11 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set(allKeys))
 
   // Keep selection in sync when a fresh draft arrives (e.g. regenerate).
-  useEffect(() => {
+  const [prevAllKeys, setPrevAllKeys] = useState(allKeys)
+  if (prevAllKeys !== allKeys) {
+    setPrevAllKeys(allKeys)
     setSelectedKeys(new Set(allKeys))
-  }, [allKeys])
+  }
 
   // Notify parent whenever selection changes.
   useEffect(() => {

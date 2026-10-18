@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ChevronDown, Hash, SlidersHorizontal, Ticket } from "lucide-react"
 import { Controller, type UseFormReturn } from "react-hook-form"
 
@@ -44,9 +44,11 @@ export function TransportDetailsFields({
   const filledCount = watch([...OPTIONAL_FIELDS]).filter((value) => Boolean(value?.trim())).length
 
   const hasError = OPTIONAL_FIELDS.some((name) => errors[name]) || Boolean(errors.currency)
-  useEffect(() => {
+  const [prevHasError, setPrevHasError] = useState(false)
+  if (hasError !== prevHasError) {
+    setPrevHasError(hasError)
     if (hasError) setOpen(true)
-  }, [hasError])
+  }
 
   return (
     <section className="overflow-hidden rounded-xl border border-border/70 bg-muted/10">

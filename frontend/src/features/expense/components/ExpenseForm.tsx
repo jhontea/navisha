@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
 import React, { useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
@@ -71,7 +71,7 @@ export function ExpenseForm({
   onCancel,
   isSubmitting,
 }: Props) {
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } =
+  const { register, handleSubmit, control, setValue, formState: { errors } } =
     useForm<FormValues>({
       resolver: zodResolver(schema),
       defaultValues: {
@@ -91,10 +91,10 @@ export function ExpenseForm({
     initial ? Number(initial.amount).toLocaleString() : ""
   )
 
-  const rawAmount = watch("amount")
+  const rawAmount = useWatch({ control, name: "amount" })
   const amount = Number(rawAmount)
-  const currency = watch("currency")
-  const selectedCategory = watch("category")
+  const currency = useWatch({ control, name: "currency" })
+  const selectedCategory = useWatch({ control, name: "category" })
   const previewEnabled = currency !== tripBaseCurrency && amount > 0
   const { data: preview } = useConvert(
     currency,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 
 function isModifiedClick(event: MouseEvent) {
@@ -17,17 +17,16 @@ export function RouteProgress() {
   const pathname = usePathname()
   const [visible, setVisible] = useState(false)
   const [settling, setSettling] = useState(false)
-  const timeoutRef = useRef<number | null>(null)
-  const prevPathnameRef = useRef(pathname)
+  const [prevPathname, setPrevPathname] = useState(pathname)
+
+  // The route changed: let a visible bar run to full width, then hide it.
+  // Adjusted during render (not in an effect) so it lands in the same commit.
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname)
+    if (visible) setSettling(true)
+  }
 
   useEffect(() => {
-    function clearTimer() {
-      if (timeoutRef.current !== null) {
-        window.clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
-      }
-    }
-
     function onClick(event: MouseEvent) {
       if (isModifiedClick(event)) return
       const target = event.target as Element | null
@@ -37,28 +36,23 @@ export function RouteProgress() {
       const url = new URL(anchor.href)
       if (url.pathname === window.location.pathname && url.search === window.location.search) return
 
-      clearTimer()
+      // Leaving `settling` cancels a pending hide (see the effect below).
       setSettling(false)
       setVisible(true)
     }
 
     document.addEventListener("click", onClick, true)
-    return () => {
-      document.removeEventListener("click", onClick, true)
-      clearTimer()
-    }
+    return () => document.removeEventListener("click", onClick, true)
   }, [])
 
   useEffect(() => {
-    if (prevPathnameRef.current === pathname) return
-    prevPathnameRef.current = pathname
-    if (!visible) return
-    setSettling(true)
-    timeoutRef.current = window.setTimeout(() => {
+    if (!settling) return
+    const timeout = window.setTimeout(() => {
       setVisible(false)
       setSettling(false)
     }, 350)
-  }, [pathname, visible])
+    return () => window.clearTimeout(timeout)
+  }, [settling])
 
   if (!visible) return null
 

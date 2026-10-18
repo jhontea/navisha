@@ -72,11 +72,13 @@ export function TravelDateRangePicker({
     }
   }, [isOpen])
 
-  useEffect(() => {
-    if (!isOpen) return
-    const anchor = parseISODate(startDate) ?? parseISODate(defaultMonth ?? "")
+  const monthAnchorKey = isOpen ? `${startDate}|${defaultMonth ?? ""}` : null
+  const [prevMonthAnchorKey, setPrevMonthAnchorKey] = useState<string | null>(null)
+  if (monthAnchorKey !== prevMonthAnchorKey) {
+    setPrevMonthAnchorKey(monthAnchorKey)
+    const anchor = monthAnchorKey === null ? null : parseISODate(startDate) ?? parseISODate(defaultMonth ?? "")
     if (anchor) setVisibleMonth(startOfMonth(anchor))
-  }, [isOpen, startDate, defaultMonth])
+  }
 
   const calendarDays = useMemo(
     () => buildCalendarDays(visibleMonth),

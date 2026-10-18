@@ -1,8 +1,8 @@
-import type { HTMLAttributes, Ref } from "react"
-import { Hotel, ListChecks, MapPin, StickyNote } from "lucide-react"
+import { createElement, type HTMLAttributes, type Ref } from "react"
+import { Hotel, ListChecks, MapPin, StickyNote, type LucideProps } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { transportIcon } from "@/features/transportation/lib/transportType"
+import { TransportIcon } from "@/features/transportation/components/TransportIcon"
 
 type Kind = "location" | "note" | "todo" | "transport" | "stay"
 
@@ -13,6 +13,19 @@ const STYLE: Record<Kind, string> = {
   stay: "bg-primary-soft text-primary-soft-foreground",
   note: "bg-muted text-muted-foreground",
   todo: "bg-muted text-muted-foreground",
+}
+
+const KIND_ICON: Record<Exclude<Kind, "transport">, typeof MapPin> = {
+  location: MapPin,
+  stay: Hotel,
+  note: StickyNote,
+  todo: ListChecks,
+}
+
+/** Icon for a timeline item; picked at module level, not during render. */
+function KindIcon({ kind, transportType, ...props }: { kind: Kind; transportType?: string } & LucideProps) {
+  if (kind === "transport") return <TransportIcon type={transportType} {...props} />
+  return createElement(KIND_ICON[kind], props)
 }
 
 /**
@@ -35,20 +48,9 @@ export function TimelineIcon({
   dragHandleId?: string
   dragLabel?: string
 }) {
-  const Icon =
-    kind === "transport"
-      ? transportIcon(transportType)
-      : kind === "stay"
-        ? Hotel
-        : kind === "note"
-          ? StickyNote
-          : kind === "todo"
-            ? ListChecks
-            : MapPin
-
   const circle = (
     <span className={cn("flex h-9 w-9 items-center justify-center rounded-full ring-4 ring-background", STYLE[kind])}>
-      <Icon className="h-4 w-4" aria-hidden="true" />
+      <KindIcon kind={kind} transportType={transportType} className="h-4 w-4" aria-hidden="true" />
     </span>
   )
 

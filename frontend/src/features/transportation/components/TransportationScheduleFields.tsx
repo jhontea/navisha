@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Chip } from "@/components/Chip"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Clock3, Plus, X } from "lucide-react"
 import {
   FormFieldDescription,
@@ -34,9 +34,7 @@ export function TransportationScheduleFields({
   const [showArrival, setShowArrival] = useState(Boolean(arrival))
   const duration = getDurationMinutes(departure, arrival)
 
-  useEffect(() => {
-    if (arrival) setShowArrival(true)
-  }, [arrival])
+  if (arrival && !showArrival) setShowArrival(true)
 
   const addArrival = () => {
     setShowArrival(true)

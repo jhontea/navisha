@@ -27,9 +27,15 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState("")
 
+  const fetchKey = open ? tripId : null
+  const [prevFetchKey, setPrevFetchKey] = useState<string | null>(null)
+  if (fetchKey !== prevFetchKey) {
+    setPrevFetchKey(fetchKey)
+    if (fetchKey) { setError(""); setLoading(true) }
+  }
+
   useEffect(() => {
     if (!open) return
-    setError(""); setLoading(true)
     tripApi.getActiveShareLink(tripId)
       .then(setLink)
       .catch((err) => { if (!(err instanceof ApiError && err.status === 404)) setError("Could not check the current share link.") })

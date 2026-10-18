@@ -4,7 +4,7 @@ import { SUPPORTED_CURRENCIES } from "@/lib/currency"
 import { costPayload, type LinkedCost } from "@/lib/linkedCost"
 import { Input } from "@/components/ui/input"
 import { Chip } from "@/components/Chip"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
@@ -132,7 +132,6 @@ export function AccommodationForm({
     clearErrors,
     setValue,
     getValues,
-    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -154,8 +153,8 @@ export function AccommodationForm({
     },
   })
 
-  const checkIn = watch("check_in")
-  const checkOut = watch("check_out")
+  const checkIn = useWatch({ control, name: "check_in" })
+  const checkOut = useWatch({ control, name: "check_out" })
   const stayNights = getStayNights(checkIn, checkOut)
 
   const submit = async (v: FormValues) => {

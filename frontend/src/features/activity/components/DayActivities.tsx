@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -89,7 +89,7 @@ export function DayActivities({
   const [reorderKey, setReorderKey] = useState(0)
   // The DndContext remounts after a drop; keyboard users get focus back on
   // the handle they moved so they can keep reordering.
-  const [refocusId, setRefocusId] = useState<string | null>(null)
+  const refocusIdRef = useRef<string | null>(null)
   // dnd-kit's own live region goes with the remount, so the drop is announced here.
   const [dropStatus, setDropStatus] = useState("")
   const [timeFocus, setTimeFocus] = useState<string | null>(null)
@@ -122,11 +122,14 @@ export function DayActivities({
     document.getElementById(`activity-${selectedActivityId}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" })
   }, [selectedActivityId, activities])
 
+  // After a keyboard reorder the list remounts (key={reorderKey}); give focus
+  // back to the moved item's handle.
   useEffect(() => {
-    if (!refocusId) return
-    document.getElementById(dragHandleId(refocusId))?.focus({ preventScroll: true })
-    setRefocusId(null)
-  }, [refocusId, reorderKey])
+    const id = refocusIdRef.current
+    if (!id) return
+    refocusIdRef.current = null
+    document.getElementById(dragHandleId(id))?.focus({ preventScroll: true })
+  }, [reorderKey])
 
   if (isLoading) {
     return (
@@ -154,7 +157,7 @@ export function DayActivities({
     requestAnimationFrame(() => {
       qc.setQueryData<ActivityListResponse>(["activities", "list", dayId], { items: reordered })
       setReorderKey((k) => k + 1)
-      if (keyboard) setRefocusId(String(active.id))
+      if (keyboard) refocusIdRef.current = String(active.id)
       setDropStatus(`${activities[oldIdx].title} moved to position ${newIdx + 1} of ${activities.length}.`)
       reorderMut.mutate(
         { ids: newOrder },

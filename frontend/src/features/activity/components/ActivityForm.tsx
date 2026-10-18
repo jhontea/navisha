@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarDays, ListChecks, MapPin, StickyNote } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 
 import { FormActions } from "@/components/forms/FormActions"
 import { FormField } from "@/components/forms/FormField"
@@ -57,11 +57,10 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors, isDirty },
   } = form
-  const type = watch("type")
+  const type = useWatch({ control: form.control, name: "type" })
 
   useEffect(() => {
     onDirtyChange?.(isDirty)

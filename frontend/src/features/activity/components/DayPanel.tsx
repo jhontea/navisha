@@ -1,7 +1,7 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import { ArrowDownUp, Check, CheckSquare, LoaderCircle, MoreHorizontal, Pencil, X } from "lucide-react"
 
@@ -63,11 +63,17 @@ export function DayPanel({
   const updateTitle = useUpdateDayTitle(tripId)
   const sortByTime = useSortDayByTime(dayId, tripId)
 
-  useEffect(() => {
-    if (editingTitle) return
-    setCurrentTitle(title)
-    setTitleDraft(title)
-  }, [editingTitle, title])
+  // Outside edit mode the title follows the prop (after a save or a refetch).
+  // `null` while editing, so leaving edit mode also re-syncs.
+  const syncedTitle = editingTitle ? null : title
+  const [prevSyncedTitle, setPrevSyncedTitle] = useState(syncedTitle)
+  if (syncedTitle !== prevSyncedTitle) {
+    setPrevSyncedTitle(syncedTitle)
+    if (syncedTitle !== null) {
+      setCurrentTitle(syncedTitle)
+      setTitleDraft(syncedTitle)
+    }
+  }
 
   const startTitleEdit = () => {
     setTitleDraft(currentTitle)

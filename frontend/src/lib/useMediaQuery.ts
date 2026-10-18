@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useState, useSyncExternalStore } from "react"
 
 /** Tailwind's `lg` breakpoint (default theme), for components that must not even mount below it. */
 export const LG_MEDIA_QUERY = "(min-width: 1024px)"
@@ -30,8 +30,6 @@ export function useMediaQuery(query: string): boolean {
  */
 export function useOnceTrue(condition: boolean): boolean {
   const [seen, setSeen] = useState(condition)
-  useEffect(() => {
-    if (condition) setSeen(true)
-  }, [condition])
+  if (condition && !seen) setSeen(true)
   return seen || condition
 }
