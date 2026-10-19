@@ -88,7 +88,8 @@ func main() {
 		fail(err)
 	}
 	client := llm.NewClient(cfg.EffectiveProvider(), cfg.ActiveAPIKey(), cfg.ActiveModel(), cfg.ActiveBaseURL()).
-		WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second)
+		WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second).
+		WithMaxConcurrent(cfg.LLM.MaxConcurrent)
 	usecase := autogen.NewUsecase(client, nil, cfg.ActiveModel())
 	locations := location.NewHandler(location.NewGeoapifyClient(cfg.Location.GeoapifyAPIKey, cfg.Location.GeoapifyBaseURL, 8*time.Second))
 

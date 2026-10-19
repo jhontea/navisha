@@ -102,6 +102,7 @@ llm:
   deepseek_model: deepseek-flash
   openrouter_model: openrouter/owl-alpha
   timeout_seconds: 300
+  max_concurrent: 4     # simultaneous LLM calls; extra requests queue
 ```
 
 **.env** — secrets, never committed:
@@ -130,7 +131,7 @@ See `.env.example` for the full list.
 Exchange rates fetched from CurrencyFreaks API (USD-based). Full USD-keyed map cached in Redis key `rates:USD` with TTL from config; cross-rates `base→target = rates[target]/rates[base]` derived in `internal/currency/rate_math.go`.
 
 ## LLM Provider
-Multi-provider LLM client (`pkg/llm/`) supports DeepSeek and OpenRouter via config-driven selection. Auto-downgrades `json_schema` strict → `json_object` for DeepSeek with schema injected into system prompt. Config via `LLM_PROVIDER`, `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL` env vars. Falls back to legacy OpenRouter when `LLM_PROVIDER` is empty.
+Multi-provider LLM client (`pkg/llm/`) supports DeepSeek and OpenRouter via config-driven selection. Auto-downgrades `json_schema` strict → `json_object` for DeepSeek with schema injected into system prompt. Config via `LLM_PROVIDER`, `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL` env vars. Falls back to legacy OpenRouter when `LLM_PROVIDER` is empty. Calls are capped by `llm.max_concurrent`, retried up to 2x on 429/502/503/504 and transient network errors (backoff + `Retry-After`), and responses are limited to 4 MiB.
 
 ## Cross-Domain Pattern
 Domains communicate via **local interfaces** (not cross-imports):

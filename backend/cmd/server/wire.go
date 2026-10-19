@@ -127,7 +127,8 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		cfg.ActiveAPIKey(),
 		cfg.ActiveModel(),
 		cfg.ActiveBaseURL(),
-	).WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second)
+	).WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second).
+		WithMaxConcurrent(cfg.LLM.MaxConcurrent)
 
 	summaryRepo := summary.NewPostgresRepository(db)
 	tripContextProvider := integration.NewTripContextProvider(

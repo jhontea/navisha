@@ -40,6 +40,8 @@ llm:
   # HTTP timeout (seconds) for LLM calls. Some models are slow, so keep
   # this generous. Set to 0 to use the client default (120s).
   timeout_seconds: 300
+  # Max simultaneous LLM calls (extra requests queue). 0 = client default (4).
+  max_concurrent: 4
   # ── AI Daily Quota (stored in DB: app_settings.autogen_daily_quota) ──
   # All AI features (trip generate, build-around, summary) share one daily
   # counter per user. Edit via SQL, no restart needed:

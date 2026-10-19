@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestChatCompletion_HappyPath(t *testing.T) {
@@ -74,6 +75,7 @@ func TestChatCompletion_Non200Status(t *testing.T) {
 	defer srv.Close()
 
 	c := NewClient(ProviderOpenRouter, "test-key", "test-model", srv.URL)
+	c.backoffBase = time.Millisecond
 
 	_, err := c.ChatCompletion(context.Background(), ChatRequest{
 		Messages: []Message{{Role: "user", Content: "hi"}},
