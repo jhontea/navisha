@@ -167,16 +167,19 @@ func (u *Usecase) RebaseTx(ctx context.Context, tx pgx.Tx, tripID, newBase strin
 	if err != nil {
 		return err
 	}
+	// Convert in memory (rates come from the Redis cache), then write all rows
+	// in one statement.
+	ids := make([]string, 0, len(expenses))
+	amounts := make([]float64, 0, len(expenses))
 	for _, e := range expenses {
 		converted, _, err := u.converter.Convert(ctx, e.Currency, newBase, e.Amount)
 		if err != nil {
 			return fmt.Errorf("expense.RebaseTx convert %s→%s: %w: %w", e.Currency, newBase, apperr.ErrRatesUnavailable, err)
 		}
-		if err := u.repo.UpdateConvertedTx(ctx, tx, e.ID, converted, newBase); err != nil {
-			return err
-		}
+		ids = append(ids, e.ID)
+		amounts = append(amounts, converted)
 	}
-	return nil
+	return u.repo.UpdateConvertedBatchTx(ctx, tx, ids, amounts, newBase)
 }
 
 func (u *Usecase) List(ctx context.Context, userID, tripID string) ([]Expense, error) {

@@ -365,3 +365,26 @@ func TestSyncLinkedExpense_Forbidden(t *testing.T) {
 		t.Fatalf("err = %v, want ErrForbidden", err)
 	}
 }
+
+// Rebase writes every expense in a single statement, not one UPDATE each.
+func TestUsecase_RebaseTx_WritesOneBatch(t *testing.T) {
+	repo := newMockRepo()
+	repo.trips["t1"] = tripMeta{owner: "user-1", base: "IDR"}
+	for _, id := range []string{"e1", "e2", "e3"} {
+		repo.expenses[id] = &Expense{ID: id, Amount: 16_000, Currency: "IDR", ConvertedAmount: 16_000, BaseCurrency: "IDR"}
+		repo.expenseOf[id] = "t1"
+	}
+	u := NewUsecase(repo, &rateConverter{rates: map[string]float64{"IDR→USD": 1.0 / 16_000}})
+
+	if err := u.RebaseTx(context.Background(), nil, "t1", "USD"); err != nil {
+		t.Fatalf("RebaseTx: %v", err)
+	}
+	if repo.batchCalls != 1 {
+		t.Fatalf("batch calls = %d, want 1", repo.batchCalls)
+	}
+	for _, id := range []string{"e1", "e2", "e3"} {
+		if e := repo.expenses[id]; e.BaseCurrency != "USD" || e.ConvertedAmount != 1 {
+			t.Errorf("%s = %v %s, want 1 USD", id, e.ConvertedAmount, e.BaseCurrency)
+		}
+	}
+}

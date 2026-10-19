@@ -9,16 +9,25 @@ import (
 
 	pkgcurrency "github.com/jhontea/navisha/backend/pkg/currency"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/singleflight"
 )
 
 // redisRepository implements currency.Repository using CurrencyFreaks as the
 // upstream source and Redis as a cache. Rates are fetched with USD as base,
 // then cross-rates are derived client-side.
 
+// ratesFetcher is the upstream source (CurrencyFreaks); an interface so tests
+// can fake it.
+type ratesFetcher interface {
+	Latest(ctx context.Context, symbols []string) (*pkgcurrency.LatestRates, error)
+}
+
 type redisRepository struct {
 	rdb    *redis.Client
-	client *pkgcurrency.Client
+	client ratesFetcher
 	ttl    time.Duration
+	// group collapses concurrent cache misses into one upstream call.
+	group singleflight.Group
 }
 
 func NewRedisRepository(rdb *redis.Client, client *pkgcurrency.Client, ttlSeconds int) Repository {
@@ -30,6 +39,14 @@ func NewRedisRepository(rdb *redis.Client, client *pkgcurrency.Client, ttlSecond
 }
 
 const usdCacheKey = "rates:USD"
+
+// usdLastKey keeps the last good table without a TTL, served when the
+// upstream fails so expenses can still be saved.
+const usdLastKey = "rates:USD:last"
+
+// staleRetry is how long a fallback table is cached before the upstream is
+// tried again.
+const staleRetry = 5 * time.Minute
 
 type cachedRates struct {
 	Date  time.Time          `json:"date"`
@@ -51,10 +68,33 @@ func (r *redisRepository) fetchUSD(ctx context.Context) (*cachedRates, error) {
 		slog.Warn("currency: redis cache read failed, fetching upstream", "error", err)
 	}
 
-	// Cache miss or Redis unavailable → upstream fetch
-	resp, err := r.client.Latest(ctx, SupportedCurrencies)
+	// Cache miss or Redis unavailable: one upstream call, shared by every
+	// request that misses at the same time (saves the free-tier quota). The
+	// call gets its own context so one caller giving up doesn't fail the rest.
+	v, err, _ := r.group.Do(usdCacheKey, func() (any, error) {
+		fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
+		defer cancel()
+		return r.fetchUpstream(fetchCtx)
+	})
 	if err != nil {
 		return nil, err
+	}
+	return v.(*cachedRates), nil
+}
+
+// fetchUpstream gets a fresh table from CurrencyFreaks and caches it. If the
+// upstream fails it serves the last good table (cached briefly so the
+// upstream is not hit on every request while it is down).
+func (r *redisRepository) fetchUpstream(ctx context.Context) (*cachedRates, error) {
+	resp, err := r.client.Latest(ctx, SupportedCurrencies)
+	if err != nil {
+		last, raw, ok := r.lastGood(ctx)
+		if !ok {
+			return nil, err
+		}
+		slog.Warn("currency: upstream failed, using last known rates", "error", err, "rates_date", last.Date)
+		_ = r.rdb.Set(ctx, usdCacheKey, raw, staleRetry).Err()
+		return last, nil
 	}
 	// Always include USD = 1.0 so cross-rate maths needs no special case.
 	resp.Rates["USD"] = 1.0
@@ -62,8 +102,22 @@ func (r *redisRepository) fetchUSD(ctx context.Context) (*cachedRates, error) {
 	out := &cachedRates{Date: resp.Date, Rates: resp.Rates}
 	if b, err := json.Marshal(out); err == nil {
 		_ = r.rdb.Set(ctx, usdCacheKey, b, r.ttl).Err()
+		_ = r.rdb.Set(ctx, usdLastKey, b, 0).Err()
 	}
 	return out, nil
+}
+
+// lastGood returns the last table fetched successfully, if any.
+func (r *redisRepository) lastGood(ctx context.Context) (*cachedRates, string, bool) {
+	raw, err := r.rdb.Get(ctx, usdLastKey).Result()
+	if err != nil {
+		return nil, "", false
+	}
+	var out cachedRates
+	if json.Unmarshal([]byte(raw), &out) != nil || len(out.Rates) == 0 {
+		return nil, "", false
+	}
+	return &out, raw, true
 }
 
 func (r *redisRepository) GetRate(parent context.Context, base, target string) (*Rate, error) {

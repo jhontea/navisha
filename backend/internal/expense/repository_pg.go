@@ -174,15 +174,24 @@ func (r *postgresRepository) ListForRebaseTx(ctx context.Context, tx pgx.Tx, tri
 	return out, nil
 }
 
-func (r *postgresRepository) UpdateConvertedTx(ctx context.Context, tx pgx.Tx, id string, converted float64, base string) error {
-	cmd, err := tx.Exec(ctx,
-		`UPDATE expenses
-		    SET converted_amount = $2, base_currency = $3, updated_at = NOW()
-		  WHERE id = $1`, id, converted, base)
-	if err != nil {
-		return fmt.Errorf("expense.UpdateConvertedTx: %w", err)
+// UpdateConvertedBatchTx updates every row in one statement (rebase used to
+// send one UPDATE per expense, a round-trip each to the remote database).
+func (r *postgresRepository) UpdateConvertedBatchTx(ctx context.Context, tx pgx.Tx, ids []string, converted []float64, base string) error {
+	if len(ids) == 0 {
+		return nil
 	}
-	if cmd.RowsAffected() == 0 {
+	if len(ids) != len(converted) {
+		return fmt.Errorf("expense.UpdateConvertedBatchTx: %d ids but %d amounts", len(ids), len(converted))
+	}
+	cmd, err := tx.Exec(ctx,
+		`UPDATE expenses AS e
+		    SET converted_amount = v.converted, base_currency = $3, updated_at = NOW()
+		   FROM unnest($1::uuid[], $2::numeric[]) AS v(id, converted)
+		  WHERE e.id = v.id`, ids, converted, base)
+	if err != nil {
+		return fmt.Errorf("expense.UpdateConvertedBatchTx: %w", err)
+	}
+	if cmd.RowsAffected() != int64(len(ids)) {
 		return ErrNotFound
 	}
 	return nil
