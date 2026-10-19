@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react"
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps"
 
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,51 @@ import type { DestinationSearchProps, LocationProvider, PlaceQuery, PlaceSearchP
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 const BOUND_KM = 50
 const DEG_LAT_PER_KM = 1 / 111.32
+
+// ── Places failure ──────────────────────────────────────────────────────────
+
+const FALLBACK_PLACEHOLDER = "Suggestions unavailable, type the name"
+
+// Google calls window.gm_authFailure when it rejects the key (wrong key, quota,
+// billing); the widget then disables its input. Fields swap to a plain input.
+let placesFailed = false
+const failureListeners = new Set<() => void>()
+
+if (typeof window !== "undefined") {
+  const previous = (window as { gm_authFailure?: () => void }).gm_authFailure
+  ;(window as { gm_authFailure?: () => void }).gm_authFailure = () => {
+    placesFailed = true
+    failureListeners.forEach((listener) => listener())
+    previous?.()
+  }
+}
+
+function usePlacesFailed() {
+  return useSyncExternalStore(
+    (listener) => {
+      failureListeners.add(listener)
+      return () => failureListeners.delete(listener)
+    },
+    () => placesFailed,
+    () => false,
+  )
+}
+
+// Swapping to the fallback input drops focus; give it back if the user was typing.
+function useKeepFocusOnFallback(inputRef: RefObject<HTMLInputElement | null>, failed: boolean) {
+  const focused = useRef(false)
+  useEffect(() => {
+    if (failed && focused.current) inputRef.current?.focus()
+  }, [failed, inputRef])
+  return {
+    onFocus: () => {
+      focused.current = true
+    },
+    onBlur: () => {
+      focused.current = false
+    },
+  }
+}
 
 // ── Search fields ───────────────────────────────────────────────────────────
 
@@ -45,12 +90,14 @@ function PlaceAutocompleteInput({
   ariaRequired,
 }: PlaceSearchProps) {
   const places = useMapsLibrary("places")
+  const failed = usePlacesFailed()
   const inputRef = useRef<HTMLInputElement>(null)
+  const focusHandlers = useKeepFocusOnFallback(inputRef, failed)
   // Latest callback in a ref so the widget is not re-attached on every render.
   const onSelectRef = useLatestRef(onPlaceSelect)
 
   useEffect(() => {
-    if (!places || !inputRef.current) return
+    if (!places || failed || !inputRef.current) return
     const ac = new places.Autocomplete(inputRef.current, {
       fields: ["place_id", "name", "formatted_address", "geometry"],
     })
@@ -66,11 +113,14 @@ function PlaceAutocompleteInput({
       })
     })
     return () => google.maps.event.removeListener(listener)
-  }, [places, onSelectRef])
+  }, [places, failed, onSelectRef])
 
   return (
     <Input
+      // New element on failure: drops the input Google disabled and its error class.
+      key={failed ? "fallback" : "widget"}
       ref={inputRef}
+      {...focusHandlers}
       id={id}
       disabled={disabled}
       aria-invalid={ariaInvalid}
@@ -79,13 +129,14 @@ function PlaceAutocompleteInput({
       aria-required={ariaRequired}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder ?? "Search places…"}
+      placeholder={failed ? FALLBACK_PLACEHOLDER : (placeholder ?? "Search places…")}
     />
   )
 }
 
 function DestinationSearch(props: DestinationSearchProps) {
   const [activated, setActivated] = useState(false)
+  const failed = usePlacesFailed()
 
   // A plain text field until the user focuses it, so the large Places script
   // loads only when it is actually needed.
@@ -100,8 +151,8 @@ function DestinationSearch(props: DestinationSearchProps) {
         className={props.className}
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
-        onFocus={() => setActivated(true)}
-        placeholder={props.placeholder ?? "Search city, province, or country"}
+        onFocus={() => !failed && setActivated(true)}
+        placeholder={failed ? FALLBACK_PLACEHOLDER : (props.placeholder ?? "Search city, province, or country")}
         autoComplete="off"
       />
     )
@@ -127,11 +178,13 @@ function DestinationAutocompleteInput({
   autoFocus,
 }: DestinationSearchProps & { autoFocus?: boolean }) {
   const places = useMapsLibrary("places")
+  const failed = usePlacesFailed()
   const inputRef = useRef<HTMLInputElement>(null)
+  const focusHandlers = useKeepFocusOnFallback(inputRef, failed)
   const onSelectRef = useLatestRef(onSelect)
 
   useEffect(() => {
-    if (!places || !inputRef.current) return
+    if (!places || failed || !inputRef.current) return
     const ac = new places.Autocomplete(inputRef.current, {
       // `(regions)`: city, province/state and country only, no streets or businesses.
       types: ["(regions)"],
@@ -151,12 +204,14 @@ function DestinationAutocompleteInput({
     })
     return () => google.maps.event.removeListener(listener)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [places])
+  }, [places, failed])
 
   return (
     <Input
+      key={failed ? "fallback" : "widget"}
       variant="bare"
       ref={inputRef}
+      {...focusHandlers}
       id={id}
       disabled={disabled}
       aria-invalid={ariaInvalid}
@@ -164,9 +219,9 @@ function DestinationAutocompleteInput({
       className={className}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder ?? "Search city, province, or country"}
+      placeholder={failed ? FALLBACK_PLACEHOLDER : (placeholder ?? "Search city, province, or country")}
       autoComplete="off"
-      autoFocus={autoFocus}
+      autoFocus={autoFocus && !failed}
     />
   )
 }
