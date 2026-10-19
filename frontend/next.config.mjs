@@ -9,6 +9,17 @@ const r2PublicOrigin = (() => {
   }
 })()
 
+// The API origin the browser calls: localhost in development and E2E, the API
+// subdomain in production. Derived from the build-time API URL so production
+// never allows http://localhost.
+const apiOrigin = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_API_URL ?? '').origin
+  } catch {
+    return ''
+  }
+})()
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Disable React StrictMode in development — it double-mounts components
@@ -67,7 +78,7 @@ const nextConfig = {
           // Limit referrer information on cross-origin requests
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           // Content-Security-Policy: restrict script/style/font sources.
-          // 'unsafe-inline' and 'unsafe-eval' are required by Next.js 14's
+          // 'unsafe-inline' and 'unsafe-eval' are required by Next.js's
           // development mode and the Google Maps JS API loader.
           // In production, consider using a nonce-based approach via _document.tsx.
           {
@@ -78,7 +89,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://*.gstatic.com https://*.google.com https://lh3.googleusercontent.com`,
-              "connect-src 'self' data: blob: http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://cloudflareinsights.com https://tiles.openfreemap.org",
+              `connect-src 'self' data: blob: ${apiOrigin} https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://cloudflareinsights.com https://tiles.openfreemap.org`,
               // MapLibre spawns its tile worker from a blob: URL. Without an
               // explicit worker-src, the script-src fallback blocks it and
               // vector tiles never load.
@@ -93,33 +104,9 @@ const nextConfig = {
                 : "",
             ].filter(Boolean).join('; '),
           },
-          // CSP Report-Only: log violations without blocking.
-          // Enable in staging first to audit before enforcing.
-          ...(process.env.CSP_REPORT_ONLY === 'true'
-            ? [{
-                key: 'Content-Security-Policy-Report-Only',
-                value: [
-                  "default-src 'self'",
-                  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.gstatic.com https://static.cloudflareinsights.com",
-                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                  "font-src 'self' https://fonts.gstatic.com",
-                  `img-src 'self' data: blob: ${r2PublicOrigin} https://*.googleusercontent.com https://maps.googleapis.com https://*.gstatic.com https://*.google.com https://lh3.googleusercontent.com`,
-                  "connect-src 'self' data: blob: http://localhost:8090 https://*.navisha.cloud https://maps.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://cloudflareinsights.com https://tiles.openfreemap.org",
-                  "worker-src 'self' blob:",
-                  "frame-src 'self' https://accounts.google.com",
-                  "object-src 'none'",
-                  "base-uri 'self'",
-                  "form-action 'self'",
-                  process.env.CSP_REPORT_URI
-                    ? `report-uri ${process.env.CSP_REPORT_URI}`
-                    : "",
-                ].filter(Boolean).join('; '),
-              }]
-            : []),
-          // Legacy X-XSS-Protection (Loop 8: defense-in-depth for older browsers)
-          // Chromium-based browsers ignore this; IE/older Edge use it as a
-          // reflected-XSS filter.
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          // 0 disables the legacy XSS auditor, which could itself be abused;
+          // modern browsers removed it and the CSP above is the real protection.
+          { key: 'X-XSS-Protection', value: '0' },
           // HTTP Strict-Transport-Security (HSTS) — 2 years, include subdomains
           // Set only in production; omit in dev (localhost is HTTP)
           ...(process.env.NODE_ENV === 'production'
