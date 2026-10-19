@@ -2,11 +2,15 @@ package user
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
+	"net/url"
 	"testing"
 	"time"
 
 	jwtpkg "github.com/jhontea/navisha/backend/pkg/jwt"
+	gooauth2 "golang.org/x/oauth2"
 )
 
 type sessionRepoMock struct {
@@ -144,5 +148,29 @@ func TestCleanupRefreshSessions_KeepsOneWeek(t *testing.T) {
 	}
 	if repo.staleOlderThan != 7*24*time.Hour {
 		t.Errorf("retention = %v, want 168h", repo.staleOlderThan)
+	}
+}
+
+func TestGoogleAuthURL_SendsS256Challenge(t *testing.T) {
+	cfg := &gooauth2.Config{
+		ClientID:    "client",
+		RedirectURL: "https://api.navisha.cloud/api/v1/auth/google/callback",
+		Endpoint:    gooauth2.Endpoint{AuthURL: "https://accounts.google.com/o/oauth2/v2/auth"},
+	}
+	u := NewUsecase(&sessionRepoMock{}, nil, cfg, nil)
+	verifier := gooauth2.GenerateVerifier()
+
+	parsed, err := url.Parse(u.GoogleAuthURL("state-1", verifier))
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := parsed.Query()
+	sum := sha256.Sum256([]byte(verifier))
+	wantChallenge := base64.RawURLEncoding.EncodeToString(sum[:])
+	if q.Get("code_challenge_method") != "S256" || q.Get("code_challenge") != wantChallenge {
+		t.Errorf("challenge = %q (%s), want S256 %q", q.Get("code_challenge"), q.Get("code_challenge_method"), wantChallenge)
+	}
+	if q.Get("state") != "state-1" || q.Get("code_verifier") != "" {
+		t.Errorf("unexpected query %v: state must pass through, verifier must never be sent", q)
 	}
 }

@@ -72,6 +72,7 @@ func TestGoogleCallback_Success(t *testing.T) {
 		nil,
 	)
 	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	req.AddCookie(&http.Cookie{Name: "oauth_verifier", Value: "test-verifier"})
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 
@@ -114,6 +115,7 @@ func TestGoogleCallback_AuthCookiesUseConfiguredDomain(t *testing.T) {
 	h := NewHandler(mu, "https://navisha.cloud", ".navisha.cloud", 3600, 604800)
 	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz&code=c", nil)
 	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	req.AddCookie(&http.Cookie{Name: "oauth_verifier", Value: "test-verifier"})
 	rec := httptest.NewRecorder()
 	if err := h.GoogleCallback(echo.New().NewContext(req, rec)); err != nil {
 		t.Fatal(err)
@@ -172,6 +174,7 @@ func TestGoogleCallback_MissingCode(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz", nil)
 	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	req.AddCookie(&http.Cookie{Name: "oauth_verifier", Value: "test-verifier"})
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 
@@ -195,6 +198,7 @@ func TestGoogleCallback_LoginFails(t *testing.T) {
 		nil,
 	)
 	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	req.AddCookie(&http.Cookie{Name: "oauth_verifier", Value: "test-verifier"})
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 
@@ -416,6 +420,7 @@ func TestAuthCookies_SameSite(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz&code=c", nil)
 	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	req.AddCookie(&http.Cookie{Name: "oauth_verifier", Value: "test-verifier"})
 	rec = httptest.NewRecorder()
 	if err := h.GoogleCallback(echo.New().NewContext(req, rec)); err != nil {
 		t.Fatal(err)
@@ -431,5 +436,55 @@ func TestAuthCookies_SameSite(t *testing.T) {
 		if cookie == nil || cookie.SameSite != sameSite || !cookie.Secure {
 			t.Errorf("%s = %+v, want SameSite %v and Secure", name, cookie, sameSite)
 		}
+	}
+}
+
+// PKCE: the redirect stores a verifier in an HttpOnly Lax cookie and hands it
+// to the usecase; the callback requires it and passes it to the exchange.
+func TestGoogleOAuth_PKCE(t *testing.T) {
+	mu := &mockUsecase{loginUser: &User{ID: "u1"}, loginTokens: &Tokens{AccessToken: "a", RefreshToken: "r"}}
+	h := newHandler(mu)
+
+	rec := httptest.NewRecorder()
+	if err := h.GoogleRedirect(echo.New().NewContext(httptest.NewRequest(http.MethodGet, "/auth/google", nil), rec)); err != nil {
+		t.Fatal(err)
+	}
+	verifier := findCookie(rec.Result().Cookies(), "oauth_verifier")
+	if verifier == nil || verifier.Value == "" || !verifier.HttpOnly || !verifier.Secure ||
+		verifier.SameSite != http.SameSiteLaxMode || verifier.MaxAge != 300 {
+		t.Fatalf("oauth_verifier = %+v, want HttpOnly, Secure, Lax, 300s", verifier)
+	}
+	if mu.authVerifier != verifier.Value {
+		t.Errorf("GoogleAuthURL got verifier %q, cookie has %q", mu.authVerifier, verifier.Value)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz&code=c", nil)
+	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	req.AddCookie(&http.Cookie{Name: "oauth_verifier", Value: verifier.Value})
+	rec = httptest.NewRecorder()
+	if err := h.GoogleCallback(echo.New().NewContext(req, rec)); err != nil {
+		t.Fatal(err)
+	}
+	if mu.loginVerifier != verifier.Value {
+		t.Errorf("GoogleLogin got verifier %q, want %q", mu.loginVerifier, verifier.Value)
+	}
+	if cleared := findCookie(rec.Result().Cookies(), "oauth_verifier"); cleared == nil || cleared.MaxAge >= 0 {
+		t.Errorf("oauth_verifier should be cleared after the callback, got %+v", cleared)
+	}
+}
+
+func TestGoogleCallback_MissingVerifier(t *testing.T) {
+	mu := &mockUsecase{}
+	h := newHandler(mu)
+	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz&code=c", nil)
+	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+
+	err := h.GoogleCallback(echo.New().NewContext(req, httptest.NewRecorder()))
+	httpErr, ok := err.(*echo.HTTPError)
+	if !ok || httpErr.Code != http.StatusBadRequest {
+		t.Fatalf("err = %v, want 400", err)
+	}
+	if mu.loginCalls != 0 {
+		t.Error("GoogleLogin must not run without a PKCE verifier")
 	}
 }

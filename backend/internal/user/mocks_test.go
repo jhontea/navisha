@@ -5,10 +5,12 @@ import "context"
 // mockUsecase satisfies UsecaseInterface. Each field captures last input or
 // the canned response to return.
 type mockUsecase struct {
-	authURL string
+	authURL      string
+	authVerifier string
 
 	loginCalls  int
 	loginCode   string
+	loginVerifier string
 	loginUser   *User
 	loginTokens *Tokens
 	loginErr    error
@@ -24,16 +26,18 @@ type mockUsecase struct {
 	refreshErr    error
 }
 
-func (m *mockUsecase) GoogleAuthURL(state string) string {
+func (m *mockUsecase) GoogleAuthURL(state, verifier string) string {
+	m.authVerifier = verifier
 	if m.authURL == "" {
 		return "https://accounts.google.com/o/oauth2/v2/auth?state=" + state
 	}
 	return m.authURL + "?state=" + state
 }
 
-func (m *mockUsecase) GoogleLogin(_ context.Context, code string) (*User, *Tokens, error) {
+func (m *mockUsecase) GoogleLogin(_ context.Context, code, verifier string) (*User, *Tokens, error) {
 	m.loginCalls++
 	m.loginCode = code
+	m.loginVerifier = verifier
 	return m.loginUser, m.loginTokens, m.loginErr
 }
 
