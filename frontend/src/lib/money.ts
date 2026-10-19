@@ -24,3 +24,9 @@ export function formatMoney(amount: number, currency: string): string {
   const sign = rounded < 0 ? "-" : ""
   return `${sign}${getCurrencySymbol(currency)} ${formatted}`
 }
+
+/** Live-typing format for whole-number amount inputs: digits only, en-US grouping, "" when empty. */
+export function formatAmountInput(raw: string): string {
+  const digits = raw.replace(/[^0-9]/g, "")
+  return digits ? Number(digits).toLocaleString("en-US") : ""
+}

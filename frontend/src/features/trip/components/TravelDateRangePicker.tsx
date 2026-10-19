@@ -18,6 +18,10 @@ interface Props extends DateRangeValue {
   disabled?: boolean
   required?: boolean
   label?: string
+  /** Id for the trigger button, so an external <label htmlFor> can name it. */
+  id?: string
+  /** Keep the label for screen readers only when the parent already shows it. */
+  hideLabel?: boolean
   emptyText?: string
   endText?: string
   startHint?: string
@@ -39,6 +43,8 @@ export function TravelDateRangePicker({
   disabled = false,
   required = false,
   label = "Travel dates",
+  id,
+  hideLabel = false,
   emptyText = "Select start and end dates",
   endText = "Select end date",
   startHint = "Choose the first day of your trip",
@@ -111,6 +117,7 @@ export function TravelDateRangePicker({
     <div ref={containerRef} className="relative">
       {/* eslint-disable-next-line no-restricted-syntax -- date range trigger styled as a field */}
       <button
+        id={id}
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         disabled={disabled}
@@ -126,7 +133,7 @@ export function TravelDateRangePicker({
           aria-hidden="true"
         />
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-medium text-muted-foreground">
+          <span className={hideLabel ? "sr-only" : "block text-xs font-medium text-muted-foreground"}>
             {label}
             {required && <span className="sr-only"> required</span>}
           </span>
