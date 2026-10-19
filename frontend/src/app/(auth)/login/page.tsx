@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <main className="flex min-h-dvh flex-col bg-background">
       <div className="mx-auto flex w-full max-w-6xl flex-1 items-stretch px-margin-mobile py-6 md:px-margin-desktop md:py-10">
-        <div className="grid w-full items-stretch gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="grid w-full items-center gap-6 lg:items-stretch lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <section className="mx-auto flex w-full max-w-md flex-col justify-center rounded-3xl border bg-card p-6 shadow-card sm:p-10 lg:max-w-none">
             <Link href="/" className="flex min-h-11 w-fit items-center rounded-full" aria-label="Navisha home">
               <BrandLogo />
