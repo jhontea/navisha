@@ -130,6 +130,11 @@ func (h *Handler) Refresh(c echo.Context) error {
 	}
 
 	tokens, err := h.usecase.RefreshTokens(c.Request().Context(), cookie.Value)
+	if errors.Is(err, ErrRefreshRaced) {
+		// Another tab refreshed with the same cookie a moment ago and its new
+		// cookies are already set in this browser: keep them, don't log out.
+		return c.JSON(http.StatusConflict, map[string]string{"message": "session already refreshed"})
+	}
 	if err != nil {
 		h.clearTokenCookies(c)
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid refresh token")

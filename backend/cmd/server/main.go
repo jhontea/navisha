@@ -125,6 +125,10 @@ func main() {
 	a := wire(cfg, db, rdb)
 	e := newServer(cfg, db, rdb, a)
 
+	cleanupCtx, stopCleanup := context.WithCancel(context.Background())
+	defer stopCleanup()
+	go runSessionCleanup(cleanupCtx, a.userUsecase)
+
 	// Graceful shutdown
 	go func() {
 		addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -157,6 +161,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	sig := <-quit
+	stopCleanup()
 
 	// Must stay below stop_grace_period in docker-compose.prod.yml (30s).
 	const shutdownTimeout = 25 * time.Second

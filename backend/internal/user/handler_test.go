@@ -375,3 +375,23 @@ func findCookie(cookies []*http.Cookie, name string) *http.Cookie {
 	}
 	return nil
 }
+
+// Two tabs refreshing with the same cookie: the loser gets 409 and must keep
+// the cookies the winner just set, instead of logging the browser out.
+func TestRefresh_RacedKeepsCookies(t *testing.T) {
+	h := newHandler(&mockUsecase{refreshErr: ErrRefreshRaced})
+
+	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", nil)
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: "just-rotated"})
+	rec := httptest.NewRecorder()
+
+	if err := h.Refresh(echo.New().NewContext(req, rec)); err != nil {
+		t.Fatalf("Refresh: %v", err)
+	}
+	if rec.Code != http.StatusConflict {
+		t.Errorf("status = %d, want 409", rec.Code)
+	}
+	if cookies := rec.Result().Cookies(); len(cookies) != 0 {
+		t.Errorf("a raced refresh must not touch cookies, got %+v", cookies)
+	}
+}

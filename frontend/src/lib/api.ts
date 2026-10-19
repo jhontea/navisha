@@ -36,7 +36,9 @@ async function refreshSession(): Promise<boolean> {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
       })
-      return res.ok
+      // 409: another tab refreshed with the same cookie a moment ago; its new
+      // cookies are already set, so retrying the request will succeed.
+      return res.ok || res.status === 409
     } catch {
       return false
     } finally {

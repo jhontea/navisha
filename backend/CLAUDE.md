@@ -1,7 +1,7 @@
 # Backend — Claude Context
 
 ## Stack
-Go 1.25, Echo framework, PostgreSQL 16+, Redis 7+, JWT (httpOnly cookie), Google OAuth, Viper (config), DeepSeek/OpenRouter LLM
+Go 1.27, Echo framework, PostgreSQL 16+, Redis 7+, JWT (httpOnly cookie), Google OAuth, Viper (config), DeepSeek/OpenRouter LLM
 
 ## Project Structure
 ```
@@ -95,7 +95,7 @@ currency:
   supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
   cache_ttl: 3600
 jwt:
-  access_ttl: 10800    # 3 hours
+  access_ttl: 1800     # 30 minutes
   refresh_ttl: 604800  # 7 days
 llm:
   provider: ""          # deepseek or openrouter

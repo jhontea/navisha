@@ -91,7 +91,7 @@ func (r *postgresRepository) RotateRefreshSession(ctx context.Context, oldID, us
 		 WHERE id = $1 AND token_hash = $2 AND revoked_at IS NULL AND expires_at > NOW()
 		 FOR UPDATE`, oldID, oldHash).Scan(&storedUserID)
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && storedUserID != userID) {
-		return ErrInvalidSession
+		return classifyFailedRotation(ctx, tx, oldID, userID, oldHash)
 	}
 	if err != nil {
 		return fmt.Errorf("user.RotateRefreshSession lock: %w", err)
@@ -111,6 +111,40 @@ func (r *postgresRepository) RotateRefreshSession(ctx context.Context, oldID, us
 		return fmt.Errorf("user.RotateRefreshSession commit: %w", err)
 	}
 	return nil
+}
+
+// classifyFailedRotation explains why a refresh token could not be rotated.
+// A token that was replaced within the last 30 seconds is a concurrent refresh
+// (another tab sent the same cookie); one replaced earlier is a reuse. Anything
+// else (unknown, expired, revoked by logout) is simply invalid. NOW() is the
+// database clock, so app/DB clock skew does not matter.
+func classifyFailedRotation(ctx context.Context, tx pgx.Tx, id, userID string, hash []byte) error {
+	var recent bool
+	err := tx.QueryRow(ctx,
+		`SELECT revoked_at > NOW() - INTERVAL '30 seconds' FROM refresh_sessions
+		 WHERE id = $1 AND user_id = $2 AND token_hash = $3
+		   AND revoked_at IS NOT NULL AND replaced_by IS NOT NULL`, id, userID, hash).Scan(&recent)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrInvalidSession
+	}
+	if err != nil {
+		return fmt.Errorf("user.RotateRefreshSession classify: %w", err)
+	}
+	if recent {
+		return ErrSessionRecentlyRotated
+	}
+	return ErrSessionReused
+}
+
+func (r *postgresRepository) DeleteStaleRefreshSessions(ctx context.Context, olderThan time.Duration) (int64, error) {
+	tag, err := r.db.Exec(ctx,
+		`DELETE FROM refresh_sessions
+		 WHERE expires_at < NOW() - make_interval(secs => $1)
+		    OR revoked_at < NOW() - make_interval(secs => $1)`, olderThan.Seconds())
+	if err != nil {
+		return 0, fmt.Errorf("user.DeleteStaleRefreshSessions: %w", err)
+	}
+	return tag.RowsAffected(), nil
 }
 
 func (r *postgresRepository) RevokeRefreshSession(ctx context.Context, id, userID string, tokenHash []byte) error {

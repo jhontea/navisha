@@ -23,7 +23,7 @@ location:
   geoapify_timeout_seconds: 8
 
 jwt:
-  access_ttl: 10800    # 3 hours
+  access_ttl: 1800     # 30 minutes (the frontend refreshes every 10 min while active)
   refresh_ttl: 604800  # 7 days
 
 # ── LLM Provider ──
