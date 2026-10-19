@@ -38,8 +38,8 @@ type Tokens struct {
 // UsecaseInterface defines the contract for the user domain's business logic.
 // Handler depends on this interface so it can be tested with a mock.
 type UsecaseInterface interface {
-	GoogleAuthURL(state string) string
-	GoogleLogin(ctx context.Context, code string) (*User, *Tokens, error)
+	GoogleAuthURL(state, verifier string) string
+	GoogleLogin(ctx context.Context, code, verifier string) (*User, *Tokens, error)
 	Me(ctx context.Context, id string) (*User, error)
 	RefreshTokens(ctx context.Context, refreshToken string) (*Tokens, error)
 	Logout(ctx context.Context, refreshToken string) error
@@ -57,8 +57,10 @@ func NewUsecase(repo Repository, jwtSvc *jwt.Service, oauthConfig *gooauth2.Conf
 }
 
 // GoogleAuthURL returns the Google consent URL the user should be redirected to.
-func (u *Usecase) GoogleAuthURL(state string) string {
-	return u.oauthConfig.AuthCodeURL(state)
+// It carries the PKCE S256 challenge of verifier; the verifier itself never
+// leaves the server.
+func (u *Usecase) GoogleAuthURL(state, verifier string) string {
+	return u.oauthConfig.AuthCodeURL(state, gooauth2.S256ChallengeOption(verifier))
 }
 
 // isEmailAllowed returns true when the whitelist is empty (open access)
@@ -77,8 +79,8 @@ func (u *Usecase) isEmailAllowed(email string) bool {
 
 // GoogleLogin exchanges the OAuth code for a Google user, upserts the user in
 // the DB, and issues JWT access + refresh tokens.
-func (u *Usecase) GoogleLogin(ctx context.Context, code string) (*User, *Tokens, error) {
-	token, err := u.oauthConfig.Exchange(ctx, code)
+func (u *Usecase) GoogleLogin(ctx context.Context, code, verifier string) (*User, *Tokens, error) {
+	token, err := u.oauthConfig.Exchange(ctx, code, gooauth2.VerifierOption(verifier))
 	if err != nil {
 		return nil, nil, fmt.Errorf("user.GoogleLogin: exchange code: %w", err)
 	}

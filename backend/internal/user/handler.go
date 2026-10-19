@@ -11,6 +11,7 @@ import (
 
 	"github.com/jhontea/navisha/backend/internal/middleware"
 	"github.com/labstack/echo/v4"
+	gooauth2 "golang.org/x/oauth2"
 )
 
 type Handler struct {
@@ -64,23 +65,35 @@ func (h *Handler) RegisterTestLogin(g *echo.Group, uc TestLoginer) {
 	}, middleware.NoCache())
 }
 
-// GoogleRedirect generates a random CSRF state, stores it in a short-lived cookie,
-// and redirects the user to Google's consent screen.
+// oauthVerifierCookie holds the PKCE verifier between the redirect to Google
+// and the callback.
+const oauthVerifierCookie = "oauth_verifier"
+
+// GoogleRedirect generates a random CSRF state and a PKCE verifier, stores both
+// in short-lived cookies, and redirects the user to Google's consent screen.
 func (h *Handler) GoogleRedirect(c echo.Context) error {
 	state := randomState()
-	// Lax: Google sends the user back with a top-level GET navigation, and Lax
-	// cookies are sent on those. navisha.cloud and api.navisha.cloud are the
-	// same site, so None is not needed.
+	// PKCE: Google only sees the S256 challenge, so an intercepted code cannot
+	// be exchanged without this verifier.
+	verifier := gooauth2.GenerateVerifier()
+	setOAuthCookie(c, "oauth_state", state, 300)
+	setOAuthCookie(c, oauthVerifierCookie, verifier, 300)
+	return c.Redirect(http.StatusTemporaryRedirect, h.usecase.GoogleAuthURL(state, verifier))
+}
+
+// setOAuthCookie sets (or clears, with maxAge -1) a login-flow cookie. Lax:
+// Google sends the user back with a top-level GET navigation, and Lax cookies
+// are sent on those. navisha.cloud and api.navisha.cloud are the same site.
+func setOAuthCookie(c echo.Context, name, value string, maxAge int) {
 	c.SetCookie(&http.Cookie{
-		Name:     "oauth_state",
-		Value:    state,
+		Name:     name,
+		Value:    value,
 		Path:     "/",
-		MaxAge:   300,
+		MaxAge:   maxAge,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
-	return c.Redirect(http.StatusTemporaryRedirect, h.usecase.GoogleAuthURL(state))
 }
 
 // GoogleCallback validates the OAuth state, exchanges the code for user info,
@@ -90,14 +103,19 @@ func (h *Handler) GoogleCallback(c echo.Context) error {
 	if err != nil || stateCookie.Value != c.QueryParam("state") {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid oauth state")
 	}
-	c.SetCookie(&http.Cookie{Name: "oauth_state", Value: "", MaxAge: -1, Path: "/", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
+	verifierCookie, err := c.Cookie(oauthVerifierCookie)
+	if err != nil || verifierCookie.Value == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid oauth state")
+	}
+	setOAuthCookie(c, "oauth_state", "", -1)
+	setOAuthCookie(c, oauthVerifierCookie, "", -1)
 
 	code := c.QueryParam("code")
 	if code == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "missing code")
 	}
 
-	_, tokens, err := h.usecase.GoogleLogin(c.Request().Context(), code)
+	_, tokens, err := h.usecase.GoogleLogin(c.Request().Context(), code, verifierCookie.Value)
 	if err != nil {
 		if errors.Is(err, ErrNotAllowed) {
 			return c.Redirect(http.StatusTemporaryRedirect, h.frontendURL+"/login?error=not_allowed")
