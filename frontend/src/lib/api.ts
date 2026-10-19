@@ -31,10 +31,14 @@ async function refreshSession(): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight
   refreshInFlight = (async () => {
     try {
+      // /auth/refresh is a POST, so the CSRF middleware requires the header too.
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      const csrfToken = getCSRFToken()
+      if (csrfToken) headers["X-CSRF-Token"] = csrfToken
       const res = await fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers,
       })
       return res.ok
     } catch {
