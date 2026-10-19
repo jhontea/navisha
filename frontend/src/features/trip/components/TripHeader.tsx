@@ -54,8 +54,9 @@ export function TripHeader({
   const meta = [range, `${nights} ${nights === 1 ? "night" : "nights"}`].filter(Boolean).join(" · ")
   const timingTone = metrics.status === "past" ? "neutral" : "info"
 
+  // A labelled section, not a header: outside <main> a header is a second banner landmark.
   return (
-    <header className="md:mx-auto md:w-full md:max-w-max-width md:px-margin-desktop md:pt-2">
+    <section aria-label="Trip details" className="md:mx-auto md:w-full md:max-w-max-width md:px-margin-desktop md:pt-2">
       <div className="bg-cover-fallback relative h-52 overflow-hidden rounded-b-3xl md:h-60 md:rounded-3xl">
         {cover && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -136,6 +137,6 @@ export function TripHeader({
       </div>
 
       {shareOpen && <TripShareDialog tripId={trip.id} open={shareOpen} onOpenChange={setShareOpen} />}
-    </header>
+    </section>
   )
 }
