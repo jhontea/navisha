@@ -3,6 +3,7 @@ package middleware
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
 	"strings"
@@ -52,7 +53,7 @@ func CSRF(cookieDomain string) echo.MiddlewareFunc {
 			if header == "" {
 				return echo.NewHTTPError(http.StatusForbidden, "csrf header missing")
 			}
-			if cookie.Value != header {
+			if subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(header)) != 1 {
 				return echo.NewHTTPError(http.StatusForbidden, "csrf token mismatch")
 			}
 
@@ -78,33 +79,18 @@ func isOAuthCallback(path string) bool {
 		strings.HasSuffix(path, "/auth/callback")
 }
 
+// ensureCSRFCookie issues the token cookie only when the browser has none,
+// instead of re-sending it on every safe request.
 func ensureCSRFCookie(c echo.Context, cookieDomain string) error {
-	token := ""
 	if ck, err := c.Cookie(csrfCookieName); err == nil && ck.Value != "" {
-		token = ck.Value
-	} else {
-		var err error
-		token, err = generateCSRFToken()
-		if err != nil {
-			return err
-		}
+		return nil
+	}
+	token, err := generateCSRFToken()
+	if err != nil {
+		return err
 	}
 
-	clearDomain := cookieDomain
-	if clearDomain == "" {
-		clearDomain = c.Request().URL.Hostname()
-	}
-	c.SetCookie(&http.Cookie{
-		Name:     csrfCookieName,
-		Value:    "",
-		Path:     "/",
-		Domain:   clearDomain,
-		MaxAge:   -1,
-		HttpOnly: false,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-	})
-
+	// Not HttpOnly: the frontend reads it to echo it in X-CSRF-Token.
 	c.SetCookie(&http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
@@ -113,7 +99,7 @@ func ensureCSRFCookie(c echo.Context, cookieDomain string) error {
 		MaxAge:   86400,
 		HttpOnly: false,
 		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 	return nil
 }

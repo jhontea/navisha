@@ -68,8 +68,9 @@ func (h *Handler) RegisterTestLogin(g *echo.Group, uc TestLoginer) {
 // and redirects the user to Google's consent screen.
 func (h *Handler) GoogleRedirect(c echo.Context) error {
 	state := randomState()
-	// SameSite=None + Secure required for cross-domain OAuth flow:
-	// frontend is on navisha.cloud, backend/callback is on api.navisha.cloud
+	// Lax: Google sends the user back with a top-level GET navigation, and Lax
+	// cookies are sent on those. navisha.cloud and api.navisha.cloud are the
+	// same site, so None is not needed.
 	c.SetCookie(&http.Cookie{
 		Name:     "oauth_state",
 		Value:    state,
@@ -77,7 +78,7 @@ func (h *Handler) GoogleRedirect(c echo.Context) error {
 		MaxAge:   300,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 	return c.Redirect(http.StatusTemporaryRedirect, h.usecase.GoogleAuthURL(state))
 }
@@ -89,7 +90,7 @@ func (h *Handler) GoogleCallback(c echo.Context) error {
 	if err != nil || stateCookie.Value != c.QueryParam("state") {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid oauth state")
 	}
-	c.SetCookie(&http.Cookie{Name: "oauth_state", Value: "", MaxAge: -1, Path: "/"})
+	c.SetCookie(&http.Cookie{Name: "oauth_state", Value: "", MaxAge: -1, Path: "/", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
 
 	code := c.QueryParam("code")
 	if code == "" {
@@ -164,10 +165,11 @@ func (h *Handler) Me(c echo.Context, userID string) error {
 }
 
 func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken string) {
-	// Always use Secure + SameSite=None. On localhost, Chrome/Edge allow
-	// Secure cookies over HTTP (localhost exception). In production with
-	// .navisha.cloud domain, this is the standard cross-subdomain pattern.
-
+	// navisha.cloud and api.navisha.cloud (and localhost:3000/:8090) are the same
+	// site, so SameSite=None is not needed. access_token is Lax: the frontend
+	// proxy must still see it when a user opens a Navisha link from another site.
+	// refresh_token is Strict: only our own fetch to /auth/refresh needs it.
+	// Secure works on localhost over HTTP (browser exception).
 	c.SetCookie(&http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
@@ -176,7 +178,7 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		MaxAge:   h.accessTTL,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: tokenCookieSameSite["access_token"],
 	})
 	c.SetCookie(&http.Cookie{
 		Name:     "refresh_token",
@@ -186,8 +188,14 @@ func (h *Handler) setTokenCookies(c echo.Context, accessToken, refreshToken stri
 		MaxAge:   h.refreshTTL,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: tokenCookieSameSite["refresh_token"],
 	})
+}
+
+// SameSite per auth cookie; see setTokenCookies.
+var tokenCookieSameSite = map[string]http.SameSite{
+	"access_token":  http.SameSiteLaxMode,
+	"refresh_token": http.SameSiteStrictMode,
 }
 
 func (h *Handler) clearTokenCookies(c echo.Context) {
@@ -201,7 +209,7 @@ func (h *Handler) clearTokenCookies(c echo.Context) {
 			MaxAge:   -1,
 			HttpOnly: true,
 			Secure:   true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: tokenCookieSameSite[name],
 		})
 	}
 }

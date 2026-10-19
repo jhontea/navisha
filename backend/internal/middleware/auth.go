@@ -30,17 +30,16 @@ func Auth(jwtSvc *jwt.Service) echo.MiddlewareFunc {
 }
 
 func tokenFromRequest(c echo.Context) string {
-	cookie, err := c.Cookie("access_token")
-	if err == nil && cookie.Value != "" {
-		return cookie.Value
-	}
-
-	// Fallback: Authorization header (useful for API testing)
-	bearer := c.Request().Header.Get("Authorization")
-	if strings.HasPrefix(bearer, "Bearer ") {
+	// An explicit Bearer header wins over the cookie. CSRF is skipped for Bearer
+	// requests, so a forged "Bearer junk" must never fall back to the victim's
+	// cookie.
+	if bearer := c.Request().Header.Get("Authorization"); strings.HasPrefix(bearer, "Bearer ") {
 		return strings.TrimPrefix(bearer, "Bearer ")
 	}
 
+	if cookie, err := c.Cookie("access_token"); err == nil && cookie.Value != "" {
+		return cookie.Value
+	}
 	return ""
 }
 

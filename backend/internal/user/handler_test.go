@@ -395,3 +395,41 @@ func TestRefresh_RacedKeepsCookies(t *testing.T) {
 		t.Errorf("a raced refresh must not touch cookies, got %+v", cookies)
 	}
 }
+
+// Same-site cookies: the frontend proxy needs access_token on links opened
+// from other sites (Lax); only our own fetch needs refresh_token (Strict);
+// Google's redirect back is a top-level GET, so oauth_state can be Lax.
+func TestAuthCookies_SameSite(t *testing.T) {
+	mu := &mockUsecase{
+		loginUser:   &User{ID: "u1"},
+		loginTokens: &Tokens{AccessToken: "a", RefreshToken: "r"},
+	}
+	h := NewHandler(mu, "https://navisha.cloud", ".navisha.cloud", 3600, 604800)
+
+	rec := httptest.NewRecorder()
+	if err := h.GoogleRedirect(echo.New().NewContext(httptest.NewRequest(http.MethodGet, "/auth/google", nil), rec)); err != nil {
+		t.Fatal(err)
+	}
+	if state := findCookie(rec.Result().Cookies(), "oauth_state"); state == nil || state.SameSite != http.SameSiteLaxMode || !state.Secure {
+		t.Errorf("oauth_state = %+v, want Lax and Secure", state)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/auth/google/callback?state=xyz&code=c", nil)
+	req.AddCookie(&http.Cookie{Name: "oauth_state", Value: "xyz"})
+	rec = httptest.NewRecorder()
+	if err := h.GoogleCallback(echo.New().NewContext(req, rec)); err != nil {
+		t.Fatal(err)
+	}
+	cookies := rec.Result().Cookies()
+	want := map[string]http.SameSite{
+		"access_token":  http.SameSiteLaxMode,
+		"refresh_token": http.SameSiteStrictMode,
+		"oauth_state":   http.SameSiteLaxMode,
+	}
+	for name, sameSite := range want {
+		cookie := findCookie(cookies, name)
+		if cookie == nil || cookie.SameSite != sameSite || !cookie.Secure {
+			t.Errorf("%s = %+v, want SameSite %v and Secure", name, cookie, sameSite)
+		}
+	}
+}
