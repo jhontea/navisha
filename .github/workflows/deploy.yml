@@ -87,29 +87,34 @@ jobs:
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          # Server path of the checkout, kept in a secret rather than the repo.
+          APP_DIR: ${{ secrets.VPS_APP_DIR }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          envs: APP_DIR
           command_timeout: 30m
           # Stop on first error, fail on unset vars, fail piped commands.
           script_stop: true
           script: |
             set -euo pipefail
-            cd /opt/navisha
+            : "${APP_DIR:?VPS_APP_DIR secret is not set}"
+            cd "$APP_DIR"
 
             echo "==> Pulling latest code"
             git fetch --prune origin main
             git reset --hard origin/main
 
             echo "==> Logging in to GitHub Container Registry"
-            if [ ! -f /opt/navisha/.env.deploy ]; then
-              echo "Missing /opt/navisha/.env.deploy"
+            if [ ! -f .env.deploy ]; then
+              echo "Missing .env.deploy in the app directory"
               exit 1
             fi
             set -a
-            source /opt/navisha/.env.deploy
+            source ./.env.deploy
             set +a
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 

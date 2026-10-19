@@ -245,7 +245,7 @@ Buat `docs/COPY_GUIDE.md` berisi:
 | C5 | **i18n (id/en)** dengan `next-intl` | Kalau target user Indonesia. Sekalian memusatkan semua copy (membantu B6). |
 | C6 | **Offline-first ringan** | Sudah ada service worker dan `queryPersistence.ts`. Pastikan itinerary bisa dibaca offline saat perjalanan (sinyal sering hilang di tempat wisata). |
 | C7 | **Export / print itinerary** (PDF atau .ics) | Kebutuhan umum traveler. Tabel calendar sempat dibuat lalu dihapus (migrasi 009/010), jadi perlu dievaluasi ulang alasannya. |
-| C8 | **Backup DB terjadwal + uji restore** | Dari `DEPLOY.md` belum terlihat ada strategi backup Postgres di VPS. |
+| C8 | **Backup DB terjadwal + uji restore** | Belum terlihat ada strategi backup Postgres. |
 | C9 | **Storybook / halaman `/dev/ui`** | Katalog komponen dan token supaya konsistensi desain bisa dicek tanpa membuka setiap halaman. |
 | C10 | **Analytics produk minimal** (event: trip dibuat, AI generate dipakai, expense ditambah) | Supaya prioritas redesign berikutnya berbasis data. |
 | C11 | **Rapikan `WORKLOG.md` (184KB)** | Ringkas ke `docs/decisions/` (ADR singkat). File sebesar ini berat dibaca manusia maupun AI agent. |

@@ -167,7 +167,6 @@ navisha/
 │   ├── src/features/     # Feature-slice architecture
 │   ├── src/components/   # Shared UI components
 │   └── src/lib/          # Utilities, API client, categories
-├── deploy/               # Nginx config for production
 ├── docker-compose.dev.yml  # Dev infrastructure (PostgreSQL + Redis)
 └── docker-compose.prod.yml # Production (images from GHCR)
 ```
