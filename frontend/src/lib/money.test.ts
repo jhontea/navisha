@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { currencyDecimals, formatMoney } from "./money"
+import { currencyDecimals, formatAmountInput, formatMoney } from "./money"
 
 // F4: IDR totals were shown with cents ("Rp 68,340,303.69").
 describe("formatMoney", () => {
@@ -32,5 +32,25 @@ describe("currencyDecimals", () => {
   it("is case-insensitive", () => {
     expect(currencyDecimals("idr")).toBe(0)
     expect(currencyDecimals("usd")).toBe(2)
+  })
+})
+
+describe("formatAmountInput", () => {
+  it("returns an empty string for empty or non-numeric input", () => {
+    expect(formatAmountInput("")).toBe("")
+    expect(formatAmountInput("abc")).toBe("")
+  })
+
+  it("groups digits with en-US separators", () => {
+    expect(formatAmountInput("1500000")).toBe("1,500,000")
+  })
+
+  it("strips separators and symbols before regrouping", () => {
+    expect(formatAmountInput("1.500.000")).toBe("1,500,000")
+    expect(formatAmountInput("Rp 1,500,000")).toBe("1,500,000")
+  })
+
+  it("keeps a lone zero", () => {
+    expect(formatAmountInput("0")).toBe("0")
   })
 })

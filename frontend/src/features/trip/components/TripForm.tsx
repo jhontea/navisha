@@ -10,7 +10,8 @@ import dynamic from "next/dynamic"
 import { useState, type ReactNode } from "react"
 import { ChevronDown, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
-import { getCurrencyLabel } from "@/lib/currency"
+import { getCurrencyLabel, getCurrencySymbol } from "@/lib/currency"
+import { formatAmountInput } from "@/lib/money"
 import {
   FormFieldDescription,
   FormFieldError,
@@ -313,7 +314,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           <FormFieldLabel htmlFor="budget" optional>Budget</FormFieldLabel>
           <InputGroup
             invalid={Boolean(errors.budget)}
-            prefix={<span className="min-w-8 text-center text-sm font-semibold text-muted-foreground">{baseCurrency}</span>}
+            prefix={<span className="min-w-8 text-center text-sm font-semibold text-muted-foreground">{getCurrencySymbol(baseCurrency)}</span>}
           >
             <Input
               id="budget"
@@ -325,10 +326,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
               placeholder="e.g., 10,000,000"
               {...register("budget", {
                 onChange: (e) => {
-                  const raw = e.target.value.replace(/[^0-9]/g, "")
-                  // en-US grouping, same as formatMoney (lib/money.ts)
-                  e.target.value = raw ? Number(raw).toLocaleString("en-US") : ""
-                  return raw
+                  e.target.value = formatAmountInput(e.target.value)
+                  return e.target.value.replace(/,/g, "")
                 },
                 setValueAs: (v) => v ? String(Number(String(v).replace(/[^0-9]/g, ""))) : "",
               })}
