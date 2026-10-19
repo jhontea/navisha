@@ -4,13 +4,15 @@
 > **Status:** Plan disetujui (K1–K3), belum ada task yang dikerjakan. Berikutnya: U1. Lihat [Tracker](#tracker-progres).
 > **Konteks:** Audit memakai rubrik plugin `ux-ui-agent-skills` (design-review + a11y-audit: WCAG 2.2 AA, heuristik Nielsen) ditambah axe-core dan cek visual. Halaman publik diaudit di 1440px, 375px, dan 320px. Dashboard diaudit di layout mobile 457px dengan data asli.
 > Screenshot audit ada di `design-audit/ui-audit-2026-10-19/` (gitignored).
+> **Catatan:** audit dijalankan terhadap checkout lokal saat itu (branch `chore/ci-hardening`), bukan `main` terbaru. Konfirmasi ulang setiap temuan di `main` terbaru sebelum diperbaiki.
 
 ## Cara memakai dokumen ini (untuk sesi baru)
 
 1. Baca bagian **Tracker** dan ambil task pertama yang statusnya `todo` (ikuti urutan, kecuali diminta lain).
 2. Baca detail task-nya di bagian **Task**: file, langkah, dan kriteria selesai.
 3. Jelaskan rencananya ke Ahmad dan tunggu persetujuan sebelum mengubah kode.
-4. Buat branch dari `main` dengan nama yang tertulis di task. Satu task = satu branch = satu PR (PR dibuat manual oleh Ahmad).
+4. **Selalu mulai dari `main` terbaru** ("master" = `origin/main`). Jalankan `git fetch origin`, lalu buat branch dari `origin/main` dengan nama yang tertulis di task (sebaiknya lewat worktree, karena checkout utama `D:
+avisha` dipakai bersama dan branch-nya bisa berganti). Sebelum memperbaiki, pastikan temuannya masih ada di kode `main`, dan pastikan server lokal yang dipakai untuk verifikasi menjalankan kode branch task. Satu task = satu branch = satu PR (PR dibuat manual oleh Ahmad).
 5. Verifikasi di runtime (lihat **Cara verifikasi**), jangan hanya mengandalkan unit test.
 6. Setelah selesai, perbarui baris task di **Tracker** (status, branch/PR, tanggal) dan tambahkan catatan singkat di **Log progres**. Perubahan dokumen ini ikut di-commit di branch task yang sama.
 
