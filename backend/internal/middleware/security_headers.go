@@ -18,7 +18,9 @@ func SecurityHeaders() echo.MiddlewareFunc {
 			h.Set("X-Permitted-Cross-Domain-Policies", "none")
 			h.Set("Cross-Origin-Resource-Policy", "same-origin")
 			// Legacy XSS filter for older browsers (defense-in-depth).
-			h.Set("X-XSS-Protection", "1; mode=block")
+			// 0 disables the legacy XSS auditor, which could itself be abused; modern
+			// browsers removed it and CSP is the real protection.
+			h.Set("X-XSS-Protection", "0")
 			// Loop 18: expose request ID in response so clients can reference
 			// it in bug reports. Echo's RequestID middleware stores it on the
 			// context; this header mirrors it to the client.

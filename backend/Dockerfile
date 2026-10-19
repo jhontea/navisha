@@ -9,9 +9,9 @@ COPY . .
 # Cache mount mempercepat rebuild berikutnya secara signifikan.
 # Build pertama tetap lama karena compile semua package dari scratch.
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 go build -o server ./cmd/server
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o server ./cmd/server
 
-FROM alpine:3.21
+FROM alpine:3.24
 WORKDIR /app
 COPY --from=builder /app/server .
 COPY config.yaml .
