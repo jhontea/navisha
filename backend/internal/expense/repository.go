@@ -33,8 +33,9 @@ type Repository interface {
 	// ListForRebaseTx returns the trip's expenses locked FOR UPDATE inside
 	// tx, so a base-currency change can reconvert them atomically.
 	ListForRebaseTx(ctx context.Context, tx pgx.Tx, tripID string) ([]Expense, error)
-	// UpdateConvertedTx rewrites only converted_amount + base_currency.
-	UpdateConvertedTx(ctx context.Context, tx pgx.Tx, id string, converted float64, base string) error
+	// UpdateConvertedBatchTx rewrites converted_amount + base_currency for many
+	// expenses in one statement; ids[i] gets converted[i].
+	UpdateConvertedBatchTx(ctx context.Context, tx pgx.Tx, ids []string, converted []float64, base string) error
 	Delete(ctx context.Context, id string) error
 	// FindLinkedTx returns the expense linked to a booking (column is
 	// "transportation_id" or "accommodation_id"), locked FOR UPDATE, or

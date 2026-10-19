@@ -17,6 +17,7 @@ type mockRepo struct {
 	createErr     error
 	updateResult  *Expense
 	updateErr     error
+	batchCalls    int
 	deleteErr     error
 	summaryResult *Summary
 	summaryErr    error
@@ -153,16 +154,19 @@ func (m *mockRepo) ListForRebaseTx(_ context.Context, _ pgx.Tx, tripID string) (
 	return out, nil
 }
 
-func (m *mockRepo) UpdateConvertedTx(_ context.Context, _ pgx.Tx, id string, converted float64, base string) error {
+func (m *mockRepo) UpdateConvertedBatchTx(_ context.Context, _ pgx.Tx, ids []string, converted []float64, base string) error {
+	m.batchCalls++
 	if m.updateErr != nil {
 		return m.updateErr
 	}
-	e, ok := m.expenses[id]
-	if !ok {
-		return ErrNotFound
+	for i, id := range ids {
+		e, ok := m.expenses[id]
+		if !ok {
+			return ErrNotFound
+		}
+		e.ConvertedAmount = converted[i]
+		e.BaseCurrency = base
 	}
-	e.ConvertedAmount = converted
-	e.BaseCurrency = base
 	return nil
 }
 
