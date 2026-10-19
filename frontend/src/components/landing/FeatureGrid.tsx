@@ -1,9 +1,11 @@
-import { CalendarDays, LogIn, Map, Sparkles, Wallet, type LucideIcon } from "lucide-react"
+import { CalendarDays, Check, LogIn, Map, Sparkles, Wallet, type LucideIcon } from "lucide-react"
 
 import { FeatureCard } from "@/components/landing/FeatureCard"
+import { getCategoryColor } from "@/features/expense/categoryColors"
 import { BudgetMeter } from "@/features/expense/components/BudgetMeter"
 import { TimelineIcon } from "@/features/activity/components/timeline/TimelineIcon"
 import { TimelineRow } from "@/features/activity/components/timeline/TimelineRow"
+import { cn } from "@/lib/utils"
 
 // Sample content only; it mirrors the app's own timeline and budget UI.
 const itineraryVisual = (
@@ -24,17 +26,64 @@ const itineraryVisual = (
 )
 
 const mapVisual = (
-  <ol className="space-y-2">
-    {["Senso-ji", "Ueno Park", "Ameyoko"].map((place, i) => (
-      <li key={place} className="flex items-center gap-3 text-sm text-foreground">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground ring-2 ring-card">
-          {i + 1}
-        </span>
-        {place}
-      </li>
-    ))}
-  </ol>
+  <div>
+    <p className="mb-3 px-1 font-display text-base font-extrabold text-foreground">
+      Day 2 <span className="text-muted-foreground">· 4 stops</span>
+    </p>
+    <div className="relative">
+      {/* Dashed route behind the numbered pins. */}
+      <span className="absolute inset-y-3.5 left-3.5 -translate-x-1/2 border-l-2 border-dashed border-primary/40" />
+      <ol className="relative space-y-5">
+        {[
+          { place: "Senso-ji", leg: null },
+          { place: "Ueno Park", leg: "25 min walk" },
+          { place: "Ameyoko", leg: "10 min walk" },
+          { place: "Hotel in Ueno", leg: "5 min walk" },
+        ].map(({ place, leg }, i) => (
+          <li key={place} className="flex items-center gap-3 text-sm text-foreground">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground ring-2 ring-card">
+              {i + 1}
+            </span>
+            {place}
+            {leg && <span className="ml-auto text-xs text-muted-foreground">{leg}</span>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
 )
+
+const aiVisual = (
+  <div className="space-y-3">
+    <p className="ml-auto w-fit max-w-xs rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground">
+      3 days in Tokyo, food and temples
+    </p>
+    <ul className="space-y-2">
+      {[
+        { day: "Day 1", title: "Asakusa and Senso-ji", keep: true },
+        { day: "Day 2", title: "Tsukiji food walk", keep: true },
+        { day: "Day 3", title: "Shibuya at night", keep: false },
+      ].map(({ day, title, keep }) => (
+        <li key={day} className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2">
+          <span
+            className={cn(
+              "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2",
+              keep ? "border-primary bg-primary text-primary-foreground" : "border-input",
+            )}
+          >
+            {keep && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+          </span>
+          <div className="min-w-0">
+            <p className="font-display text-sm font-extrabold text-foreground">{title}</p>
+            <p className="text-xs text-muted-foreground">{day}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+)
+
+const SAMPLE_SPEND = { accommodation: 42000, transport: 18000, food: 16000, souvenir: 8000 }
 
 const budgetVisual = (
   <div>
@@ -42,13 +91,17 @@ const budgetVisual = (
       <span className="text-muted-foreground">Spent</span>
       <span className="font-semibold text-foreground tabular-nums">¥ 84,000 of ¥ 120,000</span>
     </div>
-    <BudgetMeter
-      className="mt-2"
-      label="Sample budget"
-      budget={120000}
-      byCategory={{ accommodation: 42000, transport: 18000, food: 16000, souvenir: 8000 }}
-    />
+    <BudgetMeter className="mt-2" label="Sample budget" budget={120000} byCategory={SAMPLE_SPEND} />
     <p className="mt-2 text-xs text-muted-foreground tabular-nums">¥ 36,000 left · ≈ Rp 3,960,000</p>
+    <ul className="mt-3 space-y-1.5 border-t pt-3 text-sm">
+      {Object.entries(SAMPLE_SPEND).map(([key, amount]) => (
+        <li key={key} className="flex items-center gap-2">
+          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", getCategoryColor(key).bar)} />
+          <span className="text-foreground">{getCategoryColor(key).label}</span>
+          <span className="ml-auto text-muted-foreground tabular-nums">¥ {amount.toLocaleString("en-US")}</span>
+        </li>
+      ))}
+    </ul>
   </div>
 )
 
@@ -113,6 +166,7 @@ export function FeatureGrid() {
             Icon={Sparkles}
             title="AI drafts you review"
             description="Get a suggested day or a whole trip from a few answers. Nothing is added until you pick what to keep."
+            visual={aiVisual}
           />
         </div>
       </section>
