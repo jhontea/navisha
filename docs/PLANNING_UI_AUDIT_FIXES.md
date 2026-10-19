@@ -1,7 +1,7 @@
 # Planning — Perbaikan Hasil Audit UI (2026-10-19)
 
 > **Tanggal audit:** 2026-10-19
-> **Status:** U1–U8, U10 dan U11 selesai (2026-10-19). U9 menunggu fase V5. U12–U17 (audit alur buat trip baru) masih `todo`. Lihat [Tracker](#tracker-progres).
+> **Status:** U1–U8, U10 dan U11 selesai (2026-10-19). U9 menunggu fase V5. U12 dan U13 (audit alur buat trip baru) selesai (2026-10-19). U14–U19 masih `todo`. Lihat [Tracker](#tracker-progres).
 > **Konteks:** Audit memakai rubrik plugin `ux-ui-agent-skills` (design-review + a11y-audit: WCAG 2.2 AA, heuristik Nielsen) ditambah axe-core dan cek visual. Halaman publik diaudit di 1440px, 375px, dan 320px. Dashboard diaudit di layout mobile 457px dengan data asli.
 > Screenshot audit ada di `design-audit/ui-audit-2026-10-19/` (gitignored).
 > **Catatan:** audit dijalankan terhadap checkout lokal saat itu (branch `chore/ci-hardening`), bukan `main` terbaru. Konfirmasi ulang setiap temuan di `main` terbaru sebelum diperbaiki.
@@ -32,12 +32,14 @@ Status: `todo` → `in progress` → `review` (PR dibuka) → `done` (merge). Pa
 | U9 | Minor (desain) | Trip tanpa cover hanya berupa gradien kosong | (ikut V5 redesign) | todo | |
 | U10 | Audit | Audit lanjutan: dashboard desktop + dark mode | — | done | 2026-10-19 (temuan: U11) |
 | U11 | Sedang (tab trip, desktop) | Header trip menjadi landmark banner kedua | `fix/a11y-trip-header-banner` | done | #110 · 2026-10-19 |
-| U12 | Sedang (UX) | Switch AI di form "from scratch" diganti link | `fix/new-trip-ai-link` | todo | |
-| U13 | Sedang | Rapikan form trip: label tanggal, urutan currency/budget, refactor | `fix/trip-form-polish` | todo | |
+| U12 | Sedang (UX) | Switch AI di form "from scratch" diganti link | `fix/new-trip-ai-link` | done | #113 · 2026-10-19 |
+| U13 | Sedang | Rapikan form trip: label tanggal, urutan currency/budget, refactor | `fix/trip-form-polish` | done | #114, #115 · 2026-10-19 |
 | U14 | Sedang (UX) | "Review location" fokus ke lokasi + Title terisi otomatis | `fix/activity-location-review` | todo | |
 | U15 | Sedang | Field destinasi tetap bisa dipakai saat Google Places gagal | `fix/destination-places-fallback` | todo | |
 | U16 | Minor | Kalender: tanggal lampau redup, rentang trip ditandai | `fix/date-picker-past-days` | todo | |
 | U17 | Minor | Chip durasi tersorot + biaya tampil di kartu stay | `fix/duration-chip-stay-cost` | todo | |
+| U18 | Refactor | Form uang lain memakai `formatAmountInput` | `refactor/amount-input-format` | todo | |
+| U19 | Sedang (data) | Budget desimal berubah saat Edit → Save trip | `fix/trip-budget-decimals` | todo | |
 
 ## Keputusan
 
@@ -190,6 +192,18 @@ Badge "Review location" sempat muncul karena audit awalnya dijalankan di :3001, 
 - **Langkah:** (1) Reproduksi dulu di :3000 dengan mengetik jam secara manual, lalu cek `aria-pressed` pada chip. Jika `true` tapi tampak tidak aktif, perbaiki kontras gaya `pressed` di `Chip.tsx`. Jika `false`, perbaiki hitungan di `LocationFields.tsx`. Jika tidak bisa direproduksi, tulis di log lalu `skip` bagian ini. (2) Di `AccommodationSection`, ambil biaya tiap stay dengan `linkedCost(expenses, "accommodation", id)`, teruskan ke `AccommodationCard` lewat satu prop opsional `cost`, dan tampilkan sebagai fact "Cost" dengan helper format uang yang sudah ada.
 - **Selesai jika:** chip yang sesuai tersorot saat jam diisi manual, dan kartu stay menampilkan biaya. Stay tanpa biaya tetap tampil seperti sekarang.
 
+### U18 — Format angka uang di form lain
+
+- **Temuan:** logika "buang non-angka lalu `toLocaleString()` tanpa locale" ditulis ulang di form stay (`features/accommodation/components/AccommodationForm.tsx:380-387`), expense (`features/expense/components/ExpenseForm.tsx:91` dan onChange amount), converter (`features/currency/components/CurrencyConverter.tsx`), AI wizard (`features/trip/components/GenerateChatWizard.tsx`), dan share dialog (`features/trip/components/TripShareDialog.tsx`). Karena tanpa locale, hasilnya bergantung pada browser. U13 sudah membuat `formatAmountInput` (`lib/money.ts`, dengan test) dan memakainya di form trip.
+- **Langkah:** periksa tiap tempat. Untuk input uang bilangan bulat, ganti dengan `formatAmountInput`. Form stay dan expense menerima desimal (`replace(/[^0-9.]/g, "")`), jadi perluas helper dengan opsi desimal atau buat helper kedua, lalu tambahkan test-nya. Untuk angka yang bukan input uang (misalnya di share dialog), cukup beri locale `"en-US"`.
+- **Selesai jika:** tidak ada lagi `toLocaleString()` tanpa argumen di `src/`, angka di form stay, expense, dan converter tampil "1,500,000", nilai yang tersimpan tidak berubah (cek Edit → Save pada data uji), dan regresi form stay serta expense dicek di :3000.
+
+### U19 — Budget desimal berubah saat Edit → Save
+
+- **Temuan:** budget trip disimpan sebagai `NUMERIC(14,4)` (`backend/migrations/003_add_trip_budget.sql`; `backend/internal/trip/model.go:14` memakai `float64`), tetapi form trip hanya menerima digit. `setValueAs` dan `formatAmountInput` membuang titik desimal, sehingga budget `1500.50` tampil "150,050" di form Edit dan tersimpan sebagai `150050` saat Save. Bug ini sudah ada sebelum U13. Budget yang diketik lewat form selalu bilangan bulat, jadi kasus ini hanya muncul dari jalur lain (API, AI draft, atau data lama).
+- **Langkah:** (1) Cek dulu di DB prod secara read-only (`SELECT count(*) FROM trips WHERE budget <> trunc(budget)`) apakah ada budget desimal. (2) Putuskan bersama Ahmad: budget selalu bilangan bulat (dibulatkan di backend dan didokumentasikan), atau form menerima desimal sesuai `currencyDecimals` (`lib/money.ts:7`). (3) Terapkan, lalu tambahkan test untuk nilai desimal.
+- **Selesai jika:** Edit → Save tidak pernah mengubah nilai budget, termasuk yang desimal, dan ada test untuk kasus itu.
+
 ---
 
 ## Cara verifikasi
@@ -217,3 +231,5 @@ Badge "Review location" sempat muncul karena audit awalnya dijalankan di :3001, 
 | 2026-10-19 | U8 | Preview AI baru, rute pada kartu peta, rincian kategori pada budget, panel `flex-1`. |
 | 2026-10-19 | U10, U11 | Audit desktop + dark selesai; satu temuan (U11) diperbaiki. |
 | 2026-10-19 | U12–U17 | Audit alur buat trip baru di `main` 4d4a1f1; enam task baru. K4–K7 diputuskan sesuai rekomendasi. Berikutnya: U12. |
+| 2026-10-19 | U12 | Switch AI diganti link "Generate with AI" (#113). |
+| 2026-10-19 | U13 | Label tanggal, currency di atas budget dengan prefix simbol, `InputGroup`, `formatAmountInput` + test (#114); nilai awal budget di Edit diformat (#115). Regresi form stay dan Edit → Save trip uji sudah dicek. U18 dan U19 ditambahkan dari temuan review. Berikutnya: bahas U14. |
