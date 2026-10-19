@@ -172,3 +172,62 @@ func TestResolveMapsLinkKeepsCoordinatesWhenNearestPlaceIsFar(t *testing.T) {
 		t.Fatalf("suggestion = %#v, want the coordinates as address, country ID", got)
 	}
 }
+
+// fakeMapsTransport answers like Google: the short link redirects to the full
+// Maps URL, which then returns a page.
+type fakeMapsTransport struct{ redirectTo string }
+
+func (f fakeMapsTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	rec := httptest.NewRecorder()
+	if r.URL.Host == "maps.app.goo.gl" {
+		rec.Header().Set("Location", f.redirectTo)
+		rec.WriteHeader(http.StatusFound)
+	} else {
+		rec.WriteHeader(http.StatusOK)
+	}
+	res := rec.Result()
+	res.Request = r
+	return res, nil
+}
+
+func TestFollowRedirectResolvesShortLink(t *testing.T) {
+	const short = "https://maps.app.goo.gl/abc123"
+	const full = "https://www.google.com/maps/place/Monas/@-6.175392,106.827153,17z"
+	rt := fakeMapsTransport{redirectTo: full}
+
+	got, err := followRedirect(context.Background(), NewMapsLinkHTTPClient(rt), short)
+	if err != nil || got != full {
+		t.Fatalf("followRedirect = %q, %v; want %q", got, err, full)
+	}
+
+	// The old setup (an auto-following client) never saw the Location header
+	// and handed back the short link unresolved.
+	old, _ := followRedirect(context.Background(), &http.Client{Transport: rt}, short)
+	if old != short {
+		t.Errorf("auto-following client resolved to %q; expected the unresolved short link", old)
+	}
+}
+
+func TestFollowRedirectRejectsLookalikeHosts(t *testing.T) {
+	client := NewMapsLinkHTTPClient(fakeMapsTransport{redirectTo: "https://evilgoogle.com/steal"})
+	for _, start := range []string{
+		"https://evilgoogle.com/maps",    // first hop
+		"https://maps.app.goo.gl/abc123", // redirect to a lookalike
+	} {
+		if _, err := followRedirect(context.Background(), client, start); !errors.Is(err, ErrUnsupportedLink) {
+			t.Errorf("followRedirect(%q) err = %v, want ErrUnsupportedLink", start, err)
+		}
+	}
+}
+
+func TestIsGoogleHost(t *testing.T) {
+	for host, want := range map[string]bool{
+		"google.com": true, "www.google.com": true, "maps.google.com": true,
+		"goo.gl": true, "maps.app.goo.gl": true,
+		"evilgoogle.com": false, "google.com.evil.io": false, "notgoo.gl": false,
+	} {
+		if got := isGoogleHost(host); got != want {
+			t.Errorf("isGoogleHost(%q) = %v, want %v", host, got, want)
+		}
+	}
+}
