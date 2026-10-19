@@ -35,7 +35,7 @@ export function ProfileScreen() {
   const { mutate: logout, isPending: loggingOut } = useLogout()
 
   return (
-    <div className="mx-auto w-full max-w-6xl animate-fade-in px-margin-mobile pb-28 pt-4 md:px-margin-desktop md:pb-8 md:pt-6">
+    <main className="mx-auto w-full max-w-6xl animate-fade-in px-margin-mobile pb-28 pt-4 md:px-margin-desktop md:pb-8 md:pt-6">
       <PageHeader title="Your" accent="profile" description="Manage your account and see your travel progress." />
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -175,6 +175,6 @@ variant="destructive" className="mt-5 w-full">
           </section>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
