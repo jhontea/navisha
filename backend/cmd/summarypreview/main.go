@@ -93,7 +93,8 @@ func main() {
 	}
 
 	client := llm.NewClient(cfg.EffectiveProvider(), cfg.ActiveAPIKey(), cfg.ActiveModel(), cfg.ActiveBaseURL()).
-		WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second)
+		WithTimeout(time.Duration(cfg.LLM.TimeoutSeconds) * time.Second).
+		WithMaxConcurrent(cfg.LLM.MaxConcurrent)
 	temp := summary.TemperatureForTrip(tripCtx.TripID)
 	content, err := client.ChatCompletion(ctx, llm.ChatRequest{
 		Model:       cfg.ActiveModel(),

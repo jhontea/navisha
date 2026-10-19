@@ -110,6 +110,8 @@ type LLMConfig struct {
 	// TimeoutSeconds is the HTTP timeout for LLM calls. When 0 (or unset)
 	// the client default is used.
 	TimeoutSeconds int `mapstructure:"timeout_seconds"`
+	// MaxConcurrent caps simultaneous LLM calls; 0 (or unset) uses the client default (4).
+	MaxConcurrent int `mapstructure:"max_concurrent"`
 }
 
 // ActiveAPIKey returns the API key for the currently selected provider.

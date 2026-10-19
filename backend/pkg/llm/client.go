@@ -7,9 +7,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"math/rand/v2"
+	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -78,10 +83,25 @@ type Client struct {
 	apiKey   string
 	model    string
 	http     *http.Client
+	// slots bounds concurrent provider calls across all callers. A slot is held
+	// per HTTP attempt, never while sleeping between retries.
+	slots chan struct{}
+	// backoffBase is the first retry delay; it doubles per attempt (tests shrink it).
+	backoffBase time.Duration
 }
 
-// defaultTimeout is generous because some models stream/think slowly.
-const defaultTimeout = 120 * time.Second
+const (
+	// defaultTimeout is generous because some models stream/think slowly.
+	defaultTimeout = 120 * time.Second
+	// defaultMaxConcurrent is the default cap on simultaneous provider calls.
+	defaultMaxConcurrent = 4
+	// maxRetries is the number of extra attempts after the first one.
+	maxRetries = 2
+	// maxRetryDelay caps both the backoff and a provider's Retry-After.
+	maxRetryDelay = 10 * time.Second
+	// maxResponseBytes caps how much of a provider response is read.
+	maxResponseBytes = 4 << 20
+)
 
 // NewClient creates a Client for the given provider. If baseURL is empty,
 // the default for the provider is used. If model is empty, the caller must
@@ -96,7 +116,20 @@ func NewClient(provider, apiKey, model, baseURL string) *Client {
 		apiKey:   apiKey,
 		model:    model,
 		http:     &http.Client{Timeout: defaultTimeout},
+		slots:    make(chan struct{}, defaultMaxConcurrent),
+
+		backoffBase: time.Second,
 	}
+}
+
+// WithMaxConcurrent sets how many provider calls may run at once; extra
+// callers wait for a slot. A zero or negative value leaves the default.
+// Call it before the client is shared between goroutines.
+func (c *Client) WithMaxConcurrent(n int) *Client {
+	if n > 0 {
+		c.slots = make(chan struct{}, n)
+	}
+	return c
 }
 
 // WithTimeout overrides the HTTP client timeout. A zero or negative value
@@ -220,41 +253,93 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (string, e
 	return content, nil
 }
 
-// send makes one chat completion call and returns the first choice's content
-// and finish reason.
+// send makes a chat completion call and returns the first choice's content and
+// finish reason. Transient failures (429/502/503/504, temporary network errors)
+// are retried up to maxRetries times with exponential backoff + jitter.
 func (c *Client) send(ctx context.Context, req ChatRequest) (string, string, error) {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return "", "", fmt.Errorf("llm.ChatCompletion: marshal request: %w", err)
 	}
 
+	for attempt := 0; ; attempt++ {
+		content, finish, retryAfter, retryable, err := c.attempt(ctx, body)
+		if err == nil || !retryable || attempt >= maxRetries {
+			return content, finish, err
+		}
+		delay := min(c.backoffBase<<attempt, maxRetryDelay)
+		delay += rand.N(delay/2 + 1) //nolint:gosec // jitter needs no crypto randomness
+		if retryAfter > 0 {
+			delay = min(retryAfter, maxRetryDelay)
+		}
+		slog.Warn("llm.ChatCompletion: transient failure, retrying",
+			"provider", c.provider, "attempt", attempt+1, "delay", delay)
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return "", "", fmt.Errorf("llm.ChatCompletion: retry wait: %w", ctx.Err())
+		case <-timer.C:
+		}
+	}
+}
+
+// attempt performs one HTTP call while holding a concurrency slot. It reports
+// whether a failure is worth retrying and any server-requested Retry-After.
+func (c *Client) attempt(ctx context.Context, body []byte) (content, finish string, retryAfter time.Duration, retryable bool, err error) {
+	select {
+	case c.slots <- struct{}{}:
+		defer func() { <-c.slots }()
+	case <-ctx.Done():
+		return "", "", 0, false, fmt.Errorf("llm.ChatCompletion: wait for slot: %w", ctx.Err())
+	}
+
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
-		return "", "", fmt.Errorf("llm.ChatCompletion: new request: %w", err)
+		return "", "", 0, false, fmt.Errorf("llm.ChatCompletion: new request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	res, err := c.http.Do(httpReq)
 	if err != nil {
-		return "", "", fmt.Errorf("llm.ChatCompletion: do request: %w", err)
+		// A client timeout is not retried: it already burned the full budget.
+		var ne net.Error
+		timedOut := errors.As(err, &ne) && ne.Timeout()
+		transient := ctx.Err() == nil && !timedOut
+		return "", "", 0, transient, fmt.Errorf("llm.ChatCompletion: do request: %w", err)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		// Provider response bodies can contain request details or echoed user
 		// input. Keep them out of wrapped errors because callers log those errors.
-		return "", "", fmt.Errorf("llm.ChatCompletion: provider %q returned status %d", c.provider, res.StatusCode)
+		err = fmt.Errorf("llm.ChatCompletion: provider %q returned status %d", c.provider, res.StatusCode)
+		switch res.StatusCode {
+		case http.StatusTooManyRequests, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+			if secs, convErr := strconv.Atoi(res.Header.Get("Retry-After")); convErr == nil && secs > 0 {
+				retryAfter = time.Duration(secs) * time.Second
+			}
+			return "", "", retryAfter, true, err
+		}
+		return "", "", 0, false, err
 	}
 
+	data, err := io.ReadAll(io.LimitReader(res.Body, maxResponseBytes+1))
+	if err != nil {
+		return "", "", 0, false, fmt.Errorf("llm.ChatCompletion: read response: %w", err)
+	}
+	if len(data) > maxResponseBytes {
+		return "", "", 0, false, fmt.Errorf("llm.ChatCompletion: response exceeds %d bytes", maxResponseBytes)
+	}
 	var raw chatResponse
-	if err := json.NewDecoder(res.Body).Decode(&raw); err != nil {
-		return "", "", fmt.Errorf("llm.ChatCompletion: decode response: %w", err)
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return "", "", 0, false, fmt.Errorf("llm.ChatCompletion: decode response: %w", err)
 	}
 	if len(raw.Choices) == 0 {
-		return "", "", nil
+		return "", "", 0, false, nil
 	}
-	return raw.Choices[0].Message.Content, raw.Choices[0].FinishReason, nil
+	return raw.Choices[0].Message.Content, raw.Choices[0].FinishReason, 0, false, nil
 }
 
 // defaultBaseURL returns the default base URL for a known provider.
