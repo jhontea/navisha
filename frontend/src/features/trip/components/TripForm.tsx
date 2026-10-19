@@ -250,7 +250,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       {!initial && (
         <p className="-mt-2 flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
           Prefer an AI draft?
-          <Button type="button" variant="link" size="xs" onClick={continueWithAI}>
+          <Button type="button" variant="link" size="sm" className="h-auto px-0" onClick={continueWithAI}>
             <Sparkles aria-hidden="true" />
             Generate with AI
           </Button>
