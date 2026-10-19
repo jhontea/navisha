@@ -268,7 +268,7 @@ func (c *Client) send(ctx context.Context, req ChatRequest) (string, string, err
 			return content, finish, err
 		}
 		delay := min(c.backoffBase<<attempt, maxRetryDelay)
-		delay += rand.N(delay/2 + 1) // jitter
+		delay += rand.N(delay/2 + 1) //nolint:gosec // jitter needs no crypto randomness
 		if retryAfter > 0 {
 			delay = min(retryAfter, maxRetryDelay)
 		}
@@ -305,7 +305,8 @@ func (c *Client) attempt(ctx context.Context, body []byte) (content, finish stri
 	if err != nil {
 		// A client timeout is not retried: it already burned the full budget.
 		var ne net.Error
-		transient := ctx.Err() == nil && !(errors.As(err, &ne) && ne.Timeout())
+		timedOut := errors.As(err, &ne) && ne.Timeout()
+		transient := ctx.Err() == nil && !timedOut
 		return "", "", 0, transient, fmt.Errorf("llm.ChatCompletion: do request: %w", err)
 	}
 	defer res.Body.Close()

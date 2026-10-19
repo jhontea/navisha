@@ -19,7 +19,7 @@ func retryClient(url string) *Client {
 	return c
 }
 
-func chat(c *Client, ctx context.Context) (string, error) {
+func chat(ctx context.Context, c *Client) (string, error) {
 	return c.ChatCompletion(ctx, ChatRequest{Messages: []Message{{Role: "user", Content: "hi"}}})
 }
 
@@ -34,7 +34,7 @@ func TestChatCompletion_RetriesThenSucceeds(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	got, err := chat(retryClient(srv.URL), context.Background())
+	got, err := chat(context.Background(), retryClient(srv.URL))
 	if err != nil || got != "ok" {
 		t.Fatalf("got %q, %v", got, err)
 	}
@@ -51,7 +51,7 @@ func TestChatCompletion_StopsAtRetryLimit(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	if _, err := chat(retryClient(srv.URL), context.Background()); err == nil {
+	if _, err := chat(context.Background(), retryClient(srv.URL)); err == nil {
 		t.Fatal("expected error")
 	}
 	if calls.Load() != 1+maxRetries {
@@ -66,7 +66,7 @@ func TestChatCompletion_DoesNotRetryOtherClientErrors(t *testing.T) {
 			calls.Add(1)
 			w.WriteHeader(status)
 		}))
-		if _, err := chat(retryClient(srv.URL), context.Background()); err == nil {
+		if _, err := chat(context.Background(), retryClient(srv.URL)); err == nil {
 			t.Fatalf("status %d: expected error", status)
 		}
 		srv.Close()
@@ -89,7 +89,7 @@ func TestChatCompletion_HonoursRetryAfter(t *testing.T) {
 	defer srv.Close()
 
 	start := time.Now()
-	if _, err := chat(retryClient(srv.URL), context.Background()); err != nil {
+	if _, err := chat(context.Background(), retryClient(srv.URL)); err != nil {
 		t.Fatal(err)
 	}
 	if d := time.Since(start); d < time.Second {
@@ -109,7 +109,7 @@ func TestChatCompletion_CancelledDuringBackoffStops(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	start := time.Now()
-	_, err := chat(retryClient(srv.URL), ctx)
+	_, err := chat(ctx, retryClient(srv.URL))
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("err = %v, want deadline exceeded", err)
 	}
@@ -126,7 +126,7 @@ func TestChatCompletion_RejectsOversizedBody(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, err := chat(retryClient(srv.URL), context.Background())
+	_, err := chat(context.Background(), retryClient(srv.URL))
 	if err == nil || !strings.Contains(err.Error(), "exceeds") {
 		t.Fatalf("err = %v, want size error", err)
 	}
@@ -155,7 +155,7 @@ func TestChatCompletion_LimitsConcurrency(t *testing.T) {
 	c := retryClient(srv.URL).WithMaxConcurrent(2)
 	done := make(chan error, 6)
 	for range 6 {
-		go func() { _, err := chat(c, context.Background()); done <- err }()
+		go func() { _, err := chat(context.Background(), c); done <- err }()
 	}
 	time.Sleep(300 * time.Millisecond)
 	if got := inflight.Load(); got != 2 {
@@ -184,14 +184,14 @@ func TestChatCompletion_CancelledWhileQueued(t *testing.T) {
 	defer close(release)
 
 	c := retryClient(srv.URL).WithMaxConcurrent(1)
-	go chat(c, context.Background())
+	go chat(context.Background(), c)
 	for calls.Load() == 0 {
 		time.Sleep(5 * time.Millisecond)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	_, err := chat(c, ctx)
+	_, err := chat(ctx, c)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("err = %v, want deadline exceeded", err)
 	}
