@@ -144,7 +144,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       start_date: values.start_date,
       end_date: values.end_date,
       base_currency: values.base_currency,
-      budget: values.budget ? Number(values.budget) : 0,
+      budget: values.budget ? Number(values.budget.replace(/,/g, "")) : 0,
       cover_image_url:
         coverPreview && !coverPreview.startsWith("blob:")
           ? coverPreview
@@ -369,7 +369,7 @@ function buildDefaults(initial?: Trip): FormValues {
     start_date: initial.start_date,
     end_date: initial.end_date,
     base_currency: initial.base_currency ?? "IDR",
-    budget: initial.budget ? String(initial.budget) : "",
+    budget: initial.budget ? formatAmountInput(String(initial.budget)) : "",
     notes: initial.notes ?? "",
   }
 }
