@@ -89,9 +89,9 @@ function SpentCard({
     <section className={CARD} aria-labelledby="budget-spent-heading">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 id="budget-spent-heading" className="text-sm font-semibold text-muted-foreground">
+          <h2 id="budget-spent-heading" className="text-sm font-semibold text-muted-foreground">
             Spent
-          </h3>
+          </h2>
           <p className="mt-0.5 font-display text-3xl font-extrabold text-foreground">
             <MoneyText amount={spent} currency={currency} />
           </p>
@@ -140,9 +140,9 @@ function CategoryCard({ rows, currency }: { rows: CategoryRow[]; currency: strin
   return (
     <section className={CARD} aria-labelledby="budget-category-heading">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 id="budget-category-heading" className="font-display text-lg font-extrabold text-foreground">
+        <h2 id="budget-category-heading" className="font-display text-lg font-extrabold text-foreground">
           By category
-        </h3>
+        </h2>
         {hasPlan && (
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="h-3 w-0.5 rounded-full bg-foreground" aria-hidden="true" />
@@ -211,9 +211,9 @@ function DailyCard({ daily, currency }: { daily: DailyTotals; currency: string }
   return (
     <section className={CARD} aria-labelledby="budget-daily-heading">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 id="budget-daily-heading" className="font-display text-lg font-extrabold text-foreground">
+        <h2 id="budget-daily-heading" className="font-display text-lg font-extrabold text-foreground">
           By day
-        </h3>
+        </h2>
         {peak && (
           <p className="text-xs text-muted-foreground">
             Highest: Day {peak.dayNumber} · <MoneyText amount={peak.total} currency={currency} />
