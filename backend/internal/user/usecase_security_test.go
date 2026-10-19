@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -15,6 +16,8 @@ type sessionRepoMock struct {
 	rotatedOldHash         []byte
 	rotatedNewID           string
 	revokedID              string
+	rotateErr              error
+	staleOlderThan         time.Duration
 }
 
 func (m *sessionRepoMock) FindByID(context.Context, string) (*User, error) { return nil, ErrNotFound }
@@ -28,11 +31,15 @@ func (m *sessionRepoMock) CreateRefreshSession(_ context.Context, id, userID str
 }
 func (m *sessionRepoMock) RotateRefreshSession(_ context.Context, oldID, _ string, oldHash []byte, newID string, _ []byte, _ time.Time) error {
 	m.rotatedOldID, m.rotatedOldHash, m.rotatedNewID = oldID, append([]byte(nil), oldHash...), newID
-	return nil
+	return m.rotateErr
 }
 func (m *sessionRepoMock) RevokeRefreshSession(_ context.Context, id, _ string, _ []byte) error {
 	m.revokedID = id
 	return nil
+}
+func (m *sessionRepoMock) DeleteStaleRefreshSessions(_ context.Context, olderThan time.Duration) (int64, error) {
+	m.staleOlderThan = olderThan
+	return 3, nil
 }
 
 func TestIssueTokensPersistsHashedRefreshSession(t *testing.T) {
@@ -89,5 +96,53 @@ func TestLogoutRevokesRefreshSession(t *testing.T) {
 	}
 	if repo.revokedID != "session-to-revoke" {
 		t.Fatalf("revoked session = %q", repo.revokedID)
+	}
+}
+
+func TestRefreshTokens_ClassifiesFailedRotation(t *testing.T) {
+	svc := jwtpkg.NewService("access-secret", "refresh-secret", 3600, 604800)
+	oldToken, _, err := svc.GenerateRefreshTokenForSession("user-1", "old-session")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("concurrent refresh from another tab", func(t *testing.T) {
+		u := NewUsecase(&sessionRepoMock{rotateErr: ErrSessionRecentlyRotated}, svc, nil, nil)
+		_, err := u.RefreshTokens(context.Background(), oldToken)
+		if !errors.Is(err, ErrRefreshRaced) {
+			t.Fatalf("err = %v, want ErrRefreshRaced", err)
+		}
+	})
+
+	t.Run("reused token is rejected, not treated as a race", func(t *testing.T) {
+		repo := &sessionRepoMock{rotateErr: ErrSessionReused}
+		u := NewUsecase(repo, svc, nil, nil)
+		_, err := u.RefreshTokens(context.Background(), oldToken)
+		if err == nil || errors.Is(err, ErrRefreshRaced) || !errors.Is(err, ErrSessionReused) {
+			t.Fatalf("err = %v, want a rejection wrapping ErrSessionReused", err)
+		}
+		if repo.revokedID != "" {
+			t.Errorf("reuse must only be logged for now, but session %q was revoked", repo.revokedID)
+		}
+	})
+
+	t.Run("invalid session", func(t *testing.T) {
+		u := NewUsecase(&sessionRepoMock{rotateErr: ErrInvalidSession}, svc, nil, nil)
+		_, err := u.RefreshTokens(context.Background(), oldToken)
+		if err == nil || errors.Is(err, ErrRefreshRaced) {
+			t.Fatalf("err = %v, want an invalid-session rejection", err)
+		}
+	})
+}
+
+func TestCleanupRefreshSessions_KeepsOneWeek(t *testing.T) {
+	repo := &sessionRepoMock{}
+	u := NewUsecase(repo, jwtpkg.NewService("a", "b", 3600, 604800), nil, nil)
+	deleted, err := u.CleanupRefreshSessions(context.Background())
+	if err != nil || deleted != 3 {
+		t.Fatalf("CleanupRefreshSessions = %d, %v; want 3, nil", deleted, err)
+	}
+	if repo.staleOlderThan != 7*24*time.Hour {
+		t.Errorf("retention = %v, want 168h", repo.staleOlderThan)
 	}
 }

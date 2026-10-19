@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jhontea/navisha/backend/pkg/jwt"
 	"github.com/jhontea/navisha/backend/pkg/oauth"
@@ -20,6 +22,13 @@ import (
 // ErrNotAllowed is returned when an email is not in the whitelist.
 var ErrNotAllowed = errors.New("email not allowed")
 var ErrEmailUnverified = errors.New("google email is not verified")
+
+// ErrRefreshRaced: another request rotated this refresh token moments ago. Its
+// new cookies are already in the browser, so the caller should keep them.
+var ErrRefreshRaced = errors.New("refresh token was just rotated by another request")
+
+// Refresh sessions that expired or were revoked longer ago than this are deleted.
+const staleSessionRetention = 7 * 24 * time.Hour
 
 type Tokens struct {
 	AccessToken  string
@@ -158,9 +167,23 @@ func (u *Usecase) RefreshTokens(ctx context.Context, refreshToken string) (*Toke
 		ctx, details.SessionID, details.UserID, tokenHash(refreshToken),
 		newSessionID, tokenHash(refresh), expiresAt,
 	); err != nil {
+		switch {
+		case errors.Is(err, ErrSessionRecentlyRotated):
+			return nil, ErrRefreshRaced
+		case errors.Is(err, ErrSessionReused):
+			// Possible token theft. Logged only for now; revoking all of the
+			// user's sessions here is a later decision.
+			slog.Warn("refresh token reuse detected", "user_id", details.UserID, "session_id", details.SessionID)
+		}
 		return nil, fmt.Errorf("user.RefreshTokens rotate: %w", err)
 	}
 	return &Tokens{AccessToken: access, RefreshToken: refresh}, nil
+}
+
+// CleanupRefreshSessions deletes refresh sessions that expired or were revoked
+// more than a week ago.
+func (u *Usecase) CleanupRefreshSessions(ctx context.Context) (int64, error) {
+	return u.repo.DeleteStaleRefreshSessions(ctx, staleSessionRetention)
 }
 
 func (u *Usecase) Logout(ctx context.Context, refreshToken string) error {
