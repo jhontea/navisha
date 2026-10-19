@@ -25,7 +25,7 @@ export function FeatureCard({
       <h3 className="mt-4 font-display text-xl font-extrabold text-foreground">{title}</h3>
       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
       {visual && (
-        <div className="mt-5 rounded-xl bg-background p-3" aria-hidden="true">
+        <div className="mt-5 flex-1 rounded-xl bg-background p-3" aria-hidden="true">
           {visual}
         </div>
       )}
