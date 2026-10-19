@@ -181,7 +181,9 @@ navisha/
 
 Core features (trips, itinerary, map, transport, stay, budget, currency
 converter, AI generation and summary, share links) are shipped. Current work
-is tracked in [docs/PLANNING_REDESIGN_V2.md](docs/PLANNING_REDESIGN_V2.md).
+is tracked in [docs/PLANNING_REDESIGN_V2.md](docs/PLANNING_REDESIGN_V2.md). The October 2026 UI and
+accessibility audit and its fixes are in
+[docs/PLANNING_UI_AUDIT_FIXES.md](docs/PLANNING_UI_AUDIT_FIXES.md).
 
 ---
 
