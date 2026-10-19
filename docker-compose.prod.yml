@@ -1,7 +1,4 @@
-# Production Docker Compose
-# Images are built by GitHub Actions and pulled by the VPS.
-# Usage: docker compose -f docker-compose.prod.yml pull
-#        docker compose -f docker-compose.prod.yml up -d --no-build
+# Production stack. Images are built in CI and pulled, never built here.
 
 name: navisha-prod
 
