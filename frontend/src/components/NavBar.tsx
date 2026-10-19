@@ -119,7 +119,7 @@ export function NavBar() {
 
       {!inTrip && (
         <FloatingNav
-          aria-label="Main navigation"
+          aria-label="Bottom navigation"
           items={[
             { href: "/trips", label: "Trips", icon: Home, active: sections.trips, onIntent: prefetchTrips },
             { href: "/trips/generate", label: "Plan with AI", icon: Sparkles, active: sections.ai },

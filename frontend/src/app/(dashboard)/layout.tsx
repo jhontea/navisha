@@ -17,12 +17,12 @@ export default function DashboardLayout({
           <NavBar />
 
           {/* Bottom padding clears the floating nav on phones (and the notch). */}
-          <main
+          <div
             id="main-content"
             className="flex-1 pb-[max(6.5rem,calc(5.75rem+env(safe-area-inset-bottom)))] md:pb-10"
           >
             {children}
-          </main>
+          </div>
 
         {/* Footer — visible on desktop only; legal links for every dashboard page */}
         <footer className="relative z-10 mt-auto hidden border-t px-4 py-4 md:block">

@@ -7,13 +7,13 @@ export const metadata: Metadata = { title: "Currency converter" }
 
 export default function CurrencyPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop md:pt-8">
+    <main className="mx-auto w-full max-w-3xl px-margin-mobile pb-28 pt-6 md:px-margin-desktop md:pt-8">
       <PageHeader
         title="Currency"
         accent="converter"
         description="Live exchange rates for the currencies Navisha supports."
       />
       <LazyCurrencyConverter />
-    </div>
+    </main>
   )
 }
