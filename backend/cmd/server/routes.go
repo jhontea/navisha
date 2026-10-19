@@ -102,12 +102,18 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 	if llmTimeout <= 0 {
 		llmTimeout = 300 * time.Second
 	}
-	e.Use(appMiddleware.Timeout(30*time.Second, map[string]time.Duration{
-		"POST /api/v1/trips/:id/summary":                            llmTimeout,
-		"POST /api/v1/trips/generate":                               llmTimeout,
-		"POST /api/v1/trips/from-draft":                             llmTimeout,
-		"POST /api/v1/trips/:trip_id/days/:day_id/generate-preview": llmTimeout,
-	}))
+	// One list for both the LLM timeout and the LLM rate-limit bucket.
+	llmRoutes := []string{
+		"POST /api/v1/trips/:id/summary",
+		"POST /api/v1/trips/generate",
+		"POST /api/v1/trips/from-draft",
+		"POST /api/v1/trips/:trip_id/days/:day_id/generate-preview",
+	}
+	llmTimeouts := make(map[string]time.Duration, len(llmRoutes))
+	for _, route := range llmRoutes {
+		llmTimeouts[route] = llmTimeout
+	}
+	e.Use(appMiddleware.Timeout(30*time.Second, llmTimeouts))
 
 	// Loop 3: limit request body size to 1MB.
 	const maxBodySize = 1 << 20 // 1MB
@@ -121,6 +127,7 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 		AuthPerMinute: cfg.RateLimit.AuthPerMinute,
 		LLMPerMinute:  cfg.RateLimit.LLMPerMinute,
 		GeneralPerMin: cfg.RateLimit.GeneralPerMin,
+		LLMRoutes:     llmRoutes,
 	})
 
 	// Loop 2: API version header on all responses.

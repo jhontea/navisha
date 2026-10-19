@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -22,9 +21,10 @@ import (
 // scores are Unix timestamps in nanoseconds. Expired entries are trimmed on
 // each check.
 type RateLimiter struct {
-	rdb    *redis.Client
-	jwtSvc *jwt.Service // optional: validates JWT before auth middleware runs
-	config RateLimitConfig
+	rdb       *redis.Client
+	jwtSvc    *jwt.Service // optional: validates JWT before auth middleware runs
+	config    RateLimitConfig
+	llmRoutes map[string]bool
 	seq    atomic.Uint64
 }
 
@@ -46,12 +46,19 @@ type RateLimitConfig struct {
 	AuthPerMinute int // e.g. 20 req/min for /auth/*
 	LLMPerMinute  int // e.g. 5 req/min for LLM endpoints
 	GeneralPerMin int // e.g. 100 req/min for everything else
+	// LLMRoutes lists "METHOD /route/:pattern" keys that use the LLM bucket,
+	// the same keys as the LLM timeouts in cmd/server/routes.go.
+	LLMRoutes []string
 }
 
 // NewRateLimiter creates a rate limiter. Pass nil jwtSvc to skip JWT extraction
 // (then only context UserIDKey or IP is used for identification).
 func NewRateLimiter(rdb *redis.Client, jwtSvc *jwt.Service, cfg RateLimitConfig) *RateLimiter {
-	return &RateLimiter{rdb: rdb, jwtSvc: jwtSvc, config: cfg}
+	llm := make(map[string]bool, len(cfg.LLMRoutes))
+	for _, route := range cfg.LLMRoutes {
+		llm[route] = true
+	}
+	return &RateLimiter{rdb: rdb, jwtSvc: jwtSvc, config: cfg, llmRoutes: llm}
 }
 
 // Limit returns an Echo middleware that rate-limits requests per authenticated
@@ -60,7 +67,7 @@ func NewRateLimiter(rdb *redis.Client, jwtSvc *jwt.Service, cfg RateLimitConfig)
 // an auth rate limit doesn't block the user from their own data.
 // The limit is selected based on the request path:
 //   - /auth/*     → AuthPerMinute  (key: ratelimit:auth:{id})
-//   - /trips/generate, /trips/:id/summary → LLMPerMinute  (key: ratelimit:llm:{id})
+//   - LLMRoutes (method + route pattern) → LLMPerMinute  (key: ratelimit:llm:{id})
 //   - everything else → GeneralPerMin  (key: ratelimit:general:{id})
 func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -75,7 +82,7 @@ func (rl *RateLimiter) Limit() echo.MiddlewareFunc {
 			// 3. Client IP (fallback for public/unauthenticated routes)
 			ident := rl.identifier(c)
 
-			bucket, limit := rl.bucketAndLimit(c.Request().URL.Path)
+			bucket, limit := rl.bucketAndLimit(c.Request().Method, c.Path(), c.Request().URL.Path)
 			if limit <= 0 {
 				return next(c)
 			}
@@ -115,10 +122,11 @@ func (rl *RateLimiter) identifier(c echo.Context) string {
 }
 
 // bucketAndLimit returns the Redis key bucket name and per-minute limit for a path.
-func (rl *RateLimiter) bucketAndLimit(path string) (string, int) {
-	// LLM endpoints (expensive) — exact generate path or /trips/:id/summary suffix.
-	// Must NOT match /trips/:id/expenses/summary — that's a cheap DB aggregate.
-	if path == "/api/v1/trips/generate" || isLLMSummaryPath(path) {
+// bucketAndLimit picks the bucket from the matched route (c.Path()), so only
+// the calls that actually run the LLM use the strict bucket: viewing a summary
+// (GET) is general, generating a day preview (POST) is LLM.
+func (rl *RateLimiter) bucketAndLimit(method, route, path string) (string, int) {
+	if rl.llmRoutes[method+" "+route] {
 		return "llm", rl.config.LLMPerMinute
 	}
 	// Auth endpoints
@@ -126,18 +134,6 @@ func (rl *RateLimiter) bucketAndLimit(path string) (string, int) {
 		return "auth", rl.config.AuthPerMinute
 	}
 	return "general", rl.config.GeneralPerMin
-}
-
-// isLLMSummaryPath checks if path is exactly /api/v1/trips/<uuid>/summary
-// (not /api/v1/trips/<uuid>/expenses/summary or other /summary variants).
-func isLLMSummaryPath(path string) bool {
-	if !strings.HasPrefix(path, "/api/v1/trips/") || !strings.HasSuffix(path, "/summary") {
-		return false
-	}
-	// Must NOT contain another slash between /trips/ and /summary
-	// (e.g. /trips/:id/expenses/summary has an extra /expenses/ segment).
-	inner := path[len("/api/v1/trips/") : len(path)-len("/summary")]
-	return !strings.Contains(inner, "/")
 }
 
 // matchPath is a simple prefix check. For more precise matching, we'd use

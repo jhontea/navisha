@@ -1,20 +1,19 @@
 package autogen
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
+	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/jhontea/navisha/backend/internal/apperr"
 	"github.com/jhontea/navisha/backend/internal/middleware"
 	"github.com/jhontea/navisha/backend/internal/quota"
@@ -22,134 +21,38 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// ---------- in-process fake Redis (net.Pipe, no network) ----------
+// ---------- in-memory Redis (miniredis) ----------
 
-// fakeRedis is a tiny RESP2 server reached over net.Pipe so the quota
-// Checker can be exercised without a real Redis. It supports only the
-// commands quota uses (GET, SET, INCR, DECR, EXPIRE, PING). Daily counter
-// keys are normalised by dropping the trailing date so tests stay
-// deterministic across UTC midnight.
-type fakeRedis struct {
-	mu   sync.Mutex
-	data map[string]string
-}
+// fakeRedis wraps miniredis so the quota Checker runs against real Redis
+// semantics (MULTI/EXEC, EXPIRE NX) without a server.
+type fakeRedis struct{ mr *miniredis.Miniredis }
 
 const quotaKeyPrefix = "ratelimit:autogen:daily:"
 
-func normKey(k string) string {
-	if strings.HasPrefix(k, quotaKeyPrefix) {
-		if i := strings.LastIndexByte(k, ':'); i > len(quotaKeyPrefix) {
-			return k[:i]
-		}
-	}
-	return k
+// todayKey matches quota.userKey: the counter is per user per UTC day.
+func todayKey(userID string) string {
+	return quotaKeyPrefix + userID + ":" + time.Now().UTC().Format("2006-01-02")
 }
 
 func newQuotaChecker(t *testing.T, limit int, used map[string]int) (*quota.Checker, *fakeRedis) {
 	t.Helper()
-	fr := &fakeRedis{data: map[string]string{
-		"app:config:autogen_daily_quota": strconv.Itoa(limit),
-	}}
+	mr := miniredis.RunT(t)
+	_ = mr.Set("app:config:autogen_daily_quota", strconv.Itoa(limit))
 	for u, n := range used {
-		fr.data[quotaKeyPrefix+u] = strconv.Itoa(n)
+		_ = mr.Set(todayKey(u), strconv.Itoa(n))
 	}
-	rdb := redis.NewClient(&redis.Options{
-		Protocol:        2,
-		DisableIdentity: true,
-		MaxRetries:      -1,
-		Dialer: func(context.Context, string, string) (net.Conn, error) {
-			client, server := net.Pipe()
-			go fr.serve(server)
-			return client, nil
-		},
-	})
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	t.Cleanup(func() { _ = rdb.Close() })
-	return quota.NewChecker(rdb, nil), fr
+	return quota.NewChecker(rdb, nil), &fakeRedis{mr: mr}
 }
 
 func (f *fakeRedis) used(userID string) int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	n, _ := strconv.Atoi(f.data[quotaKeyPrefix+userID])
+	v, err := f.mr.Get(todayKey(userID))
+	if err != nil {
+		return 0
+	}
+	n, _ := strconv.Atoi(v)
 	return n
-}
-
-func (f *fakeRedis) serve(conn net.Conn) {
-	defer conn.Close()
-	r := bufio.NewReader(conn)
-	for {
-		args, err := readCommand(r)
-		if err != nil {
-			return
-		}
-		if _, err := io.WriteString(conn, f.exec(args)); err != nil {
-			return
-		}
-	}
-}
-
-func readCommand(r *bufio.Reader) ([]string, error) {
-	line, err := r.ReadString('\n')
-	if err != nil {
-		return nil, err
-	}
-	line = strings.TrimRight(line, "\r\n")
-	if !strings.HasPrefix(line, "*") {
-		return nil, fmt.Errorf("unexpected %q", line)
-	}
-	n, err := strconv.Atoi(line[1:])
-	if err != nil {
-		return nil, err
-	}
-	args := make([]string, 0, n)
-	for i := 0; i < n; i++ {
-		hdr, err := r.ReadString('\n')
-		if err != nil {
-			return nil, err
-		}
-		size, err := strconv.Atoi(strings.TrimRight(hdr, "\r\n")[1:])
-		if err != nil {
-			return nil, err
-		}
-		buf := make([]byte, size+2)
-		if _, err := io.ReadFull(r, buf); err != nil {
-			return nil, err
-		}
-		args = append(args, string(buf[:size]))
-	}
-	return args, nil
-}
-
-func (f *fakeRedis) exec(args []string) string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	switch strings.ToUpper(args[0]) {
-	case "PING":
-		return "+PONG\r\n"
-	case "GET":
-		v, ok := f.data[normKey(args[1])]
-		if !ok {
-			return "$-1\r\n"
-		}
-		return fmt.Sprintf("$%d\r\n%s\r\n", len(v), v)
-	case "SET":
-		f.data[normKey(args[1])] = args[2]
-		return "+OK\r\n"
-	case "INCR", "DECR":
-		k := normKey(args[1])
-		n, _ := strconv.Atoi(f.data[k])
-		if strings.ToUpper(args[0]) == "INCR" {
-			n++
-		} else {
-			n--
-		}
-		f.data[k] = strconv.Itoa(n)
-		return fmt.Sprintf(":%d\r\n", n)
-	case "EXPIRE":
-		return ":1\r\n"
-	default:
-		return "-ERR unknown command\r\n"
-	}
 }
 
 // ---------- stub usecase ----------

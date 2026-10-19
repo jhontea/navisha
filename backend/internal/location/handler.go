@@ -25,6 +25,9 @@ type Handler struct {
 
 const maxCachedCities = 2000
 
+// mapsLinkHTTPClient resolves pasted short Google Maps links hop by hop.
+var mapsLinkHTTPClient = NewMapsLinkHTTPClient(nil)
+
 func NewHandler(client AutocompleteClient) *Handler {
 	return &Handler{client: client}
 }
@@ -233,7 +236,7 @@ func (h *Handler) MapsLink(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "url must be 1 to 2048 characters")
 	}
 
-	suggestion, err := ResolveMapsLink(c.Request().Context(), http.DefaultClient, h.client.(*GeoapifyClient), raw)
+	suggestion, err := ResolveMapsLink(c.Request().Context(), mapsLinkHTTPClient, h.client.(*GeoapifyClient), raw)
 	if err != nil {
 		if errors.Is(err, ErrNotConfigured) {
 			return echo.NewHTTPError(http.StatusServiceUnavailable, "location provider is not configured")

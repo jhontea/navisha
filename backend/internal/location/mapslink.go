@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ErrUnsupportedLink indicates the pasted text is not a Google Maps link we
@@ -60,12 +61,7 @@ func parseMapsLink(raw string) (mapsLink, error) {
 		return mapsLink{}, fmt.Errorf("location.parseMapsLink: %w", err)
 	}
 
-	host := strings.ToLower(parsed.Hostname())
-	isGoogleHost := host == "google.com" ||
-		strings.HasSuffix(host, ".google.com") ||
-		host == "goo.gl" ||
-		strings.HasSuffix(host, ".goo.gl")
-	if !isGoogleHost {
+	if !isGoogleHost(strings.ToLower(parsed.Hostname())) {
 		return mapsLink{}, ErrUnsupportedLink
 	}
 
@@ -234,6 +230,29 @@ func isShortLink(raw string) bool {
 
 const maxRedirects = 3
 
+// isGoogleHost reports whether host is google.com, goo.gl, or one of their
+// subdomains. A plain suffix check would also accept lookalikes such as
+// evilgoogle.com.
+func isGoogleHost(host string) bool {
+	return host == "google.com" || strings.HasSuffix(host, ".google.com") ||
+		host == "goo.gl" || strings.HasSuffix(host, ".goo.gl")
+}
+
+// NewMapsLinkHTTPClient returns the client for resolving short links. It does
+// not follow redirects itself: followRedirect walks each hop so it can check
+// the host first. (An auto-following client returns the final page with no
+// Location header, and the short link was never resolved.) A nil transport
+// uses the default.
+func NewMapsLinkHTTPClient(transport http.RoundTripper) *http.Client {
+	return &http.Client{
+		Timeout:   5 * time.Second,
+		Transport: transport,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+}
+
 // followRedirect resolves a short link by following redirect responses. Only
 // http(s) URLs are followed, and each hop must remain a google-owned host to
 // avoid turning this into an open fetch primitive.
@@ -244,8 +263,7 @@ func followRedirect(ctx context.Context, httpClient *http.Client, raw string) (s
 		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
 			return "", ErrUnsupportedLink
 		}
-		host := strings.ToLower(parsed.Hostname())
-		if !strings.HasSuffix(host, "google.com") && !strings.HasSuffix(host, "goo.gl") {
+		if !isGoogleHost(strings.ToLower(parsed.Hostname())) {
 			return "", ErrUnsupportedLink
 		}
 

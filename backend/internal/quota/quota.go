@@ -98,19 +98,16 @@ func (c *Checker) Consume(ctx echo.Context, userID string) *echo.HTTPError {
 	}
 
 	key := userKey(userID)
-	used, err := c.rdb.Incr(ctx.Request().Context(), key).Result()
-	if err != nil {
-		slog.Warn("quota: INCR failed", "user_id", userID, "err", err)
+	// INCR and EXPIRE in one MULTI: a failed separate EXPIRE used to leave a
+	// counter that never reset. NX keeps the first expiry (next 00:00 UTC).
+	pipe := c.rdb.TxPipeline()
+	incr := pipe.Incr(ctx.Request().Context(), key)
+	pipe.ExpireNX(ctx.Request().Context(), key, time.Until(nextUTCMidnight()))
+	if _, err := pipe.Exec(ctx.Request().Context()); err != nil {
+		slog.Warn("quota: INCR/EXPIRE failed", "user_id", userID, "err", err)
 		return nil // fail open
 	}
-	if used == 1 {
-		ttl := time.Until(nextUTCMidnight())
-		if ttl > 0 {
-			if err := c.rdb.Expire(ctx.Request().Context(), key, ttl).Err(); err != nil {
-				slog.Warn("quota: EXPIRE failed", "user_id", userID, "err", err)
-			}
-		}
-	}
+	used := incr.Val()
 	if used > int64(limit) {
 		_, _ = c.rdb.Decr(ctx.Request().Context(), key).Result()
 		return echo.NewHTTPError(http.StatusTooManyRequests, map[string]any{
@@ -132,8 +129,12 @@ func (c *Checker) Refund(ctx echo.Context, userID string) {
 	if !c.Enabled() {
 		return
 	}
+	// Refunds happen after an LLM timeout or a dropped client, when the request
+	// context is usually already done; use a short context of our own.
+	rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx.Request().Context()), 2*time.Second)
+	defer cancel()
 	key := userKey(userID)
-	if _, err := c.rdb.Decr(ctx.Request().Context(), key).Result(); err != nil {
+	if _, err := c.rdb.Decr(rctx, key).Result(); err != nil {
 		slog.Warn("quota: DECR refund failed", "user_id", userID, "err", err)
 	}
 }
