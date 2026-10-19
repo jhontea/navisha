@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, type MouseEvent } from "react"
-import { ChevronDown, Clock3 } from "lucide-react"
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react"
+import { ChevronDown, Clock3, Info } from "lucide-react"
 import { Controller, type UseFormReturn } from "react-hook-form"
 
 import { Chip } from "@/components/Chip"
 import { FormField } from "@/components/forms/FormField"
+import { FormFieldDescription, fieldDescriptionIds } from "@/components/forms/FormFieldState"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -35,11 +36,17 @@ export function LocationFields({
   form,
   isSubmitting,
   destination,
+  title,
+  needsReview,
 }: {
   form: UseFormReturn<ActivityFormValues>
   isSubmitting: boolean
   /** Trip destination, to bias place search. */
   destination?: string
+  /** The Title field, rendered right after Location name. */
+  title: ReactNode
+  /** Editing a place that is not pinned on the map yet. */
+  needsReview?: boolean
 }) {
   const {
     control,
@@ -53,6 +60,12 @@ export function LocationFields({
   const startTime = watch("start_time") ?? ""
   const endTime = watch("end_time") ?? ""
   const durationMinutes = getDurationMinutes(startTime, endTime)
+  const showReviewHint = Boolean(needsReview) && !watch("lat")
+
+  useEffect(() => {
+    // The place search forwards no ref, so RHF setFocus cannot reach it.
+    if (needsReview) document.getElementById("activity-location")?.focus()
+  }, [needsReview])
 
   const v = getValues()
   const [detailsOpen, setDetailsOpen] = useState(
@@ -71,6 +84,57 @@ export function LocationFields({
 
   return (
     <>
+      <FormField label="Location name" htmlFor="activity-location" required error={errors.location_name?.message} errorId="activity-location-error">
+        <Controller
+          control={control}
+          name="location_name"
+          render={({ field }) => (
+            <LocationAutocomplete
+              id="activity-location"
+              value={field.value ?? ""}
+              onChange={(value) => {
+                // Typing replaces the picked place, so drop its coordinates.
+                field.onChange(value)
+                setValue("lat", "")
+                setValue("lng", "")
+                setValue("address", "")
+                setValue("google_place_id", "")
+              }}
+              disabled={isSubmitting}
+              ariaInvalid={Boolean(errors.location_name)}
+              ariaRequired
+              ariaDescribedBy={fieldDescriptionIds(showReviewHint ? "activity-location-hint" : undefined, "activity-location-error", Boolean(errors.location_name))}
+              searchContext={destination}
+              placeholder="Search a place…"
+              onPlaceSelect={(p) => {
+                field.onChange(p.location_name)
+                if (!getValues("title").trim()) setValue("title", p.location_name, validate)
+                setValue("lat", String(p.lat), { shouldValidate: true })
+                setValue("lng", String(p.lng), { shouldValidate: true })
+                setValue("address", p.address)
+                setValue("google_place_id", p.google_place_id)
+                // Keep the original Google Maps link so "Open in Google Maps"
+                // reopens the exact place, not a coordinate approximation.
+                if (p.source_url) setValue("external_url", p.source_url)
+              }}
+            />
+          )}
+        />
+        {showReviewHint && (
+          <FormFieldDescription id="activity-location-hint" className="flex items-start gap-1.5">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span>Not on the map yet. Pick a place from the suggestions to pin it.</span>
+          </FormFieldDescription>
+        )}
+      </FormField>
+
+      {/* Coordinates come from the place search only. */}
+      <input type="hidden" {...register("lat")} />
+      <input type="hidden" {...register("lng")} />
+      <input type="hidden" {...register("google_place_id")} />
+
+      {title}
+
       <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
         <FormField label="Start time" htmlFor="activity-start-time" optional error={errors.start_time?.message} errorId="activity-start-time-error">
           <Controller
@@ -147,49 +211,6 @@ export function LocationFields({
           )}
         </div>
       )}
-
-      <FormField label="Location name" htmlFor="activity-location" required error={errors.location_name?.message} errorId="activity-location-error">
-        <Controller
-          control={control}
-          name="location_name"
-          render={({ field }) => (
-            <LocationAutocomplete
-              id="activity-location"
-              value={field.value ?? ""}
-              onChange={(value) => {
-                // Typing replaces the picked place, so drop its coordinates.
-                field.onChange(value)
-                setValue("lat", "")
-                setValue("lng", "")
-                setValue("address", "")
-                setValue("google_place_id", "")
-              }}
-              disabled={isSubmitting}
-              ariaInvalid={Boolean(errors.location_name)}
-              ariaRequired
-              ariaDescribedBy={errors.location_name ? "activity-location-error" : undefined}
-              searchContext={destination}
-              placeholder="Search a place…"
-              onPlaceSelect={(p) => {
-                field.onChange(p.location_name)
-                if (!getValues("title").trim()) setValue("title", p.location_name, validate)
-                setValue("lat", String(p.lat), { shouldValidate: true })
-                setValue("lng", String(p.lng), { shouldValidate: true })
-                setValue("address", p.address)
-                setValue("google_place_id", p.google_place_id)
-                // Keep the original Google Maps link so "Open in Google Maps"
-                // reopens the exact place, not a coordinate approximation.
-                if (p.source_url) setValue("external_url", p.source_url)
-              }}
-            />
-          )}
-        />
-      </FormField>
-
-      {/* Coordinates come from the place search only. */}
-      <input type="hidden" {...register("lat")} />
-      <input type="hidden" {...register("lng")} />
-      <input type="hidden" {...register("google_place_id")} />
 
       <details
         className="group rounded-xl border border-border/30 bg-muted/15"

@@ -18,7 +18,7 @@ import {
   activityPayload,
   type ActivityFormValues,
 } from "../lib/activityFormValues"
-import type { Activity, ActivityType, CreateActivityInput } from "../types"
+import type { Activity, ActivityType, CreateActivityInput, LocationPayload } from "../types"
 import { LocationFields } from "./form/LocationFields"
 import { TodoFields } from "./form/TodoFields"
 
@@ -76,6 +76,19 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
     })
   }
 
+  const titleField = (
+    <FormField label="Title" htmlFor="activity-title" required error={errors.title?.message} errorId="activity-title-error">
+      <Input
+        id="activity-title"
+        aria-required="true"
+        aria-invalid={Boolean(errors.title)}
+        aria-describedby={errors.title ? "activity-title-error" : undefined}
+        placeholder={TYPE_META[type].titlePlaceholder}
+        {...register("title")}
+      />
+    </FormField>
+  )
+
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-6" aria-busy={isSubmitting}>
       <fieldset disabled={isSubmitting} className="flex flex-col gap-6">
@@ -90,19 +103,16 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
           />
         )}
 
-        <FormField label="Title" htmlFor="activity-title" required error={errors.title?.message} errorId="activity-title-error">
-          <Input
-            id="activity-title"
-            aria-required="true"
-            aria-invalid={Boolean(errors.title)}
-            aria-describedby={errors.title ? "activity-title-error" : undefined}
-            placeholder={TYPE_META[type].titlePlaceholder}
-            {...register("title")}
+        {type === "location" ? (
+          <LocationFields
+            form={form}
+            isSubmitting={isSubmitting}
+            destination={context?.destination}
+            needsReview={(initial?.payload as LocationPayload | null)?.location_verification === "needs_review"}
+            title={titleField}
           />
-        </FormField>
-
-        {type === "location" && (
-          <LocationFields form={form} isSubmitting={isSubmitting} destination={context?.destination} />
+        ) : (
+          titleField
         )}
 
         {type === "note" && (
