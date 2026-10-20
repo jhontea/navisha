@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { ArrowLeftRight, ArrowUpDown, History, X } from "lucide-react"
 
 import { Chip } from "@/components/Chip"
@@ -16,6 +16,9 @@ import { CurrencyBadge } from "./CurrencyBadge"
 
 // Quick-preset amounts for fast conversion without typing.
 const PRESETS = [1, 10, 100, 1000]
+
+// Wait this long after the last change before logging a conversion to history.
+const RECORD_DELAY_MS = 1000
 
 const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 })
 
@@ -73,14 +76,26 @@ export function CurrencyConverter() {
   const removeRecord = useRecentConversionsStore((s) => s.remove)
   const clearRecords = useRecentConversionsStore((s) => s.clear)
 
-  // Record each successful conversion once per (from, to, amount).
-  const lastRecorded = useRef("")
+  // Record the conversion once input has settled for 1s, so intermediate typing isn't logged.
   useEffect(() => {
-    const key = `${from}-${to}-${amount}`
-    if (!result || numericAmount <= 0 || result.converted_amount <= 0 || lastRecorded.current === key) return
-    lastRecorded.current = key
-    addRecord({ from, to, amount: numericAmount, convertedAmount: result.converted_amount, rate: result.rate })
-  }, [result, from, to, amount, numericAmount, addRecord])
+    if (isError || !result || numericAmount <= 0 || result.converted_amount <= 0) return
+    if (result.from !== from || result.to !== to || result.amount !== numericAmount) return
+    const t = setTimeout(
+      () => addRecord({ from, to, amount: numericAmount, convertedAmount: result.converted_amount, rate: result.rate }),
+      RECORD_DELAY_MS,
+    )
+    return () => clearTimeout(t)
+  }, [result, isError, from, to, numericAmount, addRecord])
+
+  // Picking the currency already on the other side swaps the two instead of allowing from === to.
+  const changeFrom = (code: string) => {
+    if (code === to) setTo(from)
+    setFrom(code)
+  }
+  const changeTo = (code: string) => {
+    if (code === from) setFrom(to)
+    setTo(code)
+  }
 
   if (loadingList) {
     return <p className="text-sm text-muted-foreground">Loading currencies…</p>
@@ -99,7 +114,7 @@ export function CurrencyConverter() {
         <div className="grid items-end gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-2">
             <Label id={fromLabelId}>From</Label>
-            <CurrencySelect value={from} onChange={setFrom} options={options} labelId={fromLabelId} />
+            <CurrencySelect value={from} onChange={changeFrom} options={options} labelId={fromLabelId} />
             <Label htmlFor={amountId} className="sr-only">
               Amount in {from}
             </Label>
@@ -131,7 +146,7 @@ export function CurrencyConverter() {
 
           <div className="flex min-w-0 flex-col gap-2">
             <Label id={toLabelId}>To</Label>
-            <CurrencySelect value={to} onChange={setTo} options={options} labelId={toLabelId} />
+            <CurrencySelect value={to} onChange={changeTo} options={options} labelId={toLabelId} />
             <p
               className="flex h-14 items-center break-all rounded-xl bg-primary-soft px-4 font-display text-3xl font-extrabold tabular-nums text-primary-soft-foreground"
               aria-live="polite"

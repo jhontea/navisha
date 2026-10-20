@@ -19,7 +19,7 @@ export function useConvert(from: string, to: string, amount: number) {
     queryKey: ["currency", "convert", from, to, amount],
     queryFn: () => currencyApi.convert(from, to, amount),
     enabled: !!from && !!to && amount > 0,
-    // Rate doesn't change per-keystroke; cache 5 min so debounced typing reuses.
+    // Rate doesn't change per-keystroke; cache 5 min so switching back to a pair/amount reuses it.
     staleTime: 5 * 60 * 1000,
   })
 }
