@@ -110,7 +110,9 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
             onDelete={() =>
               scheduleDelete({
                 id: a.id,
-                message: "Stay deleted.",
+                message: linkedCost(expenses.data?.items, "accommodation", a.id)
+                  ? "Stay deleted. Its cost stays in Budget."
+                  : "Stay deleted.",
                 errorMessage: "Couldn’t delete this stay. It’s back in the list.",
                 commit: () => deleteMut.mutateAsync(a.id),
               })
