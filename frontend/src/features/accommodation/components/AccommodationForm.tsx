@@ -107,6 +107,8 @@ interface Props {
   isSubmitting: boolean
   /** "YYYY-MM-DD" the date picker opens on (the trip's first day). */
   defaultDate?: string
+  /** "YYYY-MM-DD" last day of the trip; with defaultDate it outlines the trip in the picker. */
+  tripEnd?: string
   /** Trip destination, to bias the location search. */
   searchContext?: string
 }
@@ -120,6 +122,7 @@ export function AccommodationForm({
   onCancel,
   isSubmitting,
   defaultDate,
+  tripEnd,
   searchContext,
 }: Props) {
   // A linked cost keeps the currency it was paid in.
@@ -279,6 +282,7 @@ export function AccommodationForm({
             duration={stayNights}
             durationUnit="night"
             defaultMonth={defaultDate}
+            highlightRange={defaultDate && tripEnd ? { start: defaultDate, end: tripEnd } : undefined}
             label="Stay dates"
             emptyText="Select check-in and check-out"
             endText="Select check-out"

@@ -29,6 +29,8 @@ interface Props extends DateRangeValue {
   durationUnit?: string
   /** "YYYY-MM-DD" whose month the calendar opens on while no date is picked. */
   defaultMonth?: string
+  /** "YYYY-MM-DD" bounds (inclusive) outlined in the calendar, e.g. the trip's days. */
+  highlightRange?: { start: string; end: string }
 }
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
@@ -51,6 +53,7 @@ export function TravelDateRangePicker({
   endHint = "Choose the last day of your trip",
   durationUnit = "day",
   defaultMonth,
+  highlightRange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -199,49 +202,79 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
               const isInRange = Boolean(
                 startDate && endDate && value > startDate && value < endDate,
               )
-              const isToday = value === toISODate(new Date())
+              const todayValue = toISODate(new Date())
+              const isToday = value === todayValue
+              const isHighlighted = Boolean(
+                highlightRange &&
+                  value >= highlightRange.start &&
+                  value <= highlightRange.end,
+              )
+              const isSelected = isStart || isEnd
+              const hasRange = Boolean(startDate && endDate && endDate > startDate)
+              const column = date.getDay()
+              // Soft band behind the cells: full width inside the range, the
+              // inner half on start/end so the blue circles join it. Row edges
+              // (Sun/Sat) round off, and a half that would only stub out of the
+              // row is dropped.
+              const band = isInRange
+                ? `inset-x-0 ${column === 0 ? "rounded-l-full" : ""} ${column === 6 ? "rounded-r-full" : ""}`
+                : hasRange && isStart && column !== 6
+                  ? "left-1/2 right-0"
+                  : hasRange && isEnd && column !== 0
+                    ? "left-0 right-1/2"
+                    : null
 
               return (
-                // eslint-disable-next-line no-restricted-syntax -- calendar day cell
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => selectDate(date)}
-                  className={`relative flex h-9 items-center justify-center text-sm transition-colors focus-visible:z-10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
-                    isStart || isEnd
-                      ? "rounded-full bg-primary font-bold text-primary-foreground"
-                      : `${
-                          isInRange
-                            ? "bg-primary-soft"
-                            : "rounded-full hover:bg-accent"
-                        } ${
-                          isCurrentMonth
-                            ? "text-foreground"
-                            : "text-muted-foreground"
-                        }`
-                  }`}
-                  aria-label={date.toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                  aria-pressed={isStart || isEnd}
-                >
-                  {date.getDate()}
-                  {isToday && !isStart && !isEnd && (
-                    <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                <div key={value} className="relative">
+                  {band && (
+                    <span
+                      aria-hidden="true"
+                      className={`absolute inset-y-0 bg-primary-soft ${band}`}
+                    />
                   )}
-                </button>
+                  {/* eslint-disable-next-line no-restricted-syntax -- calendar day cell */}
+                  <button
+                    type="button"
+                    onClick={() => selectDate(date)}
+                    className={`relative flex h-9 w-full items-center justify-center rounded-full text-sm transition-colors focus-visible:z-10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${
+                      isSelected
+                        ? "bg-primary font-bold text-primary-foreground"
+                        : `hover:bg-accent ${
+                            isHighlighted && isInRange
+                              ? "font-semibold text-primary-soft-foreground"
+                              : isCurrentMonth && value >= todayValue
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                          } ${
+                            isHighlighted && !isInRange
+                              ? "ring-1 ring-inset ring-primary/40"
+                              : ""
+                          }`
+                    }`}
+                    aria-label={date.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                    aria-pressed={isSelected}
+                  >
+                    {date.getDate()}
+                    {isToday && !isSelected && (
+                      <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                    )}
+                  </button>
+                </div>
               )
             })}
           </div>
 
-          <p className="mt-3 border-t border-border pt-2 text-center text-xs text-muted-foreground">
-            {selectingEnd
-              ? endHint
-              : startHint}
-          </p>
+          <div className="mt-3 space-y-1 border-t border-border pt-2 text-center text-xs text-muted-foreground">
+            {highlightRange && (
+              <p>Trip: {formatTripRange(highlightRange.start, highlightRange.end)}</p>
+            )}
+            <p>{selectingEnd ? endHint : startHint}</p>
+          </div>
         </div>
       )}
     </div>
@@ -304,6 +337,16 @@ function formatDateRange(
   }
 
   return `${formatDate(start, true)} — ${formatDate(end, true)}`
+}
+
+/** "Oct 24", "Oct 24 – Oct 25", or with years when the trip spans two. */
+export function formatTripRange(startDate: string, endDate: string) {
+  const start = parseISODate(startDate)
+  const end = parseISODate(endDate)
+  if (!start || !end) return ""
+  if (startDate === endDate) return formatDate(start, false)
+  const withYear = start.getFullYear() !== end.getFullYear()
+  return `${formatDate(start, withYear)} – ${formatDate(end, withYear)}`
 }
 
 function formatDate(date: Date, includeYear: boolean) {
