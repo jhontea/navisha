@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { currencyDecimals, formatAmountInput, formatMoney } from "./money"
+import { currencyDecimals, formatAmountInput, formatMoney, unformatAmountInput } from "./money"
 
 // F4: IDR totals were shown with cents ("Rp 68,340,303.69").
 describe("formatMoney", () => {
@@ -52,5 +52,38 @@ describe("formatAmountInput", () => {
 
   it("keeps a lone zero", () => {
     expect(formatAmountInput("0")).toBe("0")
+  })
+
+  it("cuts the fraction to the currency decimals", () => {
+    expect(formatAmountInput("1500000.75")).toBe("1,500,000")
+    expect(formatAmountInput("1500.756", 2)).toBe("1,500.75")
+    expect(formatAmountInput("10.50", 0)).toBe("10")
+    expect(formatAmountInput("10.50", 2)).toBe("10.50")
+  })
+
+  it("keeps a trailing dot and a leading fraction while typing", () => {
+    expect(formatAmountInput("10.", 2)).toBe("10.")
+    expect(formatAmountInput(".5", 2)).toBe("0.5")
+    expect(formatAmountInput(".", 2)).toBe("0.")
+    expect(formatAmountInput(".", 0)).toBe("")
+  })
+
+  it("keeps only the first dot and drops leading zeros", () => {
+    expect(formatAmountInput("1.2.3", 2)).toBe("1.23")
+    expect(formatAmountInput("1.500.000", 2)).toBe("1.50")
+    expect(formatAmountInput("007", 0)).toBe("7")
+  })
+})
+
+describe("unformatAmountInput", () => {
+  it("round-trips a decimal budget (1500.5 USD)", () => {
+    const shown = formatAmountInput(String(1500.5), 2)
+    expect(shown).toBe("1,500.5")
+    expect(Number(unformatAmountInput(shown))).toBe(1500.5)
+  })
+
+  it("drops grouping and keeps the empty string", () => {
+    expect(unformatAmountInput("1,500,000")).toBe("1500000")
+    expect(unformatAmountInput("")).toBe("")
   })
 })

@@ -25,8 +25,25 @@ export function formatMoney(amount: number, currency: string): string {
   return `${sign}${getCurrencySymbol(currency)} ${formatted}`
 }
 
-/** Live-typing format for whole-number amount inputs: digits only, en-US grouping, "" when empty. */
-export function formatAmountInput(raw: string): string {
-  const digits = raw.replace(/[^0-9]/g, "")
-  return digits ? Number(digits).toLocaleString("en-US") : ""
+/**
+ * Live-typing format for amount inputs: digits plus one ".", fraction cut to
+ * `decimals` (0 drops the dot), en-US grouping, "" when empty. "1500.756" with
+ * 2 decimals -> "1,500.75"; "10." keeps its dot so the user can keep typing.
+ */
+export function formatAmountInput(raw: string, decimals = 0): string {
+  const [intRaw, ...rest] = raw.replace(/[^0-9.]/g, "").split(".")
+  // Whole-number currencies: dots are thousands separators ("1.500.000", "1.500"); otherwise a fraction to drop ("10.50").
+  const dotsAreGrouping = rest.length > 1 || rest[0]?.length === 3
+  const whole = decimals === 0 && dotsAreGrouping ? intRaw + rest.join("") : intRaw
+  const fraction = decimals > 0 ? rest.join("").slice(0, decimals) : ""
+  const int = whole.replace(/^0+(?=\d)/, "")
+  if (!int && !rest.length) return ""
+  if (!int && decimals === 0) return ""
+  const grouped = (int || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  return decimals > 0 && rest.length ? `${grouped}.${fraction}` : grouped
+}
+
+/** Inverse of formatAmountInput: "1,500.50" -> "1500.50" (feed it to Number()). */
+export function unformatAmountInput(formatted: string): string {
+  return formatted.replace(/,/g, "")
 }

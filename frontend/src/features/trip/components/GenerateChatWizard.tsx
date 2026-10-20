@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
 import { useEffect, useRef, useState } from "react"
+import { formatMoney } from "@/lib/money"
 import { Sparkles, Send, ChevronDown, RefreshCw, AlertCircle, X } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { cn } from "@/lib/utils"
@@ -203,7 +204,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       return
     }
     setError(null)
-    pushUser(budget ? `${currency} · budget ${budget.toLocaleString()}` : currency)
+    pushUser(budget ? `${currency} · budget ${formatMoney(budget, currency)}` : currency)
     setStep("review")
     pushBot("All set! Here's a recap. If it looks good, click Generate Itinerary.")
   }
@@ -496,7 +497,7 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-2 text-muted-fore
               <Recap key={r.label} label={r.label} value={r.value} />
             ))}
             <Recap label="Currency" value={currency} />
-            {budget ? <Recap label="Budget" value={`${currency} ${budget.toLocaleString()}`} /> : null}
+            {budget ? <Recap label="Budget" value={formatMoney(budget, currency)} /> : null}
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button size="lg" onClick={handleGenerate} disabled={disabled}>

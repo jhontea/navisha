@@ -17,7 +17,7 @@ import { CurrencyBadge } from "./CurrencyBadge"
 // Quick-preset amounts for fast conversion without typing.
 const PRESETS = [1, 10, 100, 1000]
 
-const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 4 })
+const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 })
 
 type CurrencyOption = { code: string; name?: string }
 
@@ -151,7 +151,7 @@ export function CurrencyConverter() {
                 aria-label={`Set amount to ${p}`}
                 className="tabular-nums"
               >
-                {p.toLocaleString()}
+                {p.toLocaleString("en-US")}
               </Chip>
             ))}
           </div>

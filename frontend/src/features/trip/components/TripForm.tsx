@@ -11,7 +11,7 @@ import { useState, type ReactNode } from "react"
 import { ChevronDown, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel, getCurrencySymbol } from "@/lib/currency"
-import { formatAmountInput } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, unformatAmountInput } from "@/lib/money"
 import {
   FormFieldDescription,
   FormFieldError,
@@ -59,7 +59,7 @@ const schema = z
     budget: z
       .string()
       .optional()
-      .refine((v) => !v || Number(v) >= 0, "Budget must be 0 or more"),
+      .refine((v) => !v || Number(unformatAmountInput(v)) >= 0, "Budget must be 0 or more"),
     notes: z.string().max(2000).optional(),
   })
   .refine((d) => new Date(d.end_date) >= new Date(d.start_date), {
@@ -113,6 +113,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     control,
     clearErrors,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormValues>({
 
@@ -144,7 +145,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
       start_date: values.start_date,
       end_date: values.end_date,
       base_currency: values.base_currency,
-      budget: values.budget ? Number(values.budget.replace(/,/g, "")) : 0,
+      budget: values.budget ? Number(unformatAmountInput(values.budget)) : 0,
       cover_image_url:
         coverPreview && !coverPreview.startsWith("blob:")
           ? coverPreview
@@ -280,7 +281,11 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
                 <NativeSelect
                   id="currency"
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(e) => {
+                    field.onChange(e)
+                    // Re-cut a typed budget to the new currency's decimals.
+                    setValue("budget", formatAmountInput(getValues("budget") ?? "", currencyDecimals(e.target.value)))
+                  }}
                   disabled={currenciesLoading}
                   aria-required="true"
                   aria-invalid={Boolean(errors.base_currency)}
@@ -319,17 +324,16 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
             <Input
               id="budget"
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               aria-invalid={Boolean(errors.budget)}
               aria-describedby={errors.budget ? "trip-budget-error" : "trip-budget-description"}
               className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 text-base text-foreground outline-hidden placeholder:text-muted-foreground focus-visible:ring-0"
               placeholder="e.g., 10,000,000"
               {...register("budget", {
                 onChange: (e) => {
-                  e.target.value = formatAmountInput(e.target.value)
-                  return e.target.value.replace(/,/g, "")
+                  e.target.value = formatAmountInput(e.target.value, currencyDecimals(baseCurrency))
                 },
-                setValueAs: (v) => v ? String(Number(String(v).replace(/[^0-9]/g, ""))) : "",
+                setValueAs: (v) => (v ? unformatAmountInput(String(v)) : ""),
               })}
             />
           </InputGroup>
@@ -369,7 +373,7 @@ function buildDefaults(initial?: Trip): FormValues {
     start_date: initial.start_date,
     end_date: initial.end_date,
     base_currency: initial.base_currency ?? "IDR",
-    budget: initial.budget ? formatAmountInput(String(initial.budget)) : "",
+    budget: initial.budget ? formatAmountInput(String(initial.budget), currencyDecimals(initial.base_currency ?? "IDR")) : "",
     notes: initial.notes ?? "",
   }
 }

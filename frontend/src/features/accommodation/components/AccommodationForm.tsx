@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { SUPPORTED_CURRENCIES } from "@/lib/currency"
 import { costPayload, type LinkedCost } from "@/lib/linkedCost"
+import { currencyDecimals, formatAmountInput, unformatAmountInput } from "@/lib/money"
 import { Input } from "@/components/ui/input"
 import { Chip } from "@/components/Chip"
 import { Controller, useForm, useWatch } from "react-hook-form"
@@ -156,6 +158,10 @@ export function AccommodationForm({
     },
   })
 
+  const costCurrencyNow = useWatch({ control, name: "currency" }) ?? defaultCurrency
+  const [displayCost, setDisplayCost] = useState(
+    initialCost ? formatAmountInput(String(initialCost.amount), currencyDecimals(defaultCurrency)) : "",
+  )
   const checkIn = useWatch({ control, name: "check_in" })
   const checkOut = useWatch({ control, name: "check_out" })
   const stayNights = getStayNights(checkIn, checkOut)
@@ -378,20 +384,14 @@ export function AccommodationForm({
             <input {...register("amount")} type="hidden" />
             <Input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               placeholder="0"
               aria-label="Cost amount"
-              defaultValue={initialCost ? initialCost.amount.toLocaleString() : ""}
+              value={displayCost}
               onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9.]/g, "")
-                const parts = raw.split(".")
-                const normalised = parts.length > 1 ? parts[0] + "." + parts.slice(1).join("") : raw
-                const [intPart, decPart] = normalised.split(".")
-                const formatted = intPart
-                  ? Number(intPart).toLocaleString() + (decPart !== undefined ? "." + decPart : "")
-                  : ""
-                e.target.value = formatted
-                setValue("amount", normalised || "", { shouldValidate: false })
+                const formatted = formatAmountInput(e.target.value, currencyDecimals(costCurrencyNow))
+                setDisplayCost(formatted)
+                setValue("amount", unformatAmountInput(formatted), { shouldValidate: false })
               }}
               className="h-auto w-full px-4 py-2.5 rounded-xl border bg-card text-base focus:border-primary focus:ring-1 focus:ring-primary outline-hidden transition-all"
             />
@@ -401,7 +401,13 @@ export function AccommodationForm({
               render={({ field }) => (
                 <Select
                   value={field.value ?? defaultCurrency}
-                  onValueChange={field.onChange}
+                  onValueChange={(c) => {
+                    field.onChange(c)
+                    // Re-cut what was typed to the new currency's decimals.
+                    const formatted = formatAmountInput(displayCost, currencyDecimals(c ?? defaultCurrency))
+                    setDisplayCost(formatted)
+                    setValue("amount", unformatAmountInput(formatted), { shouldValidate: false })
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
