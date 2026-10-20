@@ -178,8 +178,7 @@ export function LocationFields({
         </FormField>
       </div>
 
-      {startTime && (
-        <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
+      <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Activity duration">
             <span className="mr-1 text-xs font-medium text-muted-foreground">Duration</span>
             {QUICK_DURATIONS.map((duration) => (
@@ -195,22 +194,29 @@ export function LocationFields({
             ))}
             <Chip
               variant="option"
+              disabled={!startTime}
               pressed={durationMinutes !== null && !QUICK_DURATIONS.some((d) => d.minutes === durationMinutes)}
               onClick={() => setFocus("end_time")}
             >
               Custom
             </Chip>
           </div>
-          {durationMinutes !== null && (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock3 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              <span>
-                {startTime}–{endTime} · {formatDuration(durationMinutes)}
-              </span>
-            </p>
-          )}
+          {/* Fixed height so the hint/summary appearing never shifts the fields below. */}
+          <p className="mt-2 flex h-4 items-center gap-1.5 text-xs text-muted-foreground">
+            {!startTime ? (
+              "Set a start time first"
+            ) : (
+              durationMinutes !== null && (
+                <>
+                  <Clock3 className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  <span>
+                    {startTime}–{endTime} · {formatDuration(durationMinutes)}
+                  </span>
+                </>
+              )
+            )}
+          </p>
         </div>
-      )}
 
       <details
         className="group rounded-xl border border-border/30 bg-muted/15"
