@@ -104,7 +104,9 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
             onDelete={() =>
               scheduleDelete({
                 id: t.id,
-                message: "Transport deleted.",
+                message: linkedCost(expenses.data?.items, "transportation", t.id)
+                  ? "Transport deleted. Its cost stays in Budget."
+                  : "Transport deleted.",
                 errorMessage: "Couldn’t delete this transport. It’s back in the list.",
                 commit: () => deleteMut.mutateAsync(t.id),
               })
