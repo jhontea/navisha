@@ -230,7 +230,7 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
                         }`
                   } ${
                     isHighlighted
-                      ? `rounded-full ring-1 ring-inset ${
+                      ? `${isInRange ? "" : "rounded-full"} ring-1 ring-inset ${
                           isStart || isEnd
                             ? "ring-primary-foreground/70"
                             : "ring-primary/40"
@@ -256,10 +256,7 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
 
           <div className="mt-3 space-y-1 border-t border-border pt-2 text-center text-xs text-muted-foreground">
             {highlightRange && (
-              <p>
-                Trip: {formatDate(parseISODate(highlightRange.start) ?? new Date(), false)} –{" "}
-                {formatDate(parseISODate(highlightRange.end) ?? new Date(), false)}
-              </p>
+              <p>Trip: {formatTripRange(highlightRange.start, highlightRange.end)}</p>
             )}
             <p>{selectingEnd ? endHint : startHint}</p>
           </div>
@@ -325,6 +322,16 @@ function formatDateRange(
   }
 
   return `${formatDate(start, true)} — ${formatDate(end, true)}`
+}
+
+/** "Oct 24", "Oct 24 – Oct 25", or with years when the trip spans two. */
+export function formatTripRange(startDate: string, endDate: string) {
+  const start = parseISODate(startDate)
+  const end = parseISODate(endDate)
+  if (!start || !end) return ""
+  if (startDate === endDate) return formatDate(start, false)
+  const withYear = start.getFullYear() !== end.getFullYear()
+  return `${formatDate(start, withYear)} – ${formatDate(end, withYear)}`
 }
 
 function formatDate(date: Date, includeYear: boolean) {
