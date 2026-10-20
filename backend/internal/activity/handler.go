@@ -22,6 +22,7 @@ func NewHandler(usecase UsecaseInterface) *Handler {
 func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	g.GET("/days/:day_id/activities", middleware.WithUser(h.List), authMiddleware)
 	g.POST("/days/:day_id/activities", middleware.WithUser(h.Create), authMiddleware)
+	g.POST("/days/:day_id/activities/batch", middleware.WithUser(h.CreateBatch), authMiddleware)
 	g.PUT("/days/:day_id/activities/reorder", middleware.WithUser(h.Reorder), authMiddleware)
 	g.PUT("/activities/:id", middleware.WithUser(h.Update), authMiddleware)
 	g.DELETE("/activities/:id", middleware.WithUser(h.Delete), authMiddleware)
@@ -34,6 +35,13 @@ type createRequest struct {
 	EndTime   string          `json:"end_time"`
 	Payload   json.RawMessage `json:"payload"`
 }
+
+type batchCreateRequest struct {
+	Items []createRequest `json:"items"`
+}
+
+// maxBatchItems caps one batch create (AI "Add N to day" sends a handful).
+const maxBatchItems = 20
 
 type updateRequest struct {
 	Title     string          `json:"title"`
@@ -59,13 +67,9 @@ func (h *Handler) List(c echo.Context, userID string) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": resp})
 }
 
-func (h *Handler) Create(c echo.Context, userID string) error {
-	dayID := c.Param("day_id")
-	var req createRequest
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
-	}
-	// Early validation (Loop 2: user-friendly errors)
+// validateCreateRequest applies the early checks shared by Create and
+// CreateBatch (user-friendly 400s), then sanitizes the title in place.
+func validateCreateRequest(req *createRequest) error {
 	if strings.TrimSpace(req.Title) == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "title is required")
 	}
@@ -80,11 +84,53 @@ func (h *Handler) Create(c echo.Context, userID string) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid activity type")
 	}
 	req.Title = sanitize.Text(req.Title)
+	return nil
+}
+
+func (h *Handler) Create(c echo.Context, userID string) error {
+	dayID := c.Param("day_id")
+	var req createRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	if err := validateCreateRequest(&req); err != nil {
+		return err
+	}
 	a, err := h.usecase.Create(c.Request().Context(), userID, dayID, CreateInput(req))
 	if err != nil {
 		return mapErr(err)
 	}
 	return c.JSON(http.StatusCreated, toResponse(a))
+}
+
+func (h *Handler) CreateBatch(c echo.Context, userID string) error {
+	dayID := c.Param("day_id")
+	var req batchCreateRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	if len(req.Items) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "items is required")
+	}
+	if len(req.Items) > maxBatchItems {
+		return echo.NewHTTPError(http.StatusBadRequest, "too many items (max 20)")
+	}
+	inputs := make([]CreateInput, len(req.Items))
+	for i, item := range req.Items {
+		if err := validateCreateRequest(&item); err != nil {
+			return err
+		}
+		inputs[i] = CreateInput(item)
+	}
+	out, err := h.usecase.CreateBatch(c.Request().Context(), userID, dayID, inputs)
+	if err != nil {
+		return mapErr(err)
+	}
+	resp := make([]map[string]any, 0, len(out))
+	for _, a := range out {
+		resp = append(resp, toResponse(&a))
+	}
+	return c.JSON(http.StatusCreated, map[string]any{"items": resp})
 }
 
 func (h *Handler) Update(c echo.Context, userID string) error {

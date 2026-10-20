@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/jhontea/navisha/backend/internal/apperr"
@@ -377,5 +379,103 @@ func TestUsecase_ListByTrip_RepoError(t *testing.T) {
 
 	if _, err := u.ListByTrip(context.Background(), "user-1", "trip-1"); err == nil {
 		t.Fatal("want error")
+	}
+}
+
+// ---------- CreateBatch ----------
+
+// finalOrder applies the repo's recorded order updates to the day's rows and
+// returns the IDs in order_index order.
+func finalOrder(repo *mockRepo) []string {
+	rows, _ := repo.ListByDayTx(context.Background(), nil, "")
+	for _, u := range repo.orderUpdates {
+		for i := range rows {
+			if rows[i].ID == u.id {
+				rows[i].OrderIndex = u.order
+			}
+		}
+	}
+	sort.SliceStable(rows, func(i, j int) bool { return rows[i].OrderIndex < rows[j].OrderIndex })
+	ids := make([]string, len(rows))
+	for i, r := range rows {
+		ids[i] = r.ID
+	}
+	return ids
+}
+
+func batchNote(title, start string) CreateInput {
+	return CreateInput{Type: TypeNote, Title: title, StartTime: start}
+}
+
+func TestUsecase_CreateBatch_OrderMatchesOneByOne(t *testing.T) {
+	existing := []Activity{
+		{ID: "breakfast", StartTime: "08:00", OrderIndex: 0},
+		{ID: "untimed", OrderIndex: 1},
+		{ID: "dinner", StartTime: "19:00", OrderIndex: 2},
+	}
+	tests := []struct {
+		name     string
+		existing []Activity
+		in       []CreateInput
+		want     []string
+	}{
+		{"empty day keeps input order", nil,
+			[]CreateInput{batchNote("a", ""), batchNote("b", ""), batchNote("c", "")},
+			[]string{"new-a", "new-b", "new-c"}},
+		{"timed items slot between existing, input out of time order", existing,
+			[]CreateInput{batchNote("late", "15:00"), batchNote("early", "09:00"), batchNote("lunch", "12:00")},
+			nil},
+		{"untimed items go to the end", existing,
+			[]CreateInput{batchNote("x", ""), batchNote("y", "10:00")},
+			nil},
+	}
+	// Expected = what repeated Create gives, one input at a time:
+	// case 2: +15:00 -> [b u late d]; +09:00 -> before first later timed ("late") -> [b u early late d]; +12:00 -> [b u early lunch late d]
+	// case 3: +untimed -> end; +10:00 -> before dinner -> [b u y d x]
+	tests[1].want = []string{"breakfast", "untimed", "new-early", "new-lunch", "new-late", "dinner"}
+	tests[2].want = []string{"breakfast", "untimed", "new-y", "dinner", "new-x"}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := newMockRepo()
+			repo.dayOwners["day-1"] = "user-1"
+			repo.listByDayResult = append([]Activity(nil), tc.existing...)
+			if _, err := NewUsecase(repo).CreateBatch(context.Background(), "user-1", "day-1", tc.in); err != nil {
+				t.Fatalf("CreateBatch: %v", err)
+			}
+			if got := finalOrder(repo); !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("order = %v, want %v", got, tc.want)
+			}
+			if len(repo.batchInserted) != len(tc.in) || repo.commitCalls != 1 {
+				t.Errorf("inserted %d (want %d), commits %d (want 1)", len(repo.batchInserted), len(tc.in), repo.commitCalls)
+			}
+		})
+	}
+}
+
+func TestUsecase_CreateBatch_InvalidItemWritesNothing(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["day-1"] = "user-1"
+	_, err := NewUsecase(repo).CreateBatch(context.Background(), "user-1", "day-1", []CreateInput{
+		batchNote("ok", "09:00"),
+		{Type: TypeNote, Title: ""},
+	})
+	if !errors.Is(err, ErrInvalidPayload) {
+		t.Fatalf("err = %v, want ErrInvalidPayload", err)
+	}
+	if len(repo.batchInserted) != 0 || repo.beginTxCalls != 0 {
+		t.Errorf("wrote %d rows / began %d tx, want none", len(repo.batchInserted), repo.beginTxCalls)
+	}
+}
+
+func TestUsecase_CreateBatch_ForeignDayForbidden(t *testing.T) {
+	repo := newMockRepo()
+	repo.dayOwners["day-1"] = "someone-else"
+	_, err := NewUsecase(repo).CreateBatch(context.Background(), "user-1", "day-1", []CreateInput{batchNote("a", "")})
+	if !errors.Is(err, apperr.ErrForbidden) {
+		t.Fatalf("err = %v, want ErrForbidden", err)
+	}
+	if len(repo.batchInserted) != 0 {
+		t.Error("wrote rows to a foreign day")
 	}
 }
