@@ -27,27 +27,22 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
+// Same from/to/amount replaces any older entry and moves to the top, capped at MAX_RECORDS.
+export function upsertRecord(
+  records: ConversionRecord[],
+  record: Omit<ConversionRecord, "id" | "createdAt">,
+  now: number,
+  id: string,
+): ConversionRecord[] {
+  const rest = records.filter((r) => !(r.from === record.from && r.to === record.to && r.amount === record.amount))
+  return [{ ...record, id, createdAt: now }, ...rest].slice(0, MAX_RECORDS)
+}
+
 export const useRecentConversionsStore = create<RecentConversionsState>()(
   persist(
     (set) => ({
       records: [],
-      add: (record) =>
-        set((state) => {
-          const next: ConversionRecord = {
-            ...record,
-            id: makeId(),
-            createdAt: Date.now(),
-          }
-          // Dedupe consecutive identical conversions (same from/to/amount).
-          const last = state.records[0]
-          const isDuplicate =
-            last &&
-            last.from === next.from &&
-            last.to === next.to &&
-            last.amount === next.amount
-          if (isDuplicate) return state
-          return { records: [next, ...state.records].slice(0, MAX_RECORDS) }
-        }),
+      add: (record) => set((state) => ({ records: upsertRecord(state.records, record, Date.now(), makeId()) })),
       remove: (id) =>
         set((state) => ({
           records: state.records.filter((r) => r.id !== id),
