@@ -29,6 +29,8 @@ interface Props extends DateRangeValue {
   durationUnit?: string
   /** "YYYY-MM-DD" whose month the calendar opens on while no date is picked. */
   defaultMonth?: string
+  /** "YYYY-MM-DD" bounds (inclusive) outlined in the calendar, e.g. the trip's days. */
+  highlightRange?: { start: string; end: string }
 }
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
@@ -51,6 +53,7 @@ export function TravelDateRangePicker({
   endHint = "Choose the last day of your trip",
   durationUnit = "day",
   defaultMonth,
+  highlightRange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -199,7 +202,13 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
               const isInRange = Boolean(
                 startDate && endDate && value > startDate && value < endDate,
               )
-              const isToday = value === toISODate(new Date())
+              const todayValue = toISODate(new Date())
+              const isToday = value === todayValue
+              const isHighlighted = Boolean(
+                highlightRange &&
+                  value >= highlightRange.start &&
+                  value <= highlightRange.end,
+              )
 
               return (
                 // eslint-disable-next-line no-restricted-syntax -- calendar day cell
@@ -215,10 +224,18 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
                             ? "bg-primary-soft"
                             : "rounded-full hover:bg-accent"
                         } ${
-                          isCurrentMonth
+                          isCurrentMonth && value >= todayValue
                             ? "text-foreground"
                             : "text-muted-foreground"
                         }`
+                  } ${
+                    isHighlighted
+                      ? `rounded-full ring-1 ring-inset ${
+                          isStart || isEnd
+                            ? "ring-primary-foreground/70"
+                            : "ring-primary/40"
+                        }`
+                      : ""
                   }`}
                   aria-label={date.toLocaleDateString("en-US", {
                     weekday: "long",
@@ -237,11 +254,15 @@ variant="ghost" size="icon-sm" className="text-muted-foreground">
             })}
           </div>
 
-          <p className="mt-3 border-t border-border pt-2 text-center text-xs text-muted-foreground">
-            {selectingEnd
-              ? endHint
-              : startHint}
-          </p>
+          <div className="mt-3 space-y-1 border-t border-border pt-2 text-center text-xs text-muted-foreground">
+            {highlightRange && (
+              <p>
+                Trip: {formatDate(parseISODate(highlightRange.start) ?? new Date(), false)} –{" "}
+                {formatDate(parseISODate(highlightRange.end) ?? new Date(), false)}
+              </p>
+            )}
+            <p>{selectingEnd ? endHint : startHint}</p>
+          </div>
         </div>
       )}
     </div>

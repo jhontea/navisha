@@ -46,7 +46,9 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
   // save can never clear a cost it did not load.
   const expenses = useExpenses(tripId)
   // The date picker opens on the trip, not on today's month.
-  const tripStart = days.map((d) => d.date).sort()[0]
+  const tripDates = days.map((d) => d.date).sort()
+  const tripStart = tripDates[0]
+  const tripEnd = tripDates[tripDates.length - 1]
 
   // Chronological; undated entries last.
   const pendingDeletes = usePendingDeletes()
@@ -126,6 +128,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
             tripBaseCurrency={tripBaseCurrency}
             withCost
             defaultDate={tripStart}
+            tripEnd={tripEnd}
             searchContext={destination}
             isSubmitting={createMut.isPending}
             onCancel={() => setSheet(null)}
@@ -142,6 +145,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
             withCost={expenses.isSuccess}
             initialCost={linkedCost(expenses.data?.items, "accommodation", sheet.item.id)}
             defaultDate={tripStart}
+            tripEnd={tripEnd}
             searchContext={destination}
             isSubmitting={updateMut.isPending}
             onCancel={() => setSheet(null)}
