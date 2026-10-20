@@ -7,7 +7,7 @@ type ChipProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
   pressed?: boolean
   /**
    * filter: list filters (All / Food / Day 2), a pill tinted when selected.
-   * option: a choice inside a form (stay type, category), tinted when selected.
+   * option: a choice inside a form (stay type, category), solid primary when selected.
    */
   variant?: "filter" | "option"
   icon?: ComponentType<{ className?: string }>
@@ -37,7 +37,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
           : cn(
               "h-10 rounded-full px-3.5",
               pressed
-                ? "border-transparent bg-primary-soft font-semibold text-primary-soft-foreground"
+                ? "border-transparent bg-primary font-semibold text-primary-foreground"
                 : "bg-background text-foreground hover:bg-muted",
             ),
         className,
@@ -49,7 +49,8 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
           className={cn(
             "h-4 w-4 shrink-0",
             pressed ? "text-primary-soft-foreground" : "text-muted-foreground",
-            iconClassName,
+            // A category tint would be unreadable on the solid selected chip.
+            variant === "option" && pressed ? "text-primary-foreground" : iconClassName,
           )}
           aria-hidden="true"
         />

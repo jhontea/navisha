@@ -1,3 +1,5 @@
+import { formatMoney } from "./money"
+
 /**
  * A booking's Cost field is backed by one expense linked to it
  * (expenses.transportation_id / accommodation_id).
@@ -23,6 +25,16 @@ export function linkedCost(
   const key = kind === "transportation" ? "transportation_id" : "accommodation_id"
   const expense = expenses?.find((e) => e[key] === bookingId)
   return expense ? { amount: expense.amount, currency: expense.currency } : null
+}
+
+/** linkedCost formatted for a card ("Rp 650,000"); null when none. */
+export function linkedCostText(
+  expenses: LinkedExpense[] | undefined,
+  kind: "transportation" | "accommodation",
+  bookingId: string,
+): string | null {
+  const cost = linkedCost(expenses, kind, bookingId)
+  return cost ? formatMoney(cost.amount, cost.currency) : null
 }
 
 /**
