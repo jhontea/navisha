@@ -1,7 +1,7 @@
 # Planning — Perbaikan Hasil Audit UI (2026-10-19)
 
 > **Tanggal audit:** 2026-10-19
-> **Status:** U1–U8, U10 dan U11 selesai (2026-10-19). U9 menunggu fase V5. U12 dan U13 (audit alur buat trip baru) selesai (2026-10-19). U14–U19 masih `todo`. Lihat [Tracker](#tracker-progres).
+> **Status:** U1–U8, U10 dan U11 selesai (2026-10-19). U9 menunggu fase V5. U12–U19 (audit alur buat trip baru) selesai (2026-10-19 – 2026-10-20). Lihat [Tracker](#tracker-progres).
 > **Konteks:** Audit memakai rubrik plugin `ux-ui-agent-skills` (design-review + a11y-audit: WCAG 2.2 AA, heuristik Nielsen) ditambah axe-core dan cek visual. Halaman publik diaudit di 1440px, 375px, dan 320px. Dashboard diaudit di layout mobile 457px dengan data asli.
 > Screenshot audit ada di `design-audit/ui-audit-2026-10-19/` (gitignored).
 > **Catatan:** audit dijalankan terhadap checkout lokal saat itu (branch `chore/ci-hardening`), bukan `main` terbaru. Konfirmasi ulang setiap temuan di `main` terbaru sebelum diperbaiki.
@@ -34,12 +34,12 @@ Status: `todo` → `in progress` → `review` (PR dibuka) → `done` (merge). Pa
 | U11 | Sedang (tab trip, desktop) | Header trip menjadi landmark banner kedua | `fix/a11y-trip-header-banner` | done | #110 · 2026-10-19 |
 | U12 | Sedang (UX) | Switch AI di form "from scratch" diganti link | `fix/new-trip-ai-link` | done | #113 · 2026-10-19 |
 | U13 | Sedang | Rapikan form trip: label tanggal, urutan currency/budget, refactor | `fix/trip-form-polish` | done | #114, #115 · 2026-10-19 |
-| U14 | Sedang (UX) | "Review location" fokus ke lokasi + Title terisi otomatis | `fix/activity-location-review` | todo | |
-| U15 | Sedang | Field destinasi tetap bisa dipakai saat Google Places gagal | `fix/destination-places-fallback` | todo | |
-| U16 | Minor | Kalender: tanggal lampau redup, rentang trip ditandai | `fix/date-picker-past-days` | todo | |
-| U17 | Minor | Chip durasi tersorot + biaya tampil di kartu stay | `fix/duration-chip-stay-cost` | todo | |
-| U18 | Refactor | Form uang lain memakai `formatAmountInput` | `refactor/amount-input-format` | todo | |
-| U19 | Sedang (data) | Budget desimal berubah saat Edit → Save trip | `fix/trip-budget-decimals` | todo | |
+| U14 | Sedang (UX) | "Review location" fokus ke lokasi + petunjuk; Location name di atas Title | `fix/activity-location-review` | done | #117 · 2026-10-20 |
+| U15 | Sedang | Field Places (destinasi, lokasi aktivitas, alamat stay) tetap bisa diketik saat key ditolak | `fix/places-failure-fallback` | done | #118 · 2026-10-20 |
+| U16 | Minor | Kalender: tanggal lampau abu, hari trip ditandai di picker stay, pita rentang menyambung | `fix/date-picker-past-days` | done | #119 · 2026-10-20 |
+| U17 | Minor | Chip option terpilih biru solid + biaya di kartu stay dan transport | `fix/option-chip-card-cost` | done | #120 · 2026-10-20 |
+| U18 | Refactor | Satu format input uang, desimal ikut mata uang (`formatAmountInput` / `formatAmountValue`) | `refactor/money-input-format` | done | #121 · 2026-10-20 |
+| U19 | Sedang (data) | Budget desimal berubah saat Edit → Save trip | (digabung ke U18) | done | #121 · 2026-10-20 |
 
 ## Keputusan
 
@@ -233,3 +233,8 @@ Badge "Review location" sempat muncul karena audit awalnya dijalankan di :3001, 
 | 2026-10-19 | U12–U17 | Audit alur buat trip baru di `main` 4d4a1f1; enam task baru. K4–K7 diputuskan sesuai rekomendasi. Berikutnya: U12. |
 | 2026-10-19 | U12 | Switch AI diganti link "Generate with AI" (#113). |
 | 2026-10-19 | U13 | Label tanggal, currency di atas budget dengan prefix simbol, `InputGroup`, `formatAmountInput` + test (#114); nilai awal budget di Edit diformat (#115). Regresi form stay dan Edit → Save trip uji sudah dicek. U18 dan U19 ditambahkan dari temuan review. Berikutnya: bahas U14. |
+| 2026-10-20 | U14 | Edit aktivitas lokasi `needs_review` fokus ke Location name + petunjuk; untuk tipe Location, Location name di atas Title (auto-isi Title sudah ada) (#117). Edit aktivitas terverifikasi kini fokus di Location name (diterima). |
+| 2026-10-20 | U15 | `gm_authFailure` → input biasa + placeholder penjelasan di 3 field Places; diuji dengan key palsu di :3000 (#118). |
+| 2026-10-20 | U16 | Tanggal lampau abu (tetap bisa dipilih), `highlightRange` + keterangan "Trip: …" di picker stay, pita rentang menyambung di semua picker (#119). |
+| 2026-10-20 | U17 | Chip `option` terpilih jadi biru solid (7 pemakaian); biaya terkait tampil di kartu stay dan transport (#120). Catatan: menghapus booking tidak menghapus expense terkait (migrasi 022, `ON DELETE SET NULL`). |
+| 2026-10-20 | U18, U19 | `formatAmountInput` (teks diketik) + `formatAmountValue` (nilai tersimpan, mencegah salah baca 1000×) dengan desimal ikut `currencyDecimals`; dipakai di form trip, expense, stay, dan budget; wizard/converter en-US (#121). Budget IDR berfraksi dibulatkan saat Save (diterima). Cek end-to-end di main a72d401. |
