@@ -181,3 +181,16 @@ func (m *mockRepo) BatchInsertTx(_ context.Context, _ pgx.Tx, activities []Activ
 	m.batchInserted = append(m.batchInserted, activities...)
 	return nil
 }
+
+// ListByDayTx mimics the DB after BatchInsertTx: existing rows, then the
+// batch-inserted ones (ID "new-<title>") appended after the max order_index.
+func (m *mockRepo) ListByDayTx(_ context.Context, _ pgx.Tx, _ string) ([]Activity, error) {
+	out := append([]Activity(nil), m.listByDayResult...)
+	base := len(out)
+	for _, a := range m.batchInserted {
+		a.ID = "new-" + a.Title
+		a.OrderIndex = base + a.OrderIndex
+		out = append(out, a)
+	}
+	return out, nil
+}

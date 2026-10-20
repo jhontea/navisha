@@ -77,7 +77,18 @@ func (r *postgresRepository) FindActivityOwner(ctx context.Context, activityID s
 }
 
 func (r *postgresRepository) ListByDay(ctx context.Context, dayID string) ([]Activity, error) {
-	rows, err := r.db.Query(ctx,
+	return listByDay(ctx, r.db, dayID)
+}
+
+// ListByDayTx reads a day's activities inside tx so it sees rows inserted earlier in the same tx.
+func (r *postgresRepository) ListByDayTx(ctx context.Context, tx pgx.Tx, dayID string) ([]Activity, error) {
+	return listByDay(ctx, tx, dayID)
+}
+
+func listByDay(ctx context.Context, q interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}, dayID string) ([]Activity, error) {
+	rows, err := q.Query(ctx,
 		`SELECT id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at
 		 FROM activities
 		 WHERE day_id = $1

@@ -19,6 +19,9 @@ type UsecaseInterface interface {
 	ListByTrip(ctx context.Context, userID, tripID string) (map[string][]Activity, error)
 	Create(ctx context.Context, userID, dayID string, in CreateInput) (*Activity, error)
 	CreateMany(ctx context.Context, userID string, inputs []CreateManyInput) error
+	// CreateBatch saves several activities to one day atomically, placed by
+	// start time as if created one by one. Returns the day's full list.
+	CreateBatch(ctx context.Context, userID, dayID string, inputs []CreateInput) ([]Activity, error)
 	Update(ctx context.Context, userID, activityID string, in UpdateInput) (*Activity, error)
 	Delete(ctx context.Context, userID, activityID string) error
 	Reorder(ctx context.Context, userID, dayID string, orderedIDs []string) error
@@ -188,6 +191,69 @@ func (u *Usecase) CreateMany(ctx context.Context, userID string, inputs []Create
 		}
 		return u.repo.BatchInsertTx(ctx, tx, activities)
 	})
+}
+
+// CreateBatch validates every input, then in one tx appends them (as
+// CreateMany does) and re-sorts the day so each lands where Create would have
+// put it, processing inputs in order. Nothing is written if any input is invalid.
+func (u *Usecase) CreateBatch(ctx context.Context, userID, dayID string, inputs []CreateInput) ([]Activity, error) {
+	if err := u.verifyDayOwnership(ctx, userID, dayID); err != nil {
+		return nil, err
+	}
+	activities := make([]Activity, len(inputs))
+	for i, in := range inputs {
+		if !in.Type.Valid() {
+			return nil, ErrInvalidType
+		}
+		if in.Title == "" {
+			return nil, fmt.Errorf("activity.CreateBatch: %w: title required", ErrInvalidPayload)
+		}
+		if err := validatePayload(in.Type, in.Payload); err != nil {
+			return nil, err
+		}
+		activities[i] = Activity{
+			DayID: dayID, Type: in.Type, Title: in.Title,
+			StartTime: in.StartTime, EndTime: in.EndTime,
+			OrderIndex: i, Payload: in.Payload,
+		}
+	}
+
+	err := dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		if err := u.repo.BatchInsertTx(ctx, tx, activities); err != nil {
+			return err
+		}
+		// BatchInsertTx appends after the day's max order_index and returns no
+		// IDs, so the new rows are the last len(inputs) of the re-read list.
+		all, err := u.repo.ListByDayTx(ctx, tx, dayID)
+		if err != nil {
+			return err
+		}
+		if len(all) < len(inputs) {
+			return fmt.Errorf("activity.CreateBatch: read back %d of %d rows", len(all), len(inputs))
+		}
+		split := len(all) - len(inputs)
+		final := append([]Activity(nil), all[:split]...)
+		for _, a := range all[split:] {
+			pos := insertPosition(final, a.StartTime)
+			final = append(final, Activity{})
+			copy(final[pos+1:], final[pos:])
+			final[pos] = a
+		}
+		orderMap := make(map[string]int, len(final))
+		for i, a := range final {
+			if a.OrderIndex != i {
+				orderMap[a.ID] = i
+			}
+		}
+		if len(orderMap) == 0 {
+			return nil
+		}
+		return u.repo.BatchUpdateOrderTx(ctx, tx, orderMap)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return u.repo.ListByDay(ctx, dayID)
 }
 
 func (u *Usecase) Update(ctx context.Context, userID, activityID string, in UpdateInput) (*Activity, error) {

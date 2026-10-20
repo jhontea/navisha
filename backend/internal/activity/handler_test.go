@@ -323,3 +323,55 @@ func TestHandler_Reorder(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_CreateBatch(t *testing.T) {
+	post := func(repo *mockRepo, body string) (*httptest.ResponseRecorder, error) {
+		return callHandler(t, NewHandler(NewUsecase(repo)).CreateBatch, http.MethodPost, body, handlerTestUser,
+			map[string]string{"day_id": "day-1"})
+	}
+	items := func(n int) string {
+		parts := make([]string, n)
+		for i := range parts {
+			parts[i] = `{"type":"note","title":"t"}`
+		}
+		return `{"items":[` + strings.Join(parts, ",") + `]}`
+	}
+	cases := []struct {
+		name string
+		body string
+		want int
+	}{
+		{"success", items(3), http.StatusCreated},
+		{"empty list", `{"items":[]}`, http.StatusBadRequest},
+		{"over limit", items(maxBatchItems + 1), http.StatusBadRequest},
+		{"at limit", items(maxBatchItems), http.StatusCreated},
+		{"invalid item", `{"items":[{"type":"note","title":"ok"},{"type":"bogus","title":"x"}]}`, http.StatusBadRequest},
+		{"blank title", `{"items":[{"type":"note","title":"  "}]}`, http.StatusBadRequest},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := seededRepo()
+			rec, err := post(repo, tc.body)
+			if got := statusOf(t, rec, err); got != tc.want {
+				t.Fatalf("status = %d, want %d", got, tc.want)
+			}
+			if tc.want == http.StatusBadRequest && len(repo.batchInserted) != 0 {
+				t.Errorf("wrote %d rows on rejected batch", len(repo.batchInserted))
+			}
+			if tc.name == "success" {
+				if n := len(decodeBody(t, rec)["items"].([]any)); n != len(repo.listByDayResult) {
+					t.Errorf("items = %d, want day list (%d)", n, len(repo.listByDayResult))
+				}
+			}
+		})
+	}
+
+	t.Run("foreign day", func(t *testing.T) {
+		repo := seededRepo()
+		rec, err := callHandler(t, NewHandler(NewUsecase(repo)).CreateBatch, http.MethodPost, items(1), handlerTestUser,
+			map[string]string{"day_id": "day-2"})
+		if got := statusOf(t, rec, err); got != http.StatusForbidden {
+			t.Errorf("status = %d, want 403", got)
+		}
+	})
+}
