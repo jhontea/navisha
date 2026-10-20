@@ -11,6 +11,7 @@ import type { DestinationSearchProps, LocationProvider, PlaceQuery, PlaceSearchP
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 const BOUND_KM = 50
 const DEG_LAT_PER_KM = 1 / 111.32
+const REPLAY_DELAY_MS = 150
 
 // ── Places failure ──────────────────────────────────────────────────────────
 
@@ -57,6 +58,22 @@ function useKeepFocusOnFallback(inputRef: RefObject<HTMLInputElement | null>, fa
   }
 }
 
+// The widget only sees focus/input events after it is attached. Without the focus it
+// keeps its dropdown hidden, and text typed while the Places script loaded is lost.
+// Replay the focus for a field the user is in, and an input event only if they typed
+// (an autofocused prefilled field in an edit form must not open a dropdown). Deferred
+// because the widget finishes its own setup asynchronously and drops events fired
+// right at attach. Returns the cancel function.
+function replayTypedText(input: HTMLInputElement, typedRef: RefObject<boolean>) {
+  const timer = setTimeout(() => {
+    if (document.activeElement !== input) return
+    if (!typedRef.current) return
+    input.dispatchEvent(new Event("focus"))
+    if (input.value.trim()) input.dispatchEvent(new Event("input", { bubbles: true }))
+  }, REPLAY_DELAY_MS)
+  return () => clearTimeout(timer)
+}
+
 // ── Search fields ───────────────────────────────────────────────────────────
 
 function Boundary({ children }: { children: ReactNode }) {
@@ -95,6 +112,7 @@ function PlaceAutocompleteInput({
   const focusHandlers = useKeepFocusOnFallback(inputRef, failed)
   // Latest callback in a ref so the widget is not re-attached on every render.
   const onSelectRef = useLatestRef(onPlaceSelect)
+  const typedRef = useRef(false)
 
   useEffect(() => {
     if (!places || failed || !inputRef.current) return
@@ -112,7 +130,11 @@ function PlaceAutocompleteInput({
         google_place_id: p.place_id ?? "",
       })
     })
-    return () => google.maps.event.removeListener(listener)
+    const cancelReplay = replayTypedText(inputRef.current, typedRef)
+    return () => {
+      cancelReplay()
+      google.maps.event.removeListener(listener)
+    }
   }, [places, failed, onSelectRef])
 
   return (
@@ -128,7 +150,10 @@ function PlaceAutocompleteInput({
       aria-label={ariaLabel}
       aria-required={ariaRequired}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        typedRef.current = true
+        onChange(e.target.value)
+      }}
       placeholder={failed ? FALLBACK_PLACEHOLDER : (placeholder ?? "Search places…")}
     />
   )
@@ -182,6 +207,7 @@ function DestinationAutocompleteInput({
   const inputRef = useRef<HTMLInputElement>(null)
   const focusHandlers = useKeepFocusOnFallback(inputRef, failed)
   const onSelectRef = useLatestRef(onSelect)
+  const typedRef = useRef(false)
 
   useEffect(() => {
     if (!places || failed || !inputRef.current) return
@@ -202,7 +228,11 @@ function DestinationAutocompleteInput({
         countryCode: country?.short_name ?? "",
       })
     })
-    return () => google.maps.event.removeListener(listener)
+    const cancelReplay = replayTypedText(inputRef.current, typedRef)
+    return () => {
+      cancelReplay()
+      google.maps.event.removeListener(listener)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [places, failed])
 
@@ -218,7 +248,10 @@ function DestinationAutocompleteInput({
       aria-describedby={ariaDescribedBy}
       className={className}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        typedRef.current = true
+        onChange(e.target.value)
+      }}
       placeholder={failed ? FALLBACK_PLACEHOLDER : (placeholder ?? "Search city, province, or country")}
       autoComplete="off"
       autoFocus={autoFocus && !failed}
