@@ -17,6 +17,7 @@ export function TodoFields({ form }: { form: UseFormReturn<ActivityFormValues> }
     formState: { errors },
   } = form
   const items = useFieldArray({ control, name: "todo_items" })
+  const newItem = () => ({ id: crypto.randomUUID(), text: "", completed: false })
 
   return (
     <div className="flex flex-col gap-2">
@@ -39,6 +40,13 @@ export function TodoFields({ form }: { form: UseFormReturn<ActivityFormValues> }
               placeholder={`Item ${i + 1}…`}
               className="h-8 flex-1 text-sm"
               {...register(`todo_items.${i}.text`)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return
+                // Enter never submits the form; it adds an item below (unless the item is empty or IME is composing).
+                event.preventDefault()
+                if (event.nativeEvent.isComposing || !event.currentTarget.value.trim()) return
+                items.insert(i + 1, newItem())
+              }}
             />
             <Button
               type="button"
@@ -56,7 +64,7 @@ export function TodoFields({ form }: { form: UseFormReturn<ActivityFormValues> }
       <FormFieldError id="activity-todo-error">{errors.todo_items?.message}</FormFieldError>
       <Button
         type="button"
-        onClick={() => items.append({ id: crypto.randomUUID(), text: "", completed: false })}
+        onClick={() => items.append(newItem())}
         variant="ghost"
         size="sm"
         className="self-start text-primary"
