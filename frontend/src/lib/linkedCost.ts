@@ -27,7 +27,7 @@ export function linkedCost(
   return expense ? { amount: expense.amount, currency: expense.currency } : null
 }
 
-/** linkedCost formatted for a card ("Rp 650,000"); null when none. A string, so card memo still holds. */
+/** linkedCost formatted for a card ("Rp 650,000"); null when none. */
 export function linkedCostText(
   expenses: LinkedExpense[] | undefined,
   kind: "transportation" | "accommodation",
