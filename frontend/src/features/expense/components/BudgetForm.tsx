@@ -5,7 +5,7 @@ import { useState } from "react"
 import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { FormActions } from "@/components/forms/FormActions"
 import { Input } from "@/components/ui/input"
-import { formatMoney } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, formatMoney, unformatAmountInput } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { getBudgetSaveDisabledReason } from "@/features/trip/lib/actionability"
 import { CATEGORY_ORDER, getCategoryColor } from "../categoryColors"
@@ -24,21 +24,15 @@ interface Props {
   onSubmit: (values: BudgetFormValues) => void
 }
 
-const toDraft = (n?: number) => (n && n > 0 ? String(n) : "")
-const clean = (v: string) => v.replace(/[^0-9.]/g, "")
 const amountOf = (v: string) => {
-  const n = Number(v)
+  const n = Number(unformatAmountInput(v))
   return Number.isFinite(n) ? n : 0
-}
-/** "1234567.5" -> "1,234,567.5" while typing. */
-function withSeparators(raw: string): string {
-  if (!raw) return ""
-  const [intPart, decPart] = raw.split(".")
-  return Number(intPart || "0").toLocaleString("en-US") + (decPart !== undefined ? `.${decPart}` : "")
 }
 
 /** Total trip budget plus optional planned amounts per category. */
 export function BudgetForm({ currency, initialBudget, initialCategories, isSubmitting, onCancel, onSubmit }: Props) {
+  const decimals = currencyDecimals(currency)
+  const toDraft = (n?: number) => (n && n > 0 ? formatAmountValue(n, decimals) : "")
   const [total, setTotal] = useState(toDraft(initialBudget))
   const [categories, setCategories] = useState<Record<string, string>>(() =>
     Object.fromEntries(CATEGORY_ORDER.map((c) => [c, toDraft(initialCategories?.[c])])),
@@ -48,7 +42,7 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
   const plannedSum = Object.values(categories).reduce((sum, v) => sum + amountOf(v), 0)
   const categoryError =
     totalAmount > 0 && plannedSum > totalAmount ? "Category plans add up to more than the total budget." : null
-  const disabledReason = getBudgetSaveDisabledReason(total) ?? categoryError
+  const disabledReason = getBudgetSaveDisabledReason(unformatAmountInput(total)) ?? categoryError
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -71,8 +65,8 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
             id="budget-total"
             inputMode="decimal"
             autoFocus
-            value={withSeparators(total)}
-            onChange={(e) => setTotal(clean(e.target.value))}
+            value={total}
+            onChange={(e) => setTotal(formatAmountInput(e.target.value, decimals))}
             placeholder="e.g. 10,000,000"
             className="h-11 text-base tabular-nums md:h-10 md:text-sm"
           />
@@ -100,8 +94,8 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
                   <Input
             variant="bare"
                     inputMode="decimal"
-                    value={withSeparators(categories[category] ?? "")}
-                    onChange={(e) => setCategories((cur) => ({ ...cur, [category]: clean(e.target.value) }))}
+                    value={categories[category] ?? ""}
+                    onChange={(e) => setCategories((cur) => ({ ...cur, [category]: formatAmountInput(e.target.value, decimals) }))}
                     placeholder="0"
                     aria-label={`${cfg.label} planned amount`}
                     className="h-auto w-36 min-w-0 bg-transparent text-right text-base tabular-nums text-foreground outline-hidden placeholder:text-muted-foreground md:text-sm"

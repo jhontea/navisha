@@ -10,7 +10,7 @@ import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
-import { formatMoney } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, formatMoney, unformatAmountInput } from "@/lib/money"
 import {
   FormFieldError,
   FormFieldLabel,
@@ -88,7 +88,7 @@ export function ExpenseForm({
     })
 
   const [displayAmount, setDisplayAmount] = useState(
-    initial ? Number(initial.amount).toLocaleString() : ""
+    initial ? formatAmountValue(initial.amount, currencyDecimals(initial.currency)) : ""
   )
 
   const rawAmount = useWatch({ control, name: "amount" })
@@ -196,22 +196,15 @@ export function ExpenseForm({
                 id="expense-amount"
                 aria-required="true"
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 aria-invalid={Boolean(errors.amount)}
                 aria-describedby={errors.amount ? "expense-amount-error" : undefined}
                 value={displayAmount}
                 placeholder="0"
                 onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9.]/g, "")
-                  const parts = raw.split(".")
-                  const normalised = parts.length > 1 ? parts[0] + "." + parts.slice(1).join("") : raw
-                  const num = parseFloat(normalised)
-                  const [intPart, decPart] = normalised.split(".")
-                  const formatted = intPart
-                    ? Number(intPart).toLocaleString() + (decPart !== undefined ? "." + decPart : "")
-                    : ""
+                  const formatted = formatAmountInput(e.target.value, currencyDecimals(currency))
                   setDisplayAmount(formatted)
-                  setValue("amount", isNaN(num) ? "" : String(num), { shouldValidate: true })
+                  setValue("amount", unformatAmountInput(formatted), { shouldValidate: true })
                 }}
                 className={cn("h-auto", 
                   "w-full px-4 py-2.5 rounded-xl border bg-card text-foreground",
@@ -232,6 +225,13 @@ export function ExpenseForm({
                     id="expense-currency"
                     aria-required="true"
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      // Re-cut what was typed to the new currency's decimals.
+                      const formatted = formatAmountInput(displayAmount, currencyDecimals(e.target.value))
+                      setDisplayAmount(formatted)
+                      setValue("amount", unformatAmountInput(formatted), { shouldValidate: Boolean(formatted) })
+                    }}
                     aria-invalid={Boolean(errors.currency)}
                     aria-describedby={errors.currency ? "expense-currency-error" : undefined}
                     className={cn(
@@ -253,7 +253,7 @@ export function ExpenseForm({
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
               ≈ {formatMoney(preview.converted_amount, tripBaseCurrency)}{" "}
               <span className="text-muted-foreground font-normal">
-                (1 {currency} = {preview.rate.toLocaleString(undefined, { maximumFractionDigits: 4 })} {tripBaseCurrency})
+                (1 {currency} = {preview.rate.toLocaleString("en-US", { maximumFractionDigits: 4 })} {tripBaseCurrency})
               </span>
             </p>
           )}
