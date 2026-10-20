@@ -32,21 +32,12 @@ export function TransportationScheduleFields({
 }: Props) {
   const arrivalInputRef = useRef<HTMLInputElement>(null)
   const [showArrival, setShowArrival] = useState(Boolean(arrival))
-  const duration = getDurationMinutes(departure, arrival)
 
   if (arrival && !showArrival) setShowArrival(true)
 
   const addArrival = () => {
     setShowArrival(true)
-    if (departure && !arrival) onArrivalChange(addLocalHours(departure, 1))
     window.setTimeout(() => arrivalInputRef.current?.focus(), 0)
-  }
-
-  const updateDeparture = (value: string) => {
-    onDepartureChange(value)
-    if (arrival && arrival < value) {
-      onArrivalChange(addLocalHours(value, 1))
-    }
   }
 
   return (
@@ -61,11 +52,6 @@ export function TransportationScheduleFields({
             Enter the local time shown at each station, port, or airport.
           </FormFieldDescription>
         </div>
-        {duration !== null && (
-          <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-soft-foreground">
-            {formatDuration(duration)}
-          </span>
-        )}
       </div>
 
       <div className={`grid gap-4 ${showArrival ? "md:grid-cols-2" : ""}`}>
@@ -88,7 +74,7 @@ export function TransportationScheduleFields({
             className={`h-auto w-full rounded-xl border bg-card px-4 py-2.5 text-base outline-hidden transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60 ${
               departureError ? "border-destructive" : "border-border"
             }`}
-            onChange={(event) => updateDeparture(event.target.value)}
+            onChange={(event) => onDepartureChange(event.target.value)}
             onClick={(event) => {
               try {
                 event.currentTarget.showPicker?.()
@@ -142,22 +128,20 @@ variant="ghost" size="icon-xs" className="text-muted-foreground">
                 }
               }}
             />
-            {departure && (
-              <div className="flex flex-wrap gap-2">
-                <Chip
-                  disabled={disabled}
-                  onClick={() => onArrivalChange(moveArrivalToDay(departure, arrival, 0))}
-                >
-                  Same day
-                </Chip>
-                <Chip
-                  disabled={disabled}
-                  onClick={() => onArrivalChange(moveArrivalToDay(departure, arrival, 1))}
-                >
-                  +1 day
-                </Chip>
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2">
+              <Chip
+                disabled={disabled || !departure || !arrival}
+                onClick={() => onArrivalChange(moveArrivalToDay(departure, arrival, 0))}
+              >
+                Same day
+              </Chip>
+              <Chip
+                disabled={disabled || !departure || !arrival}
+                onClick={() => onArrivalChange(moveArrivalToDay(departure, arrival, 1))}
+              >
+                +1 day
+              </Chip>
+            </div>
             <FormFieldError id="arrival-error">{arrivalError}</FormFieldError>
           </div>
         ) : (
@@ -175,30 +159,18 @@ variant="soft">
   )
 }
 
-function addLocalHours(value: string, hours: number) {
-  const date = parseLocalDateTime(value)
-  if (!date) return ""
-  date.setHours(date.getHours() + hours)
-  return toLocalDateTime(date)
-}
-
 function moveArrivalToDay(departure: string, arrival: string, dayOffset: number) {
   const departureDate = parseLocalDateTime(departure)
   if (!departureDate) return arrival
 
   const arrivalDate = parseLocalDateTime(arrival)
-  const hour = arrivalDate?.getHours() ?? departureDate.getHours()
-  const minute = arrivalDate?.getMinutes() ?? departureDate.getMinutes()
+  if (!arrivalDate) return arrival
+
+  const hour = arrivalDate.getHours()
+  const minute = arrivalDate.getMinutes()
   departureDate.setDate(departureDate.getDate() + dayOffset)
   departureDate.setHours(hour, minute, 0, 0)
   return toLocalDateTime(departureDate)
-}
-
-function getDurationMinutes(departure: string, arrival: string) {
-  const start = parseLocalDateTime(departure)
-  const end = parseLocalDateTime(arrival)
-  if (!start || !end || end < start) return null
-  return Math.round((end.getTime() - start.getTime()) / 60_000)
 }
 
 function parseLocalDateTime(value: string) {
@@ -214,15 +186,4 @@ function toLocalDateTime(date: Date) {
   const hour = String(date.getHours()).padStart(2, "0")
   const minute = String(date.getMinutes()).padStart(2, "0")
   return `${year}-${month}-${day}T${hour}:${minute}`
-}
-
-function formatDuration(minutes: number) {
-  const days = Math.floor(minutes / 1_440)
-  const hours = Math.floor((minutes % 1_440) / 60)
-  const remainingMinutes = minutes % 60
-  const parts = []
-  if (days) parts.push(`${days}d`)
-  if (hours) parts.push(`${hours}h`)
-  if (remainingMinutes || parts.length === 0) parts.push(`${remainingMinutes}m`)
-  return parts.join(" ")
 }
