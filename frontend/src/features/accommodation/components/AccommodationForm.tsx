@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { SUPPORTED_CURRENCIES } from "@/lib/currency"
 import { costPayload, type LinkedCost } from "@/lib/linkedCost"
-import { currencyDecimals, formatAmountInput, unformatAmountInput } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, unformatAmountInput } from "@/lib/money"
 import { Input } from "@/components/ui/input"
 import { Chip } from "@/components/Chip"
 import { Controller, useForm, useWatch } from "react-hook-form"
@@ -160,7 +160,7 @@ export function AccommodationForm({
 
   const costCurrencyNow = useWatch({ control, name: "currency" }) ?? defaultCurrency
   const [displayCost, setDisplayCost] = useState(
-    initialCost ? formatAmountInput(String(initialCost.amount), currencyDecimals(defaultCurrency)) : "",
+    initialCost ? formatAmountValue(initialCost.amount, currencyDecimals(defaultCurrency)) : "",
   )
   const checkIn = useWatch({ control, name: "check_in" })
   const checkOut = useWatch({ control, name: "check_out" })

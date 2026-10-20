@@ -5,7 +5,7 @@ import { useState } from "react"
 import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { FormActions } from "@/components/forms/FormActions"
 import { Input } from "@/components/ui/input"
-import { currencyDecimals, formatAmountInput, formatMoney, unformatAmountInput } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, formatMoney, unformatAmountInput } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { getBudgetSaveDisabledReason } from "@/features/trip/lib/actionability"
 import { CATEGORY_ORDER, getCategoryColor } from "../categoryColors"
@@ -32,7 +32,7 @@ const amountOf = (v: string) => {
 /** Total trip budget plus optional planned amounts per category. */
 export function BudgetForm({ currency, initialBudget, initialCategories, isSubmitting, onCancel, onSubmit }: Props) {
   const decimals = currencyDecimals(currency)
-  const toDraft = (n?: number) => (n && n > 0 ? formatAmountInput(String(n), decimals) : "")
+  const toDraft = (n?: number) => (n && n > 0 ? formatAmountValue(n, decimals) : "")
   const [total, setTotal] = useState(toDraft(initialBudget))
   const [categories, setCategories] = useState<Record<string, string>>(() =>
     Object.fromEntries(CATEGORY_ORDER.map((c) => [c, toDraft(initialCategories?.[c])])),

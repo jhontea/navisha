@@ -10,7 +10,7 @@ import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
-import { currencyDecimals, formatAmountInput, formatMoney, unformatAmountInput } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, formatMoney, unformatAmountInput } from "@/lib/money"
 import {
   FormFieldError,
   FormFieldLabel,
@@ -88,7 +88,7 @@ export function ExpenseForm({
     })
 
   const [displayAmount, setDisplayAmount] = useState(
-    initial ? formatAmountInput(String(initial.amount), currencyDecimals(initial.currency)) : ""
+    initial ? formatAmountValue(initial.amount, currencyDecimals(initial.currency)) : ""
   )
 
   const rawAmount = useWatch({ control, name: "amount" })

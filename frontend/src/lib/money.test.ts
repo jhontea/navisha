@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { currencyDecimals, formatAmountInput, formatMoney, unformatAmountInput } from "./money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, formatMoney, unformatAmountInput } from "./money"
 
 // F4: IDR totals were shown with cents ("Rp 68,340,303.69").
 describe("formatMoney", () => {
@@ -68,17 +68,31 @@ describe("formatAmountInput", () => {
     expect(formatAmountInput(".", 0)).toBe("")
   })
 
-  it("keeps only the first dot and drops leading zeros", () => {
-    expect(formatAmountInput("1.2.3", 2)).toBe("1.23")
-    expect(formatAmountInput("1.500.000", 2)).toBe("1.50")
+  it("treats several dots as grouping and drops leading zeros", () => {
+    expect(formatAmountInput("1.2.3", 2)).toBe("123")
+    expect(formatAmountInput("1.500.000", 2)).toBe("1,500,000")
     expect(formatAmountInput("007", 0)).toBe("7")
+  })
+})
+
+describe("formatAmountValue", () => {
+  it("rounds stored amounts to the currency decimals without typing heuristics", () => {
+    expect(formatAmountValue(123456.789, 0)).toBe("123,457")
+    expect(formatAmountValue(1234.5, 0)).toBe("1,235")
+    expect(formatAmountValue(650000, 0)).toBe("650,000")
+  })
+
+  it("pads like formatMoney", () => {
+    expect(formatAmountValue(12.5, 2)).toBe("12.50")
+    expect(formatAmountValue(1500.5, 2)).toBe("1,500.50")
+    expect(formatAmountValue(Number.NaN, 2)).toBe("")
   })
 })
 
 describe("unformatAmountInput", () => {
   it("round-trips a decimal budget (1500.5 USD)", () => {
-    const shown = formatAmountInput(String(1500.5), 2)
-    expect(shown).toBe("1,500.5")
+    const shown = formatAmountValue(1500.5, 2)
+    expect(shown).toBe("1,500.50")
     expect(Number(unformatAmountInput(shown))).toBe(1500.5)
   })
 

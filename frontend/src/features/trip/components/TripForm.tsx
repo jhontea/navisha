@@ -11,7 +11,7 @@ import { useState, type ReactNode } from "react"
 import { ChevronDown, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
 import { getCurrencyLabel, getCurrencySymbol } from "@/lib/currency"
-import { currencyDecimals, formatAmountInput, unformatAmountInput } from "@/lib/money"
+import { currencyDecimals, formatAmountInput, formatAmountValue, unformatAmountInput } from "@/lib/money"
 import {
   FormFieldDescription,
   FormFieldError,
@@ -373,7 +373,7 @@ function buildDefaults(initial?: Trip): FormValues {
     start_date: initial.start_date,
     end_date: initial.end_date,
     base_currency: initial.base_currency ?? "IDR",
-    budget: initial.budget ? formatAmountInput(String(initial.budget), currencyDecimals(initial.base_currency ?? "IDR")) : "",
+    budget: initial.budget ? formatAmountValue(initial.budget, currencyDecimals(initial.base_currency ?? "IDR")) : "",
     notes: initial.notes ?? "",
   }
 }
