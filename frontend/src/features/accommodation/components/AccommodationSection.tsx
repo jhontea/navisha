@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
 import { dateSortKey } from "@/lib/calendar"
-import { linkedCost } from "@/lib/linkedCost"
+import { linkedCost, linkedCostText } from "@/lib/linkedCost"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { useExpenses } from "@/features/expense/hooks/useExpenses"
 import {
@@ -105,6 +105,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
             key={a.id}
             accommodation={a}
             days={days}
+            cost={linkedCostText(expenses.data?.items, "accommodation", a.id)}
             onEdit={() => setSheet({ mode: "edit", item: a })}
             onDelete={() =>
               scheduleDelete({

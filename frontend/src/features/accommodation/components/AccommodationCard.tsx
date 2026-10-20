@@ -12,6 +12,8 @@ import { ACCOMMODATION_TYPE_LABELS, type Accommodation } from "../types"
 interface Props {
   accommodation: Accommodation
   days?: { date: string; day_number: number }[]
+  /** Formatted cost of the linked expense, when the stay has one. */
+  cost?: string | null
   onEdit: () => void
   onDelete: () => void
 }
@@ -31,6 +33,7 @@ const TYPE_ICON: Record<string, ComponentType<{ className?: string }>> = {
 export const AccommodationCard = memo(function AccommodationCard({
   accommodation: a,
   days = [],
+  cost,
   onEdit,
   onDelete,
 }: Props) {
@@ -48,6 +51,7 @@ export const AccommodationCard = memo(function AccommodationCard({
   const facts = [
     { label: dayRange?.includes("–") ? "Trip days" : "Trip day", value: dayRange },
     { label: "Booking ref", value: a.confirmation_number || null },
+    { label: "Cost", value: cost || null },
   ].filter((f): f is { label: string; value: string } => Boolean(f.value))
 
   return (

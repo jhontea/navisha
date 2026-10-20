@@ -24,6 +24,7 @@ export type BoardingPassData = Pick<
 export function BoardingPass({
   transportation: t,
   dayNumber,
+  cost,
   showDate = true,
   actions,
   children,
@@ -34,6 +35,8 @@ export function BoardingPass({
   showDate?: boolean
   /** Trip day of the departure, when known. */
   dayNumber?: number | null
+  /** Formatted cost of the linked expense, when the booking has one. */
+  cost?: string | null
   /** Optional slot top-right, e.g. the ⋯ menu. */
   actions?: ReactNode
   /** Extra content under the facts, e.g. notes. */
@@ -65,6 +68,7 @@ export function BoardingPass({
   if (date && showDate) facts.push({ label: "Date", value: date })
   if (dayNumber) facts.push({ label: "Trip day", value: `Day ${dayNumber}` })
   if (t.reference_number) facts.push({ label: "Booking ref", value: t.reference_number })
+  if (cost) facts.push({ label: "Cost", value: cost })
 
   const title = t.label || typeLabel
 

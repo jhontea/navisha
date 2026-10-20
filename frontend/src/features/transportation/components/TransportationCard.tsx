@@ -11,6 +11,7 @@ import { BoardingPass } from "./BoardingPass"
 interface Props {
   transportation: Transportation
   days?: { date: string; day_number: number }[]
+  cost?: string | null
   onEdit: () => void
   onDelete: () => void
 }
@@ -19,6 +20,7 @@ interface Props {
 export const TransportationCard = memo(function TransportationCard({
   transportation: t,
   days = [],
+  cost,
   onEdit,
   onDelete,
 }: Props) {
@@ -28,6 +30,7 @@ export const TransportationCard = memo(function TransportationCard({
     <BoardingPass
       transportation={t}
       dayNumber={tripDayNumber(t.departure_datetime, days)}
+      cost={cost}
       actions={<BookingActions label={`Actions for ${heading}`} onEdit={onEdit} onDelete={onDelete} className="-mr-1.5" />}
     >
       {t.notes && <p className="mt-3 line-clamp-3 rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">{t.notes}</p>}

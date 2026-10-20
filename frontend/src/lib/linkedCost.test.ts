@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { costPayload, linkedCost } from "./linkedCost"
+import { costPayload, linkedCost, linkedCostText } from "./linkedCost"
 
 describe("linkedCost", () => {
   const expenses = [
@@ -17,6 +17,12 @@ describe("linkedCost", () => {
   it("returns null without a linked expense", () => {
     expect(linkedCost(expenses, "transportation", "bus-9")).toBeNull()
     expect(linkedCost(undefined, "accommodation", "x")).toBeNull()
+  })
+
+  it("formats the cost in its own currency, null when none", () => {
+    expect(linkedCostText(expenses, "transportation", "car-1")).toBe("Rp 750,000")
+    expect(linkedCostText(expenses, "accommodation", "car-1")).toBe("$ 90.00")
+    expect(linkedCostText(expenses, "transportation", "bus-9")).toBeNull()
   })
 })
 
