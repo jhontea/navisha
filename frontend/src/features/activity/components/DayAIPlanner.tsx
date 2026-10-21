@@ -4,7 +4,6 @@ import { SelectableRow } from "@/components/SelectableRow"
 import { Chip } from "@/components/Chip"
 import { useState } from "react"
 import { Loader2, MapPin, Sparkles, X } from "lucide-react"
-import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { GeneratingIndicator } from "@/components/GeneratingIndicator"
@@ -13,7 +12,7 @@ import type { ActivityDraft, DayPreview, TripDraft } from "@/features/trip/types
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { toast } from "@/lib/toast"
-import { activityApi } from "../api"
+import { useCreateActivitiesBatch } from "../hooks/useActivities"
 import type { CreateActivityInput } from "../types"
 
 interface Props {
@@ -65,7 +64,7 @@ export function DayAIPlanner({
   defaultOpen = false,
   onClose,
 }: Props) {
-  const qc = useQueryClient()
+  const createBatch = useCreateActivitiesBatch(dayId, tripId)
   const [open, setOpenState] = useState(defaultOpen)
   const setOpen = (next: boolean) => {
     setOpenState(next)
@@ -134,59 +133,40 @@ export function DayAIPlanner({
         days: [{ day_number: dayNumber, date, theme: preview.theme, activities: selectedActivities }],
       }
       const resolved = await resolveDraftLocations(wrapper, destination)
-      const failed: ActivityDraft[] = []
-      let added = 0
-      let needsReview = 0
+      const items: CreateActivityInput[] = resolved.days[0].activities.map((suggestion) => ({
+        type: "location",
+        title: suggestion.title,
+        start_time: suggestion.start_time,
+        end_time: suggestion.end_time,
+        payload: {
+          location_name: suggestion.location_name || suggestion.title,
+          address: suggestion.address,
+          lat: suggestion.lat,
+          lng: suggestion.lng,
+          google_place_id: suggestion.google_place_id,
+          notes: suggestion.notes,
+          location_verification: suggestion.location_verification ?? "needs_review",
+          location_confidence: suggestion.location_confidence ?? null,
+          image_urls: [],
+        },
+      }))
+      const needsReview = resolved.days[0].activities.filter((s) => s.location_verification === "needs_review").length
 
-      for (const suggestion of resolved.days[0].activities) {
-        const input: CreateActivityInput = {
-          type: "location",
-          title: suggestion.title,
-          start_time: suggestion.start_time,
-          end_time: suggestion.end_time,
-          payload: {
-            location_name: suggestion.location_name || suggestion.title,
-            address: suggestion.address,
-            lat: suggestion.lat,
-            lng: suggestion.lng,
-            google_place_id: suggestion.google_place_id,
-            notes: suggestion.notes,
-            location_verification: suggestion.location_verification ?? "needs_review",
-            location_confidence: suggestion.location_confidence ?? null,
-            image_urls: [],
-          },
-        }
-        try {
-          await activityApi.create(dayId, input)
-          added++
-          if (suggestion.location_verification === "needs_review") needsReview++
-        } catch {
-          failed.push(suggestion)
-        }
+      // All-or-nothing: on failure nothing was saved and the planner stays open to retry.
+      try {
+        await createBatch.mutateAsync(items)
+      } catch (error) {
+        toast(error instanceof Error ? error.message : "Couldn't add the suggestions. Nothing was saved. Try again.", "error")
+        return
       }
 
-      await qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "active" })
-      if (failed.length === 0) {
-        toast(
-          needsReview > 0
-            ? `${added} suggestions added. ${needsReview} location${needsReview === 1 ? "" : "s"} need review.`
-            : `${added} AI suggestion${added === 1 ? "" : "s"} added to Day ${dayNumber}.`,
-        )
-        setPreview(null)
-        setSelectedKeys(new Set())
-        setSelectedIntents(new Set())
-        setInstruction("")
-        setOpen(false)
-      } else {
-        setPreview({ ...preview, activities: failed })
-        setSelectedKeys(new Set(failed.map(suggestionKey)))
-        toast(
-          added > 0
-            ? `${added} added. ${failed.length} location${failed.length === 1 ? "" : "s"} could not be resolved.`
-            : "The suggested locations could not be resolved. Try generating again.",
-          "error",
-        )
-      }
+      const added = items.length
+      toast(
+        needsReview > 0
+          ? `${added} suggestions added. ${needsReview} location${needsReview === 1 ? "" : "s"} need review.`
+          : `${added} AI suggestion${added === 1 ? "" : "s"} added to Day ${dayNumber}.`,
+      )
+      closePlanner()
     } finally {
       setIsApplying(false)
     }

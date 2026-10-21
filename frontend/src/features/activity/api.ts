@@ -18,6 +18,10 @@ export const activityApi = {
   create: (dayId: string, input: CreateActivityInput) =>
     api.post<Activity>(`/days/${dayId}/activities`, input),
 
+  // Atomic: 1-20 items, all saved or none. Returns the day's full list in final order.
+  createBatch: (dayId: string, items: CreateActivityInput[]) =>
+    api.post<ActivityListResponse>(`/days/${dayId}/activities/batch`, { items }),
+
   update: (id: string, input: UpdateActivityInput) =>
     api.put<Activity>(`/activities/${id}`, input),
 
