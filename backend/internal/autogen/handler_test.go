@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -58,6 +59,8 @@ func (f *fakeRedis) used(userID string) int {
 // ---------- stub usecase ----------
 
 type stubUsecase struct {
+	mu sync.Mutex // jobs run GenerateDraft from goroutines
+
 	draft     *TripDraft
 	draftErr  error
 	preview   *DayPreview
@@ -74,6 +77,8 @@ type stubUsecase struct {
 }
 
 func (s *stubUsecase) GenerateDraft(_ context.Context, _ string, in GenerateInput) (*TripDraft, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.genCalls++
 	s.genIn = in
 	return s.draft, s.draftErr
