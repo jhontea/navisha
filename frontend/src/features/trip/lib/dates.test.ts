@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest"
 
-import { getInclusiveDayCount } from "./dates"
+import { formatFriendlyRange, getInclusiveDayCount } from "./dates"
+
+describe("formatFriendlyRange", () => {
+  it("writes weekdays and the month once inside a month", () => {
+    expect(formatFriendlyRange("2026-11-20", "2026-11-23")).toBe("Fri 20 – Mon 23 Nov")
+    expect(formatFriendlyRange("2026-11-20", "2026-11-20")).toBe("Fri 20 Nov")
+  })
+
+  it("names both months across a month boundary", () => {
+    expect(formatFriendlyRange("2026-10-30", "2026-11-01")).toBe("Fri 30 Oct – Sun 1 Nov")
+  })
+
+  it("adds years across a year boundary", () => {
+    expect(formatFriendlyRange("2026-12-30", "2027-01-01")).toBe("Wed 30 Dec 2026 – Fri 1 Jan 2027")
+  })
+
+  it("returns empty for non ISO dates", () => {
+    expect(formatFriendlyRange("", "2026-11-01")).toBe("")
+  })
+})
 
 describe("getInclusiveDayCount", () => {
   it("counts both start and end day", () => {

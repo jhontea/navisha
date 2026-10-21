@@ -13,6 +13,7 @@ import {
   MAX_EVENT_NAME,
   TRANSPORT_MODES,
   TRIP_NEEDS,
+  withAdults,
   withChildren,
   type PlaceField,
   type TripDetailsForm,
@@ -131,15 +132,31 @@ export function TripDetailsStep({ value, onChange, destination, startDate, endDa
         <h3 id="details-who" className="text-sm font-semibold text-foreground">Who&apos;s going</h3>
         <div className="grid grid-cols-2 gap-3">
           <FormField label="Adults" htmlFor="details-adults" optional>
-            <Input
-              id="details-adults"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={MAX_ADULTS}
-              value={value.adults}
-              onChange={(e) => set({ adults: e.target.value })}
-            />
+            <div className="flex h-11 items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Fewer adults"
+                disabled={value.adults === "" || (value.children > 0 && Number(value.adults) <= 1)}
+                onClick={() => onChange(withAdults(value, Number(value.adults) - 1))}
+              >
+                <Minus aria-hidden="true" />
+              </Button>
+              <span id="details-adults" className="w-6 text-center font-semibold" aria-live="polite">
+                {value.adults || "-"}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="More adults"
+                disabled={Number(value.adults) >= MAX_ADULTS}
+                onClick={() => onChange(withAdults(value, Number(value.adults) + 1))}
+              >
+                <Plus aria-hidden="true" />
+              </Button>
+            </div>
           </FormField>
           <FormField label="Children" htmlFor="details-children">
             <div className="flex h-11 items-center gap-2">
@@ -197,7 +214,7 @@ export function TripDetailsStep({ value, onChange, destination, startDate, endDa
       <section className="space-y-2" aria-labelledby="details-needs">
         <h3 id="details-needs" className="text-sm font-semibold text-foreground">Needs</h3>
         <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="details-needs">
-          {TRIP_NEEDS.map((n) => (
+          {TRIP_NEEDS.filter((n) => n.value !== "kids_playground" || value.children > 0).map((n) => (
             <Chip key={n.value} pressed={value.needs.includes(n.value)} onClick={() => toggleNeed(n.value)}>
               {n.label}
             </Chip>

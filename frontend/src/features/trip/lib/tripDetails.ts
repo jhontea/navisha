@@ -83,7 +83,15 @@ export function toPlace(field: PlaceField): GeneratePlace | undefined {
 export function withChildren(form: TripDetailsForm, children: number): TripDetailsForm {
   const n = Math.max(0, Math.min(MAX_CHILDREN, children))
   const childAges = Array.from({ length: n }, (_, i) => form.childAges[i] ?? "")
-  return { ...form, children: n, childAges }
+  // "Kids playground" only makes sense with children, so it goes when the last one does.
+  const needs = n === 0 ? form.needs.filter((need) => need !== "kids_playground") : form.needs
+  return { ...form, children: n, childAges, needs }
+}
+
+/** Sets the number of adults; below 1 means "not given" (empty), like the untouched field. */
+export function withAdults(form: TripDetailsForm, adults: number): TripDetailsForm {
+  const n = Math.min(MAX_ADULTS, adults)
+  return { ...form, adults: n < 1 ? "" : String(n) }
 }
 
 function hasEventInput(f: TripDetailsForm): boolean {
@@ -146,7 +154,8 @@ export function tripDetailsToInput(f: TripDetailsForm): Partial<GenerateTripInpu
     }
     out.travelers = travelers
   }
-  if (f.needs.length > 0) out.needs = [...f.needs]
+  const needs = f.needs.filter((n) => n !== "kids_playground" || f.children > 0)
+  if (needs.length > 0) out.needs = needs
   return out
 }
 
