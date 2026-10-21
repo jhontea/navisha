@@ -99,6 +99,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   const [currency, setCurrency] = useState(initialValues?.base_currency ?? "IDR")
   const [details, setDetails] = useState<TripDetailsForm>(() => emptyTripDetails())
   const [budgetText, setBudgetText] = useState("")
+  const [language, setLanguage] = useState<"id" | "en">("id")
 
   // Current input field bindings
   const [draftText, setDraftText] = useState(initialValues?.destination ?? "")
@@ -220,6 +221,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       end_date: endDate,
       base_currency: currency,
       travel_style: travelStyle,
+      language,
       ...tripDetailsToInput(details),
       ...(budget ? { budget_amount: budget } : {}),
     })
@@ -236,6 +238,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     setTravelStyle("balanced")
     setDetails(emptyTripDetails())
     setBudgetText("")
+    setLanguage("id")
     setDraftText("")
     setError(null)
   }
@@ -499,6 +502,18 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-2 text-muted-fore
             <Recap label="Currency" value={currency} />
             {budget ? <Recap label="Budget" value={formatMoney(budget, currency)} /> : null}
           </div>
+          <label className="flex items-center gap-3 text-sm font-medium">
+            Itinerary language
+            <NativeSelect
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as "id" | "en")}
+              disabled={disabled}
+              className="w-auto"
+            >
+              <option value="id">Indonesian</option>
+              <option value="en">English</option>
+            </NativeSelect>
+          </label>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button size="lg" onClick={handleGenerate} disabled={disabled}>
               <Sparkles aria-hidden="true" />
