@@ -38,10 +38,14 @@ export function normalize(value: string): string {
     .trim()
 }
 
+/** US spellings folded onto the UK one so "Food Center" matches "Food Centre". */
+const SPELLING_VARIANTS: Record<string, string> = { center: "centre" }
+
 export function tokens(value: string): string[] {
   return normalize(value)
     .split(" ")
     .filter((token) => token.length > 1 && !STOP_WORDS.has(token))
+    .map((token) => SPELLING_VARIANTS[token] ?? token)
 }
 
 /**
