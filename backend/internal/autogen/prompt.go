@@ -268,7 +268,7 @@ func TemperatureForDraft(input GenerateInput) float64 {
 // Phase 3F: injects travel style, season awareness, and diversity constraints.
 func BuildPrompt(in GenerateInput) (system, user string) {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf(systemPromptBase, MaxTripDays, MaxActivitiesPerDay, languageRule(in.Language), languageName(in.Language)))
+	fmt.Fprintf(&sb, systemPromptBase, MaxTripDays, MaxActivitiesPerDay, languageRule(in.Language), languageName(in.Language))
 
 	// Inject the event-trip context (origin, event anchor, travellers, needs)
 	sb.WriteString(tripContextRules(in))
