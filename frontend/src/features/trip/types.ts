@@ -101,6 +101,8 @@ export interface GenerateTripInput {
   /** Total budget in base_currency. */
   budget_amount?: number
   needs?: TripNeed[]
+  /** Language of the generated text; the server defaults to "id". */
+  language?: "id" | "en"
 }
 
 /** A place the user picked (autocomplete or Maps link) or just typed. */
