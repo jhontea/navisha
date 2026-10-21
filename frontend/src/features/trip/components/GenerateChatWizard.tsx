@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { TravelDateRangePicker } from "./TravelDateRangePicker"
 import { TripDetailsStep } from "./TripDetailsStep"
+import { formatFriendlyRange } from "../lib/dates"
 import type { GenerateTripInput, TravelStyle } from "../types"
 import {
   MAX_DESCRIPTION,
@@ -30,10 +31,7 @@ const MAX_DESTINATION = 60
 // friction: users tap a style instead of typing from scratch. Values are kept
 // short so 2-3 chips can combine within MAX_DESCRIPTION.
 const PROMPT_CHIPS: { label: string; value: string }[] = [
-  { label: "Local food", value: "local food and markets" },
   { label: "Outdoors", value: "outdoor activities and nature" },
-  { label: "On a budget", value: "budget-friendly" },
-  { label: "Culture & history", value: "cultural and historical sites" },
   { label: "With kids", value: "family-friendly, with kids" },
   { label: "Off the main sights", value: "quieter places away from the main tourist sights" },
   { label: "Slow pace", value: "relaxed pace, fewer stops per day" },
@@ -85,7 +83,7 @@ function summarize(step: StepId, a: Answers): string {
       return a.description ? `${style} · ${a.description}` : style
     }
     case "dates":
-      return `${a.startDate} → ${a.endDate}`
+      return formatFriendlyRange(a.startDate, a.endDate)
     case "details":
       return tripDetailsRecap(a.details).map((r) => r.value).join(" · ") || "none"
     case "currency": {
@@ -208,6 +206,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   }
 
   const span = daySpan(startDate, endDate)
+  const datesText = `${formatFriendlyRange(startDate, endDate)} (${span} day${span > 1 ? "s" : ""})`
   const hasDraftText = draftText.trim().length > 0
 
   const handleDestination = () => {
@@ -263,7 +262,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       return
     }
     setError(null)
-    say(`${startDate} → ${endDate} (${span} days)`)
+    say(datesText)
     // Default the event to the first day, or keep it if still inside the trip.
     const nextDetails = {
       ...details,
@@ -615,7 +614,7 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-2 text-muted-fore
             {description && <Recap label="Preferences" value={description} onEdit={() => startEdit("description")} disabled={disabled} />}
             <Recap
               label="Dates"
-              value={`${startDate} → ${endDate} (${span} day${span > 1 ? "s" : ""})`}
+              value={datesText}
               onEdit={() => startEdit("dates")}
               disabled={disabled}
             />

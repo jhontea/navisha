@@ -8,7 +8,9 @@ import {
   tripDetailsRecap,
   tripDetailsToInput,
   validateTripDetails,
+  withAdults,
   withChildren,
+  MAX_ADULTS,
   type TripDetailsForm,
 } from "./tripDetails"
 
@@ -96,6 +98,29 @@ describe("withChildren", () => {
     expect(two.childAges).toEqual(["5", ""])
     expect(withChildren(two, 0).childAges).toEqual([])
     expect(withChildren(two, 99).children).toBe(10)
+  })
+
+  it("drops the kids playground need with the last child", () => {
+    const one = fanMeeting()
+    expect(one.needs).toContain("kids_playground")
+    expect(withChildren(one, 2).needs).toContain("kids_playground")
+    expect(withChildren(one, 0).needs).toEqual(["hotel_near_venue"])
+  })
+
+  it("never sends the kids playground need without children", () => {
+    const noKids = { ...fanMeeting(), children: 0, childAges: [] }
+    expect(tripDetailsToInput(noKids).needs).toEqual(["hotel_near_venue"])
+    expect(tripDetailsToInput(fanMeeting()).needs).toEqual(["hotel_near_venue", "kids_playground"])
+  })
+})
+
+describe("withAdults", () => {
+  it("steps within 1..MAX_ADULTS and treats 0 as not given", () => {
+    const form = emptyTripDetails(START)
+    expect(withAdults(form, 1).adults).toBe("1")
+    expect(withAdults(form, 3).adults).toBe("3")
+    expect(withAdults(withAdults(form, 1), 0).adults).toBe("")
+    expect(withAdults(form, 999).adults).toBe(String(MAX_ADULTS))
   })
 })
 

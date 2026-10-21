@@ -13,7 +13,7 @@ function toWIB(iso: string): string {
   const d = new Date(iso)
   // WIB = UTC+7
   const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000)
-  return wib.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })
+  return wib.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })
 }
 
 /**
@@ -33,9 +33,7 @@ export function QuotaBadge({ className }: Props) {
     const resetWIB = toWIB(resets_at)
 
     return {
-      text: exhausted
-        ? `0/${limit} · resets ${resetWIB} WIB`
-        : `${remaining}/${limit} · resets ${resetWIB} WIB`,
+      text: `${exhausted ? 0 : remaining} of ${limit} AI uses left today · resets ${resetWIB} WIB`,
       exhausted,
       low,
     }
