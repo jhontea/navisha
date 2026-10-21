@@ -3,11 +3,11 @@
 // AI Generate Trip Page — Critical Patterns (DO NOT REGRESS)
 // ══════════════════════════════════════════════════════════════════════════════
 //
-// 1. Mutation pattern: `mutate(input, { onSuccess, onError, onSettled })`
-//    NEVER use `await mutateAsync()` — causes render-timing issues with
-//    React 18 batching on long-running (30-55s) AI mutations.
+// 1. Generation is a background job (useGenerateJob): start returns at once and
+//    the hook polls until done. The user may leave and come back; the hook
+//    resumes the latest job. NEVER await a long request in a click handler.
 //
-// 2. Triple guard: generatingRef + draftReceivedRef + result !== null
+// 2. Double guard: submittedRef + result !== null
 //    Prevents concurrent calls AND re-generation after success.
 //
 // 3. Overlay, don't unmount: skeleton overlays on top of wizard instead of
@@ -25,11 +25,9 @@ import { DraftPreview } from "@/features/trip/components/DraftPreview"
 import { cn } from "@/lib/utils"
 import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizard"
 import { GeneratingItinerarySkeleton } from "@/features/trip/components/GeneratingItinerarySkeleton"
-import {
-  useCreateTripFromDraft,
-  useGenerateTripDraft,
-  useAutogenQuota,
-} from "@/features/trip/hooks/useTrips"
+import { useCreateTripFromDraft, useAutogenQuota } from "@/features/trip/hooks/useTrips"
+import { useGenerateJob } from "@/features/trip/hooks/useGenerateJob"
+import { jobToResponse, loadSnapshot, snapshotFromInput } from "@/features/trip/lib/generateJob"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { flagFarFromVenue, type VenueAnchor } from "@/features/trip/lib/venueRadius"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
@@ -60,96 +58,71 @@ function GenerateTripPageContent() {
     base_currency: searchParams.get("base_currency") ?? "IDR",
   }), [searchParams])
 
-  const [result, setResult] = useState<GenerateTripResponse | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [pendingDays, setPendingDays] = useState(4)
-  const [destination, setDestination] = useState("")
+  const [typedDestination, setTypedDestination] = useState("")
   // The event venue, when picked with coordinates: places pinned far from it
   // while the trip stays there are flagged for review.
-  const [venue, setVenue] = useState<VenueAnchor | null>(null)
+  const [typedVenue, setTypedVenue] = useState<VenueAnchor | null>(null)
   const [resolving, setResolving] = useState(false)
   // Curation: which AI-suggested places the user wants to keep. Lifted here so
   // handleCreate can filter the draft before resolving/creating. Default empty
   // until DraftPreview reports its initial all-selected state.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
-  const generate = useGenerateTripDraft()
+  const generate = useGenerateJob()
   const create = useCreateTripFromDraft()
   const quota = useAutogenQuota()
 
   // Prevent concurrent generate calls AND re-generation after success.
-  const generatingRef = useRef(false)
-  const draftReceivedRef = useRef(false)
   const submittedRef = useRef(false) // one-shot: true once mutate fires, never reset
 
-  // Stable refs so useCallback doesn't depend on mutation objects (avoids
-  // stale-closure double-call when TanStack Query re-renders with isPending).
-  const generateMutateRef = useRef(generate.mutate)
-  // Keep a ref to the quota query client for invalidation in callbacks.
+  // Stable refs so useCallback doesn't depend on hook objects.
+  const startRef = useRef(generate.start)
   const quotaRef = useRef(quota)
-  useEffect(() => { generateMutateRef.current = generate.mutate }, [generate.mutate])
+  useEffect(() => { startRef.current = generate.start }, [generate.start])
   useEffect(() => { quotaRef.current = quota }, [quota])
 
   // Key to force fresh wizard mount when user retries after error.
   const [generationKey, setGenerationKey] = useState(0)
 
   // Reset the received flag when user starts a fresh generation.
+  const dismissJob = generate.dismiss
   const resetGeneration = useCallback(() => {
-    generatingRef.current = false
-    draftReceivedRef.current = false
+    dismissJob()
     submittedRef.current = false
-    setResult(null)
     setFormError(null)
     setSelectedKeys(new Set())
     setGenerationKey((k) => k + 1)
-  }, [])
+  }, [dismissJob])
 
-  // ── Generate using onSuccess/onError callbacks (no async/await) ──
-  // Uses stable refs (generateMutateRef, cooldownRef) so this callback never
-  // recreates due to TanStack Query re-renders — eliminating the stale-closure
-  // double-call that caused 429s.
+  // A finished job (also one resumed after leaving the page) is the draft to review.
+  const { job } = generate
+  const result: GenerateTripResponse | null = useMemo(() => jobToResponse(job), [job])
+  // After coming back, the wizard input is gone; the job's snapshot has what the
+  // create step needs (destination for geocoding, event venue for the radius flag).
+  const jobId = job?.job_id
+  const snapshot = useMemo(() => (jobId ? loadSnapshot(jobId) : null), [jobId])
+  const destination = snapshot?.destination ?? typedDestination
+  const venue = snapshot ? snapshot.venue : typedVenue
+  const jobStatus = job?.status
+  useEffect(() => {
+    if (jobStatus === "done") quotaRef.current.refetch()
+  }, [jobStatus])
+
   const resultRef = useRef(result)
   useEffect(() => { resultRef.current = result }, [result])
 
   const handleGenerate = useCallback((input: GenerateTripInput) => {
-    // Quadruple guard — prevents any possibility of double-submit
+    // Triple guard — prevents any possibility of double-submit
     if (submittedRef.current) return
-    if (generatingRef.current) return
-    if (draftReceivedRef.current) return
     if (resultRef.current !== null) return
 
     submittedRef.current = true
-    generatingRef.current = true
     setFormError(null)
-    setDestination(input.destination)
-    const ev = input.event
-    setVenue(ev?.venue.lat != null && ev.venue.lng != null ? { lat: ev.venue.lat, lng: ev.venue.lng, date: ev.date } : null)
-
-    const start = new Date(input.start_date)
-    const end = new Date(input.end_date)
-    const dayCount = Math.round((end.getTime() - start.getTime()) / 86400000) + 1
-    setPendingDays(Number.isFinite(dayCount) && dayCount > 0 ? Math.min(dayCount, MAX_DAYS) : 4)
-
-    generateMutateRef.current(input, {
-      onSuccess: (data) => {
-        draftReceivedRef.current = true
-        setResult(data)
-        // Invalidate quota so the badge updates after a successful generation.
-        quotaRef.current.refetch()
-      },
-      onError: (err) => {
-        // On daily quota exceeded (429), the backend already consumed a slot
-        // (handled by refund on server error). Just show the message.
-        if (!draftReceivedRef.current) {
-          setFormError(
-            err instanceof ApiError ? err.message : "Couldn't generate the itinerary. Your answers are kept, so try again.",
-          )
-        }
-      },
-      onSettled: () => {
-        generatingRef.current = false
-      },
-    })
+    const snap = snapshotFromInput(input)
+    setTypedDestination(snap.destination)
+    setTypedVenue(snap.venue)
+    startRef.current(input)
   }, []) // stable — no deps that change on re-render
 
   const handleCreate = useCallback(async () => {
@@ -185,6 +158,7 @@ function GenerateTripPageContent() {
         cover_image_url: getDefaultTripCover(tripDestination),
         description,
       })
+      dismissJob() // this draft is used; do not offer it again on the next visit
       router.push(`/trips/${trip_id}`)
     } catch (err) {
       setResolving(false)
@@ -192,13 +166,13 @@ function GenerateTripPageContent() {
         err instanceof ApiError ? err.message : "Couldn't create the trip. Nothing was saved, so try again.",
       )
     }
-  }, [result, destination, venue, create, router, selectedKeys])
+  }, [result, destination, venue, create, router, selectedKeys, dismissJob])
 
   const saving = create.isPending || resolving
   const noSelection = result !== null && selectedKeys.size === 0
 
-  // Warn before leaving during generation
-  const busy = generate.isPending || saving
+  // Warn before leaving while the trip is being saved (generation keeps running without us).
+  const busy = saving
   useEffect(() => {
     if (!busy) return
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
@@ -222,25 +196,25 @@ function GenerateTripPageContent() {
 
       {/* Wizard stays mounted during generation; the overlay covers it (pattern 3 above). */}
       {!result ? (
-        <div className={cn("relative", generate.isPending && "min-h-[320px]")}>
-          {generate.isPending && (
+        <div className={cn("relative", generate.running && "min-h-[320px]")}>
+          {generate.running && (
             <div className="absolute inset-0 z-20 rounded-3xl border bg-card p-6 shadow-card">
-              <GeneratingItinerarySkeleton days={pendingDays} />
+              <GeneratingItinerarySkeleton startedAt={generate.job?.created_at} />
             </div>
           )}
-          <div className={generate.isPending ? "pointer-events-none select-none opacity-20" : ""}>
+          <div className={generate.running ? "pointer-events-none select-none opacity-20" : ""}>
             <GenerateChatWizard
               key={generationKey}
               onSubmit={handleGenerate}
-              disabled={generate.isPending}
+              disabled={generate.running}
               initialValues={initialValues}
             />
           </div>
-          {formError && (
+          {(formError ?? generate.error) && (
             <div role="alert" className="mt-4 flex items-start gap-3 rounded-2xl bg-destructive-bg p-3">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
               <div className="min-w-0 flex-1 text-sm">
-                <p className="text-foreground">{formError}</p>
+                <p className="text-foreground">{formError ?? generate.error}</p>
                 <Button variant="link" className="mt-1 h-auto" onClick={resetGeneration}>
                   Try again
                 </Button>
@@ -263,10 +237,7 @@ function GenerateTripPageContent() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => {
-                setResult(null)
-                setFormError(null)
-              }}
+              onClick={resetGeneration}
               disabled={saving}
             >
               Start over

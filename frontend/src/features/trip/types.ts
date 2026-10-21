@@ -227,11 +227,22 @@ export interface BudgetBreakdown {
   other: number
 }
 
-// Response envelope from POST /trips/generate
+// What the review screen needs once a trip is generated.
 export interface GenerateTripResponse {
   start_date: string
   end_date: string
   draft: TripDraft
+}
+
+// A background generation job (POST /trips/generate/jobs, polled until done).
+export interface GenerateJob {
+  job_id: string
+  status: "running" | "done" | "failed"
+  created_at: string
+  start_date: string
+  end_date: string
+  draft?: TripDraft
+  error?: { code: string; message: string }
 }
 
 export interface DayPreview {
