@@ -50,7 +50,17 @@ function initialDay(days: Day[]): string | null {
   return days.find((d) => d.date === today)?.id ?? days[0]?.id ?? null
 }
 
-function DayView({ tripId, days, destination }: { tripId: string; days: Day[]; destination: string }) {
+function DayView({
+  tripId,
+  days,
+  destination,
+  tripBaseCurrency,
+}: {
+  tripId: string
+  days: Day[]
+  destination: string
+  tripBaseCurrency: string
+}) {
   const { activeDayId, setActiveDayId, selectActivity } = useItineraryFocus()
   const { data: overview } = useTripOverview(tripId)
   const counts = overview?.activity_count_by_day ?? {}
@@ -80,6 +90,7 @@ function DayView({ tripId, days, destination }: { tripId: string; days: Day[]; d
         title={day.title ?? ""}
         notes={day.notes ?? ""}
         destination={destination}
+        tripBaseCurrency={tripBaseCurrency}
         days={days}
       />
     </>
@@ -128,7 +139,7 @@ export function ItineraryScreen() {
               className="rounded-2xl border-2 border-dashed bg-card/60"
             />
           ) : (
-            <DayView tripId={id} days={trip.days} destination={trip.description} />
+            <DayView tripId={id} days={trip.days} destination={trip.description} tripBaseCurrency={trip.base_currency} />
           )}
 
           {/* Trip overview (the former Overview tab), collapsed so the day stays the main content. */}

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Boxes, Bus, Car, Plane, Ship, Train, TramFront } from "lucide-react"
 import { Controller, useForm, useWatch } from "react-hook-form"
@@ -47,6 +48,8 @@ interface Props {
   withCost?: boolean
   /** On edit: the cost already linked to this transport, to prefill. */
   initialCost?: LinkedCost | null
+  /** "YYYY-MM-DDTHH:mm" prefilled as departure on add; also focuses that field so the time gets set. */
+  defaultDeparture?: string
   onSubmit: (input: CreateTransportationInput) => Promise<unknown>
   onCancel: () => void
   isSubmitting: boolean
@@ -58,6 +61,7 @@ export function TransportationForm({
   tripBaseCurrency,
   withCost,
   initialCost,
+  defaultDeparture,
   onSubmit,
   onCancel,
   isSubmitting,
@@ -67,7 +71,7 @@ export function TransportationForm({
     : "IDR"
   const form = useForm<TransportFormValues>({
     resolver: zodResolver(transportFormSchema),
-    defaultValues: transportFormDefaults(initial, currency, initialCost),
+    defaultValues: transportFormDefaults(initial, currency, initialCost, defaultDeparture),
   })
   const {
     register,
@@ -76,6 +80,11 @@ export function TransportationForm({
     setValue,
     formState: { errors },
   } = form
+  useEffect(() => {
+    if (!defaultDeparture) return
+    const t = window.setTimeout(() => document.getElementById("departure-datetime")?.focus(), 150)
+    return () => window.clearTimeout(t)
+  }, [defaultDeparture])
   const departure = useWatch({ control, name: "departure_datetime" })
   const arrival = useWatch({ control, name: "arrival_datetime" })
 

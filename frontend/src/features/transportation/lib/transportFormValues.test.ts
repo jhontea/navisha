@@ -67,3 +67,10 @@ describe("transportInput", () => {
     })
   })
 })
+
+describe("transportFormDefaults departure prefill", () => {
+  it("uses defaultDeparture only when adding", () => {
+    expect(transportFormDefaults(undefined, "IDR", null, "2026-10-31T00:00").departure_datetime).toBe("2026-10-31T00:00")
+    expect(transportFormDefaults(undefined, "IDR").departure_datetime).toBe("")
+  })
+})

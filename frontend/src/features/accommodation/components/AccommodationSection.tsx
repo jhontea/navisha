@@ -13,11 +13,11 @@ import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { useExpenses } from "@/features/expense/hooks/useExpenses"
 import {
   useAccommodations,
-  useCreateAccommodation,
   useDeleteAccommodation,
   useUpdateAccommodation,
 } from "../hooks/useAccommodations"
-import type { Accommodation, CreateAccommodationInput } from "../types"
+import type { Accommodation } from "../types"
+import { AddStaySheet } from "./AddStaySheet"
 import { AccommodationCard } from "./AccommodationCard"
 
 const AccommodationForm = dynamic(
@@ -39,7 +39,6 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
   const { data, isLoading, isError } = useAccommodations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Accommodation } | null>(null)
 
-  const createMut = useCreateAccommodation(tripId)
   const updateMut = useUpdateAccommodation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteAccommodation(tripId)
   // The edit form shows the cost only once the expenses are known, so a
@@ -122,25 +121,10 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
       </div>
 
       <ResponsiveSheet
-        open={sheet !== null}
+        open={sheet?.mode === "edit"}
         onOpenChange={(open) => !open && setSheet(null)}
-        title={sheet?.mode === "edit" ? "Edit stay" : "Add stay"}
+        title="Edit stay"
       >
-        {sheet?.mode === "add" && (
-          <AccommodationForm
-            tripBaseCurrency={tripBaseCurrency}
-            withCost
-            defaultDate={tripStart}
-            tripEnd={tripEnd}
-            searchContext={destination}
-            isSubmitting={createMut.isPending}
-            onCancel={() => setSheet(null)}
-            onSubmit={async (input: CreateAccommodationInput) => {
-              await createMut.mutateAsync(input)
-              setSheet(null)
-            }}
-          />
-        )}
         {sheet?.mode === "edit" && (
           <AccommodationForm
             initial={sheet.item}
@@ -159,6 +143,15 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
           />
         )}
       </ResponsiveSheet>
+
+      <AddStaySheet
+        tripId={tripId}
+        tripBaseCurrency={tripBaseCurrency}
+        open={sheet?.mode === "add"}
+        onOpenChange={(open) => !open && setSheet(null)}
+        days={days}
+        destination={destination}
+      />
 
     </section>
   )

@@ -12,12 +12,12 @@ import { linkedCost, linkedCostText } from "@/lib/linkedCost"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
 import { useExpenses } from "@/features/expense/hooks/useExpenses"
 import {
-  useCreateTransportation,
   useDeleteTransportation,
   useTransportations,
   useUpdateTransportation,
 } from "../hooks/useTransportations"
-import type { CreateTransportationInput, Transportation } from "../types"
+import type { Transportation } from "../types"
+import { AddTransportationSheet } from "./AddTransportationSheet"
 import { TransportationCard } from "./TransportationCard"
 
 const TransportationForm = dynamic(
@@ -37,7 +37,6 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
   const { data, isLoading, isError } = useTransportations(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; item: Transportation } | null>(null)
 
-  const createMut = useCreateTransportation(tripId)
   const updateMut = useUpdateTransportation(sheet?.mode === "edit" ? sheet.item.id : "", tripId)
   const deleteMut = useDeleteTransportation(tripId)
   // The edit form shows the cost only once the expenses are known, so a
@@ -116,22 +115,10 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
       </div>
 
       <ResponsiveSheet
-        open={sheet !== null}
+        open={sheet?.mode === "edit"}
         onOpenChange={(open) => !open && setSheet(null)}
-        title={sheet?.mode === "edit" ? "Edit transport" : "Add transport"}
+        title="Edit transport"
       >
-        {sheet?.mode === "add" && (
-          <TransportationForm
-            tripBaseCurrency={tripBaseCurrency}
-            withCost
-            isSubmitting={createMut.isPending}
-            onCancel={() => setSheet(null)}
-            onSubmit={async (input: CreateTransportationInput) => {
-              await createMut.mutateAsync(input)
-              setSheet(null)
-            }}
-          />
-        )}
         {sheet?.mode === "edit" && (
           <TransportationForm
             initial={sheet.item}
@@ -148,6 +135,13 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
           />
         )}
       </ResponsiveSheet>
+
+      <AddTransportationSheet
+        tripId={tripId}
+        tripBaseCurrency={tripBaseCurrency}
+        open={sheet?.mode === "add"}
+        onOpenChange={(open) => !open && setSheet(null)}
+      />
 
     </section>
   )

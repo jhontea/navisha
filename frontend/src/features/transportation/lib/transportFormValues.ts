@@ -53,6 +53,7 @@ export function transportFormDefaults(
   initial: Transportation | undefined,
   currency: CurrencyCode,
   cost?: LinkedCost | null,
+  defaultDeparture = "",
 ): TransportFormValues {
   return {
     type: initial?.type ?? "flight",
@@ -61,7 +62,7 @@ export function transportFormDefaults(
     reference_number: initial?.reference_number ?? "",
     from_location: initial?.from_location ?? "",
     to_location: initial?.to_location ?? "",
-    departure_datetime: toLocalInput(initial?.departure_datetime),
+    departure_datetime: initial ? toLocalInput(initial.departure_datetime) : defaultDeparture,
     arrival_datetime: toLocalInput(initial?.arrival_datetime),
     notes: initial?.notes ?? "",
     amount: cost ? String(cost.amount) : "",
