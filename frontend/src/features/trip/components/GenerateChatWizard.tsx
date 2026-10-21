@@ -55,6 +55,48 @@ const TRAVEL_STYLES: { value: TravelStyle; label: string }[] = [
 // Steps in the conversation. Each maps to one or more fields of GenerateTripInput.
 type StepId = "destination" | "description" | "dates" | "details" | "currency" | "review"
 
+// The answers an edit can change; snapshotted when an edit starts so Cancel can restore them.
+interface Answers {
+  destination: string
+  description: string
+  travelStyle: TravelStyle
+  startDate: string
+  endDate: string
+  currency: string
+  budgetText: string
+  details: TripDetailsForm
+}
+
+const EDIT_LABELS: Partial<Record<StepId, string>> = {
+  destination: "destination",
+  description: "style & preferences",
+  dates: "dates",
+  details: "trip details",
+  currency: "currency & budget",
+}
+
+/** One-line value of a step's answers, for the "Changed …" chat bubble. */
+function summarize(step: StepId, a: Answers): string {
+  switch (step) {
+    case "destination":
+      return a.destination
+    case "description": {
+      const style = TRAVEL_STYLES.find((t) => t.value === a.travelStyle)?.label ?? "Balanced"
+      return a.description ? `${style} · ${a.description}` : style
+    }
+    case "dates":
+      return `${a.startDate} → ${a.endDate}`
+    case "details":
+      return tripDetailsRecap(a.details).map((r) => r.value).join(" · ") || "none"
+    case "currency": {
+      const b = parseBudget(a.budgetText)
+      return b ? `${a.currency} · budget ${formatMoney(b, a.currency)}` : a.currency
+    }
+    default:
+      return ""
+  }
+}
+
 interface ChatMessage {
   from: "bot" | "user"
   text: string
@@ -100,6 +142,8 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   const [details, setDetails] = useState<TripDetailsForm>(() => emptyTripDetails())
   const [budgetText, setBudgetText] = useState("")
   const [language, setLanguage] = useState<"id" | "en">("id")
+  const [editing, setEditing] = useState(false)
+  const snapshot = useRef<Answers | null>(null)
 
   // Current input field bindings
   const [draftText, setDraftText] = useState(initialValues?.destination ?? "")
@@ -114,6 +158,55 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
   const pushBot = (text: string) => setMessages((m) => [...m, { from: "bot", text }])
   const pushUser = (text: string) => setMessages((m) => [...m, { from: "user", text }])
 
+  const answers: Answers = { destination, description, travelStyle, startDate, endDate, currency, budgetText, details }
+
+  // While editing, answers are confirmed with a one-line "Changed …" bubble and the
+  // flow jumps back to the recap instead of asking the next question.
+  const say = (text: string) => {
+    if (!editing) pushUser(text)
+  }
+  const finish = (from: StepId, patch: Partial<Answers>, next: StepId, botText: string) => {
+    if (!editing || !snapshot.current) {
+      setStep(next)
+      pushBot(botText)
+      return
+    }
+    const before = summarize(from, snapshot.current)
+    const after = summarize(from, { ...answers, ...patch })
+    if (before !== after) pushUser(`Changed ${EDIT_LABELS[from]}: ${after} (was ${before})`)
+    snapshot.current = null
+    setEditing(false)
+    setDraftText("")
+    setStep("review")
+  }
+
+  const startEdit = (target: StepId) => {
+    snapshot.current = answers
+    setEditing(true)
+    setError(null)
+    setDraftText(target === "destination" ? destination : target === "description" ? description : "")
+    setStep(target)
+  }
+
+  const cancelEdit = () => {
+    const a = snapshot.current
+    if (a) {
+      setDestination(a.destination)
+      setDescription(a.description)
+      setTravelStyle(a.travelStyle)
+      setStartDate(a.startDate)
+      setEndDate(a.endDate)
+      setCurrency(a.currency)
+      setBudgetText(a.budgetText)
+      setDetails(a.details)
+    }
+    snapshot.current = null
+    setEditing(false)
+    setDraftText("")
+    setError(null)
+    setStep("review")
+  }
+
   const span = daySpan(startDate, endDate)
   const hasDraftText = draftText.trim().length > 0
 
@@ -125,10 +218,14 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     }
     setError(null)
     setDestination(v)
-    pushUser(v)
+    say(v)
     setDraftText("")
-    setStep("description")
-    pushBot("Nice! Now tell me about your travel style or preferences (optional). For example: foodie, adventure, budget-friendly, cultural.")
+    finish(
+      "destination",
+      { destination: v },
+      "description",
+      "Nice! Now tell me about your travel style or preferences (optional). For example: foodie, adventure, budget-friendly, cultural.",
+    )
   }
 
   const handleDescription = (skip: boolean) => {
@@ -136,10 +233,9 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     setError(null)
     setDescription(v)
     const styleLabel = TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"
-    pushUser(skip || !v ? `${styleLabel} trip` : `${styleLabel} trip · ${v}`)
+    say(skip || !v ? `${styleLabel} trip` : `${styleLabel} trip · ${v}`)
     setDraftText("")
-    setStep("dates")
-    pushBot("Got it! When is your trip? (up to 10 days)")
+    finish("description", { description: v }, "dates", "Got it! When is your trip? (up to 10 days)")
   }
 
   // Append a prompt chip value to the description input. If the input is
@@ -167,23 +263,28 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       return
     }
     setError(null)
-    pushUser(`${startDate} → ${endDate} (${span} days)`)
+    say(`${startDate} → ${endDate} (${span} days)`)
     // Default the event to the first day, or keep it if still inside the trip.
-    setDetails((d) => ({
-      ...d,
-      eventDate: d.eventDate && d.eventDate >= startDate && d.eventDate <= endDate ? d.eventDate : startDate,
-    }))
-    setStep("details")
-    pushBot(
+    const nextDetails = {
+      ...details,
+      eventDate: details.eventDate && details.eventDate >= startDate && details.eventDate <= endDate ? details.eventDate : startDate,
+    }
+    setDetails(nextDetails)
+    finish(
+      "dates",
+      { details: nextDetails },
+      "details",
       "Is the trip built around an event, like a concert or fan meeting? Add where you leave from, the event and who's coming (optional).",
     )
   }
 
   const handleDetails = (skip: boolean) => {
+    let next = details
     if (skip) {
-      setDetails(emptyTripDetails(startDate))
+      next = emptyTripDetails(startDate)
+      setDetails(next)
       setError(null)
-      pushUser("No extra details")
+      say("No extra details")
     } else {
       const problem = validateTripDetails(details, startDate, endDate)
       if (problem) {
@@ -192,10 +293,14 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       }
       setError(null)
       const rows = tripDetailsRecap(details)
-      pushUser(rows.length > 0 ? rows.map((r) => r.value).join(" · ") : "No extra details")
+      say(rows.length > 0 ? rows.map((r) => r.value).join(" · ") : "No extra details")
     }
-    setStep("currency")
-    pushBot("Last one — which currency would you like to use for budget estimates? Add your total budget if you have one.")
+    finish(
+      "details",
+      { details: next },
+      "currency",
+      "Last one — which currency would you like to use for budget estimates? Add your total budget if you have one.",
+    )
   }
 
   const handleCurrency = () => {
@@ -205,9 +310,8 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       return
     }
     setError(null)
-    pushUser(budget ? `${currency} · budget ${formatMoney(budget, currency)}` : currency)
-    setStep("review")
-    pushBot("All set! Here's a recap. If it looks good, click Generate Itinerary.")
+    say(budget ? `${currency} · budget ${formatMoney(budget, currency)}` : currency)
+    finish("currency", {}, "review", "All set! Here's a recap. If it looks good, click Generate Itinerary.")
   }
 
   const budget = parseBudget(budgetText)
@@ -239,6 +343,8 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
     setDetails(emptyTripDetails())
     setBudgetText("")
     setLanguage("id")
+    setEditing(false)
+    snapshot.current = null
     setDraftText("")
     setError(null)
   }
@@ -286,6 +392,13 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       {/* Input area — changes per step */}
       {step !== "review" && (
         <div className="space-y-3 border-t p-4">
+          {editing && (
+            <div className="flex justify-end">
+              <Button type="button" variant="ghost" size="sm" onClick={cancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          )}
           {error && (
             <p className="flex items-center gap-1.5 text-xs text-destructive">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -492,15 +605,25 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-2 text-muted-fore
       {step === "review" && (
         <div className="space-y-4 border-t p-5">
           <div className="space-y-2 rounded-2xl bg-muted p-4 text-sm">
-            <Recap label="Destination" value={destination} />
-            <Recap label="Style" value={TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"} />
-            {description && <Recap label="Preferences" value={description} />}
-            <Recap label="Dates" value={`${startDate} → ${endDate} (${span} day${span > 1 ? "s" : ""})`} />
+            <Recap label="Destination" value={destination} onEdit={() => startEdit("destination")} disabled={disabled} />
+            <Recap
+              label="Style"
+              value={TRAVEL_STYLES.find((s) => s.value === travelStyle)?.label ?? "Balanced"}
+              onEdit={() => startEdit("description")}
+              disabled={disabled}
+            />
+            {description && <Recap label="Preferences" value={description} onEdit={() => startEdit("description")} disabled={disabled} />}
+            <Recap
+              label="Dates"
+              value={`${startDate} → ${endDate} (${span} day${span > 1 ? "s" : ""})`}
+              onEdit={() => startEdit("dates")}
+              disabled={disabled}
+            />
             {tripDetailsRecap(details).map((r) => (
-              <Recap key={r.label} label={r.label} value={r.value} />
+              <Recap key={r.label} label={r.label} value={r.value} onEdit={() => startEdit("details")} disabled={disabled} />
             ))}
-            <Recap label="Currency" value={currency} />
-            {budget ? <Recap label="Budget" value={formatMoney(budget, currency)} /> : null}
+            <Recap label="Currency" value={currency} onEdit={() => startEdit("currency")} disabled={disabled} />
+            {budget ? <Recap label="Budget" value={formatMoney(budget, currency)} onEdit={() => startEdit("currency")} disabled={disabled} /> : null}
           </div>
           <label className="flex items-center gap-3 text-sm font-medium">
             Itinerary language
@@ -531,11 +654,14 @@ variant="ghost" size="icon-xs" className="absolute right-2 top-2 text-muted-fore
 }
 
 
-function Recap({ label, value }: { label: string; value: string }) {
+function Recap({ label, value, onEdit, disabled }: { label: string; value: string; onEdit: () => void; disabled?: boolean }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex items-baseline gap-3">
       <span className="w-24 shrink-0 text-muted-foreground">{label}</span>
-      <span className="min-w-0 font-medium text-foreground">{value}</span>
+      <span className="min-w-0 flex-1 font-medium text-foreground">{value}</span>
+      <Button type="button" variant="link" className="h-auto shrink-0 p-0 text-xs" aria-label={`Edit ${label}`} onClick={onEdit} disabled={disabled}>
+        Edit
+      </Button>
     </div>
   )
 }
