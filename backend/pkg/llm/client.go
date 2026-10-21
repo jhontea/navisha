@@ -236,11 +236,12 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (string, e
 	if err != nil {
 		return "", err
 	}
-	// A reasoning model can spend the whole max_tokens budget thinking and
-	// return no answer. Ask once more without the cap (the provider default).
-	if content == "" && finish == "length" && req.MaxTokens != nil {
-		slog.Warn("llm.ChatCompletion: no content within max_tokens, retrying without it",
-			"provider", c.provider, "model", req.Model, "max_tokens", *req.MaxTokens)
+	// A reasoning model can spend most or all of the max_tokens budget thinking
+	// and return no answer or a truncated one (empty or cut-off JSON). Ask once
+	// more without the cap (the provider default).
+	if finish == "length" && req.MaxTokens != nil {
+		slog.Warn("llm.ChatCompletion: reply truncated at max_tokens, retrying without it",
+			"provider", c.provider, "model", req.Model, "max_tokens", *req.MaxTokens, "chars", len(content))
 		req.MaxTokens = nil
 		content, finish, err = c.send(ctx, req)
 		if err != nil {

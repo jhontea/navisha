@@ -401,3 +401,57 @@ func TestChatCompletion_EmptyContentReportsFinishReason(t *testing.T) {
 		t.Errorf("retried a non-length empty reply: %d calls", calls)
 	}
 }
+
+func TestChatCompletion_RetriesWithoutMaxTokensWhenReplyTruncated(t *testing.T) {
+	var caps []*int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			MaxTokens *int `json:"max_tokens"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		caps = append(caps, req.MaxTokens)
+		content, finish := `{"theme":"Foo","activities":[{"ti`, "length"
+		if req.MaxTokens == nil {
+			content, finish = `{"theme":"Foo","activities":[]}`, "stop"
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{{"message": map[string]string{"role": "assistant", "content": content}, "finish_reason": finish}},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient(ProviderDeepSeek, "k", "m", srv.URL)
+	limit := 3000
+	got, err := c.ChatCompletion(context.Background(), ChatRequest{MaxTokens: &limit, Messages: []Message{{Role: "user", Content: "hi"}}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != `{"theme":"Foo","activities":[]}` {
+		t.Errorf("want the second (complete) reply, got %q", got)
+	}
+	if len(caps) != 2 || caps[0] == nil || caps[1] != nil {
+		t.Errorf("want a capped call then an uncapped retry, got %v", caps)
+	}
+}
+
+func TestChatCompletion_NoRetryWhenReplyComplete(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{{"message": map[string]string{"role": "assistant", "content": "done"}, "finish_reason": "stop"}},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient(ProviderDeepSeek, "k", "m", srv.URL)
+	limit := 3000
+	if _, err := c.ChatCompletion(context.Background(), ChatRequest{MaxTokens: &limit, Messages: []Message{{Role: "user", Content: "hi"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Errorf("retried a complete reply: %d calls", calls)
+	}
+}
