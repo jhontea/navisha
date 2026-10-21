@@ -152,7 +152,8 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		WithDayContextProvider(autogenDayContext).
 		WithNearbyPlaces(integration.NewAutogenPlaces(locationClient))
 	autogenHandler := autogen.NewHandler(autogenUsecase).
-		WithQuota(aiQuota)
+		WithQuota(aiQuota).
+		WithJobs(autogen.NewJobStore(rdb), llmTimeout(cfg))
 
 	return &app{
 		jwtSvc:                jwtSvc,

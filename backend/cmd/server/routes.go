@@ -98,11 +98,8 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 	// not hold a DB connection for minutes; LLM routes get the full LLM
 	// timeout (llm.timeout_seconds). Keep this list in sync with the
 	// summary/autogen handlers' RegisterRoutes.
-	llmTimeout := time.Duration(cfg.LLM.TimeoutSeconds) * time.Second
-	if llmTimeout <= 0 {
-		llmTimeout = 300 * time.Second
-	}
-	// One list for both the LLM timeout and the LLM rate-limit bucket.
+	longTimeout := llmTimeout(cfg)
+	// Routes that wait for the LLM inside the request (long timeout + LLM rate bucket).
 	llmRoutes := []string{
 		"POST /api/v1/trips/:id/summary",
 		"POST /api/v1/trips/generate",
@@ -111,8 +108,11 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 	}
 	llmTimeouts := make(map[string]time.Duration, len(llmRoutes))
 	for _, route := range llmRoutes {
-		llmTimeouts[route] = llmTimeout
+		llmTimeouts[route] = longTimeout
 	}
+	// Starting a generation job answers 202 at once, so it only needs the LLM
+	// rate bucket. The job GETs are cheap polling and stay in the general one.
+	llmRateRoutes := append(append([]string{}, llmRoutes...), "POST /api/v1/trips/generate/jobs")
 	e.Use(appMiddleware.Timeout(30*time.Second, llmTimeouts))
 
 	// Loop 3: limit request body size to 1MB.
@@ -127,7 +127,7 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 		AuthPerMinute: cfg.RateLimit.AuthPerMinute,
 		LLMPerMinute:  cfg.RateLimit.LLMPerMinute,
 		GeneralPerMin: cfg.RateLimit.GeneralPerMin,
-		LLMRoutes:     llmRoutes,
+		LLMRoutes:     llmRateRoutes,
 	})
 
 	// Loop 2: API version header on all responses.
@@ -192,4 +192,12 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 	a.autogenHandler.RegisterRoutes(api, authMiddleware)
 
 	return e
+}
+
+// llmTimeout is how long one LLM-backed request (or background job) may run.
+func llmTimeout(cfg *config.Config) time.Duration {
+	if d := time.Duration(cfg.LLM.TimeoutSeconds) * time.Second; d > 0 {
+		return d
+	}
+	return 300 * time.Second
 }
