@@ -19,7 +19,7 @@ import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { sheetCloseAction } from "@/lib/discardGuard"
 import { TimePills, type TimePill } from "@/components/TimePills"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +64,12 @@ interface Props {
 }
 
 const MENU_ITEM = "min-h-14 gap-3 px-2.5 py-2"
+const DAY_ACTIONS = [
+  { mode: "add", icon: PenLine, title: "Add activity", hint: () => "A place, a note, or a to-do list" },
+  { mode: "ai", icon: Sparkles, title: "Suggest with AI", hint: (hasPlan: boolean) => (hasPlan ? "Fill the gaps around your plan" : "Get a balanced day to review") },
+  { mode: "transport", icon: Plane, title: "Add transport", hint: () => "A flight, train, bus or transfer" },
+  { mode: "stay", icon: Hotel, title: "Add stay", hint: () => "A hotel, hostel or apartment" },
+] as const
 const MENU_ICON = "flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground"
 
 /**
@@ -221,7 +227,19 @@ export function DayActivities({
       )}
 
       {entries.length === 0 ? (
-        <p className="rounded-xl bg-muted px-4 py-6 text-center text-sm text-muted-foreground">Nothing planned for this day yet.</p>
+        <div className="rounded-xl bg-muted px-3 py-4 text-center">
+          <p className="text-sm text-muted-foreground">Nothing planned for this day yet.</p>
+          {!selectMode && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {DAY_ACTIONS.map(({ mode, icon: Icon, title }) => (
+                <Button key={mode} variant="outline" className="min-w-0 bg-card" onClick={() => setSheet({ mode })}>
+                  <Icon aria-hidden="true" />
+                  {title}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
       ) : (
         <DndContext
           key={reorderKey}
@@ -284,7 +302,7 @@ export function DayActivities({
         </DndContext>
       )}
 
-      {!selectMode && (
+      {!selectMode && entries.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger className={buttonVariants({ variant: "soft", className: "w-full justify-center" })}>
             <Plus aria-hidden="true" />
@@ -292,44 +310,17 @@ export function DayActivities({
             <ChevronDown className="opacity-70" aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-[min(22rem,calc(100vw-2rem))]">
-            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "add" })}>
-              <span className={MENU_ICON}>
-                <PenLine aria-hidden="true" />
-              </span>
-              <span>
-                <span className="block font-bold text-foreground">Add activity</span>
-                <span className="block text-xs font-normal text-muted-foreground">A place, a note, or a to-do list</span>
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "ai" })}>
-              <span className={MENU_ICON}>
-                <Sparkles aria-hidden="true" />
-              </span>
-              <span>
-                <span className="block font-bold text-foreground">Suggest with AI</span>
-                <span className="block text-xs font-normal text-muted-foreground">
-                  {activities.length > 0 ? "Fill the gaps around your plan" : "Get a balanced day to review"}
+            {DAY_ACTIONS.map(({ mode, icon: Icon, title, hint }) => (
+              <DropdownMenuItem key={mode} className={MENU_ITEM} onClick={() => setSheet({ mode })}>
+                <span className={MENU_ICON}>
+                  <Icon aria-hidden="true" />
                 </span>
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "transport" })}>
-              <span className={MENU_ICON}>
-                <Plane aria-hidden="true" />
-              </span>
-              <span>
-                <span className="block font-bold text-foreground">Add transport</span>
-                <span className="block text-xs font-normal text-muted-foreground">A flight, train, bus or transfer</span>
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "stay" })}>
-              <span className={MENU_ICON}>
-                <Hotel aria-hidden="true" />
-              </span>
-              <span>
-                <span className="block font-bold text-foreground">Add stay</span>
-                <span className="block text-xs font-normal text-muted-foreground">A hotel, hostel or apartment</span>
-              </span>
-            </DropdownMenuItem>
+                <span>
+                  <span className="block font-bold text-foreground">{title}</span>
+                  <span className="block text-xs font-normal text-muted-foreground">{hint(activities.length > 0)}</span>
+                </span>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
