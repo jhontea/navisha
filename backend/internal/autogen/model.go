@@ -81,7 +81,29 @@ type DayActivityContext struct {
 	LocationName string
 }
 
+// Language is the language of the generated text. Mirrors summary.Language
+// (domains do not import each other).
+type Language string
+
+const (
+	LanguageIndonesian Language = "id"
+	LanguageEnglish    Language = "en"
+)
+
+// ParseLanguage maps a request value to a Language; empty means Indonesian.
+// ok is false for any other value (same contract as summary.ParseLanguage).
+func ParseLanguage(s string) (lang Language, ok bool) {
+	switch Language(s) {
+	case "", LanguageIndonesian:
+		return LanguageIndonesian, true
+	case LanguageEnglish:
+		return LanguageEnglish, true
+	}
+	return "", false
+}
+
 type GenerateDayInput struct {
+	Language    Language
 	TripID      string
 	DayID       string
 	Instruction string
@@ -105,6 +127,7 @@ type GenerateInput struct {
 	StartDate    time.Time // inclusive
 	EndDate      time.Time // inclusive
 	BaseCurrency string    // ISO 4217, validated against supported list
+	Language     Language  // "" = Indonesian
 	TravelStyle  string    // Phase 3F: style variant (backpacker, cultural, luxury, nature, foodie, balanced)
 
 	// Optional structured context for event-centred trips. All zero = the

@@ -45,6 +45,7 @@ func (h *Handler) GetQuota(c echo.Context, userID string) error {
 
 type generateDayRequest struct {
 	Instruction string `json:"instruction"`
+	Language    string `json:"language"` // "id" (default) | "en"
 }
 
 func (h *Handler) GenerateDayPreview(c echo.Context, userID string) error {
@@ -53,8 +54,12 @@ func (h *Handler) GenerateDayPreview(c echo.Context, userID string) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
 	req.Instruction = strings.TrimSpace(sanitize.Text(req.Instruction))
+	lang, ok := ParseLanguage(req.Language)
+	if !ok {
+		return echo.NewHTTPError(http.StatusBadRequest, "language must be id or en")
+	}
 	input := GenerateDayInput{
-		TripID: c.Param("trip_id"), DayID: c.Param("day_id"), Instruction: req.Instruction,
+		TripID: c.Param("trip_id"), DayID: c.Param("day_id"), Instruction: req.Instruction, Language: lang,
 	}
 	if err := ValidateDayInput(input); err != nil {
 		return mapErr(err)
@@ -83,6 +88,8 @@ type generateRequest struct {
 	BaseCurrency string `json:"base_currency"`
 	// TravelStyle picks a style block in the prompt; empty means balanced.
 	TravelStyle string `json:"travel_style"`
+	// Language of the generated text: "id" (default) or "en".
+	Language string `json:"language"`
 
 	// Optional event-trip context (see GenerateInput).
 	Origin        *PlaceInput   `json:"origin"`
@@ -130,7 +137,12 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
 	}
+	lang, ok := ParseLanguage(req.Language)
+	if !ok {
+		return echo.NewHTTPError(http.StatusBadRequest, "language must be id or en")
+	}
 	input := GenerateInput{
+		Language:     lang,
 		Destination:  req.Destination,
 		Description:  req.Description,
 		StartDate:    start,

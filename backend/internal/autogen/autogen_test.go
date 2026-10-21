@@ -279,7 +279,7 @@ func TestBuildDayPrompt_IncludesExistingAnchors(t *testing.T) {
 		TripTitle: "Tokyo Trip", Destination: "Tokyo", DayNumber: 2, Date: "2026-07-02",
 		Existing: []DayActivityContext{{Title: "Tokyo Station", StartTime: "10:00", EndTime: "11:00"}},
 	}
-	_, user := BuildDayPrompt(ctx, "more local food")
+	_, user := BuildDayPrompt(ctx, "more local food", LanguageIndonesian)
 	for _, expected := range []string{"Tokyo Station", "10:00-11:00", "more local food"} {
 		if !strings.Contains(user, expected) {
 			t.Errorf("day prompt missing %q", expected)

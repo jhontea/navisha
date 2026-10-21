@@ -452,7 +452,7 @@ func TestHandlerDayPreview_Success(t *testing.T) {
 	if resp["theme"] != "Food" || len(acts) != 1 {
 		t.Errorf("body = %v", resp)
 	}
-	want := GenerateDayInput{TripID: "t1", DayID: "d1", Instruction: "food tour"}
+	want := GenerateDayInput{TripID: "t1", DayID: "d1", Instruction: "food tour", Language: LanguageIndonesian}
 	if uc.prevIn != want {
 		t.Errorf("input = %+v, want %+v", uc.prevIn, want)
 	}
@@ -625,5 +625,28 @@ func TestHandlerGenerate_ZeroQuotaIsUnlimited(t *testing.T) {
 	}
 	if uc.genCalls != 1 {
 		t.Errorf("usecase calls = %d, want 1", uc.genCalls)
+	}
+}
+
+func TestHandlerDayPreview_Language(t *testing.T) {
+	h, uc, fr := newTestHandler(t, 5, 0)
+	if _, err := do(t, h.GenerateDayPreview, http.MethodPost, reqOpts{
+		body: `{"instruction":"food","language":"en"}`, user: testUser, params: dayParams(),
+	}); err != nil {
+		t.Fatalf("GenerateDayPreview: %v", err)
+	}
+	if uc.prevIn.Language != LanguageEnglish {
+		t.Errorf("language = %q, want en", uc.prevIn.Language)
+	}
+
+	_, err := do(t, h.GenerateDayPreview, http.MethodPost, reqOpts{
+		body: `{"instruction":"food","language":"fr"}`, user: testUser, params: dayParams(),
+	})
+	var he *echo.HTTPError
+	if !errors.As(err, &he) || he.Code != http.StatusBadRequest {
+		t.Errorf("language=fr error = %v, want 400", err)
+	}
+	if got := fr.used(testUser); got != 1 {
+		t.Errorf("quota used = %d, want 1 (invalid language must not consume quota)", got)
 	}
 }
