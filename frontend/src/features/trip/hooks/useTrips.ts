@@ -9,7 +9,6 @@ import {
 import { tripApi } from "../api"
 import type {
   CreateTripInput,
-  GenerateTripInput,
   Day,
   TripDetail,
   TripDraft,
@@ -140,30 +139,6 @@ export function useDeleteTrip() {
   })
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// AI Generate Trip — Mutation Pattern (DO NOT REGRESS)
-//
-// ALWAYS use `mutate(input, { onSuccess, onError, onSettled })`
-// NEVER use `await mutateAsync()` — causes shimmer-stuck-after-200 bug.
-// retry: 0 + gcTime: 0 — no auto-retry, no stale mutation replay.
-// See: /memories/navisha-frontend-patterns.md
-//
-// F5 — Auto-generate trip from a short prompt.
-// useGenerateTripDraft calls the LLM (blocking, ~10-55s) and returns a draft.
-// It does NOT persist; the user reviews the draft before committing.
-export function useGenerateTripDraft() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationKey: ["trips", "generate"],
-    mutationFn: (input: GenerateTripInput) => tripApi.generate(input),
-    retry: 0,
-    gcTime: 0,
-    // Quota decrements on every generate call — refresh the badge so the
-    // user sees their remaining count update without a manual reload.
-    onSettled: () => qc.invalidateQueries({ queryKey: ["autogen", "quota"] }),
-  })
-}
-
 // useCreateTripFromDraft persists an approved draft (trip + days + activities).
 export function useCreateTripFromDraft() {
   const qc = useQueryClient()
@@ -212,7 +187,7 @@ function updateDayCaches(qc: ReturnType<typeof useQueryClient>, tripId: string, 
 // Shared across all AI features (generate trip, summary).
 // No refetchInterval — polling every 60s wastes requests for users who aren't
 // using AI. Instead, quota is invalidated on success of any AI mutation
-// (useGenerateTripDraft, useGenerateSummary) so the badge refreshes only when
+// (useGenerateJob, useGenerateSummary) so the badge refreshes only when
 // it actually changes. staleTime 5min matches global default.
 export function useAutogenQuota() {
   return useQuery({

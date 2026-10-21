@@ -1,9 +1,9 @@
-import { api } from "@/lib/api"
+import { api, ApiError } from "@/lib/api"
 import type {
   CreateTripInput,
   Day,
   GenerateTripInput,
-  GenerateTripResponse,
+  GenerateJob,
   Trip,
   TripDetail,
   TripDraft,
@@ -55,8 +55,20 @@ export const tripApi = {
     api.put<Day>(`/days/${dayId}/title`, { title }),
 
   // F5 — Auto-generate
-  generate: (input: GenerateTripInput) =>
-    api.post<GenerateTripResponse>("/trips/generate", input),
+  startGenerateJob: (input: GenerateTripInput) =>
+    api.post<{ job_id: string }>("/trips/generate/jobs", input),
+
+  getGenerateJob: (id: string) => api.get<GenerateJob>(`/trips/generate/jobs/${id}`),
+
+  /** The running job, else the latest one; null when the user has none. */
+  getActiveGenerateJob: async () => {
+    try {
+      return await api.get<GenerateJob>("/trips/generate/jobs/active")
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null
+      throw err
+    }
+  },
 
   createFromDraft: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
     api.post<{ trip_id: string }>("/trips/from-draft", params),
