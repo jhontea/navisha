@@ -6,6 +6,8 @@ import {
   ignoreJob,
   isIgnored,
   jobToResponse,
+  MAX_POLL_FAILURES,
+  shouldKeepPolling,
   loadSnapshot,
   saveSnapshot,
   snapshotFromInput,
@@ -129,5 +131,23 @@ describe("snapshotFromInput", () => {
       event: { name: "x", venue: { label: "Arena" }, date: "2026-11-02", start_time: "10:00", end_time: "12:00" },
     })
     expect(noCoords.venue).toBeNull()
+  })
+})
+
+describe("shouldKeepPolling", () => {
+  it("polls while the job runs or has not answered yet", () => {
+    expect(shouldKeepPolling(undefined, 0)).toBe(true)
+    expect(shouldKeepPolling("running", 0)).toBe(true)
+    expect(shouldKeepPolling("running", MAX_POLL_FAILURES - 1)).toBe(true)
+  })
+
+  it("stops once the job finished", () => {
+    expect(shouldKeepPolling("done", 0)).toBe(false)
+    expect(shouldKeepPolling("failed", 0)).toBe(false)
+  })
+
+  it("gives up after too many failed polls in a row", () => {
+    expect(shouldKeepPolling("running", MAX_POLL_FAILURES)).toBe(false)
+    expect(shouldKeepPolling(undefined, MAX_POLL_FAILURES)).toBe(false)
   })
 })

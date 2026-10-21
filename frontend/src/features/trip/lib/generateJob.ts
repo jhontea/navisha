@@ -19,6 +19,15 @@ function browserStorage(): Storage | null {
   }
 }
 
+/** Consecutive failed polls (about 15s at the 3s interval) before we stop and say so. */
+export const MAX_POLL_FAILURES = 5
+
+/** Whether to keep polling a job: never after it finished, nor after too many failed polls in a row. */
+export function shouldKeepPolling(status: GenerateJob["status"] | undefined, consecutiveFailures: number): boolean {
+  if (status === "done" || status === "failed") return false
+  return consecutiveFailures < MAX_POLL_FAILURES
+}
+
 /** "1:24", "0:05", "1:02:03". Negative or invalid becomes 0:00. */
 export function formatElapsed(ms: number): string {
   const total = Number.isFinite(ms) && ms > 0 ? Math.floor(ms / 1000) : 0

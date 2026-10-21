@@ -27,7 +27,7 @@ import { GenerateChatWizard } from "@/features/trip/components/GenerateChatWizar
 import { GeneratingItinerarySkeleton } from "@/features/trip/components/GeneratingItinerarySkeleton"
 import { useCreateTripFromDraft, useAutogenQuota } from "@/features/trip/hooks/useTrips"
 import { useGenerateJob } from "@/features/trip/hooks/useGenerateJob"
-import { jobToResponse, loadSnapshot, snapshotFromInput } from "@/features/trip/lib/generateJob"
+import { ignoreJob, jobToResponse, loadSnapshot, snapshotFromInput } from "@/features/trip/lib/generateJob"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { flagFarFromVenue, type VenueAnchor } from "@/features/trip/lib/venueRadius"
 import { resolveDestinationMeta } from "@/features/trip/lib/resolveDestinationMeta"
@@ -158,7 +158,9 @@ function GenerateTripPageContent() {
         cover_image_url: getDefaultTripCover(tripDestination),
         description,
       })
-      dismissJob() // this draft is used; do not offer it again on the next visit
+      // This draft is used; do not offer it again on the next visit. Only storage:
+      // the review screen stays up until the route changes (no empty wizard flash).
+      if (job) ignoreJob(job.job_id)
       router.push(`/trips/${trip_id}`)
     } catch (err) {
       setResolving(false)
@@ -166,7 +168,7 @@ function GenerateTripPageContent() {
         err instanceof ApiError ? err.message : "Couldn't create the trip. Nothing was saved, so try again.",
       )
     }
-  }, [result, destination, venue, create, router, selectedKeys, dismissJob])
+  }, [result, destination, venue, create, router, selectedKeys, job])
 
   const saving = create.isPending || resolving
   const noSelection = result !== null && selectedKeys.size === 0

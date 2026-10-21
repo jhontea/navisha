@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ApiError } from "@/lib/api"
 import { tripApi } from "../api"
 import type { GenerateJob, GenerateTripInput } from "../types"
-import { ignoreJob, isIgnored, saveSnapshot, snapshotFromInput } from "../lib/generateJob"
+import { ignoreJob, isIgnored, saveSnapshot, shouldKeepPolling, snapshotFromInput } from "../lib/generateJob"
 
 const POLL_MS = 3000
 
@@ -23,6 +23,8 @@ export function useGenerateJob() {
   // Re-render after ignoreJob (it writes to localStorage, not state).
   const [, refresh] = useReducer((n: number) => n + 1, 0)
   const [startError, setStartError] = useState<string | null>(null)
+  // Polls that failed in a row (a 404 is an answer, not a failure).
+  const [pollFailures, setPollFailures] = useState(0)
 
   // On arrival: is there a job to resume?
   const resume = useQuery({
@@ -38,17 +40,26 @@ export function useGenerateJob() {
 
   const jobQuery = useQuery({
     queryKey: ["trips", "generate-job", jobId],
-    queryFn: () => tripApi.getGenerateJob(jobId as string),
+    queryFn: async () => {
+      try {
+        const j = await tripApi.getGenerateJob(jobId as string)
+        setPollFailures(0)
+        return j
+      } catch (err) {
+        if (!(err instanceof ApiError && err.status === 404)) setPollFailures((n) => n + 1)
+        throw err
+      }
+    },
     enabled: jobId !== null,
     gcTime: 0,
     retry: false,
     refetchIntervalInBackground: true,
-    // A failed poll (network blip) keeps polling; only a finished job or a job
-    // that no longer exists (404) stops it. The query stops itself on unmount.
+    // A failed poll (network blip) keeps polling, up to MAX_POLL_FAILURES in a
+    // row; a finished job or a job that no longer exists (404) stops it too.
+    // The query stops itself on unmount.
     refetchInterval: (query) => {
       if (query.state.error instanceof ApiError && query.state.error.status === 404) return false
-      const status = query.state.data?.status
-      return status === "done" || status === "failed" ? false : POLL_MS
+      return shouldKeepPolling(query.state.data?.status, pollFailures) ? POLL_MS : false
     },
   })
   const job: GenerateJob | undefined = jobQuery.data
@@ -94,15 +105,19 @@ export function useGenerateJob() {
     if (jobId) ignoreJob(jobId)
     setStartedId(null)
     setStartError(null)
+    setPollFailures(0)
     refresh()
     qc.removeQueries({ queryKey: ["trips", "generate-job"] })
   }, [jobId, qc])
 
+  const pollingGaveUp = jobId !== null && !shouldKeepPolling(job?.status, pollFailures) && job?.status !== "done" && job?.status !== "failed"
   const running =
-    startMutation.isPending || (jobId !== null && !jobGone && (job === undefined || job.status === "running"))
+    startMutation.isPending ||
+    (jobId !== null && !jobGone && !pollingGaveUp && (job === undefined || job.status === "running"))
 
   let error: string | null = startError
   if (!error && job?.status === "failed") error = job.error?.message || GENERIC_ERROR
+  if (!error && pollingGaveUp && !jobGone) error = "Couldn't check the progress. Try again."
   if (!error && jobGone) error = "This itinerary is no longer available. Please generate it again."
 
   return { jobId, job, running, error, start, dismiss }
