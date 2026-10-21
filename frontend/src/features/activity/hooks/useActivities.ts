@@ -60,6 +60,19 @@ export function useCreateActivity(dayId: string, tripId: string) {
   })
 }
 
+export function useCreateActivitiesBatch(dayId: string, tripId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (items: CreateActivityInput[]) => activityApi.createBatch(dayId, items),
+    onSuccess: (list, items) => {
+      // The response is the day's full list in final order, so no extra GET.
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), list)
+      updateOverviewActivityCount(qc, tripId, dayId, items.length)
+      invalidateActivityViews(qc, dayId, tripId)
+    },
+  })
+}
+
 export function useUpdateActivity(id: string, dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
