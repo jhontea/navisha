@@ -126,12 +126,17 @@ func (c *Checker) Consume(ctx echo.Context, userID string) *echo.HTTPError {
 // error (timeout, network, provider 5xx — i.e. ErrLLMUnavailable).
 // Do NOT refund for user errors (invalid prompt, bad input).
 func (c *Checker) Refund(ctx echo.Context, userID string) {
+	c.RefundUser(ctx.Request().Context(), userID)
+}
+
+// RefundUser is Refund for callers without an echo.Context (background jobs).
+func (c *Checker) RefundUser(ctx context.Context, userID string) {
 	if !c.Enabled() {
 		return
 	}
-	// Refunds happen after an LLM timeout or a dropped client, when the request
+	// Refunds happen after an LLM timeout or a dropped client, when the caller's
 	// context is usually already done; use a short context of our own.
-	rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx.Request().Context()), 2*time.Second)
+	rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer cancel()
 	key := userKey(userID)
 	if _, err := c.rdb.Decr(rctx, key).Result(); err != nil {

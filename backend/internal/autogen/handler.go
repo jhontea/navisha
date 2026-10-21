@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jhontea/navisha/backend/internal/apperr"
@@ -17,6 +18,12 @@ import (
 type Handler struct {
 	usecase UsecaseInterface
 	quota   *quota.Checker
+
+	// Async generation (nil jobs = job routes are not registered).
+	jobs       JobStore
+	jobTimeout time.Duration
+	jobWG      sync.WaitGroup // lets tests wait for background jobs
+	now        func() time.Time
 }
 
 func NewHandler(usecase UsecaseInterface) *Handler {
@@ -35,6 +42,13 @@ func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFu
 	g.POST("/trips/from-draft", middleware.WithUser(h.CreateFromDraft), authMiddleware)
 	g.POST("/trips/:trip_id/days/:day_id/generate-preview", middleware.WithUser(h.GenerateDayPreview), authMiddleware)
 	g.GET("/autogen/quota", middleware.WithUser(h.GetQuota), authMiddleware)
+	if h.jobs != nil {
+		// Only the POST is an LLM route (rate bucket, see cmd/server/routes.go);
+		// the GETs are cheap polling.
+		g.POST("/trips/generate/jobs", middleware.WithUser(h.StartJob), authMiddleware)
+		g.GET("/trips/generate/jobs/active", middleware.WithUser(h.ActiveJob), authMiddleware)
+		g.GET("/trips/generate/jobs/:id", middleware.WithUser(h.GetJob), authMiddleware)
+	}
 }
 
 // GetQuota returns the current daily AI quota status.
@@ -120,9 +134,34 @@ func cleanPlace(p *PlaceInput) *PlaceInput {
 }
 
 func (h *Handler) Generate(c echo.Context, userID string) error {
+	input, err := parseGenerateInput(c)
+	if err != nil {
+		return err
+	}
+
+	// Daily quota check (shared across all AI endpoints).
+	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
+		return quotaErr
+	}
+
+	draft, err := h.usecase.GenerateDraft(c.Request().Context(), userID, input)
+	if err != nil {
+		if refundable(err) {
+			h.quota.Refund(c, userID)
+		}
+		return mapErr(err)
+	}
+
+	return c.JSON(http.StatusOK, draftToResponse(draft, input.StartDate.Format("2006-01-02"), input.EndDate.Format("2006-01-02")))
+}
+
+// parseGenerateInput reads and validates a generate request body. Shared by
+// the synchronous endpoint and the job endpoint. The returned error is an
+// *echo.HTTPError ready to return.
+func parseGenerateInput(c echo.Context) (GenerateInput, error) {
 	var req generateRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+		return GenerateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
 	// Strip HTML/scripts from LLM-bound inputs (prompt injection), then run
 	// the same checks the usecase runs, so an invalid request never consumes
@@ -131,15 +170,15 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 	req.Description = sanitize.Text(req.Description)
 	start, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid start_date (expect YYYY-MM-DD)")
+		return GenerateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid start_date (expect YYYY-MM-DD)")
 	}
 	end, err := time.Parse("2006-01-02", req.EndDate)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
+		return GenerateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid end_date (expect YYYY-MM-DD)")
 	}
 	lang, ok := ParseLanguage(req.Language)
 	if !ok {
-		return echo.NewHTTPError(http.StatusBadRequest, "language must be id or en")
+		return GenerateInput{}, echo.NewHTTPError(http.StatusBadRequest, "language must be id or en")
 	}
 	input := GenerateInput{
 		Language:     lang,
@@ -160,7 +199,7 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 	if ev := req.Event; ev != nil {
 		date, err := time.Parse("2006-01-02", ev.Date)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "invalid event.date (expect YYYY-MM-DD)")
+			return GenerateInput{}, echo.NewHTTPError(http.StatusBadRequest, "invalid event.date (expect YYYY-MM-DD)")
 		}
 		input.Event = &EventInput{
 			Name:      strings.TrimSpace(sanitize.Text(ev.Name)),
@@ -171,23 +210,9 @@ func (h *Handler) Generate(c echo.Context, userID string) error {
 		}
 	}
 	if err := ValidateInput(input); err != nil {
-		return mapErr(err)
+		return GenerateInput{}, mapErr(err)
 	}
-
-	// Daily quota check (shared across all AI endpoints).
-	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
-		return quotaErr
-	}
-
-	draft, err := h.usecase.GenerateDraft(c.Request().Context(), userID, input)
-	if err != nil {
-		if refundable(err) {
-			h.quota.Refund(c, userID)
-		}
-		return mapErr(err)
-	}
-
-	return c.JSON(http.StatusOK, draftToResponse(draft, req.StartDate, req.EndDate))
+	return input, nil
 }
 
 type fromDraftRequest struct {
