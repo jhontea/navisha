@@ -262,7 +262,18 @@ function DestinationAutocompleteInput({
 // ── Places services (programmatic lookups) ─────────────────────────────────
 
 /** Poll until google.maps.places is available (loaded by a Boundary / search field). */
-function waitForPlaces(): Promise<typeof google.maps.places | null> {
+async function waitForPlaces(): Promise<typeof google.maps.places | null> {
+  // A page whose map loaded Maps without `places` never gets the library on
+  // its own; ask for it instead of polling until the timeout.
+  try {
+    // Bounded like the polling below: a script that never loads must not hang the caller.
+    await Promise.race([
+      window.google?.maps?.importLibrary?.("places"),
+      new Promise((resolve) => setTimeout(resolve, 10_000)),
+    ])
+  } catch {
+    // fall through to polling
+  }
   return new Promise((resolve) => {
     let attempts = 0
     const check = () => {
