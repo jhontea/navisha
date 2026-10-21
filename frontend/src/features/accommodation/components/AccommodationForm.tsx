@@ -111,6 +111,8 @@ interface Props {
   defaultDate?: string
   /** "YYYY-MM-DD" last day of the trip; with defaultDate it outlines the trip in the picker. */
   tripEnd?: string
+  /** "YYYY-MM-DD" check-in prefilled on add (check-out is still chosen by the user). */
+  initialCheckIn?: string
   /** Trip destination, to bias the location search. */
   searchContext?: string
 }
@@ -125,6 +127,7 @@ export function AccommodationForm({
   isSubmitting,
   defaultDate,
   tripEnd,
+  initialCheckIn,
   searchContext,
 }: Props) {
   // A linked cost keeps the currency it was paid in.
@@ -147,7 +150,7 @@ export function AccommodationForm({
       lat: initial?.lat != null ? String(initial.lat) : "",
       lng: initial?.lng != null ? String(initial.lng) : "",
       google_place_id: initial?.google_place_id ?? "",
-      check_in: initial?.check_in ?? "",
+      check_in: initial?.check_in ?? initialCheckIn ?? "",
       check_out: initial?.check_out ?? "",
       check_in_time: initial?.check_in_time ?? "",
       check_out_time: initial?.check_out_time ?? "",

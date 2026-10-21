@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core"
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, ChevronDown, PenLine, Plus, Sparkles } from "lucide-react"
+import { AlertTriangle, ChevronDown, Hotel, PenLine, Plane, Plus, Sparkles } from "lucide-react"
 
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
@@ -26,6 +26,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AddStaySheet } from "@/features/accommodation/components/AddStaySheet"
+import { AddTransportationSheet } from "@/features/transportation/components/AddTransportationSheet"
 import type { Day } from "@/features/trip/types"
 import {
   useCreateActivity,
@@ -54,6 +56,7 @@ interface Props {
   date: string
   dayNumber: number
   destination?: string
+  tripBaseCurrency: string
   days: Day[]
   /** Select & copy mode, turned on from the day header menu. */
   selectMode: boolean
@@ -73,6 +76,7 @@ export function DayActivities({
   date,
   dayNumber,
   destination,
+  tripBaseCurrency,
   days,
   selectMode,
   onSelectModeChange,
@@ -85,7 +89,7 @@ export function DayActivities({
   const selection = useActivitySelection(dayId, days, activities, selectMode, onSelectModeChange)
   const { selectedActivityId, selectActivity } = useItineraryFocus()
 
-  const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; activity: Activity } | { mode: "ai" } | null>(null)
+  const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; activity: Activity } | { mode: "ai" } | { mode: "transport" } | { mode: "stay" } | null>(null)
   const [reorderKey, setReorderKey] = useState(0)
   // The DndContext remounts after a drop; keyboard users get focus back on
   // the handle they moved so they can keep reordering.
@@ -308,6 +312,24 @@ export function DayActivities({
                 </span>
               </span>
             </DropdownMenuItem>
+            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "transport" })}>
+              <span className={MENU_ICON}>
+                <Plane aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block font-bold text-foreground">Add transport</span>
+                <span className="block text-xs font-normal text-muted-foreground">A flight, train, bus or transfer</span>
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "stay" })}>
+              <span className={MENU_ICON}>
+                <Hotel aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block font-bold text-foreground">Add stay</span>
+                <span className="block text-xs font-normal text-muted-foreground">A hotel, hostel or apartment</span>
+              </span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}
@@ -358,6 +380,23 @@ export function DayActivities({
         cancelLabel="Keep editing"
         destructive
         onConfirm={closeSheet}
+      />
+
+      <AddTransportationSheet
+        tripId={tripId}
+        tripBaseCurrency={tripBaseCurrency}
+        open={sheet?.mode === "transport"}
+        onOpenChange={(open) => !open && setSheet(null)}
+        defaultDeparture={`${date}T00:00`}
+      />
+      <AddStaySheet
+        tripId={tripId}
+        tripBaseCurrency={tripBaseCurrency}
+        open={sheet?.mode === "stay"}
+        onOpenChange={(open) => !open && setSheet(null)}
+        days={days}
+        checkIn={date}
+        destination={destination}
       />
 
       <ResponsiveSheet

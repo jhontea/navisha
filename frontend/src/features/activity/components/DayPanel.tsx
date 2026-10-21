@@ -37,6 +37,7 @@ interface Props {
   title: string
   notes: string
   destination?: string
+  tripBaseCurrency: string
   days: Day[]
 }
 
@@ -53,6 +54,7 @@ export function DayPanel({
   date,
   title,
   destination,
+  tripBaseCurrency,
   days,
 }: Props) {
   const [selectMode, setSelectMode] = useState(false)
@@ -217,6 +219,7 @@ export function DayPanel({
           date={date}
           dayNumber={dayNumber}
           destination={destination}
+          tripBaseCurrency={tripBaseCurrency}
           days={days}
           selectMode={selectMode}
           onSelectModeChange={setSelectMode}
