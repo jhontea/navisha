@@ -154,6 +154,7 @@ func (u *Usecase) GenerateDayPreview(ctx context.Context, userID string, in Gene
 		if errors.Is(err, ErrInvalidPrompt) {
 			return nil, err
 		}
+		slog.Error("autogen.GenerateDayPreview: parse failed", "error", err, "chars", len(content), "language", in.Language)
 		return nil, fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
 	}
 	return preview, nil
