@@ -2,6 +2,7 @@ import Link from "next/link"
 import { BrandLogo } from "@/components/BrandLogo"
 
 import { buttonVariants } from "@/components/ui/button"
+import { SessionCta } from "./SessionCta"
 import { MobileMenu } from "./MobileMenu"
 
 const NAV_LINK =
@@ -22,9 +23,7 @@ export function Navbar() {
           <a href="#how-it-works" className={NAV_LINK}>
             How it works
           </a>
-          <Link href="/login" prefetch={false} className={buttonVariants({ className: "ml-2" })}>
-            Sign in
-          </Link>
+          <SessionCta className={buttonVariants({ className: "ml-2" })} />
         </div>
 
         <MobileMenu />

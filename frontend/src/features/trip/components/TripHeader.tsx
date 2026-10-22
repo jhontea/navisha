@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
 import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import { CoverDestination } from "./CoverDestination"
 import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
 
@@ -70,6 +71,8 @@ export function TripHeader({
             className="absolute inset-0 h-full w-full object-cover object-[75%_50%]"
           />
         )}
+        {/* Desktop already names the destination under the title. */}
+        {!cover && <CoverDestination destination={trip.description} className="inset-0 m-auto h-fit justify-center px-4 text-lg md:hidden" />}
         {/* Keeps the title readable on the left of any cover. */}
         <div className="absolute inset-0 hidden bg-linear-to-r from-black/40 via-black/10 to-transparent md:block" aria-hidden="true" />
 
