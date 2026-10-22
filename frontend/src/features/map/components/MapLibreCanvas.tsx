@@ -12,6 +12,12 @@ import { colorForDay } from "./mapColors"
 import { INK, LABEL_SHADOW, MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PRIMARY, STAY, shortLabel } from "./pinStyle"
 import type { MapRendererProps } from "./MapCanvas"
 
+// maplibre-gl 6 derives its worker URL from its own import.meta.url, a file the
+// bundler never emits (404, blank map). Point it at an emitted copy instead.
+maplibregl.setWorkerUrl(
+  new URL("../../../../node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href,
+)
+
 const DEFAULT_TILE_URL = "/api/map-tiles/{z}/{x}/{y}"
 const TILE_URL = process.env.NEXT_PUBLIC_MAP_TILE_URL || DEFAULT_TILE_URL
 const TILE_ATTRIBUTION =
