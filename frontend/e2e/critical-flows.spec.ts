@@ -47,8 +47,8 @@ test.describe("critical flows", () => {
     })
     await page.goto(`/trips/${tripId}`)
 
-    await page.getByRole("button", { name: /Add to Day 1/ }).click()
-    await page.getByRole("menuitem", { name: /Add activity/ }).click()
+    // An empty day shows its add actions inline instead of the "Add to Day" menu.
+    await page.getByRole("button", { name: "Add activity", exact: true }).click()
 
     const sheet = page.getByRole("dialog")
     await sheet.getByRole("radiogroup", { name: "Activity type" }).getByRole("radio", { name: "Note" }).click()
