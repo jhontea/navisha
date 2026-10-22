@@ -13,6 +13,7 @@ import {
 import { LoaderCircle, MapPin } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
 import type { LocationPoint } from "../hooks/useTripLocations"
+import { framePoints, MAX_FIT_ZOOM } from "../lib/mapViewport"
 import type { MapRendererProps } from "./MapCanvas"
 import { colorForDay } from "./mapColors"
 import { MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PIN_SIZE, STAY, shortLabel } from "./pinStyle"
@@ -70,6 +71,8 @@ function GeocodingLayer({
   onOpenInMaps,
   selectedActivityId,
   onSelectActivity,
+  showAll,
+  onOutsideChange,
 }: Props) {
   const map = useMap()
   const [resolved, setResolved] = useState<
@@ -177,7 +180,7 @@ function GeocodingLayer({
               color={colorForDay(day.dayNumber)}
             />
           ))}
-          <FitBounds points={displayable} />
+          <FitBounds points={displayable} showAll={showAll} onOutsideChange={onOutsideChange} />
         </>
       )}
     </>
@@ -327,26 +330,43 @@ function Polyline({ path, color }: {
   return null
 }
 
-function FitBounds({ points }: { points: LocationPoint[] }) {
+function FitBounds({ points, showAll, onOutsideChange }: {
+  points: LocationPoint[]
+  showAll: boolean
+  onOutsideChange: (outside: number) => void
+}) {
   const map = useMap()
   const key = useMemo(
     () => points.map((point) => point.activityId).join("|"),
     [points],
   )
   useEffect(() => {
-    if (!map || points.length === 0) return
+    if (!map) return
+    if (points.length === 0) {
+      onOutsideChange(0)
+      return
+    }
     if (points.length === 1) {
       map.setCenter({ lat: points[0].lat, lng: points[0].lng })
       map.setZoom(13)
+      onOutsideChange(0)
       return
     }
+    const { framed, outside } = framePoints(points)
+    onOutsideChange(outside)
     const bounds = new google.maps.LatLngBounds()
-    points.forEach((point) =>
+    ;(showAll ? points : framed).forEach((point) =>
       bounds.extend({ lat: point.lat, lng: point.lng }),
     )
     map.fitBounds(bounds, 64)
+    // fitBounds has no maxZoom: clamp once, after this fit settles. The user
+    // can still zoom in further by hand.
+    const listener = google.maps.event.addListenerOnce(map, "idle", () => {
+      if ((map.getZoom() ?? 0) > MAX_FIT_ZOOM) map.setZoom(MAX_FIT_ZOOM)
+    })
+    return () => listener.remove()
     // key captures the displayed set without depending on a fresh array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, key])
+  }, [map, key, showAll])
   return null
 }

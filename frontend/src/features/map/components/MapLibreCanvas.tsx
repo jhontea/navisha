@@ -8,6 +8,8 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { ExternalLink } from "lucide-react"
 import { hasValidCoords } from "@/features/trip/lib/mapsUrl"
 
+import type { LocationPoint } from "../hooks/useTripLocations"
+import { framePoints, MAX_FIT_ZOOM } from "../lib/mapViewport"
 import { colorForDay } from "./mapColors"
 import { INK, LABEL_SHADOW, MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PRIMARY, STAY, shortLabel } from "./pinStyle"
 import type { MapRendererProps } from "./MapCanvas"
@@ -34,17 +36,27 @@ interface ProjectedRoute {
   points: { x: number; y: number }[]
 }
 
+function fitTo(map: maplibregl.Map, points: LocationPoint[], duration: number) {
+  const bounds = new maplibregl.LngLatBounds()
+  points.forEach((p) => bounds.extend([p.lng, p.lat]))
+  map.fitBounds(bounds, { padding: 64, maxZoom: MAX_FIT_ZOOM, duration })
+}
+
 export function MapLibreCanvas({
   visibleByDay,
   onOpenInMaps,
   selectedActivityId,
   onSelectActivity,
+  showAll,
+  onOutsideChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   // activityId -> marker element, for highlight + fly-to without recreating
   // the whole map.
   const markerElsRef = useRef<Map<string, HTMLButtonElement>>(new Map())
+  // Read when the map is (re)created; the effect below refits on a change.
+  const showAllRef = useRef(showAll)
   const [mapError, setMapError] = useState(false)
   const [routeOverlay, setRouteOverlay] = useState<{
     width: number
@@ -76,7 +88,20 @@ export function MapLibreCanvas({
   )
 
   useEffect(() => {
-    if (!containerRef.current || displayableByDay.length === 0) return
+    showAllRef.current = showAll
+    const map = mapRef.current
+    if (!map) return
+    const points = displayableByDay.flatMap((day) => day.points)
+    if (points.length > 1) fitTo(map, showAll ? points : framePoints(points).framed, 600)
+    // Only a Show all press refits; a changed point set recreates the map below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAll])
+
+  useEffect(() => {
+    if (!containerRef.current || displayableByDay.length === 0) {
+      onOutsideChange(0)
+      return
+    }
 
     setMapError(false)
     // Drop the previous view's route lines until the new map has projected
@@ -85,6 +110,8 @@ export function MapLibreCanvas({
     const allPoints = displayableByDay.flatMap((day) => day.points)
     // Everything the view should fit: places and stays.
     const allCoords = allPoints.map((p) => [p.lng, p.lat] as [number, number])
+    const { framed, outside } = framePoints(allPoints)
+    onOutsideChange(outside)
     let cancelled = false
 
     const rasterFallback: StyleSpecification = {
@@ -260,9 +287,7 @@ export function MapLibreCanvas({
           map.setCenter(allCoords[0])
           map.setZoom(13)
         } else {
-          const bounds = new maplibregl.LngLatBounds()
-          allCoords.forEach((coord) => bounds.extend(coord))
-          map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 })
+          fitTo(map, showAllRef.current ? allPoints : framed, 0)
         }
         updateRouteOverlay()
       })
