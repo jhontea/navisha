@@ -8,12 +8,12 @@ export function CoverDestination({ destination, className }: { destination?: str
   return (
     <p
       className={cn(
-        "pointer-events-none absolute flex max-w-[calc(100%-2rem)] items-center gap-1.5 text-sm font-extrabold text-on-cover/90",
+        "pointer-events-none absolute flex max-w-[calc(100%-2rem)] items-start gap-1.5 text-sm font-extrabold text-on-cover/90",
         className,
       )}
     >
       <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="truncate">{destination}</span>
+      <span className="line-clamp-2 text-center">{destination}</span>
     </p>
   )
 }

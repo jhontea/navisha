@@ -18,8 +18,7 @@ export async function fetchHasSession(signal?: AbortSignal): Promise<boolean> {
   }
 }
 
-const SessionContext = createContext(false)
-export const LandingSessionContext = SessionContext
+export const LandingSessionContext = createContext(false)
 
 /** One /auth/me request per landing page, shared by every CTA below. */
 export function LandingSessionProvider({ children }: { children: React.ReactNode }) {
@@ -33,7 +32,7 @@ export function LandingSessionProvider({ children }: { children: React.ReactNode
     return () => controller.abort()
   }, [])
 
-  return <SessionContext.Provider value={signedIn}>{children}</SessionContext.Provider>
+  return <LandingSessionContext.Provider value={signedIn}>{children}</LandingSessionContext.Provider>
 }
 
-export const useLandingSignedIn = () => useContext(SessionContext)
+export const useLandingSignedIn = () => useContext(LandingSessionContext)
