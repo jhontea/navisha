@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Menu, X } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
+import { SessionCta } from "./SessionCta"
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false)
@@ -63,15 +63,11 @@ export function MobileMenu() {
           >
             How it works
           </a>
-          <Link
-            href="/login"
-            prefetch={false}
+          <SessionCta
             role="menuitem"
             onClick={() => setOpen(false)}
             className={buttonVariants({ className: "mt-1 w-full" })}
-          >
-            Sign in
-          </Link>
+          />
         </div>
       </div>}
     </>

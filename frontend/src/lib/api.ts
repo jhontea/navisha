@@ -1,7 +1,7 @@
 import { toast } from "@/lib/toast"
 import { clearPersistedQueries } from "@/lib/queryPersistence"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v1"
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090/api/v1"
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>

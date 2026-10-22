@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
 import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import { CoverDestination } from "./CoverDestination"
 import type { Trip } from "../types"
 
 /** Trip cover illustration, or the dusk-navy fallback when there is none (DESIGN.md §7). */
@@ -37,7 +38,9 @@ export function TripCover({
           decoding="async"
           className="h-full w-full object-cover"
         />
-      ) : null}
+      ) : (
+        <CoverDestination destination={trip.description} className="inset-0 m-auto h-fit justify-center px-4 text-base" />
+      )}
     </div>
   )
 }
