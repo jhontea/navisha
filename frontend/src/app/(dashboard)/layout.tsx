@@ -29,9 +29,9 @@ export default function DashboardLayout({
           <div className="mx-auto flex max-w-max-width items-center justify-center gap-6 text-xs text-muted-foreground">
             <span className="font-semibold text-foreground">Navisha</span>
             <span className="text-muted-foreground/40">·</span>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+            <Link href="/privacy" className="inline-flex min-h-6 items-center transition-colors hover:text-foreground">Privacy Policy</Link>
+            <Link href="/terms" className="inline-flex min-h-6 items-center transition-colors hover:text-foreground">Terms of Service</Link>
+            <Link href="/contact" className="inline-flex min-h-6 items-center transition-colors hover:text-foreground">Contact</Link>
             <span className="text-muted-foreground/40">·</span>
             <span>© {new Date().getFullYear()} Navisha Travel</span>
           </div>

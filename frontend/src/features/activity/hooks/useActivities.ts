@@ -7,9 +7,11 @@ import {
 } from "@tanstack/react-query"
 import { activityApi } from "../api"
 import type {
+  Activity,
   ActivityListResponse,
   CreateActivityInput,
   ReorderInput,
+  TodoPayload,
   UpdateActivityInput,
 } from "../types"
 import type { TripOverviewResponse } from "@/features/trip/overview"
@@ -77,6 +79,29 @@ export function useUpdateActivity(id: string, dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: UpdateActivityInput) => activityApi.update(id, input),
+    onSuccess: (updated) => {
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
+        current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
+      )
+      invalidateActivityViews(qc, dayId, tripId)
+    },
+  })
+}
+
+/** Ticks or unticks one to-do item straight from the timeline. */
+export function useToggleTodoItem(dayId: string, tripId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ activity, itemId }: { activity: Activity; itemId: string }) => {
+      const items = (activity.payload as TodoPayload).items
+      // The server overwrites both times on every update, so send the current ones back.
+      return activityApi.update(activity.id, {
+        title: activity.title,
+        start_time: activity.start_time,
+        end_time: activity.end_time,
+        payload: { items: items.map((i) => (i.id === itemId ? { ...i, completed: !i.completed } : i)) },
+      })
+    },
     onSuccess: (updated) => {
       qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
         current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
