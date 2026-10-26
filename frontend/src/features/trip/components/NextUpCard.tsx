@@ -29,7 +29,7 @@ export function NextUpCard({ trip }: { trip: Trip }) {
       />
       <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/15 to-transparent" aria-hidden="true" />
 
-      <div className="relative flex min-h-72 flex-col items-start gap-3 p-5 text-on-cover sm:p-7 md:min-h-80 md:max-w-[65%] md:p-8">
+      <div className="relative flex min-h-60 flex-col items-start gap-3 p-5 text-on-cover sm:p-7 md:min-h-72 md:max-w-[65%] md:p-8">
         <span className="rounded-full bg-cover-button/90 px-3 py-1 text-xs font-extrabold text-cover-button-foreground">
           {active ? "Happening now" : "Next up"} · {tripTimingLabel(metrics)}
         </span>

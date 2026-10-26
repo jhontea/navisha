@@ -1,13 +1,12 @@
 import Link from "next/link"
 import { memo } from "react"
-import { MapPin } from "lucide-react"
+import { Compass, MapPin } from "lucide-react"
 
 import { StatusChip } from "@/components/StatusChip"
 import { cn } from "@/lib/utils"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
 import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
-import { CoverDestination } from "./CoverDestination"
 import type { Trip } from "../types"
 
 /** Trip cover illustration, or the dusk-navy fallback when there is none (DESIGN.md §7). */
@@ -39,7 +38,8 @@ export function TripCover({
           className="h-full w-full object-cover"
         />
       ) : (
-        <CoverDestination destination={trip.description} className="inset-0 m-auto h-fit justify-center px-4 text-base" />
+        // The destination is already named next to every cover, so the fallback stays decorative.
+        <Compass className="absolute inset-0 m-auto h-14 w-14 text-on-cover/20" strokeWidth={1.5} aria-hidden="true" />
       )}
     </div>
   )
