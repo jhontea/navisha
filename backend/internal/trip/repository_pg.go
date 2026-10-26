@@ -279,16 +279,18 @@ func (r *postgresRepository) InsertDays(ctx context.Context, tx pgx.Tx, days []D
 	dates := make([]time.Time, len(days))
 	dayNums := make([]int, len(days))
 	notes := make([]string, len(days))
+	titles := make([]string, len(days))
 	for i, d := range days {
 		tripIDs[i] = d.TripID
 		dates[i] = d.Date
 		dayNums[i] = d.DayNumber
 		notes[i] = d.Notes
+		titles[i] = d.Title
 	}
 	_, err := tx.Exec(ctx,
-		`INSERT INTO days (trip_id, date, day_number, notes)
-		 SELECT * FROM unnest($1::uuid[], $2::date[], $3::int[], $4::text[])`,
-		tripIDs, dates, dayNums, notes)
+		`INSERT INTO days (trip_id, date, day_number, notes, title)
+		 SELECT * FROM unnest($1::uuid[], $2::date[], $3::int[], $4::text[], $5::text[])`,
+		tripIDs, dates, dayNums, notes, titles)
 	if err != nil {
 		return fmt.Errorf("trip.InsertDays: %w", err)
 	}

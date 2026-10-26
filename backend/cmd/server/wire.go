@@ -37,6 +37,7 @@ type app struct {
 	tripActivitiesHandler *integration.TripActivitiesHandler
 	tripOverviewHandler   *integration.TripOverviewHandler
 	dashboardHandler      *integration.DashboardHandler
+	tripDuplicateHandler  *integration.TripDuplicateHandler
 	locationHandler       *location.Handler
 	currencyHandler       *currency.Handler
 	expenseHandler        *expense.Handler
@@ -118,6 +119,9 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 	tripOverviewReader := integration.NewPostgresTripOverviewReader(db)
 	tripOverviewHandler := integration.NewTripOverviewHandler(tripUsecase, tripOverviewReader)
 	dashboardHandler := integration.NewDashboardHandler(tripUsecase)
+	tripDuplicateHandler := integration.NewTripDuplicateHandler(
+		integration.NewTripDuplicator(tripUsecase, activityUsecase, transportationUsecase, accommodationUsecase),
+	)
 
 	// ── LLM Client (provider-agnostic: DeepSeek or OpenRouter) ──
 	// Replaces the old openrouter.Client. Provider is selected via LLM_PROVIDER
@@ -165,6 +169,7 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		tripActivitiesHandler: tripActivitiesHandler,
 		tripOverviewHandler:   tripOverviewHandler,
 		dashboardHandler:      dashboardHandler,
+		tripDuplicateHandler:  tripDuplicateHandler,
 		locationHandler:       locationHandler,
 		currencyHandler:       currencyHandler,
 		expenseHandler:        expenseHandler,

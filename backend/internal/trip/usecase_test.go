@@ -585,3 +585,59 @@ func TestValidateDates_NinetyDayLimitIsInclusive(t *testing.T) {
 		t.Errorf("91 days accepted, err = %v", err)
 	}
 }
+
+func TestUsecase_Create_DayContentFillsDaysByPosition(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	u := NewUsecase(repo, &mockRebaser{})
+
+	in := []DayContent{{Title: " Arrive ", Notes: "n1"}, {}, {Title: "Leave", Notes: "<b>n3</b>"}}
+	_, err := u.Create(context.Background(), "user-1", CreateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "IDR", Days: in,
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if in[0].Title != " Arrive " {
+		t.Errorf("caller's slice was rewritten: %q", in[0].Title)
+	}
+	got := repo.insertedDays
+	if len(got) != 3 || got[0].Title != "Arrive" || got[0].Notes != "n1" ||
+		got[1].Title != "" || got[2].Title != "Leave" || got[2].Notes != "n3" {
+		t.Errorf("days = %+v", got)
+	}
+}
+
+func TestUsecase_Create_WithoutDayContentLeavesDaysEmpty(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	u := NewUsecase(repo, &mockRebaser{})
+
+	if _, err := u.Create(context.Background(), "user-1", CreateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 2), BaseCurrency: "IDR",
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	for _, d := range repo.insertedDays {
+		if d.Title != "" || d.Notes != "" {
+			t.Errorf("day %d = %+v, want empty title/notes", d.DayNumber, d)
+		}
+	}
+}
+
+func TestUsecase_Create_DayTitleTooLong(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	u := NewUsecase(repo, &mockRebaser{})
+
+	_, err := u.Create(context.Background(), "user-1", CreateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 1), BaseCurrency: "IDR",
+		Days: []DayContent{{Title: strings.Repeat("a", maxDayTitleLength+1)}},
+	})
+	if !errors.Is(err, ErrDayTitleTooLong) {
+		t.Fatalf("err = %v, want ErrDayTitleTooLong", err)
+	}
+	if repo.beginTxCalls != 0 {
+		t.Errorf("BeginTx called before validation")
+	}
+}

@@ -296,6 +296,10 @@ func toDayResponse(d *Day) map[string]any {
 	}
 }
 
+// MapError maps trip usecase errors to HTTP errors for handlers outside this
+// package that call trip.Usecase.
+func MapError(err error) error { return mapErr(err) }
+
 func mapErr(err error) error {
 	return apperr.MapHTTP(err,
 		apperr.HTTPMapping{Err: ErrNotFound, Code: http.StatusNotFound, Message: "trip not found"},
