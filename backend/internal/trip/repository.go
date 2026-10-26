@@ -3,6 +3,7 @@ package trip
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -20,6 +21,7 @@ var (
 	ErrTripTooLong           = errors.New("trip duration exceeds maximum (90 days)")
 	ErrInvalidBudget         = errors.New("budget must not be negative")
 	ErrInvalidBudgetCategory = errors.New("invalid budget category")
+	ErrDaysHaveActivities    = errors.New("days outside the new dates still have activities")
 )
 
 // ListResult carries a page of trips plus the cursor for the next page.
@@ -44,7 +46,11 @@ type Repository interface {
 	FindByID(ctx context.Context, id string) (*Trip, error)
 	InsertTrip(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error)
 	InsertDays(ctx context.Context, tx pgx.Tx, days []Day) error
-	DeleteDays(ctx context.Context, tx pgx.Tx, tripID string) error
+	// ResizeDaysTx fits a trip's days to [start, end]: days whose date stays keep
+	// their id, title, notes and activities; dates that drop out are deleted
+	// (ErrDaysHaveActivities if any still holds an activity); new dates are added
+	// and every day is renumbered by date.
+	ResizeDaysTx(ctx context.Context, tx pgx.Tx, tripID string, start, end time.Time) error
 	Update(ctx context.Context, t *Trip) (*Trip, error)
 	// UpdateTx updates a trip row within an existing transaction (Phase 3D / Iter 8).
 	UpdateTx(ctx context.Context, tx pgx.Tx, t *Trip) (*Trip, error)

@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-query"
 import { activityApi } from "../api"
 import type {
-  Activity,
   ActivityListResponse,
   CreateActivityInput,
   ReorderInput,
@@ -91,21 +90,48 @@ export function useUpdateActivity(id: string, dayId: string, tripId: string) {
 /** Ticks or unticks one to-do item straight from the timeline. */
 export function useToggleTodoItem(dayId: string, tripId: string) {
   const qc = useQueryClient()
+  const mutationKey = ["activities", "todo", dayId]
+  const latest = (activityId: string) =>
+    qc.getQueryData<ActivityListResponse>(listKey(dayId))?.items.find((a) => a.id === activityId)
   return useMutation({
-    mutationFn: ({ activity, itemId }: { activity: Activity; itemId: string }) => {
-      const items = (activity.payload as TodoPayload).items
+    mutationKey,
+    // One save at a time per day, each sending the latest ticks from the cache,
+    // so a quick second tap cannot overwrite the first.
+    scope: { id: `todo-${dayId}` },
+    onMutate: async ({ activityId, itemId }: { activityId: string; itemId: string }) => {
+      await qc.cancelQueries({ queryKey: listKey(dayId) })
+      qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
+        current
+          ? {
+              items: current.items.map((a) =>
+                a.id !== activityId
+                  ? a
+                  : {
+                      ...a,
+                      payload: {
+                        items: (a.payload as TodoPayload).items.map((i) => (i.id === itemId ? { ...i, completed: !i.completed } : i)),
+                      },
+                    },
+              ),
+            }
+          : current,
+      )
+    },
+    mutationFn: ({ activityId }: { activityId: string; itemId: string }) => {
+      const activity = latest(activityId)
+      if (!activity) throw new Error("activity not in cache")
       // The server overwrites both times on every update, so send the current ones back.
       return activityApi.update(activity.id, {
         title: activity.title,
         start_time: activity.start_time,
         end_time: activity.end_time,
-        payload: { items: items.map((i) => (i.id === itemId ? { ...i, completed: !i.completed } : i)) },
+        payload: activity.payload ?? undefined,
       })
     },
-    onSuccess: (updated) => {
-      qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
-        current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
-      )
+    onSettled: () => {
+      // Refetch only after the last queued tick, so a stale response never flips a newer tick back.
+      if (qc.isMutating({ mutationKey }) > 1) return
+      qc.invalidateQueries({ queryKey: listKey(dayId) })
       invalidateActivityViews(qc, dayId, tripId)
     },
   })

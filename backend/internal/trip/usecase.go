@@ -3,6 +3,8 @@ package trip
 import (
 	"context"
 	"fmt"
+	"maps"
+	"math"
 	"strings"
 	"time"
 
@@ -68,6 +70,8 @@ type UpdateInput struct {
 // trip does not import expense.
 type ExpenseRebaser interface {
 	RebaseTx(ctx context.Context, tx pgx.Tx, tripID, newBase string) error
+	// ConvertAmount converts one amount with the cached rates (used for the budget).
+	ConvertAmount(ctx context.Context, from, to string, amount float64) (float64, error)
 }
 
 type Usecase struct {
@@ -227,6 +231,7 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 
 	datesChanged := !existing.StartDate.Equal(in.StartDate) || !existing.EndDate.Equal(in.EndDate)
 	currencyChanged := existing.BaseCurrency != in.BaseCurrency
+	oldBase, oldBudget, oldCategories := existing.BaseCurrency, existing.Budget, existing.BudgetCategories
 
 	existing.Title = in.Title
 	existing.Description = in.Description
@@ -242,6 +247,26 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 	existing.CoverImageURL = in.CoverImageURL
 	existing.Notes = in.Notes
 
+	// The budget is stored in the base currency. The edit form resends it with
+	// every save, so an unchanged number means "keep my budget" and is converted;
+	// a number the user just changed is already in the new currency.
+	if currencyChanged {
+		if existing.Budget == oldBudget && oldBudget > 0 {
+			if existing.Budget, err = u.convertBudget(ctx, oldBase, in.BaseCurrency, oldBudget); err != nil {
+				return nil, err
+			}
+		}
+		if len(oldCategories) > 0 && maps.Equal(existing.BudgetCategories, oldCategories) {
+			converted := make(map[string]float64, len(oldCategories))
+			for k, v := range oldCategories {
+				if converted[k], err = u.convertBudget(ctx, oldBase, in.BaseCurrency, v); err != nil {
+					return nil, err
+				}
+			}
+			existing.BudgetCategories = converted
+		}
+	}
+
 	if !datesChanged && !currencyChanged {
 		return u.repo.Update(ctx, existing)
 	}
@@ -256,11 +281,7 @@ func (u *Usecase) Update(ctx context.Context, userID, tripID string, in UpdateIn
 			return fmt.Errorf("trip.usecase.Update: update trip in tx: %w", err)
 		}
 		if datesChanged {
-			if err := u.repo.DeleteDays(ctx, tx, tripID); err != nil {
-				return err
-			}
-			newDays := generateDays(tripID, in.StartDate, in.EndDate)
-			if err := u.repo.InsertDays(ctx, tx, newDays); err != nil {
+			if err := u.repo.ResizeDaysTx(ctx, tx, tripID, in.StartDate, in.EndDate); err != nil {
 				return err
 			}
 		}
@@ -389,6 +410,17 @@ func validBudgetCategory(category string) bool {
 	default:
 		return false
 	}
+}
+
+func (u *Usecase) convertBudget(ctx context.Context, from, to string, amount float64) (float64, error) {
+	if amount == 0 {
+		return 0, nil
+	}
+	v, err := u.rebaser.ConvertAmount(ctx, from, to, amount)
+	if err != nil {
+		return 0, fmt.Errorf("trip.usecase.Update: convert budget: %w", err)
+	}
+	return math.Round(v*100) / 100, nil
 }
 
 func generateDays(tripID string, start, end time.Time) []Day {

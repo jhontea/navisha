@@ -125,6 +125,13 @@ export function useUpdateTrip(id: string) {
       qc.invalidateQueries({ queryKey: ["trips", "filtered"], refetchType: "none" })
       qc.invalidateQueries({ queryKey: ["trips", "dashboard"], refetchType: "active" })
       qc.invalidateQueries({ queryKey: ["summary", id], refetchType: "active" })
+      // New dates add or drop days server-side (new ids), and a new base currency
+      // reconverts every expense, so the merged copies above are not enough.
+      qc.invalidateQueries({ queryKey: ["trips", "detail", id], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["trips", "overview", id], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["activities", "trip", id], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["expenses", "list", id], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["expenses", "summary", id], refetchType: "active" })
     },
   })
 }

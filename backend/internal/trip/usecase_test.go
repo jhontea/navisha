@@ -322,8 +322,8 @@ func TestUsecase_Update_CurrencyChangeRebasesExpenses(t *testing.T) {
 	if repo.beginTxCalls != 1 || repo.commitCalls != 1 {
 		t.Errorf("tx begin/commit = %d/%d, want 1/1", repo.beginTxCalls, repo.commitCalls)
 	}
-	if repo.insertedDays != nil {
-		t.Errorf("days regenerated although dates did not change")
+	if repo.resizeCalls != nil {
+		t.Errorf("days resized although dates did not change")
 	}
 }
 
@@ -496,5 +496,82 @@ func TestUsecase_List_LimitClamping(t *testing.T) {
 				t.Errorf("List: %v", err)
 			}
 		})
+	}
+}
+
+func TestUsecase_Update_DatesChangeResizesDays(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-1", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "IDR"}
+	u := NewUsecase(repo, &mockRebaser{})
+
+	if _, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 5), BaseCurrency: "IDR",
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if len(repo.resizeCalls) != 1 || repo.resizeCalls[0] != "t1:2026-07-01..2026-07-05" {
+		t.Errorf("resize calls = %v", repo.resizeCalls)
+	}
+	if repo.commitCalls != 1 {
+		t.Errorf("commit calls = %d, want 1", repo.commitCalls)
+	}
+}
+
+func TestUsecase_Update_DroppedDaysWithActivitiesRejected(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-1", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 5), BaseCurrency: "IDR"}
+	repo.resizeErr = ErrDaysHaveActivities
+	u := NewUsecase(repo, &mockRebaser{})
+
+	_, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "IDR",
+	})
+	if !errors.Is(err, ErrDaysHaveActivities) {
+		t.Fatalf("err = %v, want ErrDaysHaveActivities", err)
+	}
+	if repo.commitCalls != 0 {
+		t.Errorf("committed although the resize was rejected")
+	}
+}
+
+func TestUsecase_Update_CurrencyChangeConvertsUnchangedBudget(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{
+		ID: "t1", UserID: "user-1", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "IDR",
+		Budget: 16_000_000, BudgetCategories: map[string]float64{"food": 3_200_000},
+	}
+	u := NewUsecase(repo, &mockRebaser{})
+	budget := 16_000_000.0
+
+	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "USD",
+		Budget: &budget, BudgetCategories: map[string]float64{"food": 3_200_000},
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if got.Budget != 1000 || got.BudgetCategories["food"] != 200 {
+		t.Errorf("budget = %v, categories = %v, want 1000 and food 200", got.Budget, got.BudgetCategories)
+	}
+}
+
+func TestUsecase_Update_CurrencyChangeKeepsTypedBudget(t *testing.T) {
+	setupCurrencies()
+	repo := newMockRepo()
+	repo.trips["t1"] = &Trip{ID: "t1", UserID: "user-1", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "IDR", Budget: 16_000_000}
+	u := NewUsecase(repo, &mockRebaser{})
+	typed := 900.0
+
+	got, err := u.Update(context.Background(), "user-1", "t1", UpdateInput{
+		Title: "x", StartDate: date(2026, 7, 1), EndDate: date(2026, 7, 3), BaseCurrency: "USD", Budget: &typed,
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if got.Budget != 900 {
+		t.Errorf("budget = %v, want the typed 900", got.Budget)
 	}
 }

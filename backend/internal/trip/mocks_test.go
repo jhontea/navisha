@@ -14,6 +14,8 @@ type mockRepo struct {
 	trips         map[string]*Trip
 	insertedTrip  *Trip
 	insertedDays  []Day
+	resizeCalls   []string
+	resizeErr     error
 	beginTxCalls  int
 	commitCalls   int
 	rollbackCalls int
@@ -89,10 +91,9 @@ func (m *mockRepo) InsertDays(_ context.Context, _ pgx.Tx, days []Day) error {
 	m.insertedDays = append(m.insertedDays, days...)
 	return nil
 }
-func (m *mockRepo) DeleteDays(_ context.Context, _ pgx.Tx, _ string) error {
-	// Reset inserted days so tests can verify regenerated days.
-	m.insertedDays = nil
-	return nil
+func (m *mockRepo) ResizeDaysTx(_ context.Context, _ pgx.Tx, tripID string, start, end time.Time) error {
+	m.resizeCalls = append(m.resizeCalls, tripID+":"+start.Format("2006-01-02")+".."+end.Format("2006-01-02"))
+	return m.resizeErr
 }
 func (m *mockRepo) Update(_ context.Context, t *Trip) (*Trip, error) {
 	if m.updateErr != nil {
@@ -156,4 +157,15 @@ type mockRebaser struct {
 func (m *mockRebaser) RebaseTx(_ context.Context, _ pgx.Tx, tripID, newBase string) error {
 	m.calls = append(m.calls, tripID+"→"+newBase)
 	return m.err
+}
+
+// ConvertAmount uses a fixed IDR→USD rate of 1/16000 for budget tests.
+func (m *mockRebaser) ConvertAmount(_ context.Context, from, to string, amount float64) (float64, error) {
+	if m.err != nil {
+		return 0, m.err
+	}
+	if from == "IDR" && to == "USD" {
+		return amount / 16000, nil
+	}
+	return amount, nil
 }

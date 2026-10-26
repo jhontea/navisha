@@ -295,12 +295,49 @@ func (r *postgresRepository) InsertDays(ctx context.Context, tx pgx.Tx, days []D
 	return nil
 }
 
-// DeleteDays deletes all days for a trip within the provided transaction.
-// Used when regenerating days after a date-range change.
-func (r *postgresRepository) DeleteDays(ctx context.Context, tx pgx.Tx, tripID string) error {
-	_, err := tx.Exec(ctx, `DELETE FROM days WHERE trip_id = $1`, tripID)
+func (r *postgresRepository) ResizeDaysTx(ctx context.Context, tx pgx.Tx, tripID string, start, end time.Time) error {
+	from, to := start.Format("2006-01-02"), end.Format("2006-01-02")
+
+	// Lock the days that drop out before checking them: an activity insert on one
+	// of them (its FK takes a key-share lock) then waits for this transaction and
+	// fails, instead of slipping in after the check and being cascaded away.
+	rows, err := tx.Query(ctx,
+		`SELECT id FROM days WHERE trip_id = $1 AND (date < $2::date OR date > $3::date) FOR UPDATE`,
+		tripID, from, to)
 	if err != nil {
-		return fmt.Errorf("trip.DeleteDays: %w", err)
+		return fmt.Errorf("trip.ResizeDaysTx lock: %w", err)
+	}
+	dropped, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return fmt.Errorf("trip.ResizeDaysTx lock: %w", err)
+	}
+	if len(dropped) > 0 {
+		var busy bool
+		if err := tx.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM activities WHERE day_id = ANY($1::uuid[]))`, dropped).Scan(&busy); err != nil {
+			return fmt.Errorf("trip.ResizeDaysTx check: %w", err)
+		}
+		if busy {
+			return ErrDaysHaveActivities
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM days WHERE id = ANY($1::uuid[])`, dropped); err != nil {
+			return fmt.Errorf("trip.ResizeDaysTx delete: %w", err)
+		}
+	}
+
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO days (trip_id, date, day_number)
+		 SELECT $1, g::date, 0 FROM generate_series($2::date, $3::date, interval '1 day') AS g
+		 ON CONFLICT (trip_id, date) DO NOTHING`,
+		tripID, from, to); err != nil {
+		return fmt.Errorf("trip.ResizeDaysTx insert: %w", err)
+	}
+	if _, err := tx.Exec(ctx,
+		`UPDATE days d SET day_number = n.rn
+		   FROM (SELECT id, row_number() OVER (ORDER BY date) AS rn FROM days WHERE trip_id = $1) n
+		  WHERE d.id = n.id AND d.day_number <> n.rn`,
+		tripID); err != nil {
+		return fmt.Errorf("trip.ResizeDaysTx renumber: %w", err)
 	}
 	return nil
 }

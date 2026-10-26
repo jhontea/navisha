@@ -125,7 +125,8 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
         onOpenChange={(open) => !open && setSheet(null)}
         title="Edit stay"
       >
-        {sheet?.mode === "edit" && (
+        {/* Wait for the expenses: the form reads the linked cost once, and an empty cost on save deletes it. */}
+        {sheet?.mode === "edit" && !expenses.isPending && (
           <AccommodationForm
             initial={sheet.item}
             tripBaseCurrency={tripBaseCurrency}
