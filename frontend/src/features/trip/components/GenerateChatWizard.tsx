@@ -298,7 +298,7 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       "details",
       { details: next },
       "currency",
-      "Last one — which currency would you like to use for budget estimates? Add your total budget if you have one.",
+      "Last one. Which currency would you like to use for budget estimates? Add your total budget if you have one.",
     )
   }
 

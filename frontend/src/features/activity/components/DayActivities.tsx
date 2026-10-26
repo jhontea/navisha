@@ -19,6 +19,7 @@ import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { sheetCloseAction } from "@/lib/discardGuard"
 import { TimePills, type TimePill } from "@/components/TimePills"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
+import { toast } from "@/lib/toast"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ import {
   useCreateActivity,
   useDeleteActivity,
   useReorderActivities,
+  useToggleTodoItem,
   useUpdateActivity,
 } from "../hooks/useActivities"
 import { useDayTimeline } from "../hooks/useDayTimeline"
@@ -117,6 +119,7 @@ export function DayActivities({
   }
 
   const createMut = useCreateActivity(dayId, tripId)
+  const toggleTodo = useToggleTodoItem(dayId, tripId)
   const updateMut = useUpdateActivity(sheet?.mode === "edit" ? sheet.activity.id : "", dayId, tripId)
   const deleteMut = useDeleteActivity(dayId, tripId)
   const reorderMut = useReorderActivities(dayId, tripId)
@@ -265,6 +268,12 @@ export function DayActivities({
                           errorMessage: "Couldn’t delete this activity. It’s back on the day.",
                           commit: () => deleteMut.mutateAsync(a.id),
                         })
+                      }
+                      onToggleTodo={(itemId) =>
+                        toggleTodo.mutate(
+                          { activity: a, itemId },
+                          { onError: () => toast("Couldn’t update this to-do. Try again.", "error") },
+                        )
                       }
                       overlapTitles={overlapByActivity.get(a.id) ?? []}
                       selectMode={selectMode}

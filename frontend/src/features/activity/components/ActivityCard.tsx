@@ -39,6 +39,8 @@ interface Props {
   selected?: boolean
   /** Click on the card body (e.g. to focus it on the map). */
   onSelect?: () => void
+  /** Tick a to-do item in place; without it the ticks are display-only. */
+  onToggleTodo?: (itemId: string) => void
 }
 
 const MENU_ITEM = "min-h-10 px-3 text-sm"
@@ -51,6 +53,7 @@ export function ActivityCard({
   overlapTitles = [],
   selected = false,
   onSelect,
+  onToggleTodo,
 }: Props) {
   const hasOverlap = overlapTitles.length > 0
   const timeLabel = activity.type === "location" ? formatActivityTimeRange(activity.start_time, activity.end_time) : null
@@ -117,7 +120,7 @@ variant="outline" size="sm" className="mt-2 border-warning/50 bg-warning-bg text
         </Button>
       )}
 
-      <ActivityBody activity={activity} />
+      <ActivityBody activity={activity} onToggleTodo={onToggleTodo} />
     </div>
   )
 }
@@ -127,7 +130,7 @@ function formatOverlapMessage(titles: string[]): string {
   return `Overlaps with ${titles[0]} and ${titles.length - 1} more`
 }
 
-function ActivityBody({ activity }: { activity: Activity }) {
+function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggleTodo?: (itemId: string) => void }) {
   if (!activity.payload) return null
 
   switch (activity.type) {
@@ -189,18 +192,25 @@ function ActivityBody({ activity }: { activity: Activity }) {
       return (
         <ul className="mt-1.5 space-y-1">
           {p.items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 text-sm">
-              {/* eslint-disable-next-line no-restricted-syntax -- read-only to-do tick, not an editable control */}
-              <input
-                type="checkbox"
-                checked={item.completed}
-                readOnly
-                aria-label={item.text}
-                className="h-4 w-4 shrink-0 rounded accent-primary"
-              />
-              <span className={cn("leading-snug", item.completed ? "text-muted-foreground line-through" : "text-foreground/80")}>
-                {item.text}
-              </span>
+            <li key={item.id}>
+              {/* The whole row is the label, so the tap target is the full line, not the 16px box. */}
+              <label
+                onClick={(e) => e.stopPropagation()}
+                className={cn("flex min-h-8 items-center gap-2 text-sm", onToggleTodo && "cursor-pointer")}
+              >
+                {/* eslint-disable-next-line no-restricted-syntax -- inline tick inside a card row; a full Checkbox field is too heavy here */}
+                <input
+                  type="checkbox"
+                  checked={item.completed}
+                  readOnly={!onToggleTodo}
+                  disabled={!onToggleTodo}
+                  onChange={() => onToggleTodo?.(item.id)}
+                  className="h-4 w-4 shrink-0 rounded accent-primary"
+                />
+                <span className={cn("leading-snug", item.completed ? "text-muted-foreground line-through" : "text-foreground/80")}>
+                  {item.text}
+                </span>
+              </label>
             </li>
           ))}
         </ul>
