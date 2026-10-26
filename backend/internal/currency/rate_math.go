@@ -10,12 +10,13 @@ func crossRate(usdRates map[string]float64, base, target string) (float64, error
 		return 1.0, nil
 	}
 	b, ok := usdRates[base]
-	if !ok || b == 0 {
+	if !ok || b <= 0 {
 		return 0, fmt.Errorf("currency.crossRate: missing or zero rate for %s", base)
 	}
 	t, ok := usdRates[target]
-	if !ok {
-		return 0, fmt.Errorf("currency.crossRate: missing rate for %s", target)
+	if !ok || t <= 0 {
+		// A zero rate from the feed would silently turn every amount into 0.
+		return 0, fmt.Errorf("currency.crossRate: missing or zero rate for %s", target)
 	}
 	return t / b, nil
 }

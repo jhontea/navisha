@@ -138,11 +138,20 @@ func (c *Checker) RefundUser(ctx context.Context, userID string) {
 	// context is usually already done; use a short context of our own.
 	rctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer cancel()
-	key := userKey(userID)
-	if _, err := c.rdb.Decr(rctx, key).Result(); err != nil {
-		slog.Warn("quota: DECR refund failed", "user_id", userID, "err", err)
+	// shortcut: the refund lands on today's counter, so a run charged before
+	// midnight UTC and refunded after it frees a slot today; pass the charged
+	// key from Consume if that ever matters. The guard keeps a fresh day's
+	// counter from going negative.
+	if err := refundScript.Run(rctx, c.rdb, []string{userKey(userID)}).Err(); err != nil {
+		slog.Warn("quota: refund failed", "user_id", userID, "err", err)
 	}
 }
+
+// refundScript decrements the counter only while it is above zero.
+var refundScript = redis.NewScript(`
+local used = tonumber(redis.call("GET", KEYS[1]) or "0")
+if used > 0 then return redis.call("DECR", KEYS[1]) end
+return 0`)
 
 // Status is the response shape for the quota GET endpoint.
 type Status struct {

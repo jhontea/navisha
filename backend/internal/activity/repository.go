@@ -34,7 +34,9 @@ type Repository interface {
 	// an empty map, never another user's rows.
 	ListByTrip(ctx context.Context, userID, tripID string) (map[string][]Activity, error)
 	FindByID(ctx context.Context, id string) (*Activity, error)
-	Insert(ctx context.Context, a *Activity) (*Activity, error)
+	InsertTx(ctx context.Context, tx pgx.Tx, a *Activity) (*Activity, error)
+	// LockDayTx row-locks the day so concurrent writes to its order run one at a time.
+	LockDayTx(ctx context.Context, tx pgx.Tx, dayID string) error
 	CountOwnedDaysTx(ctx context.Context, tx pgx.Tx, userID string, dayIDs []string) (int, error)
 	BatchInsertTx(ctx context.Context, tx pgx.Tx, activities []Activity) error
 	Update(ctx context.Context, a *Activity) (*Activity, error)

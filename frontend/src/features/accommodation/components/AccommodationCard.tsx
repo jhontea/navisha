@@ -5,7 +5,7 @@ import { Bed, Building2, Hotel, House, MapPin } from "lucide-react"
 
 import { BookingCard } from "@/components/BookingCard"
 import { StatusChip } from "@/components/StatusChip"
-import { formatWeekdayDate, nightsBetween, tripDayNumber } from "@/lib/calendar"
+import { formatWeekdayDate, nightsBetween, tripDayRange } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
 import { ACCOMMODATION_TYPE_LABELS, type Accommodation } from "../types"
 
@@ -39,14 +39,8 @@ export const AccommodationCard = memo(function AccommodationCard({
 }: Props) {
   const type = a.accommodation_type?.toLowerCase() ?? "other"
   const nights = nightsBetween(a.check_in, a.check_out)
-  const firstDay = tripDayNumber(a.check_in, days)
-  const lastDay = tripDayNumber(a.check_out, days)
-  const dayRange =
-    firstDay !== null && lastDay !== null && lastDay !== firstDay
-      ? `${firstDay}–${lastDay}`
-      : firstDay !== null
-        ? String(firstDay)
-        : null
+  const range = tripDayRange(a.check_in, a.check_out, days)
+  const dayRange = range ? (range[0] === range[1] ? String(range[0]) : `${range[0]}–${range[1]}`) : null
 
   const facts = [
     { label: dayRange?.includes("–") ? "Trip days" : "Trip day", value: dayRange },

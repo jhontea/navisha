@@ -99,7 +99,9 @@ func (m *mockRepo) FindByID(_ context.Context, id string) (*Activity, error) {
 	return nil, ErrNotFound
 }
 
-func (m *mockRepo) Insert(_ context.Context, a *Activity) (*Activity, error) {
+func (m *mockRepo) LockDayTx(_ context.Context, _ pgx.Tx, _ string) error { return nil }
+
+func (m *mockRepo) InsertTx(_ context.Context, _ pgx.Tx, a *Activity) (*Activity, error) {
 	if m.insertErr != nil {
 		return nil, m.insertErr
 	}
@@ -192,5 +194,5 @@ func (m *mockRepo) ListByDayTx(_ context.Context, _ pgx.Tx, _ string) ([]Activit
 		a.OrderIndex = base + a.OrderIndex
 		out = append(out, a)
 	}
-	return out, nil
+	return out, m.listByDayErr
 }

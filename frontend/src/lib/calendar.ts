@@ -70,6 +70,28 @@ export function tripDayNumber(
   return days.find((d) => d.date.slice(0, 10) === key)?.day_number ?? null
 }
 
+/**
+ * Trip day numbers a date range covers, clamped to the trip's days, so a stay
+ * that starts before or ends after the trip still shows the days it spans.
+ * Null when the range misses the trip entirely.
+ */
+export function tripDayRange(
+  from: string | null | undefined,
+  to: string | null | undefined,
+  days: { date: string; day_number: number }[],
+): [number, number] | null {
+  if (!from || !to || days.length === 0) return null
+  const key = (v: string) => v.slice(0, 10)
+  const first = key(days[0].date)
+  const last = key(days[days.length - 1].date)
+  const start = key(from) < first ? first : key(from)
+  const end = key(to) > last ? last : key(to)
+  if (start > end) return null
+  const a = tripDayNumber(start, days)
+  const b = tripDayNumber(end, days)
+  return a !== null && b !== null ? [a, b] : null
+}
+
 /** Sort key that keeps undated items last. */
 export function dateSortKey(value?: string | null): string {
   return value || "9999"

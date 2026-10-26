@@ -85,45 +85,54 @@ func (u *Usecase) Create(ctx context.Context, userID, dayID string, in CreateInp
 		return nil, err
 	}
 
-	existing, err := u.repo.ListByDay(ctx, dayID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Insert at the end first, then move it into place by start time so a
-	// 11:00 lunch added after a 14:00 meeting lands before it.
-	a := &Activity{
-		DayID:      dayID,
-		Type:       in.Type,
-		Title:      in.Title,
-		StartTime:  in.StartTime,
-		EndTime:    in.EndTime,
-		OrderIndex: len(existing),
-		Payload:    in.Payload,
-	}
-	created, err := u.repo.Insert(ctx, a)
-	if err != nil {
-		return nil, err
-	}
-	pos := insertPosition(existing, in.StartTime)
-	if pos == len(existing) {
-		return created, nil
-	}
-	orderMap := make(map[string]int, len(existing)+1)
-	for i, item := range existing {
-		if i < pos {
-			orderMap[item.ID] = i
-		} else {
-			orderMap[item.ID] = i + 1
+	// One transaction with the day row locked: a second add to the same day
+	// waits and then sees this one, so both get distinct positions, and a
+	// failed re-sort cannot leave a stray row behind.
+	var created *Activity
+	err := dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
+		if err := u.repo.LockDayTx(ctx, tx, dayID); err != nil {
+			return err
 		}
-	}
-	orderMap[created.ID] = pos
-	if err := dbtx.WithTx(ctx, u.repo, func(tx pgx.Tx) error {
-		return u.repo.BatchUpdateOrderTx(ctx, tx, orderMap)
-	}); err != nil {
+		existing, err := u.repo.ListByDayTx(ctx, tx, dayID)
+		if err != nil {
+			return err
+		}
+		// Insert at the end first, then move it into place by start time so a
+		// 11:00 lunch added after a 14:00 meeting lands before it.
+		created, err = u.repo.InsertTx(ctx, tx, &Activity{
+			DayID:      dayID,
+			Type:       in.Type,
+			Title:      in.Title,
+			StartTime:  in.StartTime,
+			EndTime:    in.EndTime,
+			OrderIndex: len(existing),
+			Payload:    in.Payload,
+		})
+		if err != nil {
+			return err
+		}
+		pos := insertPosition(existing, in.StartTime)
+		if pos == len(existing) {
+			return nil
+		}
+		orderMap := make(map[string]int, len(existing)+1)
+		for i, item := range existing {
+			if i < pos {
+				orderMap[item.ID] = i
+			} else {
+				orderMap[item.ID] = i + 1
+			}
+		}
+		orderMap[created.ID] = pos
+		if err := u.repo.BatchUpdateOrderTx(ctx, tx, orderMap); err != nil {
+			return err
+		}
+		created.OrderIndex = pos
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
-	created.OrderIndex = pos
 	return created, nil
 }
 

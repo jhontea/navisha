@@ -348,7 +348,8 @@ func validateDates(start, end time.Time) error {
 		return ErrInvalidDates
 	}
 	// Loop 3: prevent trips spanning more than maxTripDurationDays.
-	if end.Sub(start) > time.Duration(maxTripDurationDays)*24*time.Hour {
+	// Both ends count as trip days, so 90 days spans 89 days of difference.
+	if end.Sub(start) >= time.Duration(maxTripDurationDays)*24*time.Hour {
 		return ErrTripTooLong
 	}
 	return nil

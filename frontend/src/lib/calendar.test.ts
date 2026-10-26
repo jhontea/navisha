@@ -10,6 +10,7 @@ import {
   formatWeekdayDate,
   nightsBetween,
   tripDayNumber,
+  tripDayRange,
 } from "./calendar"
 
 describe("calendar helpers", () => {
@@ -51,6 +52,19 @@ describe("calendar helpers", () => {
     expect(tripDayNumber("2026-05-11T09:00:00", days)).toBe(2)
     expect(tripDayNumber("2026-05-12", days)).toBeNull()
     expect(tripDayNumber(null, days)).toBeNull()
+  })
+
+  it("clamps a stay's day range to the trip", () => {
+    const days = [
+      { date: "2026-05-01", day_number: 1 },
+      { date: "2026-05-02", day_number: 2 },
+      { date: "2026-05-03", day_number: 3 },
+    ]
+    expect(tripDayRange("2026-05-01", "2026-05-04", days)).toEqual([1, 3])
+    expect(tripDayRange("2026-04-29", "2026-05-02", days)).toEqual([1, 2])
+    expect(tripDayRange("2026-05-02", "2026-05-02", days)).toEqual([2, 2])
+    expect(tripDayRange("2026-04-01", "2026-04-03", days)).toBeNull()
+    expect(tripDayRange("2026-05-01", "2026-05-03", [])).toBeNull()
   })
 
   it("sorts undated items last", () => {

@@ -130,10 +130,17 @@ func (r *postgresRepository) FindByID(ctx context.Context, id string) (*Activity
 	return a, nil
 }
 
-func (r *postgresRepository) Insert(ctx context.Context, a *Activity) (*Activity, error) {
+func (r *postgresRepository) LockDayTx(ctx context.Context, tx pgx.Tx, dayID string) error {
+	if _, err := tx.Exec(ctx, `SELECT 1 FROM days WHERE id = $1 FOR UPDATE`, dayID); err != nil {
+		return fmt.Errorf("activity.LockDayTx: %w", err)
+	}
+	return nil
+}
+
+func (r *postgresRepository) InsertTx(ctx context.Context, tx pgx.Tx, a *Activity) (*Activity, error) {
 	out := &Activity{}
 	var typ string
-	err := r.db.QueryRow(ctx,
+	err := tx.QueryRow(ctx,
 		`INSERT INTO activities (day_id, type, title, start_time, end_time, order_index, payload)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id, day_id, type, title, start_time, end_time, order_index, payload, created_at, updated_at`,
@@ -141,7 +148,7 @@ func (r *postgresRepository) Insert(ctx context.Context, a *Activity) (*Activity
 		Scan(&out.ID, &out.DayID, &typ, &out.Title, &out.StartTime, &out.EndTime,
 			&out.OrderIndex, &out.Payload, &out.CreatedAt, &out.UpdatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("activity.Insert: %w", err)
+		return nil, fmt.Errorf("activity.InsertTx: %w", err)
 	}
 	out.Type = Type(typ)
 	return out, nil
