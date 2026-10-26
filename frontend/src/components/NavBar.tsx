@@ -122,7 +122,8 @@ export function NavBar() {
           aria-label="Bottom navigation"
           items={[
             { href: "/trips", label: "Trips", icon: Home, active: sections.trips, onIntent: prefetchTrips },
-            { href: "/trips/generate", label: "Plan with AI", icon: Sparkles, active: sections.ai },
+            // Short label: "Plan with AI" truncates in the four-slot bar under ~345px.
+            { href: "/trips/generate", label: "AI Plan", icon: Sparkles, active: sections.ai },
             { href: "/currency", label: "Currency", icon: ArrowLeftRight, active: sections.currency },
             { href: "/profile", label: "Profile", icon: UserRound, active: sections.profile },
           ]}
