@@ -71,8 +71,10 @@ export function useActivitySelection(
     }
     setCopying(false)
 
-    // Invalidate target day so the new copies show up.
+    // Refresh the target day, the map pins and the "has plans" dots on the day circles.
     qc.invalidateQueries({ queryKey: ["activities", "list", targetDayId], refetchType: "active" })
+    qc.invalidateQueries({ queryKey: ["activities", "trip", target.trip_id], refetchType: "active" })
+    qc.invalidateQueries({ queryKey: ["trips", "overview", target.trip_id], refetchType: "active" })
 
     if (fail === 0) {
       toast(`Copied ${ok} ${ok === 1 ? "activity" : "activities"} to Day ${target.day_number}.`)

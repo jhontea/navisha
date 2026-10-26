@@ -131,11 +131,12 @@ type mockExpenseCreator struct {
 
 	lastKind    string
 	lastBooking string
+	lastDate    string
 }
 
 func (m *mockExpenseCreator) SyncLinkedExpenseTx(
 	_ context.Context, _ pgx.Tx,
-	userID, tripID, linkKind, bookingID, title, _, _ string, amount float64, _ string,
+	userID, tripID, linkKind, bookingID, title, _, _ string, amount float64, date string,
 ) error {
 	m.calls++
 	m.lastUser = userID
@@ -144,5 +145,6 @@ func (m *mockExpenseCreator) SyncLinkedExpenseTx(
 	m.lastBooking = bookingID
 	m.lastTitle = title
 	m.lastAmount = amount
+	m.lastDate = date
 	return m.err
 }

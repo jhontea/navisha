@@ -197,3 +197,24 @@ func TestList_Success(t *testing.T) {
 		t.Errorf("got %d items, want 2", len(out))
 	}
 }
+
+// pgx hands TIMESTAMPTZ back in the server zone (+07:00); a 20:00 departure is
+// then 03:00 the next day locally, but the expense must keep the travel date.
+func TestCreate_LinkedExpenseUsesWallClockDepartureDate(t *testing.T) {
+	repo := newMockRepo()
+	repo.tripOwners["trip-1"] = "user-1"
+	exp := &mockExpenseCreator{}
+	u := NewUsecase(repo, exp)
+	dep := time.Date(2026, 11, 1, 20, 0, 0, 0, time.UTC)
+	readBack := dep.In(time.FixedZone("WIB", 7*3600))
+	repo.insertResp = &Transportation{ID: "tx-1", TripID: "trip-1", Type: TypeFlight, DepartureDatetime: &readBack}
+
+	if _, err := u.Create(context.Background(), "user-1", "trip-1", CreateInput{
+		Type: TypeFlight, DepartureDatetime: &dep, Cost: &Cost{Amount: 1_500_000, Currency: "IDR"},
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if exp.lastDate != "2026-11-01" {
+		t.Errorf("expense date = %q, want 2026-11-01", exp.lastDate)
+	}
+}

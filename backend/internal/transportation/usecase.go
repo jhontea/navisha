@@ -117,7 +117,8 @@ func (u *Usecase) Create(ctx context.Context, userID, tripID string, in CreateIn
 		// Use departure date as the expense date so it groups by travel day
 		var departureDate string
 		if created.DepartureDatetime != nil {
-			departureDate = created.DepartureDatetime.Format("2006-01-02")
+			// Times are stored as wall-clock UTC; pgx reads them back in the server zone.
+			departureDate = created.DepartureDatetime.UTC().Format("2006-01-02")
 		}
 		if err := u.expenseCreator.SyncLinkedExpenseTx(
 			ctx, tx, userID, tripID, linkKind, created.ID, title,
@@ -175,7 +176,7 @@ func (u *Usecase) Update(ctx context.Context, userID, id string, in UpdateInput)
 		}
 		var date string
 		if updated.DepartureDatetime != nil {
-			date = updated.DepartureDatetime.Format("2006-01-02")
+			date = updated.DepartureDatetime.UTC().Format("2006-01-02")
 		}
 		if err := u.expenseCreator.SyncLinkedExpenseTx(
 			ctx, tx, userID, updated.TripID, linkKind, updated.ID, title,
