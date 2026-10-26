@@ -142,7 +142,7 @@ function TimeFact({ label, value, align = "start" }: { label: string; value: Rea
 function Endpoint({ place, align = "start" }: { place: PlaceLabel | null; align?: "start" | "end" }) {
   if (!place) return <p className={cn("shrink-0 text-sm text-muted-foreground", align === "end" && "text-right")}>—</p>
   return (
-    <div className={cn("min-w-0 max-w-[42%] shrink-0", align === "end" && "text-right")}>
+    <div className={cn("min-w-0 max-w-[42%]", align === "end" && "text-right")}>
       {place.code ? (
         <>
           <p className="font-display text-3xl font-black leading-none tracking-tight text-foreground">{place.code}</p>
