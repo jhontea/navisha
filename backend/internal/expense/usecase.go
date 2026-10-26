@@ -182,6 +182,15 @@ func (u *Usecase) RebaseTx(ctx context.Context, tx pgx.Tx, tripID, newBase strin
 	return u.repo.UpdateConvertedBatchTx(ctx, tx, ids, amounts, newBase)
 }
 
+// ConvertAmount converts one amount between currencies with the cached rates.
+func (u *Usecase) ConvertAmount(ctx context.Context, from, to string, amount float64) (float64, error) {
+	converted, _, err := u.converter.Convert(ctx, from, to, amount)
+	if err != nil {
+		return 0, fmt.Errorf("expense.ConvertAmount %s→%s: %w: %w", from, to, apperr.ErrRatesUnavailable, err)
+	}
+	return converted, nil
+}
+
 func (u *Usecase) List(ctx context.Context, userID, tripID string) ([]Expense, error) {
 	owner, _, err := u.repo.FindTripOwner(ctx, tripID)
 	if err != nil {

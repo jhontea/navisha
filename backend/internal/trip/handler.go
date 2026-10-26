@@ -312,6 +312,7 @@ func mapErr(err error) error {
 		apperr.HTTPMapping{Err: ErrURLTooLong, Code: http.StatusBadRequest, Message: "cover image url is too long"},
 		apperr.HTTPMapping{Err: ErrInvalidBudget, Code: http.StatusBadRequest, Message: "budget must not be negative"},
 		apperr.HTTPMapping{Err: ErrInvalidBudgetCategory, Code: http.StatusBadRequest, Message: "invalid budget category"},
+		apperr.HTTPMapping{Err: ErrDaysHaveActivities, Code: http.StatusConflict, Message: "Some days outside the new dates still have plans. Move or delete those activities first, then change the dates."},
 		apperr.HTTPMapping{Err: apperr.ErrForbidden, Code: http.StatusForbidden, Message: "forbidden"},
 		apperr.HTTPMapping{Err: apperr.ErrRatesUnavailable, Code: http.StatusServiceUnavailable, Message: "Couldn't fetch exchange rates. Base currency was not changed, try again later."},
 	)

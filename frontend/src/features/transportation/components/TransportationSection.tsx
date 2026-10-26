@@ -119,7 +119,8 @@ export function TransportationSection({ tripId, tripBaseCurrency, days = [] }: P
         onOpenChange={(open) => !open && setSheet(null)}
         title="Edit transport"
       >
-        {sheet?.mode === "edit" && (
+        {/* Wait for the expenses: the form reads the linked cost once, and an empty cost on save deletes it. */}
+        {sheet?.mode === "edit" && !expenses.isPending && (
           <TransportationForm
             initial={sheet.item}
             lockType

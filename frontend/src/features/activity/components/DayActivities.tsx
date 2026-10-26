@@ -272,7 +272,7 @@ export function DayActivities({
                       }
                       onToggleTodo={(itemId) =>
                         toggleTodo.mutate(
-                          { activity: a, itemId },
+                          { activityId: a.id, itemId },
                           { onError: () => toast("Couldn’t update this to-do. Try again.", "error") },
                         )
                       }
