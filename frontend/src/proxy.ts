@@ -9,6 +9,9 @@ const AUTH_PATHS = ["/login", "/auth/callback"]
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hasToken = request.cookies.has("access_token")
+  // The access cookie lives 30 min, the refresh cookie 7 days: after an idle half hour
+  // only the refresh cookie is left, and the first API 401 renews the session.
+  const hasSession = hasToken || request.cookies.has("refresh_token")
 
   if (OPEN_PATHS.includes(pathname) || pathname.startsWith("/share/")) {
     return NextResponse.next()
@@ -26,7 +29,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (!hasToken) {
+  if (!hasSession) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
