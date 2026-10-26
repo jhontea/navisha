@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TripHeader } from "@/features/trip/components/TripHeader"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
-import { useDeleteTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
+import { useDeleteTrip, useDuplicateTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { ApiError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -22,6 +22,14 @@ const TripForm = dynamic(
   {
     ssr: false,
     loading: () => <div className="h-96 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
+  },
+)
+
+const DuplicateTripForm = dynamic(
+  () => import("@/features/trip/components/DuplicateTripForm").then((m) => m.DuplicateTripForm),
+  {
+    ssr: false,
+    loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
   },
 )
 
@@ -36,8 +44,10 @@ export function TripShell({ children }: { children: ReactNode }) {
   const { data: trip, isLoading, isError, error, refetch, isFetching } = useTrip(tripId)
   const { mutateAsync: updateTrip, isPending: isUpdating } = useUpdateTrip(tripId)
   const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
+  const { mutateAsync: duplicateTrip, isPending: isDuplicating } = useDuplicateTrip(tripId)
 
   const [editOpen, setEditOpen] = useState(false)
+  const [duplicateOpen, setDuplicateOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   // During persisted-query restoration there can briefly be no data while
@@ -102,7 +112,12 @@ export function TripShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <TripHeader trip={trip} onEdit={() => setEditOpen(true)} onDelete={() => setConfirmDelete(true)} />
+      <TripHeader
+        trip={trip}
+        onEdit={() => setEditOpen(true)}
+        onDuplicate={() => setDuplicateOpen(true)}
+        onDelete={() => setConfirmDelete(true)}
+      />
       <TripTabBar tripId={tripId} />
 
       {isError && (
@@ -134,6 +149,33 @@ export function TripShell({ children }: { children: ReactNode }) {
                 updateError instanceof ApiError && updateError.status >= 400 && updateError.status < 600
                   ? updateError.message
                   : "Couldn't save your changes. Check your connection and try again."
+              toast(message, "error")
+            }
+          }}
+        />
+      </ResponsiveSheet>
+
+      <ResponsiveSheet
+        open={duplicateOpen}
+        // Stay open while the copy is being made; closing would not cancel it.
+        onOpenChange={(open) => !isDuplicating && setDuplicateOpen(open)}
+        title="Duplicate trip"
+      >
+        <DuplicateTripForm
+          trip={trip}
+          isSubmitting={isDuplicating}
+          onCancel={() => setDuplicateOpen(false)}
+          onSubmit={async (input) => {
+            try {
+              const copy = await duplicateTrip(input)
+              setDuplicateOpen(false)
+              toast("Trip duplicated.")
+              router.push(`/trips/${copy.id}`)
+            } catch (duplicateError) {
+              const message =
+                duplicateError instanceof ApiError && duplicateError.status >= 400 && duplicateError.status < 600
+                  ? duplicateError.message
+                  : "Couldn't duplicate this trip. Check your connection and try again."
               toast(message, "error")
             }
           }}

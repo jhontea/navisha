@@ -109,6 +109,16 @@ export function useCreateTrip() {
   })
 }
 
+export function useDuplicateTrip(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: Parameters<typeof tripApi.duplicate>[1]) => tripApi.duplicate(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
+    },
+  })
+}
+
 export function useUpdateTrip(id: string) {
   const qc = useQueryClient()
   return useMutation({

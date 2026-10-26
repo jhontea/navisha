@@ -48,6 +48,10 @@ export const tripApi = {
 
   delete: (id: string) => api.delete<void>(`/trips/${id}`),
 
+  /** Copies the trip to a new start date; an empty title becomes "<title> (copy)". */
+  duplicate: (id: string, input: { start_date: string; title: string; include_bookings: boolean }) =>
+    api.post<Trip>(`/trips/${id}/duplicate`, input),
+
   updateDayNotes: (dayId: string, notes: string) =>
     api.put<Day>(`/days/${dayId}/notes`, { notes }),
 

@@ -33,6 +33,13 @@ export function formatFriendlyRange(startDate: string, endDate: string) {
   return `${fmt(start, day)} – ${fmt(end, full)}`
 }
 
+/** "YYYY-MM-DD" moved by whole days (calendar math in UTC); "" for a bad date. */
+export function addDaysISO(date: string, days: number) {
+  const p = parseISODateParts(date)
+  if (!p) return ""
+  return new Date(Date.UTC(p.year, p.month - 1, p.day + days)).toISOString().slice(0, 10)
+}
+
 function parseISODateParts(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   if (!match) return null
