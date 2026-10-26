@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"math"
+	"slices"
 	"strings"
 	"time"
 
@@ -51,6 +52,15 @@ type CreateInput struct {
 	BudgetCategories map[string]float64
 	CoverImageURL    string
 	Notes            string
+	// Days optionally fills the generated days by position (Days[0] is day 1),
+	// used when duplicating a trip. Extra entries are ignored.
+	Days []DayContent
+}
+
+// DayContent is the user-written part of a day.
+type DayContent struct {
+	Title string
+	Notes string
 }
 
 type UpdateInput struct {
@@ -101,6 +111,18 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 	if err := validateBudgetCategories(in.BudgetCategories, in.Budget); err != nil {
 		return nil, err
 	}
+	in.Days = slices.Clone(in.Days) // don't rewrite the caller's slice
+	for i := range in.Days {
+		// Same rules as UpdateDayTitle and the day-notes handler.
+		title, err := normalizeDayTitle(in.Days[i].Title)
+		if err != nil {
+			return nil, err
+		}
+		if sanitize.TooLong(in.Days[i].Notes, maxNotesLength) {
+			return nil, ErrNotesTooLong
+		}
+		in.Days[i].Title, in.Days[i].Notes = title, sanitize.Text(in.Days[i].Notes)
+	}
 
 	// Loop 14: strip HTML tags from user-provided text before storing.
 	in.Title = sanitize.Text(in.Title)
@@ -127,6 +149,11 @@ func (u *Usecase) Create(ctx context.Context, userID string, in CreateInput) (*T
 			return fmt.Errorf("trip.usecase.Create insert trip: %w", err)
 		}
 		days := generateDays(created.ID, created.StartDate, created.EndDate)
+		for i := range days {
+			if i < len(in.Days) {
+				days[i].Title, days[i].Notes = in.Days[i].Title, in.Days[i].Notes
+			}
+		}
 		if err := u.repo.InsertDays(ctx, tx, days); err != nil {
 			return fmt.Errorf("trip.usecase.Create insert days: %w", err)
 		}
@@ -325,9 +352,9 @@ func (u *Usecase) UpdateDayNotes(ctx context.Context, userID, dayID, notes strin
 // UpdateDayTitle mutates the optional display title on a single day.
 // Ownership chain day → trip → user is verified before the update.
 func (u *Usecase) UpdateDayTitle(ctx context.Context, userID, dayID, title string) (*Day, error) {
-	title = strings.TrimSpace(sanitize.Text(title))
-	if len(title) > maxDayTitleLength {
-		return nil, ErrDayTitleTooLong
+	title, err := normalizeDayTitle(title)
+	if err != nil {
+		return nil, err
 	}
 
 	owner, err := u.repo.FindDayOwner(ctx, dayID)
@@ -338,6 +365,15 @@ func (u *Usecase) UpdateDayTitle(ctx context.Context, userID, dayID, title strin
 		return nil, apperr.ErrForbidden
 	}
 	return u.repo.UpdateDayTitle(ctx, dayID, title)
+}
+
+// normalizeDayTitle strips tags and spaces from a day title and checks its length.
+func normalizeDayTitle(title string) (string, error) {
+	title = strings.TrimSpace(sanitize.Text(title))
+	if len(title) > maxDayTitleLength {
+		return "", ErrDayTitleTooLong
+	}
+	return title, nil
 }
 
 func validateDates(start, end time.Time) error {
