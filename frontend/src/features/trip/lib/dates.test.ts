@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { formatFriendlyRange, getInclusiveDayCount } from "./dates"
+import { addDaysISO, formatFriendlyRange, getInclusiveDayCount } from "./dates"
 
 describe("formatFriendlyRange", () => {
   it("writes weekdays and the month once inside a month", () => {
@@ -39,5 +39,17 @@ describe("getInclusiveDayCount", () => {
   it("returns null for non ISO dates", () => {
     expect(getInclusiveDayCount("10/01/2026", "2026-10-05")).toBeNull()
     expect(getInclusiveDayCount("2026-10-01T00:00:00Z", "2026-10-05")).toBeNull()
+  })
+})
+
+describe("addDaysISO", () => {
+  it("moves across month and year ends", () => {
+    expect(addDaysISO("2026-12-30", 2)).toBe("2027-01-01")
+    expect(addDaysISO("2028-02-28", 1)).toBe("2028-02-29")
+    expect(addDaysISO("2026-11-20", 0)).toBe("2026-11-20")
+  })
+
+  it("returns empty for a bad date", () => {
+    expect(addDaysISO("", 3)).toBe("")
   })
 })

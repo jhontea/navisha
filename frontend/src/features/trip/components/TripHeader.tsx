@@ -3,7 +3,7 @@
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { ArrowLeft, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
+import { ArrowLeft, Copy, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
 
 import { IconButton } from "@/components/IconButton"
 import { StatusChip } from "@/components/StatusChip"
@@ -38,10 +38,12 @@ const MENU_ITEM = "min-h-10 px-3 text-sm"
 export function TripHeader({
   trip,
   onEdit,
+  onDuplicate,
   onDelete,
 }: {
   trip: Pick<Trip, "id" | "title" | "description" | "start_date" | "end_date" | "base_currency" | "cover_image_url">
   onEdit: () => void
+  onDuplicate: () => void
   onDelete: () => void
 }) {
   const [shareOpen, setShareOpen] = useState(false)
@@ -106,6 +108,10 @@ export function TripHeader({
               <DropdownMenuItem className={MENU_ITEM} onClick={() => setShareOpen(true)}>
                 <Share2 aria-hidden="true" />
                 Share trip
+              </DropdownMenuItem>
+              <DropdownMenuItem className={MENU_ITEM} onClick={onDuplicate}>
+                <Copy aria-hidden="true" />
+                Duplicate trip
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>
