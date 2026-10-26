@@ -43,6 +43,8 @@
   /* ── Global scroll & selection polish ── */
   html {
     scroll-behavior: smooth;
+    /* Keep the layout from shifting when a short page drops the scrollbar. */
+    scrollbar-gutter: stable;
   }
 
   ::selection {
