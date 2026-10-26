@@ -162,13 +162,19 @@ export function DayActivities({
     const newIdx = activities.findIndex((a) => a.id === over.id)
     if (oldIdx < 0 || newIdx < 0) return
     const reordered = arrayMove(activities, oldIdx, newIdx)
-    const newOrder = reordered.map((a) => a.id)
+    // Put activities waiting on Undo back at their old index: the server only
+    // accepts the day's full id set, and Undo must find them in the cache.
+    const full = [...reordered]
+    timeline.activities.forEach((a, i) => {
+      if (pendingDeletes.has(a.id)) full.splice(Math.min(i, full.length), 0, a)
+    })
+    const newOrder = full.map((a) => a.id)
 
     // Defer to next frame: @dnd-kit resets internal transform state
     // asynchronously after onDragEnd. If setQueryData runs synchronously,
     // @dnd-kit's pending state reset may override our optimistic reorder.
     requestAnimationFrame(() => {
-      qc.setQueryData<ActivityListResponse>(["activities", "list", dayId], { items: reordered })
+      qc.setQueryData<ActivityListResponse>(["activities", "list", dayId], { items: full })
       setReorderKey((k) => k + 1)
       if (keyboard) refocusIdRef.current = String(active.id)
       setDropStatus(`${activities[oldIdx].title} moved to position ${newIdx + 1} of ${activities.length}.`)
@@ -176,6 +182,7 @@ export function DayActivities({
         { ids: newOrder },
         {
           onError: () => {
+            toast("Couldn’t save the new order. It’s back the way it was.", "error")
             qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "active" })
           },
         },

@@ -72,6 +72,32 @@ describe("activityFormDefaults / activityPayload", () => {
   })
 })
 
+describe("approximate AI pins", () => {
+  const approx = activity({
+    payload: {
+      location_name: "Pasar Baru",
+      lat: -6.16,
+      lng: 106.83,
+      address: "",
+      google_place_id: "",
+      notes: "",
+      location_verification: "needs_review",
+      location_confidence: 40,
+      image_urls: [],
+    },
+  } as Partial<Activity>)
+
+  it("stay approximate when only other fields change", () => {
+    const v = { ...activityFormDefaults(approx), start_time: "09:00" }
+    expect(activityPayload(v)).toMatchObject({ lat: -6.16, location_verification: "needs_review", location_confidence: 40 })
+  })
+
+  it("become verified once a place is picked", () => {
+    const v: ActivityFormValues = { ...activityFormDefaults(approx), lat: "-6.1667", lng: "106.8333", location_verification: "verified" }
+    expect(activityPayload(v)).toMatchObject({ location_verification: "verified", location_confidence: 100 })
+  })
+})
+
 describe("activityFormSchema", () => {
   const base = activityFormDefaults()
   const issues = (v: ActivityFormValues) => {

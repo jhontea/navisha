@@ -34,6 +34,10 @@ export const activityFormSchema = z
       .refine((v) => !v || Number.isFinite(parseCoord(v)), "Invalid longitude"),
     address: z.string().optional(),
     google_place_id: z.string().optional(),
+    // Carried from the saved pin: an approximate AI pin stays "needs_review"
+    // until the user picks a place from search.
+    location_verification: z.enum(["verified", "needs_review"]).optional(),
+    location_confidence: z.number().nullable().optional(),
     location_notes: z.string().optional(),
     external_url: z
       .string()
@@ -106,6 +110,8 @@ export function activityFormDefaults(initial?: Activity): ActivityFormValues {
         lng: p.lng?.toString() ?? "",
         address: p.address ?? "",
         google_place_id: p.google_place_id ?? "",
+        location_verification: p.location_verification,
+        location_confidence: p.location_confidence ?? null,
         location_notes: p.notes ?? "",
         external_url: p.external_url ?? "",
       }
@@ -125,7 +131,8 @@ export function activityPayload(v: ActivityFormValues) {
       const parsedLng = v.lng ? parseCoord(v.lng) : NaN
       const lat = Number.isFinite(parsedLat) ? parsedLat : null
       const lng = Number.isFinite(parsedLng) ? parsedLng : null
-      const isVerified = lat !== null && lng !== null
+      const stillApproximate = v.location_verification === "needs_review"
+      const isVerified = lat !== null && lng !== null && !stillApproximate
       return {
         location_name: v.location_name ?? "",
         lat,
@@ -134,7 +141,7 @@ export function activityPayload(v: ActivityFormValues) {
         address: v.address ?? "",
         notes: v.location_notes ?? "",
         location_verification: isVerified ? ("verified" as const) : ("needs_review" as const),
-        location_confidence: isVerified ? 100 : null,
+        location_confidence: isVerified ? 100 : stillApproximate && lat !== null ? (v.location_confidence ?? null) : null,
         external_url: normalizeExternalUrl(v.external_url ?? "") ?? "",
         image_urls: [],
       }
