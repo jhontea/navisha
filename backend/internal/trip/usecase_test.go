@@ -575,3 +575,13 @@ func TestUsecase_Update_CurrencyChangeKeepsTypedBudget(t *testing.T) {
 		t.Errorf("budget = %v, want the typed 900", got.Budget)
 	}
 }
+
+func TestValidateDates_NinetyDayLimitIsInclusive(t *testing.T) {
+	start := date(2026, 1, 1)
+	if err := validateDates(start, start.AddDate(0, 0, 89)); err != nil {
+		t.Errorf("90 days (Jan 1 – Mar 31) rejected: %v", err)
+	}
+	if err := validateDates(start, start.AddDate(0, 0, 90)); !errors.Is(err, ErrTripTooLong) {
+		t.Errorf("91 days accepted, err = %v", err)
+	}
+}

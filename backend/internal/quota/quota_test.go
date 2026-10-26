@@ -67,3 +67,12 @@ func TestConsumeBlocksPastTheLimit(t *testing.T) {
 		t.Fatalf("call %d err = %v, want 429", defaultLimit+1, err)
 	}
 }
+
+// A refund after midnight UTC hits a fresh (absent) counter; it must not go negative.
+func TestRefundNeverDropsBelowZero(t *testing.T) {
+	c, mr := newTestChecker(t)
+	c.RefundUser(context.Background(), "user-1")
+	if got, _ := mr.Get(userKey("user-1")); got != "" && got != "0" {
+		t.Fatalf("counter after refund on an empty day = %q, want unset or 0", got)
+	}
+}

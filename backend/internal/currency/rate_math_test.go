@@ -61,3 +61,9 @@ func TestCrossRate_ZeroBase(t *testing.T) {
 		t.Error("expected error for zero base, got nil")
 	}
 }
+
+func TestCrossRateRejectsZeroTargetRate(t *testing.T) {
+	if _, err := crossRate(map[string]float64{"USD": 1, "IDR": 0}, "USD", "IDR"); err == nil {
+		t.Fatal("a zero IDR rate must be an error, not a 0 conversion")
+	}
+}
