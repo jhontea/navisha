@@ -16,7 +16,7 @@ import type { LocationPoint } from "../hooks/useTripLocations"
 import { framePoints, MAX_FIT_ZOOM } from "../lib/mapViewport"
 import type { MapRendererProps } from "./MapCanvas"
 import { colorForDay } from "./mapColors"
-import { MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PIN_SIZE, STAY, shortLabel } from "./pinStyle"
+import { INK, MAX_LABELLED_POINTS, PIN_SELECTED_SHADOW, PIN_SHADOW, PIN_SIZE, STAY, shortLabel } from "./pinStyle"
 import { cn } from "@/lib/utils"
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
@@ -289,7 +289,11 @@ function PinContent({
   return (
     <div className="flex flex-col items-center gap-1">
       {label && (
-        <span className="whitespace-nowrap rounded-full bg-white px-2.5 py-0.5 font-sans text-xs font-bold text-foreground shadow-[0_2px_8px_rgb(35_50_77/0.18)]">
+        // The map tiles stay light in dark mode, so the label keeps fixed ink instead of the theme foreground.
+        <span
+          className="whitespace-nowrap rounded-full bg-white px-2.5 py-0.5 font-sans text-xs font-bold shadow-[0_2px_8px_rgb(35_50_77/0.18)]"
+          style={{ color: INK }}
+        >
           {label}
         </span>
       )}
