@@ -66,6 +66,8 @@ export function TripHeader({
             srcSet={srcSet}
             sizes="(min-width: 1600px) 1600px, 100vw"
             alt=""
+            width={1904}
+            height={1000}
             fetchPriority="high"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-[75%_50%]"

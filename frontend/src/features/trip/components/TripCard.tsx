@@ -33,6 +33,8 @@ export function TripCover({
           srcSet={srcSet}
           sizes={sizes}
           alt=""
+          width={1904}
+          height={1000}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           className="h-full w-full object-cover"

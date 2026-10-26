@@ -225,7 +225,8 @@ export function DayActivities({
         </div>
       )}
 
-      {timePills.length >= 2 && !selectMode && (
+      {/* Below four times the timeline fits on screen, so the jump row would only repeat it. */}
+      {timePills.length >= 4 && !selectMode && (
         <TimePills className="lg:hidden" aria-label={`Times on Day ${dayNumber}`} items={timePills} value={timeFocus} onChange={jumpTo} />
       )}
 
