@@ -16,8 +16,11 @@ import type { TripOverviewResponse } from "@/features/trip/overview"
 const listKey = (tripId: string) =>
   ["transportations", "list", tripId] as const
 
-const invalidateOverview = (qc: ReturnType<typeof useQueryClient>, tripId: string) =>
+const invalidateOverview = (qc: ReturnType<typeof useQueryClient>, tripId: string) => {
   qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
+  // Transport breaks the travel chain and moves stay times.
+  qc.invalidateQueries({ queryKey: ["trips", "travel", tripId] })
+}
 
 export function useTransportations(tripId: string) {
   return useQuery({
