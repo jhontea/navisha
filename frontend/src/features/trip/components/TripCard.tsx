@@ -15,11 +15,14 @@ export function TripCover({
   sizes,
   className,
   priority = false,
+  muted = false,
 }: {
   trip: Trip
   sizes: string
   className?: string
   priority?: boolean
+  /** Past trips: a softer, partly grey cover so upcoming trips stand out. */
+  muted?: boolean
 }) {
   const src = resolveTripCover(trip.cover_image_url, trip.description, 768)
   const srcSet = tripCoverSrcSet(trip.cover_image_url, trip.description, [480, 640, 768, 960])
@@ -37,7 +40,7 @@ export function TripCover({
           height={1000}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          className="h-full w-full object-cover"
+          className={cn("h-full w-full object-cover", muted && "grayscale-[60%]")}
         />
       ) : (
         // The destination is already named next to every cover, so the fallback stays decorative.
@@ -59,6 +62,7 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
     >
       <TripCover
         trip={trip}
+        muted={metrics.status === "past"}
         sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 480px"
         className="aspect-video w-full rounded-xl [&_img]:object-[75%_50%]"
       />
