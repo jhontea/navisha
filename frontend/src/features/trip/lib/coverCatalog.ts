@@ -145,4 +145,24 @@ export const DEFAULT_TRIP_COVERS: TripCoverDefinition[] = [
   { aliases: ["sukabumi", "sukabumi jawa barat"], filename: "navisha-sukabumi.png" },
   { aliases: ["tegal", "tegal jawa tengah"], filename: "navisha-tegal.png" },
   { aliases: ["surabaya", "surabaya jawa timur"], filename: "navisha-surabaya.png" },
+  {
+    // One cover for every Korea trip until city covers exist.
+    aliases: ["seoul", "seoul south korea", "south korea", "korea selatan", "republic of korea", "korea"],
+    filename: "navisha-seoul.png",
+  },
+  {
+    aliases: [
+      "saudi arabia",
+      "arab saudi",
+      "kingdom of saudi arabia",
+      "makkah",
+      "mecca",
+      "mekkah",
+      "madinah",
+      "medina",
+      "jeddah",
+      "riyadh",
+    ],
+    filename: "navisha-saudi-arabia.png",
+  },
 ]
