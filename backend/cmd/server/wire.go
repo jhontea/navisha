@@ -9,6 +9,7 @@ import (
 	"github.com/jhontea/navisha/backend/internal/accommodation"
 	"github.com/jhontea/navisha/backend/internal/activity"
 	"github.com/jhontea/navisha/backend/internal/autogen"
+	"github.com/jhontea/navisha/backend/internal/bookingparse"
 	"github.com/jhontea/navisha/backend/internal/currency"
 	"github.com/jhontea/navisha/backend/internal/expense"
 	"github.com/jhontea/navisha/backend/internal/integration"
@@ -47,6 +48,7 @@ type app struct {
 	accommodationHandler  *accommodation.Handler
 	summaryHandler        *summary.Handler
 	autogenHandler        *autogen.Handler
+	bookingParseHandler   *bookingparse.Handler
 }
 
 // wire builds every domain (repository → usecase → handler) and the shared
@@ -163,6 +165,8 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 	autogenHandler := autogen.NewHandler(autogenUsecase).
 		WithQuota(aiQuota).
 		WithJobs(autogen.NewJobStore(rdb), llmTimeout(cfg))
+	bookingParseHandler := bookingparse.NewHandler(tripUsecase, llmClient, cfg.ActiveModel()).
+		WithQuota(aiQuota)
 
 	return &app{
 		jwtSvc:                jwtSvc,
@@ -183,5 +187,6 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		accommodationHandler:  accommodationHandler,
 		summaryHandler:        summaryHandler,
 		autogenHandler:        autogenHandler,
+		bookingParseHandler:   bookingParseHandler,
 	}
 }
