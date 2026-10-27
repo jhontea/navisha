@@ -3,7 +3,7 @@
 
 export const SUPPORTED_CURRENCIES = [
   "IDR", "USD", "JPY", "SGD", "KRW",
-  "MYR", "THB", "EUR", "VND",
+  "MYR", "THB", "EUR", "VND", "SAR",
 ] as const
 
 export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]
@@ -18,6 +18,7 @@ export const CURRENCY_NAMES: Record<string, string> = {
   THB: "Thai Baht",
   EUR: "Euro",
   VND: "Vietnamese Dong",
+  SAR: "Saudi Riyal",
 }
 
 // Display symbol per currency. Regional-indicator flag emoji are not used:
@@ -32,6 +33,7 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   MYR: "RM",
   THB: "฿",
   VND: "₫",
+  SAR: "SAR",
 }
 
 /** Returns the display symbol for a currency, or the code itself if unknown. */

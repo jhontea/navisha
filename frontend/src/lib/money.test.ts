@@ -15,6 +15,7 @@ describe("formatMoney", () => {
     expect(formatMoney(12.5, "USD")).toBe("$ 12.50")
     expect(formatMoney(10, "EUR")).toBe("€ 10.00")
     expect(formatMoney(3.456, "SGD")).toBe("S$ 3.46")
+    expect(formatMoney(1250.5, "SAR")).toBe("SAR 1,250.50")
   })
 
   it("puts the sign before the symbol", () => {
