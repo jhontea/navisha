@@ -19,6 +19,7 @@ import (
 	"github.com/jhontea/navisha/backend/internal/trip"
 	"github.com/jhontea/navisha/backend/internal/tripshare"
 	"github.com/jhontea/navisha/backend/internal/user"
+	"github.com/jhontea/navisha/backend/internal/weather"
 	pkgcurrency "github.com/jhontea/navisha/backend/pkg/currency"
 	"github.com/jhontea/navisha/backend/pkg/jwt"
 	"github.com/jhontea/navisha/backend/pkg/llm"
@@ -38,6 +39,7 @@ type app struct {
 	tripOverviewHandler   *integration.TripOverviewHandler
 	dashboardHandler      *integration.DashboardHandler
 	tripDuplicateHandler  *integration.TripDuplicateHandler
+	tripWeatherHandler    *integration.TripWeatherHandler
 	locationHandler       *location.Handler
 	currencyHandler       *currency.Handler
 	expenseHandler        *expense.Handler
@@ -119,6 +121,9 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 	tripOverviewReader := integration.NewPostgresTripOverviewReader(db)
 	tripOverviewHandler := integration.NewTripOverviewHandler(tripUsecase, tripOverviewReader)
 	dashboardHandler := integration.NewDashboardHandler(tripUsecase)
+	tripWeatherHandler := integration.NewTripWeatherHandler(
+		tripUsecase, activityUsecase, accommodationUsecase, weather.NewService(rdb, weather.NewClient()), locationClient,
+	)
 	tripDuplicateHandler := integration.NewTripDuplicateHandler(
 		integration.NewTripDuplicator(tripUsecase, activityUsecase, transportationUsecase, accommodationUsecase),
 	)
@@ -170,6 +175,7 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		tripOverviewHandler:   tripOverviewHandler,
 		dashboardHandler:      dashboardHandler,
 		tripDuplicateHandler:  tripDuplicateHandler,
+		tripWeatherHandler:    tripWeatherHandler,
 		locationHandler:       locationHandler,
 		currencyHandler:       currencyHandler,
 		expenseHandler:        expenseHandler,
