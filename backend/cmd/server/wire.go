@@ -47,6 +47,7 @@ type app struct {
 	accommodationHandler  *accommodation.Handler
 	summaryHandler        *summary.Handler
 	autogenHandler        *autogen.Handler
+	bookingParseHandler   *integration.BookingParseHandler
 }
 
 // wire builds every domain (repository → usecase → handler) and the shared
@@ -163,6 +164,8 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 	autogenHandler := autogen.NewHandler(autogenUsecase).
 		WithQuota(aiQuota).
 		WithJobs(autogen.NewJobStore(rdb), llmTimeout(cfg))
+	bookingParseHandler := integration.NewBookingParseHandler(tripUsecase, llmClient, cfg.ActiveModel()).
+		WithQuota(aiQuota)
 
 	return &app{
 		jwtSvc:                jwtSvc,
@@ -183,5 +186,6 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		accommodationHandler:  accommodationHandler,
 		summaryHandler:        summaryHandler,
 		autogenHandler:        autogenHandler,
+		bookingParseHandler:   bookingParseHandler,
 	}
 }
