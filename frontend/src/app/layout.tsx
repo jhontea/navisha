@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { ErrorReporting } from "@/components/ErrorReporting"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
@@ -45,6 +45,12 @@ export const metadata: Metadata = {
     description: "Plan each day, see it on a map, and track spending in your currency.",
     type: "website",
   },
+  // iOS takes its home-screen icon from apple-icon.png in this folder, not from the manifest.
+  appleWebApp: { capable: true, title: "Navisha", statusBarStyle: "default" },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#3673DB", // ds-allow-hardcode: meta tag needs a literal; --primary light token
 }
 
 export default function RootLayout({

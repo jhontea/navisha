@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { NextRequest } from "next/server"
 
-import { proxy } from "./proxy"
+import { config, proxy } from "./proxy"
 
 function run(path: string, cookies: string[] = []) {
   const req = new NextRequest(`http://localhost:3000${path}`, {
@@ -25,5 +25,20 @@ describe("proxy auth redirects", () => {
 
   it("moves signed-in visitors off /login", () => {
     expect(run("/login", ["access_token", "refresh_token"])).toBe("http://localhost:3000/trips")
+  })
+})
+
+describe("proxy matcher", () => {
+  const matcher = new RegExp(`^${config.matcher[0]}$`)
+
+  it.each(["/manifest.webmanifest", "/icons/icon-192.png", "/icons/maskable-512.png", "/apple-icon.png", "/sw.js"])(
+    "skips the auth check for install asset %s",
+    (path) => {
+      expect(matcher.test(path)).toBe(false)
+    },
+  )
+
+  it.each(["/trips", "/trips/1", "/login", "/iconsfoo"])("still guards %s", (path) => {
+    expect(matcher.test(path)).toBe(true)
   })
 })
