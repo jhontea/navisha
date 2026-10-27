@@ -208,3 +208,34 @@ func TestTravelAsksEachRouteOnceAndRemembersNoRoute(t *testing.T) {
 		}
 	}
 }
+
+// modeRouter answers walks with 45 min and drives with 8 min.
+type modeRouter struct{ modes []string }
+
+func (r *modeRouter) Route(_ context.Context, _, _ location.Point, mode string) (float64, float64, error) {
+	r.modes = append(r.modes, mode)
+	if mode == "walk" {
+		return 45 * 60, 3500, nil
+	}
+	return 8 * 60, 3800, nil
+}
+
+// A short straight line whose real walk is long (round a river) is shown as a drive.
+func TestTravelLongWalkBecomesDrive(t *testing.T) {
+	r := &modeRouter{}
+	h := NewTripTravelHandler(nil, nil, nil, nil, r, nil)
+	legs := legsOf(t, h, []activity.Activity{place("a", monas, "08:00", "09:00"), place("b", nearby, "09:10", "")}, nil, nil)
+	if len(legs) != 1 {
+		t.Fatalf("legs = %+v", legs)
+	}
+	l := legs[0]
+	if l.Mode != "drive" || l.Minutes != 12 || l.Source != "route" { // 8 min × 1.5 traffic
+		t.Fatalf("leg = %+v", l)
+	}
+	if l.Tight == nil || !*l.Tight { // 10 min gap, 12 min drive
+		t.Fatalf("tight = %v, want true", l.Tight)
+	}
+	if fmt.Sprint(r.modes) != "[walk drive]" {
+		t.Fatalf("router asked %v, want walk then drive", r.modes)
+	}
+}

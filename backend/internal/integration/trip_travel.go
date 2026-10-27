@@ -25,6 +25,9 @@ import (
 
 const (
 	walkMaxKm = 1.5  // straight-line distance up to which a leg is walked
+	// A walk longer than this (the real path can be far longer than the straight
+	// line, e.g. round a river) is shown as a drive instead.
+	walkMaxMinutes = 30
 	minLegKm  = 0.05 // closer than this is the same place: no leg
 	maxLegKm  = 300  // farther than this is not a day-to-day trip: no leg
 	// driveTrafficFactor stretches Geoapify's traffic-free drive time to a
@@ -140,6 +143,14 @@ func (h *TripTravelHandler) travelDays(ctx context.Context, days []trip.Day, act
 		}
 	}
 	h.time(ctx, pending)
+	var longWalks []*pendingLeg
+	for _, l := range pending {
+		if l.Mode == "walk" && l.Minutes > walkMaxMinutes {
+			l.Mode, l.Tight = "drive", nil
+			longWalks = append(longWalks, l)
+		}
+	}
+	h.time(ctx, longWalks)
 	for _, l := range pending {
 		out[l.day].Legs = append(out[l.day].Legs, l.TravelLeg)
 	}

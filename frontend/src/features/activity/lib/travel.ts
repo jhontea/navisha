@@ -67,5 +67,12 @@ export function travelText(leg: TravelLeg): string {
 /** Screen-reader sentence, e.g. "About 25 minutes by car. Only 15 minutes between these plans." */
 export function travelLabel(leg: TravelLeg): string {
   const travel = `${isApprox(leg) ? "About " : ""}${spokenDuration(leg.minutes)} ${leg.mode === "walk" ? "on foot" : "by car"}.`
-  return leg.tight && leg.gap_minutes != null ? `${travel} Only ${spokenDuration(leg.gap_minutes)} between these plans.` : travel
+  if (!leg.tight || leg.gap_minutes == null) return travel
+  return leg.gap_minutes <= 0 ? `${travel} No time between these plans.` : `${travel} Only ${spokenDuration(leg.gap_minutes)} between these plans.`
+}
+
+/** The tight note after the travel time: "Tight: 15 min gap", or "No time between plans" for back-to-back plans. */
+export function tightText(leg: TravelLeg): string | null {
+  if (!leg.tight || leg.gap_minutes == null) return null
+  return leg.gap_minutes <= 0 ? "No time between plans" : `Tight: ${shortDuration(leg.gap_minutes)} gap`
 }
