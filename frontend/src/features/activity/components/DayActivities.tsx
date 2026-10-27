@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, ChevronDown, Hotel, PenLine, Plane, Plus, Sparkles } from "lucide-react"
 
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { FloatingAddButton, FloatingAddSpacer } from "@/components/FloatingAddButton"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { sheetCloseAction } from "@/lib/discardGuard"
 import { TimePills, type TimePill } from "@/components/TimePills"
@@ -362,6 +363,16 @@ export function DayActivities({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {!selectMode && (
+        <>
+          <FloatingAddSpacer />
+          <FloatingAddButton
+            label={`Add to Day ${dayNumber}`}
+            actions={DAY_ACTIONS.map(({ mode, icon, title }) => ({ label: title, icon, onSelect: () => setSheet({ mode }) }))}
+          />
+        </>
       )}
 
       <ResponsiveSheet
