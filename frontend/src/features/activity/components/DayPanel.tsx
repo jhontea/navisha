@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useUpdateDayTitle } from "@/features/trip/hooks/useTrips"
 import type { Day } from "@/features/trip/types"
+import { WeatherChip } from "@/features/trip/components/WeatherChip"
+import type { TripWeatherDay } from "@/features/trip/weather"
 import { useSortDayByTime } from "../hooks/useActivities"
 
 const DayActivities = dynamic(
@@ -39,6 +41,8 @@ interface Props {
   destination?: string
   tripBaseCurrency: string
   days: Day[]
+  /** This day's forecast, when it is within range. */
+  weather?: TripWeatherDay
 }
 
 const MENU_ITEM = "min-h-10 px-3 text-sm"
@@ -56,6 +60,7 @@ export function DayPanel({
   destination,
   tripBaseCurrency,
   days,
+  weather,
 }: Props) {
   const [selectMode, setSelectMode] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
@@ -121,10 +126,13 @@ export function DayPanel({
     <section id={`day-${dayId}`} aria-labelledby={`day-heading-${dayId}`} className="rounded-2xl border bg-card shadow-card">
       <div className="flex items-start gap-2 px-4 pb-1 pt-4 sm:px-5">
         <div className="min-w-0 flex-1">
-          <h2 id={`day-heading-${dayId}`} className="font-display text-xl font-extrabold leading-tight text-foreground">
-            Day {dayNumber}
-            <span className="text-muted-foreground"> · {dayLabel}</span>
-          </h2>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h2 id={`day-heading-${dayId}`} className="font-display text-xl font-extrabold leading-tight text-foreground">
+              Day {dayNumber}
+              <span className="text-muted-foreground"> · {dayLabel}</span>
+            </h2>
+            {weather && <WeatherChip weather={weather} />}
+          </div>
           {!editingTitle && currentTitle && (
             <p className="mt-0.5 truncate text-sm font-semibold text-muted-foreground">{currentTitle}</p>
           )}
