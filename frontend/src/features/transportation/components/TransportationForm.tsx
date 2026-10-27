@@ -22,6 +22,7 @@ import {
 import {
   TRANSPORTATION_TYPES,
   type CreateTransportationInput,
+  type TransportDraft,
   type Transportation,
   type TransportationType,
 } from "../types"
@@ -42,6 +43,8 @@ const validate = { shouldDirty: true, shouldValidate: true } as const
 
 interface Props {
   initial?: Transportation
+  /** On add: values to prefill, e.g. read from a pasted confirmation. */
+  draft?: TransportDraft
   /** When true, the type selector is shown as a read-only chip (no changing type on edit). */
   lockType?: boolean
   tripBaseCurrency?: string
@@ -57,6 +60,7 @@ interface Props {
 
 export function TransportationForm({
   initial,
+  draft,
   lockType,
   tripBaseCurrency,
   withCost,
@@ -71,7 +75,7 @@ export function TransportationForm({
     : "IDR"
   const form = useForm<TransportFormValues>({
     resolver: zodResolver(transportFormSchema),
-    defaultValues: transportFormDefaults(initial, currency, initialCost, defaultDeparture),
+    defaultValues: transportFormDefaults(initial ?? draft, currency, initialCost, defaultDeparture),
   })
   const {
     register,

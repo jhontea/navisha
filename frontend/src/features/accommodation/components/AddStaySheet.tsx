@@ -3,8 +3,9 @@
 import dynamic from "next/dynamic"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
+import type { LinkedCost } from "@/lib/linkedCost"
 import { useCreateAccommodation } from "../hooks/useAccommodations"
-import type { CreateAccommodationInput } from "../types"
+import type { CreateAccommodationInput, StayDraft } from "../types"
 
 const AccommodationForm = dynamic(
   () => import("./AccommodationForm").then((module) => module.AccommodationForm),
@@ -16,6 +17,11 @@ interface Props {
   tripBaseCurrency: string
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Values to prefill (e.g. read from a pasted confirmation), and its cost. */
+  draft?: StayDraft
+  draftCost?: LinkedCost | null
+  /** Called after the booking is saved, before the sheet closes. */
+  onCreated?: () => void
   /** Trip days, for the check-in default and the trip outline in the date picker. */
   days: { date: string }[]
   /** "YYYY-MM-DD" check-in to prefill. */
@@ -24,7 +30,7 @@ interface Props {
 }
 
 /** Add-stay sheet (with cost), shared by the Bookings tab and the itinerary. */
-export function AddStaySheet({ tripId, tripBaseCurrency, open, onOpenChange, days, checkIn, destination }: Props) {
+export function AddStaySheet({ tripId, tripBaseCurrency, open, onOpenChange, draft, draftCost, onCreated, days, checkIn, destination }: Props) {
   const createMut = useCreateAccommodation(tripId)
   const tripDates = days.map((d) => d.date).sort()
   return (
@@ -33,6 +39,8 @@ export function AddStaySheet({ tripId, tripBaseCurrency, open, onOpenChange, day
         <AccommodationForm
           tripBaseCurrency={tripBaseCurrency}
           withCost
+          draft={draft}
+          initialCost={draftCost}
           defaultDate={tripDates[0]}
           initialCheckIn={checkIn}
           tripEnd={tripDates[tripDates.length - 1]}
@@ -41,6 +49,7 @@ export function AddStaySheet({ tripId, tripBaseCurrency, open, onOpenChange, day
           onCancel={() => onOpenChange(false)}
           onSubmit={async (input: CreateAccommodationInput) => {
             await createMut.mutateAsync(input)
+            onCreated?.()
             onOpenChange(false)
           }}
         />

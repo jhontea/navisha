@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import type { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { AlertCircle, AlertTriangle, ExternalLink, Loader2, MoreHorizontal, RefreshCw, Sparkles, Square, Trash2 } from "lucide-react"
+import { ExternalLink, Loader2, MoreHorizontal, RefreshCw, Sparkles, Square, Trash2 } from "lucide-react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Notice } from "@/components/Notice"
 import { QuotaBadge } from "@/components/QuotaBadge"
 import { sanitizeText } from "@/lib/sanitize"
 import { cn } from "@/lib/utils"
@@ -253,25 +254,5 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
         </article>
       </div>
     </section>
-  )
-}
-
-function Notice({ tone, title, children }: { tone: "warning" | "error"; title: string; children: React.ReactNode }) {
-  const Icon = tone === "warning" ? AlertTriangle : AlertCircle
-  return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
-      className={
-        tone === "warning"
-          ? "mb-4 flex items-start gap-2 rounded-2xl bg-warning-bg p-3 text-sm text-foreground"
-          : "mb-4 flex items-start gap-2 rounded-2xl bg-destructive/5 p-3 text-sm text-foreground"
-      }
-    >
-      <Icon className={tone === "warning" ? "mt-0.5 h-4 w-4 shrink-0 text-warning" : "mt-0.5 h-4 w-4 shrink-0 text-destructive"} aria-hidden="true" />
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-muted-foreground">{children}</p>
-      </div>
-    </div>
   )
 }
