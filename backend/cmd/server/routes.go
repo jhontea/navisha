@@ -97,7 +97,7 @@ func newServer(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client, a *app) 
 	// Per-request timeout: 30s for regular requests so a stuck CRUD call does
 	// not hold a DB connection for minutes; LLM routes get the full LLM
 	// timeout (llm.timeout_seconds). Keep this list in sync with the
-	// summary/autogen/bookingparse handlers' RegisterRoutes.
+	// summary/autogen/booking-parse handlers' RegisterRoutes.
 	longTimeout := llmTimeout(cfg)
 	// Routes that wait for the LLM inside the request (long timeout + LLM rate bucket).
 	llmRoutes := []string{

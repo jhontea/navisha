@@ -1,4 +1,4 @@
-package bookingparse
+package integration
 
 import (
 	"context"
@@ -14,34 +14,34 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type tripGetter interface {
+type bookingParseTrips interface {
 	Get(ctx context.Context, userID, tripID string) (*trip.Trip, []trip.Day, error)
 }
 
-type Handler struct {
-	trips tripGetter
-	llm   chatClient
+type BookingParseHandler struct {
+	trips bookingParseTrips
+	llm   bookingParseLLM
 	model string
 	quota *quota.Checker
 }
 
-func NewHandler(trips tripGetter, llm chatClient, model string) *Handler {
-	return &Handler{trips: trips, llm: llm, model: model}
+func NewBookingParseHandler(trips bookingParseTrips, llm bookingParseLLM, model string) *BookingParseHandler {
+	return &BookingParseHandler{trips: trips, llm: llm, model: model}
 }
 
 // WithQuota wires the shared daily AI quota (same counter as summary/autogen).
-func (h *Handler) WithQuota(q *quota.Checker) *Handler {
+func (h *BookingParseHandler) WithQuota(q *quota.Checker) *BookingParseHandler {
 	h.quota = q
 	return h
 }
 
-func (h *Handler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
+func (h *BookingParseHandler) RegisterRoutes(g *echo.Group, authMiddleware echo.MiddlewareFunc) {
 	g.POST("/trips/:id/bookings/parse", middleware.WithUser(h.Parse), authMiddleware)
 }
 
 // Parse reads the bookings in a pasted confirmation text. The text is sent
 // to the AI provider only; it is never stored or logged.
-func (h *Handler) Parse(c echo.Context, userID string) error {
+func (h *BookingParseHandler) Parse(c echo.Context, userID string) error {
 	var req struct {
 		Text string `json:"text"`
 	}
@@ -53,8 +53,8 @@ func (h *Handler) Parse(c echo.Context, userID string) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "text is required")
 	}
 	chars := utf8.RuneCountInString(text)
-	if chars > MaxTextChars {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("text must be %d characters or less", MaxTextChars))
+	if chars > BookingParseMaxChars {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("text must be %d characters or less", BookingParseMaxChars))
 	}
 
 	ctx := c.Request().Context()
@@ -66,7 +66,7 @@ func (h *Handler) Parse(c echo.Context, userID string) error {
 	if quotaErr := h.quota.Consume(c, userID); quotaErr != nil {
 		return quotaErr
 	}
-	bookings, err := Parse(ctx, h.llm, h.model, text, TripContext{Title: t.Title, StartDate: t.StartDate, EndDate: t.EndDate})
+	bookings, err := ParseBookings(ctx, h.llm, h.model, text, BookingParseTrip{Title: t.Title, StartDate: t.StartDate, EndDate: t.EndDate})
 	if err != nil {
 		// Parse fails only when the model call or its reply is unusable.
 		h.quota.Refund(c, userID)

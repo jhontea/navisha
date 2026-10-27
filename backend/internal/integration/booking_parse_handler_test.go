@@ -1,4 +1,4 @@
-package bookingparse
+package integration
 
 import (
 	"context"
@@ -21,57 +21,57 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const testUser = "u1"
+const bpUser = "u1"
 
-type fakeTrips struct{ err error }
+type fakeBPTrips struct{ err error }
 
-func (f fakeTrips) Get(_ context.Context, _, tripID string) (*trip.Trip, []trip.Day, error) {
+func (f fakeBPTrips) Get(_ context.Context, _, tripID string) (*trip.Trip, []trip.Day, error) {
 	if f.err != nil {
 		return nil, nil, f.err
 	}
 	return &trip.Trip{ID: tripID, Title: "Bali"}, nil, nil
 }
 
-type fakeLLM struct {
+type fakeBPLLM struct {
 	resp  string
 	err   error
 	calls int
 }
 
-func (f *fakeLLM) ChatCompletion(_ context.Context, _ llm.ChatRequest) (string, error) {
+func (f *fakeBPLLM) ChatCompletion(_ context.Context, _ llm.ChatRequest) (string, error) {
 	f.calls++
 	return f.resp, f.err
 }
 
-type harness struct {
-	llm *fakeLLM
+type bpHarness struct {
+	llm *fakeBPLLM
 	mr  *miniredis.Miniredis
-	h   *Handler
+	h   *BookingParseHandler
 }
 
-func newHarness(t *testing.T, trips fakeTrips, limit, used int) *harness {
+func newBPHarness(t *testing.T, trips fakeBPTrips, limit, used int) *bpHarness {
 	t.Helper()
 	mr := miniredis.RunT(t)
 	_ = mr.Set("app:config:autogen_daily_quota", strconv.Itoa(limit))
-	_ = mr.Set(quotaKey(), strconv.Itoa(used))
+	_ = mr.Set(bpQuotaKey(), strconv.Itoa(used))
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	t.Cleanup(func() { _ = rdb.Close() })
-	f := &fakeLLM{resp: `{"bookings":[]}`}
-	return &harness{llm: f, mr: mr, h: NewHandler(trips, f, "m").WithQuota(quota.NewChecker(rdb, nil))}
+	f := &fakeBPLLM{resp: `{"bookings":[]}`}
+	return &bpHarness{llm: f, mr: mr, h: NewBookingParseHandler(trips, f, "m").WithQuota(quota.NewChecker(rdb, nil))}
 }
 
-// quotaKey matches quota.userKey: per user per UTC day.
-func quotaKey() string {
-	return "ratelimit:autogen:daily:" + testUser + ":" + time.Now().UTC().Format("2006-01-02")
+// bpQuotaKey matches quota.userKey: per user per UTC day.
+func bpQuotaKey() string {
+	return "ratelimit:autogen:daily:" + bpUser + ":" + time.Now().UTC().Format("2006-01-02")
 }
 
-func (hs *harness) used() int {
-	v, _ := hs.mr.Get(quotaKey())
+func (hs *bpHarness) used() int {
+	v, _ := hs.mr.Get(bpQuotaKey())
 	n, _ := strconv.Atoi(v)
 	return n
 }
 
-func (hs *harness) call(t *testing.T, text string) (*httptest.ResponseRecorder, error) {
+func (hs *bpHarness) call(t *testing.T, text string) (*httptest.ResponseRecorder, error) {
 	t.Helper()
 	body, _ := json.Marshal(map[string]string{"text": text})
 	req := httptest.NewRequest(http.MethodPost, "/trips/t1/bookings/parse", strings.NewReader(string(body)))
@@ -80,11 +80,11 @@ func (hs *harness) call(t *testing.T, text string) (*httptest.ResponseRecorder, 
 	c := echo.New().NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("t1")
-	c.Set(middleware.UserIDKey, testUser)
+	c.Set(middleware.UserIDKey, bpUser)
 	return rec, middleware.WithUser(hs.h.Parse)(c)
 }
 
-func wantStatus(t *testing.T, err error, code int) {
+func bpWantStatus(t *testing.T, err error, code int) {
 	t.Helper()
 	var he *echo.HTTPError
 	if !errors.As(err, &he) || he.Code != code {
@@ -92,60 +92,60 @@ func wantStatus(t *testing.T, err error, code int) {
 	}
 }
 
-func TestParse_BadTextNoAINoQuota(t *testing.T) {
+func TestBookingParseHandler_BadTextNoAINoQuota(t *testing.T) {
 	for name, text := range map[string]string{
 		"empty":    "  \n ",
-		"too long": strings.Repeat("é", MaxTextChars+1),
+		"too long": strings.Repeat("é", BookingParseMaxChars+1),
 	} {
 		t.Run(name, func(t *testing.T) {
-			hs := newHarness(t, fakeTrips{}, 5, 0)
+			hs := newBPHarness(t, fakeBPTrips{}, 5, 0)
 			_, err := hs.call(t, text)
-			wantStatus(t, err, http.StatusBadRequest)
+			bpWantStatus(t, err, http.StatusBadRequest)
 			if hs.llm.calls != 0 || hs.used() != 0 {
 				t.Errorf("llm calls = %d, quota used = %d, want 0/0", hs.llm.calls, hs.used())
 			}
 		})
 	}
 	// Exactly the limit is accepted.
-	hs := newHarness(t, fakeTrips{}, 5, 0)
-	if _, err := hs.call(t, strings.Repeat("é", MaxTextChars)); err != nil {
+	hs := newBPHarness(t, fakeBPTrips{}, 5, 0)
+	if _, err := hs.call(t, strings.Repeat("é", BookingParseMaxChars)); err != nil {
 		t.Fatalf("limit text: %v", err)
 	}
 }
 
-func TestParse_TripErrorsBeforeAI(t *testing.T) {
+func TestBookingParseHandler_TripErrorsBeforeAI(t *testing.T) {
 	for code, tripErr := range map[int]error{
 		http.StatusNotFound:  trip.ErrNotFound,
 		http.StatusForbidden: apperr.ErrForbidden,
 	} {
-		hs := newHarness(t, fakeTrips{err: tripErr}, 5, 0)
+		hs := newBPHarness(t, fakeBPTrips{err: tripErr}, 5, 0)
 		_, err := hs.call(t, "some text")
-		wantStatus(t, err, code)
+		bpWantStatus(t, err, code)
 		if hs.llm.calls != 0 || hs.used() != 0 {
 			t.Errorf("%d: llm calls = %d, quota used = %d", code, hs.llm.calls, hs.used())
 		}
 	}
 }
 
-func TestParse_QuotaExceeded429(t *testing.T) {
-	hs := newHarness(t, fakeTrips{}, 2, 2)
+func TestBookingParseHandler_QuotaExceeded429(t *testing.T) {
+	hs := newBPHarness(t, fakeBPTrips{}, 2, 2)
 	_, err := hs.call(t, "some text")
-	wantStatus(t, err, http.StatusTooManyRequests)
+	bpWantStatus(t, err, http.StatusTooManyRequests)
 	if hs.llm.calls != 0 {
 		t.Errorf("llm called %d times", hs.llm.calls)
 	}
 }
 
-func TestParse_LLMFailureRefunds503(t *testing.T) {
-	for name, f := range map[string]fakeLLM{
+func TestBookingParseHandler_LLMFailureRefunds503(t *testing.T) {
+	for name, f := range map[string]fakeBPLLM{
 		"error":       {err: errors.New("timeout")},
 		"broken json": {resp: `{"bookings":[`},
 	} {
 		t.Run(name, func(t *testing.T) {
-			hs := newHarness(t, fakeTrips{}, 5, 1)
+			hs := newBPHarness(t, fakeBPTrips{}, 5, 1)
 			*hs.llm = f
 			_, err := hs.call(t, "some text")
-			wantStatus(t, err, http.StatusServiceUnavailable)
+			bpWantStatus(t, err, http.StatusServiceUnavailable)
 			if hs.used() != 1 {
 				t.Errorf("quota used = %d, want 1 (refunded)", hs.used())
 			}
@@ -153,8 +153,9 @@ func TestParse_LLMFailureRefunds503(t *testing.T) {
 	}
 }
 
-func TestParse_OKConsumesQuota(t *testing.T) {
-	hs := newHarness(t, fakeTrips{}, 5, 0)
+func TestBookingParseHandler_OKConsumesQuota(t *testing.T) {
+	withBookingCurrencies(t)
+	hs := newBPHarness(t, fakeBPTrips{}, 5, 0)
 	rec, err := hs.call(t, "Not a booking")
 	if err != nil || rec.Code != http.StatusOK {
 		t.Fatalf("err = %v code = %d", err, rec.Code)
