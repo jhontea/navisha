@@ -220,7 +220,7 @@ func TestResolve_TriesTheDestinationWhenTheCityGivesOnlyAreas(t *testing.T) {
 
 func TestDistanceKm(t *testing.T) {
 	// Mecca to Medina is about 340 km.
-	if d := distanceKm(Point{Lat: 21.42, Lng: 39.83}, Point{Lat: 24.47, Lng: 39.61}); d < 330 || d > 350 {
+	if d := DistanceKm(Point{Lat: 21.42, Lng: 39.83}, Point{Lat: 24.47, Lng: 39.61}); d < 330 || d > 350 {
 		t.Errorf("distance = %.0f km", d)
 	}
 }

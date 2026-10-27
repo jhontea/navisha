@@ -40,6 +40,7 @@ type app struct {
 	dashboardHandler      *integration.DashboardHandler
 	tripDuplicateHandler  *integration.TripDuplicateHandler
 	tripWeatherHandler    *integration.TripWeatherHandler
+	tripTravelHandler     *integration.TripTravelHandler
 	locationHandler       *location.Handler
 	currencyHandler       *currency.Handler
 	expenseHandler        *expense.Handler
@@ -125,6 +126,9 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 	tripWeatherHandler := integration.NewTripWeatherHandler(
 		tripUsecase, activityUsecase, accommodationUsecase, weather.NewService(rdb, weather.NewClient()), locationClient,
 	)
+	tripTravelHandler := integration.NewTripTravelHandler(
+		tripUsecase, activityUsecase, accommodationUsecase, transportationUsecase, locationClient, rdb,
+	)
 	tripDuplicateHandler := integration.NewTripDuplicateHandler(
 		integration.NewTripDuplicator(tripUsecase, activityUsecase, transportationUsecase, accommodationUsecase),
 	)
@@ -179,6 +183,7 @@ func wire(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *app {
 		dashboardHandler:      dashboardHandler,
 		tripDuplicateHandler:  tripDuplicateHandler,
 		tripWeatherHandler:    tripWeatherHandler,
+		tripTravelHandler:     tripTravelHandler,
 		locationHandler:       locationHandler,
 		currencyHandler:       currencyHandler,
 		expenseHandler:        expenseHandler,
