@@ -24,7 +24,7 @@ export function NextUpCard({ trip }: { trip: Trip }) {
       <TripCover
         trip={trip}
         priority
-        sizes="(min-width: 1920px) 1920px, 100vw"
+        sizes="(min-width: 1440px) 1440px, 100vw"
         className="absolute inset-0 h-full w-full [&_img]:object-[75%_50%]"
       />
       <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/15 to-transparent" aria-hidden="true" />

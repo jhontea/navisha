@@ -94,9 +94,9 @@ const config: Config = {
         full: "9999px",
       },
       spacing: {
-        // Content width cap (DESIGN.md §4.3): wide enough for 27" monitors; the
-        // trip map and grids grow into it.
-        "max-width": "1920px",
+        // Content width cap (DESIGN.md §4.3): keeps pages focused on 27" monitors;
+        // the trip map and grids grow into it up to this width.
+        "max-width": "1440px",
         "margin-mobile": "1rem",
         "margin-desktop": "2.5rem",
         "unit": "4px",
