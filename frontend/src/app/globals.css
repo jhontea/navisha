@@ -158,6 +158,8 @@
     color-scheme: light;
   }
 
+  /* Screen only: printing is always on the light palette. */
+  @media screen {
   .dark {
     --background: 221 41% 12%;              /* #121A2B */
     --foreground: 219 51.5% 93.5%;          /* #E6ECF7 */
@@ -209,6 +211,7 @@
     --shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.45);
 
     color-scheme: dark;
+  }
   }
 
   * {
@@ -355,4 +358,10 @@
   .animate-shimmer {
     animation: none !important;
   }
+}
+
+/* Printable itinerary ("Download PDF"); other pages keep the browser's paper size. */
+@page itinerary {
+  size: A4;
+  margin: 14mm;
 }
