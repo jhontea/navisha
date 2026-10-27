@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeftRight, Compass, Home, Sparkles, UserRound } from "lucide-react";
+import { ArrowLeftRight, Home, Sparkles, UserRound } from "lucide-react";
 
+import { BrandMark } from "@/components/BrandMark";
 import { FloatingNav } from "@/components/FloatingNav";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,9 +70,7 @@ export function NavBar() {
             onFocus={prefetchTrips}
             className="flex h-11 shrink-0 items-center gap-2 rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-              <Compass className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
-            </span>
+            <BrandMark className="text-foreground" />
             <span className="font-display text-xl font-black tracking-tight text-foreground">Navisha</span>
             <span className="sr-only">: Trips</span>
           </Link>

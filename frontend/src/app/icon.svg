@@ -1,5 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="7" fill="#0058bc"/>
-  <path d="M9 23 V9 L23 23 V9" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="23" cy="9" r="2.2" fill="#ffffff"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="230" fill="#0F2A44"/><g transform="translate(-31.6 148.8) scale(1.1947)"><defs>
+    <linearGradient id="sail" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#6FA3D2"/>
+      <stop offset="1" stop-color="#4A80B4"/>
+    </linearGradient>
+  </defs>
+<path fill="#FFF6F0" d="M155 200 L155 115 C155 55 205 18 285 18 C355 18 395 48 432 92 L738 418 C750 432 755 448 755 468 L755 555 C755 578 740 590 718 590 L692 590 C645 590 607 566 576 528 L338 244 C298 200 248 186 196 190 C178 192 165 195 155 200 Z"/>
+<path fill="url(#sail)" d="M155 285 C155 258 172 244 204 244 C262 246 302 272 342 322 L446 436 C405 424 364 430 326 462 L214 562 C192 581 155 574 155 540 Z"/>
+<path fill="#F2A33A" d="M660 18 C668 84 690 106 746 118 C690 130 668 152 660 216 C652 152 630 130 574 118 C630 106 652 84 660 18 Z"/></g></svg>
