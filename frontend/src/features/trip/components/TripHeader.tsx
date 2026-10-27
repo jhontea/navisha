@@ -3,7 +3,7 @@
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { ArrowLeft, Copy, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
+import { ArrowLeft, CalendarPlus, Copy, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
 
 import { IconButton } from "@/components/IconButton"
 import { StatusChip } from "@/components/StatusChip"
@@ -39,11 +39,13 @@ export function TripHeader({
   trip,
   onEdit,
   onDuplicate,
+  onAddToCalendar,
   onDelete,
 }: {
   trip: Pick<Trip, "id" | "title" | "description" | "start_date" | "end_date" | "base_currency" | "cover_image_url">
   onEdit: () => void
   onDuplicate: () => void
+  onAddToCalendar: () => void
   onDelete: () => void
 }) {
   const [shareOpen, setShareOpen] = useState(false)
@@ -112,6 +114,10 @@ export function TripHeader({
               <DropdownMenuItem className={MENU_ITEM} onClick={onDuplicate}>
                 <Copy aria-hidden="true" />
                 Duplicate trip
+              </DropdownMenuItem>
+              <DropdownMenuItem className={MENU_ITEM} onClick={onAddToCalendar}>
+                <CalendarPlus aria-hidden="true" />
+                Add to calendar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>
