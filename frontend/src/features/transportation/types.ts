@@ -58,3 +58,8 @@ export interface CreateTransportationInput {
 }
 
 export type UpdateTransportationInput = CreateTransportationInput
+
+/** A transport not yet saved, e.g. read from a pasted confirmation; type is "" when unknown. */
+export type TransportDraft = Omit<Transportation, "id" | "trip_id" | "created_at" | "updated_at" | "type"> & {
+  type: TransportationType | ""
+}

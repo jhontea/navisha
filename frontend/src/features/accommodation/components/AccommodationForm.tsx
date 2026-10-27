@@ -44,6 +44,7 @@ import {
   type AccommodationType,
   type Accommodation,
   type CreateAccommodationInput,
+  type StayDraft,
 } from "../types"
 import { stayNameFromPlace } from "../lib/stayName"
 
@@ -100,6 +101,8 @@ type FormValues = z.infer<typeof schema>
 
 interface Props {
   initial?: Accommodation
+  /** On add: values to prefill, e.g. read from a pasted confirmation. */
+  draft?: StayDraft
   tripBaseCurrency?: string
   withCost?: boolean
   /** On edit: the cost already linked to this stay, to prefill. */
@@ -119,6 +122,7 @@ interface Props {
 
 export function AccommodationForm({
   initial,
+  draft,
   tripBaseCurrency,
   withCost,
   initialCost,
@@ -133,6 +137,7 @@ export function AccommodationForm({
   // A linked cost keeps the currency it was paid in.
   const costCurrency = SUPPORTED_CURRENCIES.find((c) => c === initialCost?.currency)
   const defaultCurrency = costCurrency ?? (tripBaseCurrency as FormValues["currency"]) ?? "IDR"
+  const prefill = initial ?? draft
   const {
     register,
     handleSubmit,
@@ -144,18 +149,18 @@ export function AccommodationForm({
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      accommodation_type: initial?.accommodation_type ?? "hotel",
-      name: initial?.name ?? "",
-      location_name: initial?.location_name ?? "",
+      accommodation_type: prefill?.accommodation_type || "hotel",
+      name: prefill?.name ?? "",
+      location_name: prefill?.location_name ?? "",
       lat: initial?.lat != null ? String(initial.lat) : "",
       lng: initial?.lng != null ? String(initial.lng) : "",
       google_place_id: initial?.google_place_id ?? "",
-      check_in: initial?.check_in ?? initialCheckIn ?? "",
-      check_out: initial?.check_out ?? "",
-      check_in_time: initial?.check_in_time ?? "",
-      check_out_time: initial?.check_out_time ?? "",
-      confirmation_number: initial?.confirmation_number ?? "",
-      notes: initial?.notes ?? "",
+      check_in: prefill?.check_in || initialCheckIn || "",
+      check_out: prefill?.check_out ?? "",
+      check_in_time: prefill?.check_in_time ?? "",
+      check_out_time: prefill?.check_out_time ?? "",
+      confirmation_number: prefill?.confirmation_number ?? "",
+      notes: prefill?.notes ?? "",
       amount: initialCost ? String(initialCost.amount) : "",
       currency: defaultCurrency,
     },

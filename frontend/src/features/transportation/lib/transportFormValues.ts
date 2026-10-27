@@ -3,7 +3,7 @@ import { z } from "zod"
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency"
 import { costPayload, type LinkedCost } from "@/lib/linkedCost"
 
-import type { CreateTransportationInput, Transportation } from "../types"
+import type { CreateTransportationInput, TransportDraft } from "../types"
 
 /** Form state of TransportationForm and its conversion to and from the API shape. */
 
@@ -49,14 +49,15 @@ export function fromLocalInput(local: string | undefined): string | null {
   return withSec.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(withSec) ? withSec : `${withSec}Z`
 }
 
+/** `initial` is the saved transport on edit, or a draft (e.g. from a pasted confirmation) on add. */
 export function transportFormDefaults(
-  initial: Transportation | undefined,
+  initial: TransportDraft | undefined,
   currency: CurrencyCode,
   cost?: LinkedCost | null,
   defaultDeparture = "",
 ): TransportFormValues {
   return {
-    type: initial?.type ?? "flight",
+    type: initial?.type || "flight",
     label: initial?.label ?? "",
     operator: initial?.operator ?? "",
     reference_number: initial?.reference_number ?? "",

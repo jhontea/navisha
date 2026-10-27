@@ -65,3 +65,9 @@ export interface CreateAccommodationInput {
 }
 
 export type UpdateAccommodationInput = CreateAccommodationInput
+
+/** A stay not yet saved, e.g. read from a pasted confirmation; accommodation_type is "" when unknown. */
+export type StayDraft = Pick<
+  Accommodation,
+  "name" | "location_name" | "check_in" | "check_out" | "check_in_time" | "check_out_time" | "confirmation_number" | "notes"
+> & { accommodation_type: AccommodationType | "" }
