@@ -16,8 +16,18 @@ export function cookieWantsDark(cookie: string): boolean {
   return DARK_COOKIE.test(cookie)
 }
 
-/** Runs in <head> before first paint; keep it tiny and dependency-free. */
-export const THEME_INIT_SCRIPT = `try{if(${DARK_COOKIE}.test(document.cookie))document.documentElement.classList.add("dark")}catch(e){}`
+/**
+ * Browser/status bar colour (meta theme-color, e.g. the Android status bar of
+ * the installed app): the page background, so the bar blends into the app.
+ */
+export const THEME_COLOR = { light: "#F3F7FD", dark: "#121A2B" } as const // ds-allow-hardcode: meta tag needs literals; --background tokens
+
+/**
+ * Runs in <head> before first paint; keep it tiny and dependency-free. Applies
+ * the dark class, then keeps every theme-color tag (Next also streams one in
+ * after hydration into <head>) on the current theme's colour.
+ */
+export const THEME_INIT_SCRIPT = `try{var d=document.documentElement;if(${DARK_COOKIE}.test(document.cookie))d.classList.add("dark");var s=function(){var c=d.classList.contains("dark")?"${THEME_COLOR.dark}":"${THEME_COLOR.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){if(m.content!==c)m.content=c})};s();var o=new MutationObserver(s);o.observe(document.head,{childList:true});o.observe(d,{attributes:true,attributeFilter:["class"]})}catch(e){}`
 
 export function readTheme(): Theme {
   if (typeof document === "undefined") return "light"

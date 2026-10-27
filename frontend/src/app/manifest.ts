@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-// Colors are the light-theme tokens in globals.css: --primary (#3673DB) and --background (#F3F7FD).
+// Colors are the light-theme --background token (#F3F7FD): the Android status bar blends into the app.
 // Light is the app default and the dark theme is a cookie choice, so the splash stays light.
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/trips",
     scope: "/",
     display: "standalone",
-    theme_color: "#3673DB",
+    theme_color: "#F3F7FD",
     background_color: "#F3F7FD",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
