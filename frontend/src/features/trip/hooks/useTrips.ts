@@ -140,6 +140,7 @@ export function useUpdateTrip(id: string) {
       qc.invalidateQueries({ queryKey: ["trips", "detail", id], refetchType: "active" })
       qc.invalidateQueries({ queryKey: ["trips", "overview", id], refetchType: "active" })
       qc.invalidateQueries({ queryKey: ["activities", "trip", id], refetchType: "active" })
+      qc.invalidateQueries({ queryKey: ["trips", "travel", id] })
       qc.invalidateQueries({ queryKey: ["expenses", "list", id], refetchType: "active" })
       qc.invalidateQueries({ queryKey: ["expenses", "summary", id], refetchType: "active" })
     },

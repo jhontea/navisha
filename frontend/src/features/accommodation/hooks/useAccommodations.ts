@@ -20,6 +20,8 @@ const invalidateOverview = (qc: ReturnType<typeof useQueryClient>, tripId: strin
   qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "active" })
   // A stay sets the forecast location of its nights.
   qc.invalidateQueries({ queryKey: ["trips", "weather", tripId] })
+  // Check-in/check-out are travel points.
+  qc.invalidateQueries({ queryKey: ["trips", "travel", tripId] })
 }
 
 export function useAccommodations(tripId: string) {

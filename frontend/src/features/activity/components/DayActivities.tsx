@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -40,9 +40,11 @@ import {
 } from "../hooks/useActivities"
 import { useDayTimeline } from "../hooks/useDayTimeline"
 import { useActivitySelection } from "../hooks/useActivitySelection"
+import { useTripTravel } from "../hooks/useTripTravel"
 import { useItineraryFocus } from "../ItineraryFocus"
 import { reorderAnnouncements, reorderInstructions } from "../lib/order"
-import { extractTime, interleaveTimeline } from "../lib/timeline"
+import { extractTime, interleaveTimeline, type TimelineEntry } from "../lib/timeline"
+import { entryRef, legBetween, legsByPair } from "../lib/travel"
 import type { Activity, ActivityListResponse, CreateActivityInput } from "../types"
 import { ActivityForm } from "./ActivityForm"
 import { DayAIPlanner } from "./DayAIPlanner"
@@ -52,6 +54,7 @@ import { StayTimelineCard } from "./timeline/StayTimelineCard"
 import { TimelineIcon } from "./timeline/TimelineIcon"
 import { TimelineRow } from "./timeline/TimelineRow"
 import { TransportTimelineCard } from "./timeline/TransportTimelineCard"
+import { TravelConnector } from "./timeline/TravelConnector"
 
 interface Props {
   tripId: string
@@ -97,9 +100,14 @@ export function DayActivities({
   const activities = timeline.activities.filter((a) => !pendingDeletes.has(a.id))
   const selection = useActivitySelection(dayId, days, activities, selectMode, onSelectModeChange)
   const { selectedActivityId, selectActivity } = useItineraryFocus()
+  const { data: travel } = useTripTravel(tripId)
+  const legs = legsByPair(travel?.days.find((d) => d.day_id === dayId)?.legs)
 
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; activity: Activity } | { mode: "ai" } | { mode: "transport" } | { mode: "stay" } | null>(null)
   const [reorderKey, setReorderKey] = useState(0)
+  // Travel lines would sit between the old neighbours while a card is dragged;
+  // they are kept invisible (not removed) so the cards do not shift under the pointer.
+  const [dragging, setDragging] = useState(false)
   // The DndContext remounts after a drop; keyboard users get focus back on
   // the handle they moved so they can keep reordering.
   const refocusIdRef = useRef<string | null>(null)
@@ -158,10 +166,12 @@ export function DayActivities({
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e
     const keyboard = e.activatorEvent instanceof KeyboardEvent
-    if (!over || active.id === over.id) return
     const oldIdx = activities.findIndex((a) => a.id === active.id)
-    const newIdx = activities.findIndex((a) => a.id === over.id)
-    if (oldIdx < 0 || newIdx < 0) return
+    const newIdx = over ? activities.findIndex((a) => a.id === over.id) : -1
+    if (!over || active.id === over.id || oldIdx < 0 || newIdx < 0) {
+      setDragging(false)
+      return
+    }
     const reordered = arrayMove(activities, oldIdx, newIdx)
     // Put activities waiting on Undo back at their old index: the server only
     // accepts the day's full id set, and Undo must find them in the cache.
@@ -175,6 +185,8 @@ export function DayActivities({
     // asynchronously after onDragEnd. If setQueryData runs synchronously,
     // @dnd-kit's pending state reset may override our optimistic reorder.
     requestAnimationFrame(() => {
+      // With the new order, so the lines never show between the old neighbours.
+      setDragging(false)
       qc.setQueryData<ActivityListResponse>(["activities", "list", dayId], { items: full })
       setReorderKey((k) => k + 1)
       if (keyboard) refocusIdRef.current = String(active.id)
@@ -212,6 +224,57 @@ export function DayActivities({
     setTimeFocus(elementId)
     if (elementId.startsWith("activity-")) selectActivity(elementId.slice("activity-".length))
     document.getElementById(elementId)?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
+
+  const renderEntry = (entry: TimelineEntry) => {
+    if (entry.kind === "activity") {
+      const a = entry.activity
+      return (
+        <SortableActivityRow
+          activity={a}
+          onEdit={() => setSheet({ mode: "edit", activity: a })}
+          onDelete={() =>
+            scheduleDelete({
+              id: a.id,
+              message: "Activity deleted.",
+              errorMessage: "Couldn’t delete this activity. It’s back on the day.",
+              commit: () => deleteMut.mutateAsync(a.id),
+            })
+          }
+          onToggleTodo={(itemId) =>
+            toggleTodo.mutate(
+              { activityId: a.id, itemId },
+              { onError: (error) => { if (!isOfflineError(error)) toast("Couldn’t update this to-do. Try again.", "error") } },
+            )
+          }
+          overlapTitles={overlapByActivity.get(a.id) ?? []}
+          selectMode={selectMode}
+          isSelected={selection.selectedIds.has(a.id)}
+          onToggleSelect={() => selection.toggleSelect(a.id)}
+          isFocused={selectedActivityId === a.id}
+          onFocus={() => selectActivity(selectedActivityId === a.id ? null : a.id)}
+        />
+      )
+    }
+    if (entry.kind === "transport") {
+      return (
+        <TimelineRow
+          id={`trans-${entry.data.id}`}
+          time={extractTime(entry.data.departure_datetime)}
+          icon={<TimelineIcon kind="transport" transportType={entry.data.type} />}
+        >
+          <TransportTimelineCard t={entry.data} />
+        </TimelineRow>
+      )
+    }
+    return (
+      <TimelineRow
+        time={entry.at ?? null}
+        icon={<TimelineIcon kind="stay" />}
+      >
+        <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} />
+      </TimelineRow>
+    )
   }
 
   return (
@@ -257,62 +320,20 @@ export function DayActivities({
           key={reorderKey}
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={() => setDragging(true)}
           onDragEnd={onDragEnd}
+          onDragCancel={() => setDragging(false)}
           accessibility={{ announcements: reorderAnnouncements(activities), screenReaderInstructions: reorderInstructions }}
         >
           <SortableContext items={activities.map((a) => a.id)} strategy={verticalListSortingStrategy}>
             <div>
-              {entries.map((entry) => {
-                if (entry.kind === "activity") {
-                  const a = entry.activity
-                  return (
-                    <SortableActivityRow
-                      key={a.id}
-                      activity={a}
-                      onEdit={() => setSheet({ mode: "edit", activity: a })}
-                      onDelete={() =>
-                        scheduleDelete({
-                          id: a.id,
-                          message: "Activity deleted.",
-                          errorMessage: "Couldn’t delete this activity. It’s back on the day.",
-                          commit: () => deleteMut.mutateAsync(a.id),
-                        })
-                      }
-                      onToggleTodo={(itemId) =>
-                        toggleTodo.mutate(
-                          { activityId: a.id, itemId },
-                          { onError: (error) => { if (!isOfflineError(error)) toast("Couldn’t update this to-do. Try again.", "error") } },
-                        )
-                      }
-                      overlapTitles={overlapByActivity.get(a.id) ?? []}
-                      selectMode={selectMode}
-                      isSelected={selection.selectedIds.has(a.id)}
-                      onToggleSelect={() => selection.toggleSelect(a.id)}
-                      isFocused={selectedActivityId === a.id}
-                      onFocus={() => selectActivity(selectedActivityId === a.id ? null : a.id)}
-                    />
-                  )
-                }
-                if (entry.kind === "transport") {
-                  return (
-                    <TimelineRow
-                      key={`trans-${entry.data.id}`}
-                      id={`trans-${entry.data.id}`}
-                      time={extractTime(entry.data.departure_datetime)}
-                      icon={<TimelineIcon kind="transport" transportType={entry.data.type} />}
-                    >
-                      <TransportTimelineCard t={entry.data} />
-                    </TimelineRow>
-                  )
-                }
+              {entries.map((entry, i) => {
+                const leg = selectMode ? undefined : legBetween(legs, entry, entries[i + 1])
                 return (
-                  <TimelineRow
-                    key={`accom-${entry.data.id}-${entry.event}`}
-                    time={entry.at ?? null}
-                    icon={<TimelineIcon kind="stay" />}
-                  >
-                    <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} />
-                  </TimelineRow>
+                  <Fragment key={entry.kind === "transport" ? `trans-${entry.data.id}` : entryRef(entry)}>
+                    {renderEntry(entry)}
+                    {leg && <TravelConnector leg={leg} hidden={dragging} />}
+                  </Fragment>
                 )
               })}
             </div>

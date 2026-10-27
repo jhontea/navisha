@@ -82,6 +82,7 @@ export function useActivitySelection(
     qc.invalidateQueries({ queryKey: ["activities", "trip", target.trip_id], refetchType: "active" })
     qc.invalidateQueries({ queryKey: ["trips", "overview", target.trip_id], refetchType: "active" })
     qc.invalidateQueries({ queryKey: ["trips", "weather", target.trip_id] })
+    qc.invalidateQueries({ queryKey: ["trips", "travel", target.trip_id] })
 
     if (fail === 0) {
       toast(`Copied ${ok} ${ok === 1 ? "activity" : "activities"} to Day ${target.day_number}.`)
