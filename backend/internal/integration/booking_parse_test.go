@@ -49,7 +49,7 @@ func TestBookingParse_NormalizeTransportValid(t *testing.T) {
 func TestBookingParse_NormalizeTransportInvalidFieldsEmptied(t *testing.T) {
 	withBookingCurrencies(t)
 	b, ok := normalizeBooking(rawParsedBooking{
-		Kind: "transport", Type: "spaceship", Label: strings.Repeat("x", 300),
+		Kind: "transport", Type: "spaceship", Label: strings.Repeat("x", 300), Notes: strings.Repeat("n", 2500),
 		DepartureLocal: bpPtr("2026-11-12"), ArrivalLocal: bpPtr("12/11/2026 08:30"),
 		CostAmount: bpPtr(-5.0), CostCurrency: bpPtr("IDR"),
 	})
@@ -60,8 +60,8 @@ func TestBookingParse_NormalizeTransportInvalidFieldsEmptied(t *testing.T) {
 	if tr.Type != "" || tr.DepartureDatetime != nil || tr.ArrivalDatetime != nil || b.Cost != nil {
 		t.Errorf("want emptied, got %+v cost=%+v", tr, b.Cost)
 	}
-	if len([]rune(tr.Label)) != 120 {
-		t.Errorf("label len = %d, want 120", len([]rune(tr.Label)))
+	if len([]rune(tr.Label)) != 120 || len(tr.Notes) != 2000 {
+		t.Errorf("label len = %d, notes len = %d, want 120 and 2000 (form limits)", len([]rune(tr.Label)), len(tr.Notes))
 	}
 }
 
@@ -87,14 +87,14 @@ func TestBookingParse_NormalizeStay(t *testing.T) {
 	b, _ = normalizeBooking(rawParsedBooking{
 		Kind: "stay", AccommodationType: "villa", CheckIn: bpPtr("2026-13-01"), CheckOut: bpPtr("15 Nov"),
 		CheckInTime: bpPtr("2pm"), CheckOutTime: bpPtr("25:00"), ConfirmationNumber: strings.Repeat("9", 200),
-		CostAmount: bpPtr(100.0), CostCurrency: bpPtr("XXX"),
+		CostAmount: bpPtr(100.0), CostCurrency: bpPtr("XXX"), LocationName: strings.Repeat("z", 300),
 	})
 	s = b.Stay
 	if s.AccommodationType != "" || s.CheckIn != "" || s.CheckOut != "" || s.CheckInTime != "" || s.CheckOutTime != "" || b.Cost != nil {
 		t.Errorf("want emptied, got %+v cost=%+v", s, b.Cost)
 	}
-	if len(s.ConfirmationNumber) != 120 {
-		t.Errorf("confirmation len = %d, want 120", len(s.ConfirmationNumber))
+	if len(s.ConfirmationNumber) != 120 || len(s.LocationName) != 200 {
+		t.Errorf("confirmation len = %d, location len = %d, want 120 and 200 (form limits)", len(s.ConfirmationNumber), len(s.LocationName))
 	}
 }
 

@@ -237,7 +237,8 @@ func stripBookingFence(s string) string {
 }
 
 // normalizeBooking maps one model item to the create-input shape. Invalid values
-// become empty/null rather than guessed; text is cut to the domain limits.
+// become empty/null rather than guessed; text is cut to the form limits
+// (transportFormSchema / AccommodationForm), so a draft never fails to save.
 func normalizeBooking(r rawParsedBooking) (ParsedBooking, bool) {
 	b := ParsedBooking{Kind: r.Kind, Cost: bookingCost(r.CostAmount, r.CostCurrency)}
 	switch r.Kind {
@@ -250,7 +251,7 @@ func normalizeBooking(r rawParsedBooking) (ParsedBooking, bool) {
 			ToLocation:        bookingText(r.ToLocation, 200),
 			DepartureDatetime: bookingWallClock(r.DepartureLocal),
 			ArrivalDatetime:   bookingWallClock(r.ArrivalLocal),
-			Notes:             bookingText(r.Notes, 5000),
+			Notes:             bookingText(r.Notes, 2000),
 		}
 		if typ := transportation.Type(strings.ToLower(strings.TrimSpace(r.Type))); typ.Valid() {
 			t.Type = string(typ)
@@ -259,13 +260,13 @@ func normalizeBooking(r rawParsedBooking) (ParsedBooking, bool) {
 	case "stay":
 		s := &ParsedStay{
 			Name:               bookingText(r.Name, 200),
-			LocationName:       bookingText(r.LocationName, 300),
+			LocationName:       bookingText(r.LocationName, 200),
 			CheckIn:            bookingDate(r.CheckIn),
 			CheckOut:           bookingDate(r.CheckOut),
 			CheckInTime:        bookingClock(r.CheckInTime),
 			CheckOutTime:       bookingClock(r.CheckOutTime),
 			ConfirmationNumber: bookingText(r.ConfirmationNumber, 120),
-			Notes:              bookingText(r.Notes, 5000),
+			Notes:              bookingText(r.Notes, 2000),
 		}
 		if typ := accommodation.AccommodationType(strings.ToLower(strings.TrimSpace(r.AccommodationType))); typ.Valid() {
 			s.AccommodationType = string(typ)

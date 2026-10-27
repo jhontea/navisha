@@ -25,7 +25,7 @@ export function stayDraft(s: StayDraft): StayDraft {
     ...s,
     name: clip(s.name, 200),
     location_name: clip(s.location_name, 200),
-    confirmation_number: clip(s.confirmation_number, 200),
+    confirmation_number: clip(s.confirmation_number, 120),
     notes: clip(s.notes, 2000),
   }
 }

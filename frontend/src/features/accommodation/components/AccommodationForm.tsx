@@ -79,7 +79,7 @@ const schema = z
       .regex(ISO_DATE, "Use the date picker"),
     check_in_time: optionalClock,
     check_out_time: optionalClock,
-    confirmation_number: z.string().max(200).optional(),
+    confirmation_number: z.string().max(120, "Confirmation number must be 120 characters or less").optional(),
     notes: z.string().max(2000).optional(),
     amount: z.string().optional(),
     currency: z.enum(SUPPORTED_CURRENCIES).optional(),
