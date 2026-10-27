@@ -31,7 +31,7 @@ describe("proxy auth redirects", () => {
 describe("proxy matcher", () => {
   const matcher = new RegExp(`^${config.matcher[0]}$`)
 
-  it.each(["/manifest.webmanifest", "/icons/icon-192.png", "/icons/maskable-512.png", "/apple-icon.png", "/sw.js"])(
+  it.each(["/manifest.webmanifest", "/icons/icon-192.png", "/icons/maskable-512.png", "/apple-icon.png", "/sw.js", "/offline.html"])(
     "skips the auth check for install asset %s",
     (path) => {
       expect(matcher.test(path)).toBe(false)

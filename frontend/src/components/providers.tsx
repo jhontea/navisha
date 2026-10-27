@@ -18,6 +18,7 @@ import {
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { useEffect, useState } from "react"
 import {
+  MAX_AGE_MS,
   restorePersistedQueries,
   subscribeToQueryPersistence,
 } from "@/lib/queryPersistence"
@@ -30,7 +31,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 5 * 60 * 1000,        // 5 min — avoids cascade refetches
-            gcTime: 10 * 60 * 1000,           // 10 min cache retention
+            gcTime: MAX_AGE_MS,               // keep unused trips for the offline snapshot (lib/queryPersistence)
             refetchOnWindowFocus: false,       // prevent tab-switch cascade
             refetchOnReconnect: false,         // iOS tab resume must not refetch every stale query
             refetchOnMount: true,              // stale queries refetch on navigation

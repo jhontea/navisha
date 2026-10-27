@@ -10,12 +10,17 @@ const DB_NAME = "navisha-query-cache"
 const STORE_NAME = "snapshots"
 const LEGACY_CACHE_KEY = "dashboard-v1"
 const CACHE_KEY_PREFIX = "dashboard-v2:"
-const MAX_AGE_MS = 30 * 60 * 1000
+// Trips opened online stay readable offline for a week (refreshed on every visit).
+export const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const WRITE_DEBOUNCE_MS = 750
 const DB_OPEN_TIMEOUT_MS = 150
 const DB_READ_TIMEOUT_MS = 150
-const MAX_PERSISTED_QUERIES = 40
-const MAX_SNAPSHOT_BYTES = 1_500_000
+// A trip is ~6-8 queries (detail, days, stays, transport, expenses, rates):
+// room for roughly 15 recently opened trips.
+const MAX_PERSISTED_QUERIES = 120
+const MAX_SNAPSHOT_BYTES = 4_000_000
+const LAST_USER_KEY = "navisha-last-user"
+const PAGES_CACHE_PREFIX = "navisha-pages-"
 
 interface PersistedSnapshot {
   userID: string
@@ -34,10 +39,13 @@ const PERSISTED_PREFIXES = new Set([
   "transportations",
   "expenses",
   "currency",
+  "summary",
 ])
 
 function shouldPersistQuery(query: Query) {
   const prefix = String(query.queryKey[0] ?? "")
+  // One converter query per typed amount: never worth a slot next to trip data.
+  if (prefix === "currency" && query.queryKey[1] === "convert") return false
   return query.state.status === "success" && PERSISTED_PREFIXES.has(prefix)
 }
 
@@ -73,8 +81,7 @@ function openDatabase(): Promise<IDBDatabase | null> {
   })
 }
 
-function createBoundedState(queryClient: QueryClient): DehydratedState {
-  const now = Date.now()
+export function createBoundedState(queryClient: QueryClient, now = Date.now()): DehydratedState {
   const state = dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery })
   const candidates = state.queries
     .filter((query) => now - query.state.dataUpdatedAt <= MAX_AGE_MS)
@@ -164,7 +171,38 @@ export function subscribeToQueryPersistence(queryClient: QueryClient, userID: st
   }
 }
 
+/** The signed-in user, kept so a reload without a connection still knows whose saved data to show. */
+export function saveLastUser(user: unknown): void {
+  try {
+    localStorage.setItem(LAST_USER_KEY, JSON.stringify(user))
+  } catch {}
+}
+
+export function readLastUser<T>(): T | null {
+  try {
+    const raw = localStorage.getItem(LAST_USER_KEY)
+    return raw ? (JSON.parse(raw) as T) : null
+  } catch {
+    return null
+  }
+}
+
+/** Removes the trip pages the service worker saved for offline reading (public/sw.js). */
+async function clearOfflinePages(): Promise<void> {
+  if (typeof caches === "undefined") return
+  try {
+    const keys = await caches.keys()
+    await Promise.all(keys.filter((key) => key.startsWith(PAGES_CACHE_PREFIX)).map((key) => caches.delete(key)))
+  } catch {}
+}
+
 export async function clearPersistedQueries(userID?: string): Promise<void> {
+  if (!userID) {
+    try {
+      localStorage.removeItem(LAST_USER_KEY)
+    } catch {}
+    await clearOfflinePages()
+  }
   const db = await openDatabase()
   if (!db) return
 

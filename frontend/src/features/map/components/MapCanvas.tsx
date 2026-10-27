@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import dynamic from "next/dynamic"
 import { MapPin } from "lucide-react"
 
@@ -33,6 +33,17 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 /** False when maps are turned off, or Google is selected without an API key. */
 export const MAP_ENABLED = MAP_PROVIDER !== "disabled" && !(MAP_PROVIDER === "google" && !GOOGLE_MAPS_API_KEY)
 
+// navigator.onLine, not TanStack's onlineManager: that one starts "online" on
+// every page load and only flips on an online/offline event.
+function subscribeOnline(onChange: () => void) {
+  window.addEventListener("online", onChange)
+  window.addEventListener("offline", onChange)
+  return () => {
+    window.removeEventListener("online", onChange)
+    window.removeEventListener("offline", onChange)
+  }
+}
+
 const loading = () => <div className="h-full animate-pulse bg-muted" aria-hidden="true" />
 
 // Each renderer is its own chunk, loaded only for the configured provider.
@@ -49,11 +60,15 @@ export function MapCanvas(props: Omit<MapRendererProps, "showAll" | "onOutsideCh
   if (showAllFor !== null && showAllFor !== dayKey) setShowAllFor(null)
   const [outside, setOutside] = useState(0)
   const showAll = showAllFor === dayKey
-  if (!MAP_ENABLED) {
+  // Map tiles are never saved for offline use.
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true)
+  if (!MAP_ENABLED || !online) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
         <MapPin className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">The map is turned off for this deployment.</p>
+        <p className="text-sm text-muted-foreground">
+          {MAP_ENABLED ? "Map needs a connection" : "The map is turned off for this deployment."}
+        </p>
       </div>
     )
   }
