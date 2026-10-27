@@ -43,6 +43,8 @@ function invalidateActivityViews(
 ) {
   qc.invalidateQueries({ queryKey: ["activities", "trip", tripId], refetchType: "active" })
   qc.invalidateQueries({ queryKey: ["trips", "overview", tripId], refetchType: "none" })
+  // The first pinned activity of a day can set its forecast location.
+  qc.invalidateQueries({ queryKey: ["trips", "weather", tripId] })
 }
 
 export function useCreateActivity(dayId: string, tripId: string) {
