@@ -54,6 +54,7 @@ var symbols = map[string]string{
 	"THB": "฿",
 	"CNY": "¥",
 	"VND": "₫",
+	"SAR": "SAR",
 }
 
 var names = map[string]string{
@@ -69,6 +70,7 @@ var names = map[string]string{
 	"THB": "Thai Baht",
 	"CNY": "Chinese Yuan",
 	"VND": "Vietnamese Dong",
+	"SAR": "Saudi Riyal",
 }
 
 func Symbol(code string) string {

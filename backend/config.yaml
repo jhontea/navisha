@@ -15,7 +15,7 @@ redis:
   min_idle_conns: 5
 
 currency:
-  supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND]
+  supported: [IDR, USD, JPY, SGD, KRW, MYR, THB, EUR, VND, SAR]
   cache_ttl: 3600
 
 location:
