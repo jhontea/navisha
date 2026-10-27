@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { ErrorReporting } from "@/components/ErrorReporting"
 import { WebVitalsReporter } from "@/components/WebVitalsReporter"
-import { THEME_INIT_SCRIPT } from "@/lib/theme"
+import { THEME_COLOR, THEME_INIT_SCRIPT } from "@/lib/theme"
 import "./globals.css"
 
 // docs/DESIGN.md §3: Nunito for display (titles, big numbers), Nunito Sans for
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#3673DB", // ds-allow-hardcode: meta tag needs a literal; --primary light token
+  themeColor: THEME_COLOR.light, // dark mode swaps it in lib/theme.ts
 }
 
 export default function RootLayout({
