@@ -36,11 +36,11 @@ Token adalah CSS variable di `globals.css` (format HSL seperti sekarang), dipeta
 | `--foreground` | Teks utama | `#23324D` | `#E6ECF7` | 12.0 / 13.1 |
 | `--muted-foreground` | Teks sekunder | `#5F6B82` | `#A3AFC5` | 5.0 / 7.9 |
 | `--border` | Garis halus | `#E6EDF7` | `#2A3650` | |
-| `--primary` | Tombol utama, link, pin aktif | `#3673DB` | `#86B2FF` | |
-| `--primary-foreground` | Teks di atas primary | `#FFFFFF` | `#0E1626` | 4.5 / 8.5 |
-| ✚ `--primary-soft` | Tint untuk state aktif (tab, tanggal, nav, pill jam) | `#EAF2FF` | `#1F3254` | |
-| ✚ `--primary-soft-foreground` | Teks di atas tint | `#2E64C2` | `#BCD4FF` | 5.0 / 8.5 |
-| `--ring` | Focus ring | `#3673DB` | `#86B2FF` | |
+| `--primary` | Tombol utama, link, state aktif (navy logo di terang) | `#0F2A44` | `#86B2FF` | |
+| `--primary-foreground` | Teks di atas primary | `#FFFFFF` | `#0E1626` | 14.6 / 8.5 |
+| ✚ `--primary-soft` | Tint untuk state aktif (tab, tanggal, nav, pill jam) | `#E8EDF3` | `#1F3254` | |
+| ✚ `--primary-soft-foreground` | Teks di atas tint | `#1C3B5E` | `#BCD4FF` | 9.7 / 8.5 |
+| `--ring` | Focus ring | `#0F2A44` | `#86B2FF` | |
 
 ### 2.2 Status
 

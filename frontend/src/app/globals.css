@@ -97,31 +97,31 @@
     --card-foreground: 219 37.5% 22%;
     --popover: 0 0% 100%;
     --popover-foreground: 219 37.5% 22%;
-    --primary: 218 69.6% 53.5%;             /* #3673DB */
-    --primary-foreground: 0 0% 100%;        /* 4.5:1 */
-    --primary-soft: 217 100% 95.9%;         /* #EAF2FF — active state tint */
-    --primary-soft-foreground: 218 61.7% 47.1%; /* #2E64C2 · 5:1 on tint */
+    --primary: 209 63.9% 16.3%;             /* #0F2A44 navy (logo) */
+    --primary-foreground: 0 0% 100%;        /* 14.6:1 */
+    --primary-soft: 213 31.4% 93.1%;        /* #E8EDF3 — active state tint */
+    --primary-soft-foreground: 212 54.1% 23.9%; /* #1C3B5E · 9.7:1 on tint */
     --secondary: 218 64.7% 96.7%;
     --secondary-foreground: 219 37.5% 22%;
     --muted: 218 64.7% 96.7%;               /* #F1F5FC */
     --muted-foreground: 219 15.6% 44.1%;    /* #5F6B82 · 5:1 */
-    --accent: 217 100% 95.9%;
-    --accent-foreground: 218 61.7% 47.1%;
+    --accent: 213 31.4% 93.1%;
+    --accent-foreground: 212 54.1% 23.9%;
     --destructive: 4 76.5% 40%;             /* #B42318 */
     --destructive-foreground: 0 0% 100%;
     --destructive-bg: 6 82.6% 95.5%;
     --border: 215 51.5% 93.5%;              /* #E6EDF7 */
     --input: 215 40% 88%;
-    --ring: 218 69.6% 53.5%;
+    --ring: 209 63.9% 16.3%;
     --radius: 1rem;
 
     /* ── Status ── */
     --warning: 35 100% 30.2%;               /* #9A5B00 */
     --warning-foreground: 0 0% 100%;
     --warning-bg: 37 100% 93.9%;
-    --info: 218 61.7% 47.1%;
+    --info: 212 54.1% 23.9%;
     --info-foreground: 0 0% 100%;
-    --info-bg: 217 100% 95.9%;
+    --info-bg: 213 31.4% 93.1%;
     --success: 149 58.1% 29%;               /* #1F7548 */
     --success-foreground: 0 0% 100%;
     --success-bg: 148 45.5% 93.5%;

@@ -5,7 +5,9 @@ import { SegmentedControl } from "@/components/SegmentedControl"
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { Compass, List, Map as MapIcon, MapPin } from "lucide-react"
+
+import { BrandMark } from "@/components/BrandMark"
+import { List, Map as MapIcon, MapPin } from "lucide-react"
 
 import { DateCircles } from "@/components/DateCircles"
 import { buttonVariants } from "@/components/ui/button"
@@ -37,9 +39,7 @@ export function SharedTripView({ trip }: { trip: PublicItinerary }) {
         <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm">
           <div className="mx-auto flex h-16 max-w-max-width items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop">
             <Link href="/" className="flex min-h-11 items-center gap-2 rounded-full" aria-label="Navisha home">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-                <Compass className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
-              </span>
+              <BrandMark className="text-foreground" />
               <span className="font-display text-xl font-black tracking-tight text-foreground">Navisha</span>
               <span className="hidden text-sm font-semibold text-muted-foreground sm:inline">· Shared trip</span>
             </Link>
