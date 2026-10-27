@@ -4,7 +4,7 @@ import type { Accommodation } from "@/features/accommodation/types"
 import type { Transportation } from "@/features/transportation/types"
 import type { Activity } from "../types"
 import type { TimelineEntry } from "./timeline"
-import { legBetween, legsByPair, travelLabel, travelText, type TravelLeg } from "./travel"
+import { legBetween, legsByPair, tightText, travelLabel, travelText, type TravelLeg } from "./travel"
 
 const act = (id: string): TimelineEntry => ({ kind: "activity", activity: { id } as Activity })
 const stay = (id: string, event: "check_in" | "check_out"): TimelineEntry => ({
@@ -65,6 +65,11 @@ describe("travelText / travelLabel", () => {
     expect(travelLabel(leg({ mode: "drive", minutes: 137, tight: true, gap_minutes: 61 }))).toBe(
       "About 2 hours 17 minutes by car. Only 1 hour 1 minute between these plans.",
     )
+    const backToBack = leg({ minutes: 32, tight: true, gap_minutes: 0 })
+    expect(travelLabel(backToBack)).toBe("32 minutes on foot. No time between these plans.")
+    expect(tightText(backToBack)).toBe("No time between plans")
+    expect(tightText(leg({ tight: true, gap_minutes: 75 }))).toBe("Tight: 1h 15m gap")
+    expect(tightText(leg())).toBeNull()
     expect(travelLabel(leg({ gap_minutes: 30, tight: false }))).toBe("12 minutes on foot.")
   })
 })
