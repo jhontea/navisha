@@ -70,7 +70,7 @@ function DayView({
 
   return (
     <>
-      <div className="sticky top-0 z-20 -mx-margin-mobile mb-3 bg-background/95 px-margin-mobile pt-2 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none">
+      <div className="sticky top-[env(safe-area-inset-top)] z-20 -mx-margin-mobile mb-3 bg-background/95 px-margin-mobile pt-2 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none">
         <DateCircles
           aria-label="Trip day"
           days={days.map((d) => ({ id: d.id, date: d.date, hasItems: (counts[d.id] ?? 0) > 0 }))}

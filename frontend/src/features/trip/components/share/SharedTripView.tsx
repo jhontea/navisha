@@ -36,7 +36,7 @@ export function SharedTripView({ trip }: { trip: PublicItinerary }) {
   return (
     <ItineraryFocusProvider initialDayId={trip.days[0]?.id ?? null}>
       <div className="min-h-screen bg-background pb-12">
-        <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm">
+        <header className="sticky top-[env(safe-area-inset-top)] z-30 bg-background/90 backdrop-blur-sm">
           <div className="mx-auto flex h-16 max-w-max-width items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop">
             <Link href="/" className="flex min-h-11 items-center gap-2 rounded-full" aria-label="Navisha home">
               <BrandMark className="text-foreground" />
