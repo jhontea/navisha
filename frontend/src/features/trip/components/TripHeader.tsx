@@ -3,7 +3,7 @@
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { ArrowLeft, CalendarPlus, Copy, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
+import { ArrowLeft, CalendarPlus, Copy, FileDown, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
 
 import { IconButton } from "@/components/IconButton"
 import { StatusChip } from "@/components/StatusChip"
@@ -118,6 +118,13 @@ export function TripHeader({
               <DropdownMenuItem className={MENU_ITEM} onClick={onAddToCalendar}>
                 <CalendarPlus aria-hidden="true" />
                 Add to calendar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className={MENU_ITEM}
+                render={<a href={`/trips/${trip.id}/print`} target="_blank" rel="noopener noreferrer" />}
+              >
+                <FileDown aria-hidden="true" />
+                Download PDF
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>

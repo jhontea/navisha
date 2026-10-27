@@ -1,4 +1,5 @@
 import type { Activity, LocationPayload, NotePayload } from "@/features/activity/types"
+import { transportTitle } from "@/features/transportation/lib/transportType"
 import { extractDate, extractTime } from "@/features/activity/lib/timeline"
 import {
   DEFAULT_CHECK_IN_TIME,
@@ -102,13 +103,11 @@ function transportEvents(transports: Transportation[]): IcsEvent[] {
     const arrTime = extractTime(t.arrival_datetime)
     const start = stamp(depDate, depTime)
     const arrival = arrDate && arrTime ? stamp(arrDate, arrTime) : null
-    const name = t.label || t.type.charAt(0).toUpperCase() + t.type.slice(1)
-    const route = [t.from_location, t.to_location].filter(Boolean).join(" → ")
     return [{
       uid: `transport-${t.id}@navisha`,
       start,
       end: arrival && arrival > start ? arrival : stamp(depDate, depTime, 1),
-      summary: route ? `${name}: ${route}` : name,
+      summary: transportTitle(t),
       location: t.from_location || undefined,
       description: t.reference_number ? `Booking ref: ${t.reference_number}` : undefined,
     }]
