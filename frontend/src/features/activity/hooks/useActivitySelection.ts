@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
+import { isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import type { Day } from "@/features/trip/types"
 import { activityApi } from "../api"
@@ -65,7 +66,12 @@ export function useActivitySelection(
           payload: a.payload ?? undefined,
         })
         ok++
-      } catch {
+      } catch (error) {
+        // Offline: stop here, keep the selection; the offline toast already explains.
+        if (isOfflineError(error) && ok === 0) {
+          setCopying(false)
+          return
+        }
         fail++
       }
     }

@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import type { LinkedCost } from "@/lib/linkedCost"
@@ -8,7 +9,7 @@ import { useCreateAccommodation } from "../hooks/useAccommodations"
 import type { CreateAccommodationInput, StayDraft } from "../types"
 
 const AccommodationForm = dynamic(
-  () => import("./AccommodationForm").then((module) => module.AccommodationForm),
+  () => loadOrOffline(() => import("./AccommodationForm").then((module) => module.AccommodationForm)),
   { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
 )
 

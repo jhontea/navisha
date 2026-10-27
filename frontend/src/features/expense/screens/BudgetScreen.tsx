@@ -10,7 +10,7 @@ import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { BudgetForm, type BudgetFormValues } from "@/features/expense/components/BudgetForm"
 import { BudgetSummary } from "@/features/expense/components/BudgetSummary"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
-import { ApiError } from "@/lib/api"
+import { ApiError, isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 
 export function BudgetScreen() {
@@ -40,6 +40,7 @@ export function BudgetScreen() {
           toast("Budget updated.")
         },
         onError: (error) => {
+          if (isOfflineError(error)) return
           const message =
             error instanceof ApiError && error.status >= 400 && error.status < 500
               ? error.message

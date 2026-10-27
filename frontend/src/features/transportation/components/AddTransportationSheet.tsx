@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import type { LinkedCost } from "@/lib/linkedCost"
@@ -8,7 +9,7 @@ import { useCreateTransportation } from "../hooks/useTransportations"
 import type { CreateTransportationInput, TransportDraft } from "../types"
 
 const TransportationForm = dynamic(
-  () => import("./TransportationForm").then((module) => module.TransportationForm),
+  () => loadOrOffline(() => import("./TransportationForm").then((module) => module.TransportationForm)),
   { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
 )
 

@@ -17,6 +17,7 @@ import type { Day } from "@/features/trip/types"
 import { WeatherChip } from "@/features/trip/components/WeatherChip"
 import type { TripWeatherDay } from "@/features/trip/weather"
 import { useSortDayByTime } from "../hooks/useActivities"
+import { isOfflineError } from "@/lib/api"
 
 const DayActivities = dynamic(
   () => import("./DayActivities").then((module) => module.DayActivities),
@@ -111,8 +112,8 @@ export function DayPanel({
       setCurrentTitle(updated.title)
       setTitleDraft(updated.title)
       setEditingTitle(false)
-    } catch {
-      setTitleError("Couldn't save the day title. Try again.")
+    } catch (error) {
+      if (!isOfflineError(error)) setTitleError("Couldn't save the day title. Try again.")
     }
   }
 

@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 
 import { PageHeader } from "@/components/PageHeader"
 import { useCreateTrip } from "@/features/trip/hooks/useTrips"
 
 const TripForm = dynamic(
-  () => import("@/features/trip/components/TripForm").then((module) => module.TripForm),
+  () => loadOrOffline(() => import("@/features/trip/components/TripForm").then((module) => module.TripForm)),
   {
     ssr: false,
     loading: () => <div className="h-96 animate-pulse rounded-3xl bg-muted" aria-hidden="true" />,

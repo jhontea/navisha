@@ -19,6 +19,7 @@ import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { sheetCloseAction } from "@/lib/discardGuard"
 import { TimePills, type TimePill } from "@/components/TimePills"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
+import { isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -181,8 +182,8 @@ export function DayActivities({
       reorderMut.mutate(
         { ids: newOrder },
         {
-          onError: () => {
-            toast("Couldn’t save the new order. It’s back the way it was.", "error")
+          onError: (error) => {
+            if (!isOfflineError(error)) toast("Couldn’t save the new order. It’s back the way it was.", "error")
             qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "active" })
           },
         },
@@ -280,7 +281,7 @@ export function DayActivities({
                       onToggleTodo={(itemId) =>
                         toggleTodo.mutate(
                           { activityId: a.id, itemId },
-                          { onError: () => toast("Couldn’t update this to-do. Try again.", "error") },
+                          { onError: (error) => { if (!isOfflineError(error)) toast("Couldn’t update this to-do. Try again.", "error") } },
                         )
                       }
                       overlapTitles={overlapByActivity.get(a.id) ?? []}

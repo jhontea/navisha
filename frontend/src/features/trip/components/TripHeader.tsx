@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 import Link from "next/link"
 import { ArrowLeft, CalendarPlus, Copy, FileDown, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react"
 
@@ -24,7 +25,7 @@ import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
 
 const TripShareDialog = dynamic(
-  () => import("./TripShareDialog").then((m) => m.TripShareDialog),
+  () => loadOrOffline(() => import("./TripShareDialog").then((m) => m.TripShareDialog)),
   { ssr: false },
 )
 

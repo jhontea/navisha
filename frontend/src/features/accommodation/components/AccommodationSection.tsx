@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 import { Hotel, Plus } from "lucide-react"
 
 import { EmptyState } from "@/components/EmptyState"
@@ -21,7 +22,7 @@ import { AddStaySheet } from "./AddStaySheet"
 import { AccommodationCard } from "./AccommodationCard"
 
 const AccommodationForm = dynamic(
-  () => import("./AccommodationForm").then((module) => module.AccommodationForm),
+  () => loadOrOffline(() => import("./AccommodationForm").then((module) => module.AccommodationForm)),
   { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
 )
 
