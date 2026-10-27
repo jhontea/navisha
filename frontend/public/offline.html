@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3673DB">
+<title>You're offline · Navisha</title>
+<style>
+  /* ds-allow-hardcode: standalone page served by the service worker without the app CSS; values copy the globals.css tokens. */
+  :root { --bg: #F3F7FD; --fg: #23324D; --muted: #5F6B82; --card: #FFFFFF; --primary: #3673DB; --on-primary: #FFFFFF; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121A2B; --fg: #E6ECF7; --muted: #A3AFC5; --card: #1A2438; --primary: #86B2FF; --on-primary: #121A2B; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--bg); color: var(--fg); font-family: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 26rem; width: 100%; padding: 32px 24px; border-radius: 24px; background: var(--card); text-align: center; box-shadow: 0 8px 30px rgb(35 50 77 / 0.08); }
+  h1 { margin: 0 0 8px; font-size: 1.375rem; font-weight: 800; }
+  p { margin: 0 0 24px; color: var(--muted); line-height: 1.5; }
+  a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: 700; text-decoration: none; }
+  a:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>You're offline and this page wasn't saved yet</h1>
+  <p>Trips you opened while online are still available. Connect to the internet to load this page.</p>
+  <a href="/trips">Go to my trips</a>
+</main>
+</body>
+</html>

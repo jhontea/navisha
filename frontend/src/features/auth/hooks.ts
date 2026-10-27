@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api, ApiError, setLoggingOut } from "@/lib/api"
-import { clearPersistedQueries } from "@/lib/queryPersistence"
+import { clearPersistedQueries, readLastUser, saveLastUser } from "@/lib/queryPersistence"
 import { useAuthStore } from "./store"
 import type { User } from "./types"
 
@@ -22,22 +22,34 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000,
   })
 
+  // Only a real 401/403 signs the user out. A network error or a request
+  // paused while offline keeps the last known user so saved trips stay readable.
+  const authFailed =
+    query.isError && query.error instanceof ApiError && (query.error.status === 401 || query.error.status === 403)
+  const unreachable = query.fetchStatus === "paused" || (query.isError && !authFailed)
+
   useEffect(() => {
     if (query.isSuccess) {
       setUser(query.data)
       setLoading(false)
-    } else if (query.isError) {
+      // Only what the UI shows; the response may carry more.
+      const { id, email, name, avatar_url } = query.data
+      saveLastUser({ id, email, name, avatar_url })
+    } else if (authFailed) {
       setUser(null)
       setLoading(false)
       void clearPersistedQueries()
+    } else if (unreachable) {
+      if (!useAuthStore.getState().user) setUser(readLastUser<User>())
+      setLoading(false)
     }
-  }, [query.isSuccess, query.isError, query.data, setUser, setLoading])
+  }, [query.isSuccess, authFailed, unreachable, query.data, setUser, setLoading])
 
   // TanStack Query already has the freshest value during render. Prefer it
   // over waiting one extra render for the Zustand synchronization effect.
-  const resolvedUser = query.isSuccess ? query.data : query.isError ? null : user
+  const resolvedUser = query.isSuccess ? query.data : authFailed ? null : user
   const authIsLoading =
-    !resolvedUser && !query.isError && (query.isLoading || isLoading)
+    !resolvedUser && !query.isError && !unreachable && (query.isLoading || isLoading)
 
   return {
     user: resolvedUser,
