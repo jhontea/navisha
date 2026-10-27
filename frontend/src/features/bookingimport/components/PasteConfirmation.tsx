@@ -31,18 +31,26 @@ interface Props {
   tripBaseCurrency: string
   days: { date: string }[]
   destination?: string
+  /** Bump to open the sheet from elsewhere (the floating add button on phones). */
+  openRequest?: number
 }
 
 /**
  * "Paste confirmation": the AI reads bookings from pasted text, and each one
  * opens the usual add form prefilled. Nothing is saved until the user saves a form.
  */
-export function PasteConfirmation({ tripId, tripBaseCurrency, days, destination }: Props) {
+export function PasteConfirmation({ tripId, tripBaseCurrency, days, destination, openRequest }: Props) {
   const parse = useParseBookings(tripId)
   // "paste" = the sheet (text or preview); a number = the add form for that booking.
   const [view, setView] = useState<"paste" | number | null>(null)
   const [text, setText] = useState("")
   const [added, setAdded] = useState<ReadonlySet<number>>(new Set())
+  // A new request from the floating button opens the sheet (state adjusted during render).
+  const [seenRequest, setSeenRequest] = useState(openRequest)
+  if (openRequest !== seenRequest) {
+    setSeenRequest(openRequest)
+    if (openRequest) setView("paste")
+  }
 
   // The backend trims before counting.
   const chars = [...text.trim()].length

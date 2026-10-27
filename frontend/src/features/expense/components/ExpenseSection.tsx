@@ -10,6 +10,7 @@ import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "luci
 
 import { EmptyState } from "@/components/EmptyState"
 import { MoneyText } from "@/components/MoneyText"
+import { FloatingAddButton, FloatingAddSpacer } from "@/components/FloatingAddButton"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -318,6 +319,8 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
         )}
       </ResponsiveSheet>
 
+      <FloatingAddButton label="Add expense" onClick={() => setSheet({ mode: "add" })} />
+      <FloatingAddSpacer />
     </section>
   )
 }
