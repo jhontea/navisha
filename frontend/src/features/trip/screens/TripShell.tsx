@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { BackLink } from "@/components/BackLink"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
@@ -12,6 +13,10 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TripHeader } from "@/features/trip/components/TripHeader"
 import { TripTabBar } from "@/features/trip/components/TripTabBar"
+import { buildTripIcs, icsFileName } from "@/features/trip/lib/ics"
+import { activityApi } from "@/features/activity/api"
+import { accommodationApi } from "@/features/accommodation/api"
+import { transportationApi } from "@/features/transportation/api"
 import { useDeleteTrip, useDuplicateTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { ApiError } from "@/lib/api"
 import { toast } from "@/lib/toast"
@@ -49,6 +54,8 @@ export function TripShell({ children }: { children: ReactNode }) {
   const [editOpen, setEditOpen] = useState(false)
   const [duplicateOpen, setDuplicateOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const queryClient = useQueryClient()
 
   // During persisted-query restoration there can briefly be no data while
   // isLoading is false. Keep the skeleton until data or a real error arrives.
@@ -110,12 +117,56 @@ export function TripShell({ children }: { children: ReactNode }) {
     })
   }
 
+  // Fetched on click (same query keys as the tabs) so the page doesn't load bookings it isn't showing.
+  const onAddToCalendar = async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const [activities, transports, stays] = await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: ["activities", "trip", tripId],
+          queryFn: ({ signal }) => activityApi.listByTrip(tripId, signal),
+        }),
+        queryClient.fetchQuery({
+          queryKey: ["transportations", "list", tripId],
+          queryFn: () => transportationApi.list(tripId),
+        }),
+        queryClient.fetchQuery({
+          queryKey: ["accommodations", "list", tripId],
+          queryFn: () => accommodationApi.list(tripId),
+        }),
+      ])
+      const { text, count } = buildTripIcs({
+        trip,
+        activitiesByDay: activities.items_by_day ?? {},
+        transports: transports.items ?? [],
+        stays: stays.items ?? [],
+      })
+      if (count === 0) {
+        toast("No timed plans to add yet. Add times to activities or bookings first.")
+        return
+      }
+      const url = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }))
+      const link = document.createElement("a")
+      link.href = url
+      link.download = icsFileName(trip.title)
+      link.click()
+      URL.revokeObjectURL(url)
+      toast("Calendar file downloaded.")
+    } catch {
+      toast("Couldn't export your calendar. Try again.", "error")
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <>
       <TripHeader
         trip={trip}
         onEdit={() => setEditOpen(true)}
         onDuplicate={() => setDuplicateOpen(true)}
+        onAddToCalendar={() => void onAddToCalendar()}
         onDelete={() => setConfirmDelete(true)}
       />
       <TripTabBar tripId={tripId} />
