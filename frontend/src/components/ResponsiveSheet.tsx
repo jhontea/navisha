@@ -34,8 +34,10 @@ export function ResponsiveSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={[
-          // Phone: full-width sheet anchored to the bottom.
-          "top-auto bottom-0 left-0 max-h-[90dvh] max-w-full translate-x-0 translate-y-0 overflow-y-auto rounded-t-3xl rounded-b-none p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-overlay",
+          // Phone: full-width sheet anchored to the bottom. The grid track may
+          // shrink (minmax(0,1fr)) so a wide child, e.g. an iOS date/time input,
+          // cannot widen the sheet and make it scroll sideways.
+          "top-auto bottom-0 left-0 max-h-[90dvh] max-w-full grid-cols-[minmax(0,1fr)] translate-x-0 translate-y-0 overflow-x-hidden overflow-y-auto rounded-t-3xl rounded-b-none p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-overlay",
           // sm and up: centered dialog.
           "sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[85vh] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:p-7",
           // Enter/exit: slide up from the bottom on phones, fade and scale from

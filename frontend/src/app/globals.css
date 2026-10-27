@@ -82,6 +82,17 @@
     opacity: 0.6;
   }
 
+  /* iOS sizes empty date/time inputs to their own intrinsic width and ignores
+     width: 100%; let them shrink to the field like other inputs. */
+  input:where([type="date"], [type="time"], [type="datetime-local"]) {
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input:where([type="date"], [type="time"], [type="datetime-local"])::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
   /* Native date input — remove default calendar icon overlap */
   input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.5;
