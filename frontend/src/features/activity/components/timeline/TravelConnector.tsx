@@ -1,7 +1,7 @@
 import { Car, Footprints } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { travelLabel, travelText, type TravelLeg } from "../../lib/travel"
+import { shortDuration, travelLabel, travelText, type TravelLeg } from "../../lib/travel"
 import { TimelineRow } from "./TimelineRow"
 
 /** Small line between two timeline cards: "12 min walk", in warning colour when the gap is too short. */
@@ -15,7 +15,7 @@ export function TravelConnector({ leg, hidden }: { leg: TravelLeg; hidden?: bool
         <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         <span aria-hidden="true">
           {travelText(leg)}
-          {tight && ` · Tight: ${leg.gap_minutes} min gap`}
+          {tight && ` · Tight: ${shortDuration(leg.gap_minutes ?? 0)} gap`}
         </span>
         <span className="sr-only">{travelLabel(leg)}</span>
       </p>

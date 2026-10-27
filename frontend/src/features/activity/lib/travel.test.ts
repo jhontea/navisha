@@ -53,12 +53,18 @@ describe("travelText / travelLabel", () => {
   it("marks drives and straight-line estimates as approximate", () => {
     expect(travelText(leg({ mode: "drive", minutes: 25 }))).toBe("≈ 25 min drive")
     expect(travelText(leg({ source: "estimate" }))).toBe("≈ 12 min walk")
+    expect(travelText(leg({ mode: "drive", minutes: 137 }))).toBe("≈ 2h 17m drive")
+    expect(travelText(leg({ mode: "drive", minutes: 180 }))).toBe("≈ 3h drive")
+    expect(travelText(leg({ mode: "drive", minutes: 60 }))).toBe("≈ 1h drive")
     expect(travelLabel(leg({ mode: "drive", minutes: 1 }))).toBe("About 1 minute by car.")
   })
 
   it("adds the gap when the schedule is tight", () => {
     const tight = leg({ mode: "drive", minutes: 25, gap_minutes: 15, tight: true })
     expect(travelLabel(tight)).toBe("About 25 minutes by car. Only 15 minutes between these plans.")
+    expect(travelLabel(leg({ mode: "drive", minutes: 137, tight: true, gap_minutes: 61 }))).toBe(
+      "About 2 hours 17 minutes by car. Only 1 hour 1 minute between these plans.",
+    )
     expect(travelLabel(leg({ gap_minutes: 30, tight: false }))).toBe("12 minutes on foot.")
   })
 })

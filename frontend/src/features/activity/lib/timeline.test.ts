@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { Accommodation } from "@/features/accommodation/types"
 import type { Transportation } from "@/features/transportation/types"
-import { buildStaticItems, dateMatches, extractDate, extractTime, interleaveTimeline, toSortKey } from "./timeline"
+import { buildStaticItems, dateMatches, extractDate, extractTime, interleaveTimeline, stayShownTime, toSortKey } from "./timeline"
 
 const transport = (id: string, departure: string) =>
   ({ id, type: "flight", departure_datetime: departure }) as unknown as Transportation
@@ -41,6 +41,18 @@ describe("dateMatches", () => {
 })
 
 describe("buildStaticItems", () => {
+  it("does not show a made-up time when check-in only follows the day's arrival", () => {
+    const flight = { id: "flight", type: "flight", departure_datetime: "2026-05-10T06:00:00+00:00", arrival_datetime: "2026-05-10T15:30:00+00:00" } as unknown as Transportation
+    const [, checkIn] = buildStaticItems([flight], [stay("hotel", "2026-05-10", "2026-05-14")], "2026-05-10")
+    expect(checkIn).toMatchObject({ kind: "accommodation", event: "check_in", at: "15:31", aroundTravel: true })
+    expect(stayShownTime(checkIn as { at?: string; aroundTravel?: boolean })).toBeNull()
+    // Without travel the usual 14:00 is shown, and a time the traveller set always shows.
+    const plain = buildStaticItems([], [stay("hotel", "2026-05-10", "2026-05-14")], "2026-05-10")[0]
+    expect(stayShownTime(plain as { at?: string; aroundTravel?: boolean })).toBe("14:00")
+    const own = buildStaticItems([flight], [{ ...stay("hotel", "2026-05-10", "2026-05-14"), check_in_time: "16:00" } as Accommodation], "2026-05-10")[1]
+    expect(stayShownTime(own as { at?: string; aroundTravel?: boolean })).toBe("16:00")
+  })
+
   it("keeps only items on the day, ordered by time", () => {
     const items = buildStaticItems(
       [

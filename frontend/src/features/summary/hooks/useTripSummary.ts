@@ -9,15 +9,15 @@ import type { SummaryLanguage } from "../types"
 
 const summaryKey = (tripId: string) => ["summary", tripId] as const
 
-// useTripSummary fetches the cached summary. A 404 (no summary yet) is treated
-// as a normal empty state (null) rather than an error, so the card can show
-// the initial "generate" prompt.
+// useTripSummary fetches the cached summary. No summary yet (204, or 404 from an
+// older backend) is a normal empty state (null), so the card can show the
+// initial "generate" prompt.
 export function useTripSummary(tripId: string) {
   return useQuery({
     queryKey: summaryKey(tripId),
     queryFn: async () => {
       try {
-        return await summaryApi.get(tripId)
+        return (await summaryApi.get(tripId)) ?? null
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           return null

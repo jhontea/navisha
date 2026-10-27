@@ -1,5 +1,6 @@
 "use client"
 
+import { addressAfterName } from "@/features/activity/lib/place"
 import { ExternalLink, MapPin } from "lucide-react"
 
 import { StatusChip } from "@/components/StatusChip"
@@ -10,7 +11,7 @@ import { TimelineIcon } from "@/features/activity/components/timeline/TimelineIc
 import { TimelineRow } from "@/features/activity/components/timeline/TimelineRow"
 import { StayTimelineCard } from "@/features/activity/components/timeline/StayTimelineCard"
 import { TransportTimelineCard } from "@/features/activity/components/timeline/TransportTimelineCard"
-import { buildStaticItems, extractTime, interleaveTimeline } from "@/features/activity/lib/timeline"
+import { buildStaticItems, extractTime, interleaveTimeline, stayShownTime } from "@/features/activity/lib/timeline"
 import { formatActivityTimeRange } from "@/features/activity/lib/time"
 import { normalizeExternalUrl } from "@/features/activity/lib/externalUrl"
 import { buildMapsPinUrl, hasValidCoords } from "../../lib/mapsUrl"
@@ -92,8 +93,8 @@ export function SharedDay({
               )
             }
             return (
-              <TimelineRow key={`stay-${entry.data.id}-${entry.event}`} time={entry.at ?? null} icon={<TimelineIcon kind="stay" />}>
-                <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} />
+              <TimelineRow key={`stay-${entry.data.id}-${entry.event}`} time={stayShownTime(entry)} icon={<TimelineIcon kind="stay" />}>
+                <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} aroundTravel={entry.aroundTravel} />
               </TimelineRow>
             )
           })
@@ -114,7 +115,7 @@ function SharedActivityCard({
 }) {
   const p = activity.payload
   const time = formatActivityTimeRange(activity.start_time || undefined, activity.end_time || undefined)
-  const place = [p.location_name, p.address].filter(Boolean).join(" · ")
+  const place = [p.location_name, addressAfterName(p.location_name, p.address)].filter(Boolean).join(" · ")
   const mapsHref = hasValidCoords(p.lat, p.lng) ? buildMapsPinUrl(p.lat!, p.lng!, p.location_name) : null
   const website = p.external_url ? normalizeExternalUrl(p.external_url) : null
 
