@@ -157,7 +157,7 @@ Desktop                                         Mobile (di dalam trip)
 └─────────────────────────────────────────┘
 ```
 
-- **Desktop:** top bar (logo, nav pill global, avatar) → hero cover → tab pill yang menempel di tepi bawah hero → split itinerary (kiri, 600px) dan peta (kanan, mengisi sisa lebar). Lebar maksimal konten **1920px** supaya monitor besar (27") tidak menyisakan banyak ruang kosong.
+- **Desktop:** top bar (logo, nav pill global, avatar) → hero cover → tab pill yang menempel di tepi bawah hero → split itinerary (kiri, 600px) dan peta (kanan, mengisi sisa lebar). Lebar maksimal konten **1440px** supaya di monitor besar (27") konten tetap fokus di tengah dan tidak melebar sampai tepi.
 - **Mobile:** nav mengambang di bawah. Di luar trip isinya global (Trips · AI · Kurs · Profil). Di dalam trip isinya tab trip (Itinerary · Peta · Bookings · Budget · Ringkasan), dan keduanya tidak pernah tampil bersamaan. Tab Peta di mobile memakai peta penuh dengan detail di bottom sheet.
 - Top bar global versi lama dan bottom nav berlapis dihapus.
 
