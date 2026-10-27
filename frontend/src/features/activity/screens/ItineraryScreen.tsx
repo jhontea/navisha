@@ -8,6 +8,7 @@ import { DateCircles } from "@/components/DateCircles"
 import { EmptyState } from "@/components/EmptyState"
 import { useTrip } from "@/features/trip/hooks/useTrips"
 import { useTripOverview } from "@/features/trip/overview"
+import { useTripWeather } from "@/features/trip/weather"
 import { toLocalISODate } from "@/features/trip/lib/status"
 import type { Day } from "@/features/trip/types"
 import { DayPanel } from "@/features/activity/components/DayPanel"
@@ -65,6 +66,7 @@ function DayView({
   const { data: overview } = useTripOverview(tripId)
   const counts = overview?.activity_count_by_day ?? {}
   const day = days.find((d) => d.id === activeDayId) ?? days[0]
+  const { data: weather } = useTripWeather(tripId, days[0].date, days[days.length - 1].date)
 
   return (
     <>
@@ -92,6 +94,7 @@ function DayView({
         destination={destination}
         tripBaseCurrency={tripBaseCurrency}
         days={days}
+        weather={weather?.days.find((w) => w.date === day.date)}
       />
     </>
   )
