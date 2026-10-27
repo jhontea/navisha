@@ -4,6 +4,7 @@ import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 
 import { EmptyState } from "@/components/EmptyState"
@@ -23,7 +24,7 @@ import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } fro
 import type { CreateExpenseInput, Expense } from "../types"
 
 const ExpenseForm = dynamic(
-  () => import("./ExpenseForm").then((module) => module.ExpenseForm),
+  () => loadOrOffline(() => import("./ExpenseForm").then((module) => module.ExpenseForm)),
   { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> },
 )
 

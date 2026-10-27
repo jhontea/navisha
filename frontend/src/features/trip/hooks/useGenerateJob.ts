@@ -2,7 +2,7 @@
 
 import { useCallback, useReducer, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ApiError } from "@/lib/api"
+import { ApiError, isOfflineError } from "@/lib/api"
 import { tripApi } from "../api"
 import type { GenerateJob, GenerateTripInput } from "../types"
 import { ignoreJob, isIgnored, saveSnapshot, shouldKeepPolling, snapshotFromInput } from "../lib/generateJob"
@@ -73,6 +73,7 @@ export function useGenerateJob() {
       setStartedId(job_id)
     },
     onError: (err) => {
+      if (isOfflineError(err)) return
       if (err instanceof ApiError && err.status === 409) {
         // Already generating (another tab or a double click): follow that job.
         tripApi

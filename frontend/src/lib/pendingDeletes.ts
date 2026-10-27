@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react"
 
+import { isOfflineError } from "./api"
 import { toast } from "./toast"
 
 /**
@@ -46,7 +47,8 @@ function commit(id: string) {
   item.dismiss()
   item
     .commit()
-    .catch(() => item.onError())
+    // Offline: api.ts already toasted; the item still comes back below.
+    .catch((err) => { if (!isOfflineError(err)) item.onError() })
     // Keep the id hidden until the delete settles, so the list does not flash
     // the item back before the mutation removes it from the cache.
     .finally(() => {

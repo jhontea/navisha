@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 import { useParams, useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, RefreshCw } from "lucide-react"
@@ -18,12 +19,12 @@ import { activityApi } from "@/features/activity/api"
 import { accommodationApi } from "@/features/accommodation/api"
 import { transportationApi } from "@/features/transportation/api"
 import { useDeleteTrip, useDuplicateTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
-import { ApiError } from "@/lib/api"
+import { ApiError, isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const TripForm = dynamic(
-  () => import("@/features/trip/components/TripForm").then((m) => m.TripForm),
+  () => loadOrOffline(() => import("@/features/trip/components/TripForm").then((m) => m.TripForm)),
   {
     ssr: false,
     loading: () => <div className="h-96 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
@@ -31,7 +32,7 @@ const TripForm = dynamic(
 )
 
 const DuplicateTripForm = dynamic(
-  () => import("@/features/trip/components/DuplicateTripForm").then((m) => m.DuplicateTripForm),
+  () => loadOrOffline(() => import("@/features/trip/components/DuplicateTripForm").then((m) => m.DuplicateTripForm)),
   {
     ssr: false,
     loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
@@ -113,7 +114,9 @@ export function TripShell({ children }: { children: ReactNode }) {
         toast("Trip deleted.")
         router.push("/trips")
       },
-      onError: () => toast("Couldn't delete this trip. Try again.", "error"),
+      onError: (error) => {
+        if (!isOfflineError(error)) toast("Couldn't delete this trip. Try again.", "error")
+      },
     })
   }
 
@@ -199,6 +202,7 @@ export function TripShell({ children }: { children: ReactNode }) {
               setEditOpen(false)
               toast("Trip details updated.")
             } catch (updateError) {
+              if (isOfflineError(updateError)) return
               const message =
                 updateError instanceof ApiError && updateError.status >= 400 && updateError.status < 600
                   ? updateError.message
@@ -226,6 +230,7 @@ export function TripShell({ children }: { children: ReactNode }) {
               toast("Trip duplicated.")
               router.push(`/trips/${copy.id}`)
             } catch (duplicateError) {
+              if (isOfflineError(duplicateError)) return
               const message =
                 duplicateError instanceof ApiError && duplicateError.status >= 400 && duplicateError.status < 600
                   ? duplicateError.message

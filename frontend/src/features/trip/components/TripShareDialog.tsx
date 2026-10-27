@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { tripApi } from "../api"
 import type { ShareDurationDays, TripShareLink } from "../types"
-import { ApiError } from "@/lib/api"
+import { ApiError, isOfflineError } from "@/lib/api"
 
 const durations: Array<{ value: ShareDurationDays; label: string }> = [
   { value: 1, label: "24 hours" }, { value: 3, label: "3 days" },
@@ -47,7 +47,7 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
   const generate = async () => {
     setLoading(true); setError(""); setCopied(false)
     try { setLink(await tripApi.createShareLink(tripId, duration)) }
-    catch { setError("Couldn't create the share link. Try again.") }
+    catch (err) { if (!isOfflineError(err)) setError("Couldn't create the share link. Try again.") }
     finally { setLoading(false) }
   }
 
@@ -60,7 +60,7 @@ export function TripShareDialog({ tripId, open, onOpenChange }: Props) {
   const revoke = async () => {
     setLoading(true); setError("")
     try { await tripApi.revokeShareLink(tripId); setLink(null) }
-    catch { setError("Could not disable the share link.") }
+    catch (err) { if (!isOfflineError(err)) setError("Could not disable the share link.") }
     finally { setLoading(false) }
   }
 

@@ -11,6 +11,7 @@ import { tripApi } from "@/features/trip/api"
 import type { ActivityDraft, DayPreview, TripDraft } from "@/features/trip/types"
 import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations"
 import { suggestionKey } from "@/features/trip/lib/suggestionKey"
+import { isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { useCreateActivitiesBatch } from "../hooks/useActivities"
 import type { CreateActivityInput } from "../types"
@@ -111,7 +112,7 @@ export function DayAIPlanner({
       setPreview(nextPreview)
       setSelectedKeys(new Set(nextPreview.activities.map(suggestionKey)))
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Couldn't generate suggestions for this day. Try again.", "error")
+      if (!isOfflineError(error)) toast(error instanceof Error ? error.message : "Couldn't generate suggestions for this day. Try again.", "error")
     } finally {
       setIsGenerating(false)
     }
@@ -156,7 +157,7 @@ export function DayAIPlanner({
       try {
         await createBatch.mutateAsync(items)
       } catch (error) {
-        toast(error instanceof Error ? error.message : "Couldn't add the suggestions. Nothing was saved. Try again.", "error")
+        if (!isOfflineError(error)) toast(error instanceof Error ? error.message : "Couldn't add the suggestions. Nothing was saved. Try again.", "error")
         return
       }
 

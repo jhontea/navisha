@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Notice } from "@/components/Notice"
 import { QuotaBadge } from "@/components/QuotaBadge"
+import { isOfflineError } from "@/lib/api"
 import { sanitizeText } from "@/lib/sanitize"
 import { cn } from "@/lib/utils"
 import { NativeSelect } from "@/components/NativeSelect"
@@ -126,7 +127,7 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
 
   const errStatus = (generate.error as { status?: number })?.status
   const isRateLimited = generate.isError && errStatus === 429
-  const isGenerateError = generate.isError && !isRateLimited
+  const isGenerateError = generate.isError && !isRateLimited && !isOfflineError(generate.error)
 
   // Warn before leaving while a summary is being generated.
   useEffect(() => {

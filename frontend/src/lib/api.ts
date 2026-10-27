@@ -18,6 +18,32 @@ class ApiError extends Error {
   }
 }
 
+export const OFFLINE_MESSAGE = "You're offline. Changes can't be saved right now."
+
+/** A write refused because there is no connection; nothing reached the server. */
+class OfflineError extends ApiError {
+  constructor() {
+    super(0, "OFFLINE", OFFLINE_MESSAGE)
+    this.name = "OfflineError"
+  }
+}
+
+export function isOfflineError(err: unknown): err is OfflineError {
+  return err instanceof OfflineError
+}
+
+// One toast for a burst of refused writes (e.g. several deletes flushed at once).
+let offlineToastOpen = false
+function refuseOffline(): OfflineError {
+  if (!offlineToastOpen) {
+    offlineToastOpen = true
+    const ms = 3500
+    toast(OFFLINE_MESSAGE, "error", ms)
+    setTimeout(() => (offlineToastOpen = false), ms)
+  }
+  return new OfflineError()
+}
+
 /** Read the CSRF token from the non-HTTP-only csrf_token cookie. */
 function getCSRFToken(): string {
   if (typeof document === "undefined") return ""
@@ -95,6 +121,14 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     throw new ApiError(0, "LOGGING_OUT", "Session ending")
   }
 
+  // Offline: refuse writes before fetch (no write queue). Auth calls and
+  // location lookups (POSTs that only read) keep their own error handling.
+  const guardOffline =
+    !!init.method && init.method !== "GET" && !path.startsWith("/auth/") && !path.startsWith("/locations/")
+  if (guardOffline && typeof navigator !== "undefined" && !navigator.onLine) {
+    throw refuseOffline()
+  }
+
   const url = new URL(`${API_BASE}${path}`)
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
@@ -114,13 +148,24 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     headers["X-CSRF-Token"] = csrfToken
   }
 
-  let res = await fetch(url.toString(), {
-    ...init,
-    cache: init.cache ?? "no-store",
-    credentials: "include",
-    headers,
-    signal: signal ?? null,
-  })
+  const send = async () => {
+    try {
+      return await fetch(url.toString(), {
+        ...init,
+        cache: init.cache ?? "no-store",
+        credentials: "include",
+        headers,
+        signal: signal ?? null,
+      })
+    } catch (err) {
+      // navigator.onLine can say online with no internet; fetch then rejects
+      // with a TypeError (an abort is a DOMException and passes through).
+      if (guardOffline && err instanceof TypeError) throw refuseOffline()
+      throw err
+    }
+  }
+
+  let res = await send()
 
   // ponytail: 401 → try /auth/refresh once, then retry the original request.
   // If refresh fails, the session is gone — surface it to the user instead of
@@ -130,13 +175,7 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     const ok = await refreshSession()
     if (ok) {
       // Replay the original request with fresh cookies.
-      res = await fetch(url.toString(), {
-        ...init,
-        cache: init.cache ?? "no-store",
-        credentials: "include",
-        headers,
-        signal: signal ?? null,
-      })
+      res = await send()
     } else {
       bailToLoginOnError()
     }

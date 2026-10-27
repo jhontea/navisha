@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { NavBar } from "@/components/NavBar"
+import { OfflineBanner } from "@/components/OfflineBanner"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { Providers } from "@/components/providers"
 import { DashboardRuntime } from "@/components/DashboardRuntime"
@@ -15,6 +16,7 @@ export default function DashboardLayout({
       <ErrorBoundary>
         <div className="relative flex min-h-screen flex-col bg-background">
           <NavBar />
+          <OfflineBanner />
 
           {/* Bottom padding clears the floating nav on phones (and the notch). */}
           <div

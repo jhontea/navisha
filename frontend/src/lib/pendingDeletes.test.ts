@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { api } from "./api"
 import { UNDO_WINDOW_MS, flushPendingDeletes, scheduleDelete } from "./pendingDeletes"
 
 type ToastCall = { message: string; kind?: string; action?: { label: string; onClick: () => void } }
@@ -55,5 +56,13 @@ describe("scheduleDelete", () => {
     scheduleDelete({ id: "d", message: "Activity deleted.", errorMessage: "Couldn't delete.", commit })
     await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS)
     expect(toastCalls.at(-1)).toMatchObject({ message: "Couldn't delete.", kind: "error" })
+  })
+
+  it("offline: no generic error toast, only the offline one from api.ts", async () => {
+    vi.stubGlobal("navigator", { onLine: false })
+    const commit = () => api.delete("/activities/e")
+    scheduleDelete({ id: "e", message: "Activity deleted.", errorMessage: "Couldn't delete.", commit })
+    await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS)
+    expect(toastCalls.map((t) => t.message)).toEqual(["Activity deleted.", "You're offline. Changes can't be saved right now."])
   })
 })

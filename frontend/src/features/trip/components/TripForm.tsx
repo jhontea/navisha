@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 import { useState, type ReactNode } from "react"
 import { ChevronDown, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
@@ -28,7 +29,7 @@ import { canRenderTripCover, getDefaultTripCover } from "../lib/cover"
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 const DestinationAutocomplete = dynamic(
-  () => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete),
+  () => loadOrOffline(() => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete)),
   {
     ssr: false,
     loading: () => <div className="h-12 w-full animate-pulse rounded-lg border bg-muted/30" aria-hidden="true" />,
@@ -36,7 +37,7 @@ const DestinationAutocomplete = dynamic(
 )
 
 const TravelDateRangePicker = dynamic(
-  () => import("./TravelDateRangePicker").then((module) => module.TravelDateRangePicker),
+  () => loadOrOffline(() => import("./TravelDateRangePicker").then((module) => module.TravelDateRangePicker)),
   {
     ssr: false,
     loading: () => <div className="h-20 animate-pulse rounded-xl bg-muted/30" aria-hidden="true" />,

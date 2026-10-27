@@ -37,6 +37,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             refetchOnMount: true,              // stale queries refetch on navigation
             retry: 1,
           },
+          // Run writes even when offline so api.ts refuses them with a message;
+          // the default ("online") would pause them and send them on reconnect.
+          mutations: { networkMode: "always" },
         },
       }),
   )
@@ -49,6 +52,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setPrevUserID(userID)
     setRestoredUserID(null)
   }
+
+  // Back online after a real offline spell: refresh what is on screen once.
+  // refetchOnReconnect stays off because iOS fires "online" on every tab resume.
+  useEffect(() => {
+    let wentOffline = false
+    const onOffline = () => (wentOffline = true)
+    const onOnline = () => {
+      if (!wentOffline) return
+      wentOffline = false
+      void queryClient.refetchQueries({ type: "active" })
+    }
+    window.addEventListener("offline", onOffline)
+    window.addEventListener("online", onOnline)
+    return () => {
+      window.removeEventListener("offline", onOffline)
+      window.removeEventListener("online", onOnline)
+    }
+  }, [queryClient])
 
   useEffect(() => {
     if (!userID) return

@@ -36,7 +36,7 @@ import { curateDraft } from "@/features/trip/lib/draftBookings"
 import { AlertCircle, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
-import { ApiError } from "@/lib/api"
+import { ApiError, isOfflineError } from "@/lib/api"
 import { QuotaBadge } from "@/components/QuotaBadge"
 
 const MAX_DAYS = 10
@@ -164,6 +164,7 @@ function GenerateTripPageContent() {
       router.push(`/trips/${trip_id}`)
     } catch (err) {
       setResolving(false)
+      if (isOfflineError(err)) return
       setFormError(
         err instanceof ApiError ? err.message : "Couldn't create the trip. Nothing was saved, so try again.",
       )

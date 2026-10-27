@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { loadOrOffline } from "@/lib/loadOrOffline"
 import { Plane, Plus } from "lucide-react"
 
 import { EmptyState } from "@/components/EmptyState"
@@ -21,7 +22,7 @@ import { AddTransportationSheet } from "./AddTransportationSheet"
 import { TransportationCard } from "./TransportationCard"
 
 const TransportationForm = dynamic(
-  () => import("./TransportationForm").then((module) => module.TransportationForm),
+  () => loadOrOffline(() => import("./TransportationForm").then((module) => module.TransportationForm)),
   { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
 )
 

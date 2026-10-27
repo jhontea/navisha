@@ -14,7 +14,7 @@ import { ACCOMMODATION_TYPE_LABELS } from "@/features/accommodation/types"
 import { AddTransportationSheet } from "@/features/transportation/components/AddTransportationSheet"
 import { TransportIcon } from "@/features/transportation/components/TransportIcon"
 import { transportTypeLabel } from "@/features/transportation/lib/transportType"
-import { ApiError } from "@/lib/api"
+import { ApiError, isOfflineError } from "@/lib/api"
 import { formatClock, formatShortRange, formatWeekdayDate } from "@/lib/calendar"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -117,7 +117,7 @@ export function PasteConfirmation({ tripId, tripBaseCurrency, days, destination 
                 You&apos;ve used today&apos;s AI uses. The limit resets at the time shown below.
               </Notice>
             )}
-            {parse.isError && status !== 429 && (
+            {parse.isError && status !== 429 && !isOfflineError(parse.error) && (
               <Notice tone="error" title="Couldn't read this text">
                 {status === 400 ? parse.error.message : "Try again in a moment."}
               </Notice>
