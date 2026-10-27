@@ -67,6 +67,11 @@ describe("trip .ics", () => {
     expect(text).toContain("DTSTART:20270227T230000\r\nDTEND:20270228T013000\r\n")
   })
 
+  it("gives an activity whose end equals its start one hour, not a day", () => {
+    const { text } = build({ activitiesByDay: { d1: [activity({ start_time: "09:30", end_time: "09:30" })] } })
+    expect(text).toContain("DTSTART:20270227T093000\r\nDTEND:20270227T103000\r\n")
+  })
+
   it("keeps transport wall-clock digits with no timezone conversion", () => {
     const { text, count } = build({
       transports: [
@@ -97,6 +102,7 @@ describe("trip .ics", () => {
 
   it("escapes text values", () => {
     expect(escapeText("a\\b; c, d\ne")).toBe("a\\\\b\\; c\\, d\\ne")
+    expect(escapeText("a\rb\r\nc")).toBe("a\\nb\\nc")
     const { text } = build({ trip: { title: "Bali, Lombok; 2027", days: [] } })
     expect(text).toContain("X-WR-CALNAME:Bali\\, Lombok\\; 2027\r\n")
   })

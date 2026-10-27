@@ -150,8 +150,11 @@ export function TripShell({ children }: { children: ReactNode }) {
       const link = document.createElement("a")
       link.href = url
       link.download = icsFileName(trip.title)
+      document.body.appendChild(link)
       link.click()
-      URL.revokeObjectURL(url)
+      link.remove()
+      // Safari may start the download after click() returns; revoke later.
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
       toast("Calendar file downloaded.")
     } catch {
       toast("Couldn't export your calendar. Try again.", "error")

@@ -43,7 +43,7 @@ function stamp(date: string, time: string, addHours = 0): string {
 const clock = (value: string | null | undefined) => value?.match(/^(\d{2}):(\d{2})/)?.[0] ?? null
 
 export function escapeText(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n")
+  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n")
 }
 
 /** Folds a content line at 75 octets without splitting a UTF-8 character. */
@@ -76,7 +76,8 @@ function activityEvents(trip: TripIcsInput["trip"], activitiesByDay: TripIcsInpu
       const endTime = clock(activity.end_time)
       const start = stamp(day.date, startTime)
       let end = endTime ? stamp(day.date, endTime) : stamp(day.date, startTime, 1)
-      if (end <= start) end = stamp(day.date, endTime ?? startTime, 24)
+      if (end === start) end = stamp(day.date, startTime, 1)
+      else if (end < start) end = stamp(day.date, endTime ?? startTime, 24)
 
       const event: IcsEvent = { uid: `activity-${activity.id}@navisha`, start, end, summary: activity.title }
       if (activity.type === "location") {
