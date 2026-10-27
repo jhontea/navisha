@@ -59,6 +59,21 @@
     font-variant-numeric: tabular-nums;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    /* Installed app (viewport-fit=cover): keep content below the iOS status bar. */
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* The status-bar strip takes the page background, so it follows light/dark
+     (the iOS "black-translucent" bar is otherwise see-through). Zero height
+     outside the installed app. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top);
+    background-color: hsl(var(--background));
+    z-index: 1001; /* ds-allow-hardcode: above RouteProgress (z-1000) and every overlay */
+    pointer-events: none;
   }
 
   /* Native controls inside forms share the same non-interactive treatment. */

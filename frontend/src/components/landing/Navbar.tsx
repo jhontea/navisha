@@ -10,7 +10,7 @@ const NAV_LINK =
 
 export function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 h-16 w-full bg-background/90 backdrop-blur-sm" aria-label="Main navigation">
+    <nav className="sticky top-[env(safe-area-inset-top)] z-50 h-16 w-full bg-background/90 backdrop-blur-sm" aria-label="Main navigation">
       <div className="relative mx-auto flex h-full max-w-max-width items-center justify-between px-margin-mobile md:px-margin-desktop">
         <Link href="/" className="flex min-h-11 shrink-0 items-center rounded-full" aria-label="Navisha home">
           <BrandLogo />

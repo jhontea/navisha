@@ -59,7 +59,7 @@ export function NavBar() {
 
       <header
         className={cn(
-          "sticky top-0 z-50 h-16 items-center bg-background/90 backdrop-blur-sm",
+          "sticky top-[env(safe-area-inset-top)] z-50 h-16 items-center bg-background/90 backdrop-blur-sm",
           inTrip ? "hidden md:flex" : "flex",
         )}
       >

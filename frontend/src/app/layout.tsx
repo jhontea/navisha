@@ -46,11 +46,14 @@ export const metadata: Metadata = {
     type: "website",
   },
   // iOS takes its home-screen icon from apple-icon.png in this folder, not from the manifest.
-  appleWebApp: { capable: true, title: "Navisha", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Navisha", statusBarStyle: "black-translucent" },
 }
 
 export const viewport: Viewport = {
   themeColor: THEME_COLOR.light, // dark mode swaps it in lib/theme.ts
+  // Draw under the iOS status bar and the Android navigation bar; globals.css
+  // pads the page and paints the status-bar strip with the theme background.
+  viewportFit: "cover",
 }
 
 export default function RootLayout({
