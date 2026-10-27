@@ -57,7 +57,7 @@ describe("stayDraft", () => {
     check_out: "2026-11-05",
     check_in_time: "14:00",
     check_out_time: null,
-    confirmation_number: "HF-1",
+    confirmation_number: "H".repeat(150),
     notes: "n".repeat(2500),
   }
 
@@ -65,6 +65,7 @@ describe("stayDraft", () => {
     const d = stayDraft(stay)
     expect(d.location_name).toHaveLength(200)
     expect(d.notes).toHaveLength(2000)
+    expect(d.confirmation_number).toHaveLength(120)
     expect(d).toMatchObject({ name: "Hotel Fiktif", check_in: "2026-11-02", check_out_time: null })
   })
 })
