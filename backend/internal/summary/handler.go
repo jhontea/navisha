@@ -69,6 +69,10 @@ func (h *Handler) Get(c echo.Context, userID string) error {
 	if err != nil {
 		return mapErr(err)
 	}
+	if s == nil {
+		// No summary generated yet (an unknown trip is still 404).
+		return c.NoContent(http.StatusNoContent)
+	}
 	return c.JSON(http.StatusOK, toResponse(s))
 }
 

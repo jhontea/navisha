@@ -185,14 +185,14 @@ func TestGenerate_ForbiddenPropagates(t *testing.T) {
 	}
 }
 
-func TestGet_NotFound(t *testing.T) {
+func TestGet_NoSummaryYet(t *testing.T) {
 	repo := &fakeRepo{getErr: ErrNotFound}
 	provider := &fakeProvider{ctx: newTripContext()}
 	uc := NewUsecase(repo, &fakeLLM{}, provider, "test-model")
 
-	_, err := uc.Get(context.Background(), "user1", "trip1")
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("expected ErrNotFound, got %v", err)
+	s, err := uc.Get(context.Background(), "user1", "trip1")
+	if err != nil || s != nil {
+		t.Fatalf("got (%v, %v), want (nil, nil) for a trip without a summary", s, err)
 	}
 }
 

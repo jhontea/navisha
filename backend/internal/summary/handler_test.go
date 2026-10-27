@@ -265,7 +265,6 @@ func TestHandlerGet_ErrorMapping(t *testing.T) {
 		getErr     error
 		wantStatus int
 	}{
-		{"not found", nil, ErrNotFound, http.StatusNotFound},
 		{"forbidden (apperr)", apperr.ErrForbidden, nil, http.StatusForbidden},
 		{"forbidden (summary)", ErrForbidden, nil, http.StatusForbidden},
 		{"trip missing", ErrNotFound, nil, http.StatusNotFound},
@@ -279,6 +278,19 @@ func TestHandlerGet_ErrorMapping(t *testing.T) {
 			_, err := call(t, hs.h.Get, http.MethodGet, "t1", testUser)
 			wantHTTPErr(t, err, tt.wantStatus)
 		})
+	}
+}
+
+// A trip without a summary yet answers 204 (not a 404 error in the browser console).
+func TestHandlerGet_NoSummaryYet(t *testing.T) {
+	hs := newHarness(t)
+	hs.repo.getErr = ErrNotFound
+	rec, err := call(t, hs.h.Get, http.MethodGet, "t1", testUser)
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", rec.Code)
 	}
 }
 

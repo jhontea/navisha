@@ -26,6 +26,9 @@ export type StaticTimelineItem<T extends TimelineTransport = Transportation, S e
       event: "check_in" | "check_out"
       /** "HH:MM" the stay sorts at and shows on this day. */
       at?: string
+      /** No time set and `at` was moved around the day's travel only to order the
+       *  timeline: show "after arrival" / "before departure", not `at`. */
+      aroundTravel?: boolean
     }
 
 // Stays without times of their own sit at typical hotel times.
@@ -142,10 +145,12 @@ export function buildStaticItems<T extends TimelineTransport, S extends Timeline
   for (const a of accommodations) {
     // A time the traveller set wins over the guess.
     if (dateMatches(a.check_in, date)) {
-      items.push({ kind: "accommodation", data: a, event: "check_in", at: a.check_in_time?.slice(0, 5) || checkIn })
+      const own = a.check_in_time?.slice(0, 5)
+      items.push({ kind: "accommodation", data: a, event: "check_in", at: own || checkIn, aroundTravel: !own && checkIn !== CHECK_IN_TIME })
     }
     if (dateMatches(a.check_out, date)) {
-      items.push({ kind: "accommodation", data: a, event: "check_out", at: a.check_out_time?.slice(0, 5) || checkOut })
+      const own = a.check_out_time?.slice(0, 5)
+      items.push({ kind: "accommodation", data: a, event: "check_out", at: own || checkOut, aroundTravel: !own && checkOut !== CHECK_OUT_TIME })
     }
   }
   return items.sort((a, b) => staticSortKey(a).localeCompare(staticSortKey(b)))
@@ -184,4 +189,9 @@ export function interleaveTimeline<
   }
   entries.push(...pending)
   return entries
+}
+
+/** Time to show for a timeline stay: none when it only sits around the day's travel. */
+export function stayShownTime(item: { at?: string; aroundTravel?: boolean }): string | null {
+  return item.aroundTravel ? null : (item.at ?? null)
 }

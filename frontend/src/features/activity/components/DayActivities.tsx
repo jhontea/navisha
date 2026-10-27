@@ -44,7 +44,7 @@ import { useActivitySelection } from "../hooks/useActivitySelection"
 import { useTripTravel } from "../hooks/useTripTravel"
 import { useItineraryFocus } from "../ItineraryFocus"
 import { reorderAnnouncements, reorderInstructions } from "../lib/order"
-import { extractTime, interleaveTimeline, type TimelineEntry } from "../lib/timeline"
+import { extractTime, interleaveTimeline, stayShownTime, type TimelineEntry } from "../lib/timeline"
 import { entryRef, legBetween, legsByPair } from "../lib/travel"
 import type { Activity, ActivityListResponse, CreateActivityInput } from "../types"
 import { ActivityForm } from "./ActivityForm"
@@ -270,10 +270,10 @@ export function DayActivities({
     }
     return (
       <TimelineRow
-        time={entry.at ?? null}
+        time={stayShownTime(entry)}
         icon={<TimelineIcon kind="stay" />}
       >
-        <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} />
+        <StayTimelineCard a={entry.data} event={entry.event} at={entry.at} aroundTravel={entry.aroundTravel} />
       </TimelineRow>
     )
   }

@@ -1,5 +1,6 @@
 "use client"
 
+import { addressAfterName } from "@/features/activity/lib/place"
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
@@ -8,7 +9,7 @@ import { AlertTriangle, ArrowLeft, Check, Printer, RefreshCw } from "lucide-reac
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTripActivities } from "@/features/activity/hooks/useActivities"
-import { buildStaticItems, extractDate, interleaveTimeline, type TimelineEntry } from "@/features/activity/lib/timeline"
+import { buildStaticItems, extractDate, interleaveTimeline, stayShownTime, type TimelineEntry } from "@/features/activity/lib/timeline"
 import { formatActivityTimeRange } from "@/features/activity/lib/time"
 import type { Activity, LocationPayload, NotePayload, TodoPayload } from "@/features/activity/types"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
@@ -77,7 +78,7 @@ function ActivityEntry({ activity: a }: { activity: Activity }) {
     return <Row time={time} title={a.title || "Note"}>{content && <Detail>{content}</Detail>}</Row>
   }
   const p = a.payload as LocationPayload | null
-  const place = [p?.location_name, p?.address].filter((v) => v && v !== a.title).join(", ")
+  const place = [p?.location_name, addressAfterName(p?.location_name, p?.address)].filter((v) => v && v !== a.title).join(", ")
   return (
     <Row time={time} title={a.title}>
       {place && <Detail>{place}</Detail>}
@@ -105,7 +106,10 @@ function Entry({ entry }: { entry: TimelineEntry }) {
   }
   const s = entry.data
   return (
-    <Row time={entry.at} title={`${entry.event === "check_in" ? "Check-in" : "Check-out"}: ${s.name}`}>
+    <Row
+      time={stayShownTime(entry) ?? undefined}
+      title={`${entry.event === "check_in" ? (entry.aroundTravel ? "Check-in after arrival" : "Check-in") : entry.aroundTravel ? "Check-out before departure" : "Check-out"}: ${s.name}`}
+    >
       {s.location_name && <Detail>{s.location_name}</Detail>}
       {s.confirmation_number && <Detail>Confirmation: {s.confirmation_number}</Detail>}
     </Row>

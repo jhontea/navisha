@@ -242,10 +242,11 @@ function DailyCard({ daily, currency }: { daily: DailyTotals; currency: string }
                 <span className="flex min-h-0 w-full flex-1 items-end justify-center" aria-hidden="true">
                   <span
                     className={cn(
-                      "w-full max-w-9 rounded-t-lg",
-                      d.total <= 0 ? "bg-muted" : d === peak ? "bg-primary" : "bg-primary/35",
+                      // Small radius and a visible minimum: short bars stay bars, not grey domes.
+                      "w-full max-w-9 rounded-t-md",
+                      d.total <= 0 ? "bg-muted" : d === peak ? "bg-primary" : "bg-primary/55",
                     )}
-                    style={{ height: d.total > 0 ? `max(${pct}%, 3px)` : "3px" }}
+                    style={{ height: d.total > 0 ? `max(${pct}%, 10px)` : "3px" }}
                   />
                 </span>
                 <span className="h-4 text-xs leading-4 text-muted-foreground tabular-nums" aria-hidden="true">

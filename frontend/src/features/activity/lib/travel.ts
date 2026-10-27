@@ -41,15 +41,31 @@ export function legBetween(legs: Map<string, TravelLeg>, a: TimelineEntry, b: Ti
 
 // Driving times are rough (no traffic) and estimates are straight-line guesses.
 const isApprox = (leg: TravelLeg) => leg.mode === "drive" || leg.source === "estimate"
-const minutes = (n: number) => `${n} ${n === 1 ? "minute" : "minutes"}`
+const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`
 
-/** "12 min walk" / "≈ 25 min drive". */
+/** Short duration: "45 min" under an hour, else "2h 17m" / "3h". */
+export function shortDuration(total: number): string {
+  if (total < 60) return `${total} min`
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return m ? `${h}h ${m}m` : `${h}h`
+}
+
+/** Spoken duration: "45 minutes", "2 hours 17 minutes", "1 hour". */
+function spokenDuration(total: number): string {
+  if (total < 60) return plural(total, "minute")
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return m ? `${plural(h, "hour")} ${plural(m, "minute")}` : plural(h, "hour")
+}
+
+/** "12 min walk" / "≈ 25 min drive" / "≈ 2h 17m drive". */
 export function travelText(leg: TravelLeg): string {
-  return `${isApprox(leg) ? "≈ " : ""}${leg.minutes} min ${leg.mode}`
+  return `${isApprox(leg) ? "≈ " : ""}${shortDuration(leg.minutes)} ${leg.mode}`
 }
 
 /** Screen-reader sentence, e.g. "About 25 minutes by car. Only 15 minutes between these plans." */
 export function travelLabel(leg: TravelLeg): string {
-  const travel = `${isApprox(leg) ? "About " : ""}${minutes(leg.minutes)} ${leg.mode === "walk" ? "on foot" : "by car"}.`
-  return leg.tight && leg.gap_minutes != null ? `${travel} Only ${minutes(leg.gap_minutes)} between these plans.` : travel
+  const travel = `${isApprox(leg) ? "About " : ""}${spokenDuration(leg.minutes)} ${leg.mode === "walk" ? "on foot" : "by car"}.`
+  return leg.tight && leg.gap_minutes != null ? `${travel} Only ${spokenDuration(leg.gap_minutes)} between these plans.` : travel
 }

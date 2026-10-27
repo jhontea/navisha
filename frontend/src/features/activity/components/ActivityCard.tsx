@@ -1,5 +1,6 @@
 "use client"
 
+import { addressAfterName } from "../lib/place"
 import { AlertTriangle, ExternalLink, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 
 import { buttonVariants, Button } from "@/components/ui/button"
@@ -144,14 +145,15 @@ function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggle
             ? externalUrl
             : buildMapsPinUrl(p.lat, p.lng, p.location_name)
           : null
+      const address = addressAfterName(p.location_name, p.address)
       return (
         <div className="mt-1.5 space-y-1 text-sm text-muted-foreground">
-          {(p.location_name || p.address) && (
+          {(p.location_name || address) && (
             <p className="flex items-start gap-1.5">
               <span className="min-w-0 flex-1">
                 {p.location_name && <span className="text-foreground/80">{p.location_name}</span>}
-                {p.location_name && p.address && <span aria-hidden="true"> · </span>}
-                {p.address && <span className="text-xs">{p.address}</span>}
+                {p.location_name && address && <span aria-hidden="true"> · </span>}
+                {address && <span className="text-xs">{address}</span>}
               </span>
               {mapsHref && (
                 <a

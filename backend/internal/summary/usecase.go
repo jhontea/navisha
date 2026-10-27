@@ -98,7 +98,12 @@ func (u *Usecase) Get(ctx context.Context, userID, tripID string) (*Summary, err
 	if err := u.repo.VerifyTripOwner(ctx, userID, tripID); err != nil {
 		return nil, err
 	}
-	return u.repo.GetByTripID(ctx, tripID)
+	s, err := u.repo.GetByTripID(ctx, tripID)
+	if errors.Is(err, ErrNotFound) {
+		// The trip exists but has no summary yet: a normal state, not an error.
+		return nil, nil
+	}
+	return s, err
 }
 
 // Delete removes the cached summary. Verifies ownership first via the
