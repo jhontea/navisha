@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
+import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import type { LinkedCost } from "@/lib/linkedCost"
@@ -33,6 +34,7 @@ interface Props {
 /** Add-stay sheet (with cost), shared by the Bookings tab and the itinerary. */
 export function AddStaySheet({ tripId, tripBaseCurrency, open, onOpenChange, draft, draftCost, onCreated, days, checkIn, destination }: Props) {
   const createMut = useCreateAccommodation(tripId)
+  usePrefetchOnIdle(() => import("./AccommodationForm"))
   const tripDates = days.map((d) => d.date).sort()
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Add stay">
