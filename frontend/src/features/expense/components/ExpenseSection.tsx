@@ -5,6 +5,7 @@ import { Chip } from "@/components/Chip"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
+import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 
 import { EmptyState } from "@/components/EmptyState"
@@ -69,6 +70,7 @@ interface Props {
 
 /** Expense list with category filter and sort; add and edit open in a sheet. */
 export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEndDate }: Props) {
+  usePrefetchOnIdle(() => import("./ExpenseForm"))
   const { data, isLoading, isError } = useExpenses(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; expense: Expense } | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())

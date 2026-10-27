@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
+import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import type { LinkedCost } from "@/lib/linkedCost"
@@ -30,6 +31,7 @@ interface Props {
 /** Add-transport sheet (with cost), shared by the Bookings tab and the itinerary. */
 export function AddTransportationSheet({ tripId, tripBaseCurrency, open, onOpenChange, draft, draftCost, onCreated, defaultDeparture }: Props) {
   const createMut = useCreateTransportation(tripId)
+  usePrefetchOnIdle(() => import("./TransportationForm"))
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Add transport">
       {open && (
