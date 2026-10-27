@@ -384,7 +384,7 @@ func (h *Handler) retryAroundFoundPlaces(ctx context.Context, near NearSearcher,
 			return nil
 		}
 		p := medianPoint(all)
-		if center := h.cityCenter(ctx, near, item.city); center != nil && distanceKm(*center, p) > outlierKm {
+		if center := h.cityCenter(ctx, near, item.city); center != nil && DistanceKm(*center, p) > outlierKm {
 			return nil
 		}
 		return &p
@@ -405,7 +405,7 @@ func (h *Handler) retryAroundFoundPlaces(ctx context.Context, near NearSearcher,
 		switch {
 		case s == nil:
 			retries = append(retries, retry{item: item, anchor: *anchor})
-		case distanceKm(*anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm:
+		case DistanceKm(*anchor, Point{Lat: s.Latitude, Lng: s.Longitude}) > outlierKm:
 			retries = append(retries, retry{item: item, anchor: *anchor, farAway: true})
 		}
 	}
@@ -452,8 +452,8 @@ func medianPoint(points []Point) Point {
 	return Point{Lat: median(lats), Lng: median(lngs)}
 }
 
-// distanceKm is the great-circle distance between two points.
-func distanceKm(a, b Point) float64 {
+// DistanceKm is the great-circle distance between two points.
+func DistanceKm(a, b Point) float64 {
 	const earthKm = 6371.0
 	rad := math.Pi / 180
 	dLat := (b.Lat - a.Lat) * rad

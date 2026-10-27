@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -65,5 +66,41 @@ func TestGeoapifyClientReverseGeocodeUsesReverseEndpoint(t *testing.T) {
 	address, country, ok = client.ReverseGeocode(context.Background(), -6.735603, 108.263293)
 	if !ok || address != "" || country != "ID" {
 		t.Fatalf("far ReverseGeocode() = %q, %q, %v", address, country, ok)
+	}
+}
+
+func TestGeoapifyClientRoute(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if q.Get("waypoints") != "-6.200000,106.800000|-6.210000,106.810000" || q.Get("mode") != "walk" || q.Get("apiKey") != "test-key" {
+			t.Errorf("query = %v", q)
+		}
+		_, _ = w.Write([]byte(`{"results":[{"distance":1520,"time":1210.5}]}`))
+	}))
+	defer server.Close()
+
+	client := NewGeoapifyClient("test-key", "", time.Second)
+	client.routingURL = server.URL + "/v1/routing"
+	sec, m, err := client.Route(context.Background(), Point{Lat: -6.2, Lng: 106.8}, Point{Lat: -6.21, Lng: 106.81}, "walk")
+	if err != nil || sec != 1210.5 || m != 1520 {
+		t.Fatalf("Route() = %v, %v, %v", sec, m, err)
+	}
+}
+
+func TestGeoapifyClientRouteErrorHidesAPIKey(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusBadGateway)
+	}))
+	client := NewGeoapifyClient("secret-key", "", time.Second)
+	client.routingURL = server.URL
+	if _, _, err := client.Route(context.Background(), Point{}, Point{Lat: 1}, "drive"); err == nil || strings.Contains(err.Error(), "secret-key") {
+		t.Fatalf("status error = %v", err)
+	}
+	server.Close() // connection refused: the transport error carries the URL
+	if _, _, err := client.Route(context.Background(), Point{}, Point{Lat: 1}, "drive"); err == nil || strings.Contains(err.Error(), "secret-key") {
+		t.Fatalf("transport error = %v", err)
+	}
+	if _, _, err := NewGeoapifyClient("", "", time.Second).Route(context.Background(), Point{}, Point{}, "walk"); !errors.Is(err, ErrNotConfigured) {
+		t.Fatalf("no key error = %v", err)
 	}
 }

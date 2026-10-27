@@ -14,6 +14,10 @@ import (
 
 var ErrNotConfigured = errors.New("location provider is not configured")
 
+// ErrNoRoute means the provider found no route between the points (e.g. across
+// the sea); asking again will not help.
+var ErrNoRoute = errors.New("no route between the points")
+
 type Suggestion struct {
 	Provider    string  `json:"provider"`
 	ExternalID  string  `json:"external_id"`
@@ -60,10 +64,14 @@ type AutocompleteClient interface {
 }
 
 type GeoapifyClient struct {
-	apiKey  string
-	baseURL string
-	client  *http.Client
+	apiKey     string
+	baseURL    string
+	routingURL string
+	client     *http.Client
 }
+
+// geoapifyRoutingURL is fixed in code: routing is not a configurable provider.
+const geoapifyRoutingURL = "https://api.geoapify.com/v1/routing"
 
 func NewGeoapifyClient(apiKey, baseURL string, timeout time.Duration) *GeoapifyClient {
 	if strings.TrimSpace(baseURL) == "" {
@@ -73,9 +81,10 @@ func NewGeoapifyClient(apiKey, baseURL string, timeout time.Duration) *GeoapifyC
 		timeout = 8 * time.Second
 	}
 	return &GeoapifyClient{
-		apiKey:  strings.TrimSpace(apiKey),
-		baseURL: strings.TrimSpace(baseURL),
-		client:  &http.Client{Timeout: timeout},
+		apiKey:     strings.TrimSpace(apiKey),
+		baseURL:    strings.TrimSpace(baseURL),
+		routingURL: geoapifyRoutingURL,
+		client:     &http.Client{Timeout: timeout},
 	}
 }
 
@@ -259,6 +268,60 @@ func (c *GeoapifyClient) fetch(ctx context.Context, endpoint *url.URL, params ur
 		})
 	}
 	return items, nil
+}
+
+// Route returns the travel time (seconds) and road distance (meters) from
+// one point to another by mode ("walk" or "drive"), without traffic.
+func (c *GeoapifyClient) Route(ctx context.Context, from, to Point, mode string) (seconds, meters float64, err error) {
+	if c.apiKey == "" {
+		return 0, 0, ErrNotConfigured
+	}
+	endpoint, err := url.Parse(c.routingURL)
+	if err != nil {
+		return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: parse url: %w", err)
+	}
+	params := endpoint.Query()
+	params.Set("waypoints", fmt.Sprintf("%f,%f|%f,%f", from.Lat, from.Lng, to.Lat, to.Lng))
+	params.Set("mode", mode)
+	params.Set("format", "json")
+	params.Set("apiKey", c.apiKey)
+	endpoint.RawQuery = params.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.do(req)
+	if err != nil {
+		// *url.Error carries the full URL, apiKey included: keep only the cause.
+		var uerr *url.Error
+		if errors.As(err, &uerr) {
+			err = uerr.Err
+		}
+		return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: request: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+		if resp.StatusCode == http.StatusBadRequest {
+			return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: %w", ErrNoRoute)
+		}
+		return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: provider status %d", resp.StatusCode)
+	}
+	var payload struct {
+		Results []struct {
+			Distance float64 `json:"distance"`
+			Time     float64 `json:"time"`
+		} `json:"results"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&payload); err != nil {
+		return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: decode response: %w", err)
+	}
+	if len(payload.Results) == 0 {
+		return 0, 0, fmt.Errorf("location.GeoapifyClient.Route: %w", ErrNoRoute)
+	}
+	return payload.Results[0].Time, payload.Results[0].Distance, nil
 }
 
 // do sends the request, waiting and retrying (up to 3 times) when the
