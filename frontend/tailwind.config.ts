@@ -125,6 +125,10 @@ const config: Config = {
       animation: {
         shimmer: "shimmer 1.8s ease-in-out infinite",
       },
+      // DESIGN.md §6: `duration-250 ease-soft` for sheet, dialog, tab/day switch, reveal.
+      transitionTimingFunction: {
+        soft: "cubic-bezier(.2,.8,.2,1)",
+      },
     },
   },
   plugins: [],
