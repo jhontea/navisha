@@ -13,6 +13,7 @@ import { resolveDraftLocations } from "@/features/trip/lib/resolveDraftLocations
 import { suggestionKey } from "@/features/trip/lib/suggestionKey"
 import { isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
+import { REVEAL_CLASS, revealDelay } from "@/lib/reveal"
 import { useCreateActivitiesBatch } from "../hooks/useActivities"
 import type { CreateActivityInput } from "../types"
 
@@ -291,8 +292,8 @@ variant="outline" className="w-full justify-start border-primary/30 text-primary
             </Button>
           </div>
           <ul className="space-y-2">
-            {preview.activities.map((activity) => (
-              <li key={suggestionKey(activity)}>
+            {preview.activities.map((activity, i) => (
+              <li key={suggestionKey(activity)} className={REVEAL_CLASS} style={revealDelay(i)}>
                 <SelectableRow
                   selected={selectedKeys.has(suggestionKey(activity))}
                   onToggle={() => toggleSuggestion(activity)}

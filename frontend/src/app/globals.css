@@ -415,7 +415,9 @@
     animation-duration: 0s !important;
     animation-delay: 0s !important;
   }
-  .animate-fade-in {
+  /* Even a 0.01ms run starts at opacity 0 for one frame; show these at once. */
+  .animate-fade-in,
+  .animate-fade-only {
     animation: none !important;
   }
 }

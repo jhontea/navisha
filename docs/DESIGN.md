@@ -197,7 +197,7 @@ Ikon: Lucide stroke 2, ukuran 16 / 18 / 20. Ilustrasi hanya untuk cover dan empt
 | Durasi | Token | Pakai |
 |---|---|---|
 | 150ms `ease-out` | `duration-150 ease-out` · `var(--motion-fast)` | hover, tekan (skala 0.96 pada tombol dan kartu, 0.92 pada FAB; varian link tidak berskala), toggle tint, sorotan keluar |
-| 250ms `cubic-bezier(.2,.8,.2,1)` | `duration-250 ease-soft` · `var(--motion-base)` | sheet, dialog, reveal, scroll ke kegiatan |
+| 250ms `cubic-bezier(.2,.8,.2,1)` | `duration-250 ease-soft` (transisi) · `animation-duration-250 ease-soft` (animasi tw-animate; `duration-*` juga mengubah durasi transisi) · `var(--motion-base)` | sheet, dialog, reveal, scroll ke kegiatan |
 | View Transition 250ms `ease-soft` | `<ViewTransition>` dari `react` | pindah tab, pindah hari (crossfade) |
 | Spring ringan | — | Bottom sheet peta saat ditarik |
 
