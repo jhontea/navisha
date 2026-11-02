@@ -366,9 +366,12 @@ export function GenerateChatWizard({ onSubmit, disabled, initialValues }: Props)
       {/* Chat transcript */}
       <div ref={scrollRef} className="max-h-[360px] overflow-y-auto p-5 space-y-4">
         {messages.map((m, i) => (
+          // Append-only list keyed by index: only newly mounted bubbles play the entrance.
+          // animation-duration-250, not duration-250: the latter also sets transition-duration,
+          // which would animate the space-y margin the previous bubble gains (layout shift).
           <div
             key={i}
-            className={`flex items-end gap-2 ${m.from === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex items-end gap-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 animation-duration-250 ease-soft ${m.from === "user" ? "justify-end" : "justify-start"}`}
           >
             {m.from === "bot" && (
               <div className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
