@@ -1,9 +1,10 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
+import { startRouteProgress } from "@/lib/routeProgress"
 import { useParams, useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, RefreshCw } from "lucide-react"
@@ -49,8 +50,13 @@ export function TripShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { data: trip, isLoading, isError, error, refetch, isFetching } = useTrip(tripId)
   const { mutateAsync: updateTrip, isPending: isUpdating } = useUpdateTrip(tripId)
-  const { mutate: deleteTrip, isPending: isDeleting } = useDeleteTrip()
-  const { mutateAsync: duplicateTrip, isPending: isDuplicating } = useDuplicateTrip(tripId)
+  const { mutate: deleteTrip, isPending: isDeleteRunning, isSuccess: isDeleted } = useDeleteTrip()
+  // Stays busy after success too, so the button cannot re-arm while the dialog animates out.
+  const isDeleting = isDeleteRunning || isDeleted
+  const { mutateAsync: duplicateTrip, isPending: isDuplicatingCopy } = useDuplicateTrip(tripId)
+  // The duplicate sheet stays busy until the copy's page renders, so it cannot make a second copy.
+  const [isOpeningCopy, startTransition] = useTransition()
+  const isDuplicating = isDuplicatingCopy || isOpeningCopy
 
   const [editOpen, setEditOpen] = useState(false)
   const [duplicateOpen, setDuplicateOpen] = useState(false)
@@ -110,8 +116,11 @@ export function TripShell({ children }: { children: ReactNode }) {
     if (isDeleting) return
     deleteTrip(tripId, {
       onSuccess: () => {
+        // Closed right away (not held until /trips renders): nothing is left to click, and the
+        // refetch of the deleted trip keeps its cached data on 404, so no error state flashes.
         setConfirmDelete(false)
         toast("Trip deleted.")
+        startRouteProgress()
         router.push("/trips")
       },
       onError: (error) => {
@@ -226,9 +235,13 @@ export function TripShell({ children }: { children: ReactNode }) {
           onSubmit={async (input) => {
             try {
               const copy = await duplicateTrip(input)
-              setDuplicateOpen(false)
               toast("Trip duplicated.")
-              router.push(`/trips/${copy.id}`)
+              startRouteProgress()
+              // Closing inside the transition keeps the sheet up until the copy's page commits.
+              startTransition(() => {
+                setDuplicateOpen(false)
+                router.push(`/trips/${copy.id}`)
+              })
             } catch (duplicateError) {
               if (isOfflineError(duplicateError)) return
               const message =
