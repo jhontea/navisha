@@ -9,6 +9,7 @@ import { budgetRows, draftKeys, legKey, nights, stayKey } from "../lib/draftBook
 import { Button } from "@/components/ui/button"
 import { formatWeekdayDate } from "@/lib/calendar"
 import { formatMoney } from "@/lib/money"
+import { REVEAL_CLASS, revealDelay } from "@/lib/reveal"
 
 interface Props {
   draft: TripDraft
@@ -31,6 +32,8 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
   const legs = draft.transport_legs ?? []
   const stays = draft.lodging ?? []
   const budget = budgetRows(draft.budget_breakdown)
+  const hasBookings = legs.length > 0 || stays.length > 0
+  const firstDayIndex = hasBookings ? 2 : 1 // reveal order: header, bookings, days
 
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set(allKeys))
 
@@ -79,7 +82,7 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
   return (
     <div className="space-y-6">
       {/* Header summary */}
-      <div className="rounded-2xl border bg-card shadow-card p-5 md:p-6">
+      <div className={`rounded-2xl border bg-card shadow-card p-5 md:p-6 ${REVEAL_CLASS}`} style={revealDelay(0)}>
         <h2 className="mb-1 text-xl font-display font-extrabold text-foreground">
           {draft.title}
         </h2>
@@ -116,7 +119,8 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
 
       {/* Curation toolbar */}
       {totalItems > 0 && (
-        <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-2xl border bg-card shadow-card px-4 py-1.5 shadow-card">
+        // Sticky: opacity only, no delay; a transform would re-anchor the sticky bar.
+        <div className="sticky top-2 z-10 animate-fade-only flex items-center justify-between gap-3 rounded-2xl border bg-card shadow-card px-4 py-1.5 shadow-card">
           <span className="text-sm text-muted-foreground tabular-nums">
             <span className="font-semibold text-foreground">{selectedCount}</span>
             {" "}of {totalItems} selected
@@ -132,8 +136,8 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
       )}
 
       {/* Bookings: saved as transport and stay records, not activities */}
-      {(legs.length > 0 || stays.length > 0) && (
-        <div className="space-y-4 rounded-2xl border bg-card p-4 shadow-card md:p-5">
+      {hasBookings && (
+        <div className={`space-y-4 rounded-2xl border bg-card p-4 shadow-card md:p-5 ${REVEAL_CLASS}`} style={revealDelay(1)}>
           {legs.length > 0 && (
             <section aria-labelledby="draft-legs" className="space-y-2">
               <h3 id="draft-legs" className="text-base font-semibold text-foreground">Getting there</h3>
@@ -194,14 +198,15 @@ export function DraftPreview({ draft, onSelectionChange }: Props) {
 
       {/* Days */}
       <div className="space-y-4">
-        {draft.days.map((day) => {
+        {draft.days.map((day, dayIndex) => {
           const dayKeys = day.activities.map(suggestionKey)
           const daySelected = dayKeys.filter((k) => selectedKeys.has(k)).length
           const dayAllSelected = dayKeys.length > 0 && daySelected === dayKeys.length
           return (
           <div
             key={day.day_number}
-            className="rounded-2xl border bg-card shadow-card p-4 md:p-5"
+            className={`rounded-2xl border bg-card shadow-card p-4 md:p-5 ${REVEAL_CLASS}`}
+            style={revealDelay(firstDayIndex + dayIndex)}
           >
             <div className="mb-3 flex items-center gap-2">
               <span className="text-base font-semibold text-foreground">

@@ -248,7 +248,11 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
           </Notice>
         )}
         {errors}
-        <article className={generate.isPending ? "opacity-60 transition-opacity" : undefined}>
+        {/* New key per generation: a fresh summary fades in once; loading a saved one or a refetch does not. */}
+        <article
+          key={summary.updated_at}
+          className={generate.isPending ? "opacity-60 transition-opacity" : generate.isSuccess ? "animate-fade-only" : undefined}
+        >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {sanitizeText(summary.content)}
           </ReactMarkdown>
