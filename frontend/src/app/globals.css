@@ -116,6 +116,10 @@
   /* Design foundation V2 "Soft" — docs/DESIGN.md §2.
      Light is the default theme; `.dark` on <html> is opt-in (theme toggle). */
   :root {
+    /* ── Motion (DESIGN.md §6) — for plain CSS; utilities use duration-150/250 + ease-soft ── */
+    --motion-fast: 150ms;
+    --motion-base: 250ms;
+
     /* ── Core ── */
     --background: 216 71.4% 97.3%;          /* #F3F7FD */
     --foreground: 219 37.5% 22%;            /* #23324D · 12:1 */
@@ -370,15 +374,44 @@
   animation: fadeIn 0.3s ease-out both;
 }
 
+/* Opacity-only entrance for wrappers that hold fixed/sticky children (FAB, sticky
+   bars): tw-animate `fade-in` sets transform + filter, which re-anchors fixed
+   descendants. No fill-mode, so nothing lingers after the animation. */
+@keyframes fade-only {
+  from { opacity: 0; }
+}
+.animate-fade-only {
+  animation: fade-only var(--motion-base) cubic-bezier(.2, .8, .2, 1);
+}
+
+/* coss dialog/alert-dialog/sheet overlays (DESIGN.md §6): 250ms ease-soft instead of
+   coss's duration-100. Unlayered on purpose so it beats the utilities layer without
+   editing components/ui (select/menu popovers keep 100ms). */
+[data-slot="dialog-content"],
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-content"],
+[data-slot="alert-dialog-overlay"] {
+  --tw-duration: var(--motion-base);
+  --tw-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
 /* ── Reduced Motion (accessibility) ── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* `*` does not reach view-transition pseudo-elements. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
   .animate-fade-in,
   .animate-shimmer {

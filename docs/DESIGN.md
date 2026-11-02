@@ -193,13 +193,22 @@ Ikon: Lucide stroke 2, ukuran 16 / 18 / 20. Ilustrasi hanya untuk cover dan empt
 
 ## 6. Motion
 
-| Durasi | Pakai |
-|---|---|
-| 150ms `ease-out` | hover, tekan (skala 0.98 pada tombol dan kartu), toggle tint |
-| 250ms `cubic-bezier(.2,.8,.2,1)` | sheet, dialog, pindah tab, scroll ke kegiatan |
-| Spring ringan | Bottom sheet peta saat ditarik |
+| Durasi | Token | Pakai |
+|---|---|---|
+| 150ms `ease-out` | `duration-150 ease-out` · `var(--motion-fast)` | hover, tekan (skala 0.96 pada tombol dan kartu), toggle tint, sorotan keluar |
+| 250ms `cubic-bezier(.2,.8,.2,1)` | `duration-250 ease-soft` · `var(--motion-base)` | sheet, dialog, reveal, scroll ke kegiatan |
+| View Transition 250ms `ease-soft` | `<ViewTransition>` dari `react` | pindah tab, pindah hari (crossfade) |
+| Spring ringan | — | Bottom sheet peta saat ditarik |
 
-Tidak ada animasi dekoratif. Semua mengikuti `prefers-reduced-motion`.
+`--motion-fast`/`--motion-base` (di `:root`, `globals.css`) dipakai di CSS murni; di className pakai utility Tailwind (`ease-soft` dari `tailwind.config.ts`). Popover kecil (select, menu) tetap 100ms bawaan coss.
+
+Tidak ada animasi dekoratif. Semua mengikuti `prefers-reduced-motion`: aturan global di `globals.css` membuat animasi/transisi CSS dan `::view-transition-*` instan (termasuk `animation-delay`); transform baru (tekan, slide) memakai prefix `motion-safe:`. Feedback yang membawa informasi (sorotan baris, toast) tetap terlihat, hanya tanpa gerak.
+
+Aturan teknis:
+- Tailwind v4 `translate-*`/`scale-*` mengubah properti CSS `translate`/`scale`, bukan `transform`. Pakai `transition-transform` atau `transition-[translate,scale,opacity]`, bukan `transition-[transform,…]`.
+- Pembungkus yang berisi elemen `fixed`/`sticky` (FAB, tombol sticky) tidak boleh punya transform/filter, bahkan sesaat. `animate-in fade-in` (tw-animate) memasang `transform` + `filter`; pakai `.animate-fade-only` (opacity saja). Stagger `fill-mode-backwards` hanya di item yang bukan/tidak berisi `fixed`/`sticky`.
+- File coss di `components/ui/` tidak diubah. Durasi dialog/alert-dialog/sheet diatur dari blok `[data-slot="…dialog…"]` tak-berlayer di `globals.css` (`--tw-duration`/`--tw-ease`), jadi `duration-*` lewat className tidak bisa menimpanya; bila satu dialog perlu durasi lain, pakai selector lebih spesifik di `globals.css`.
+- Animasi hanya `opacity`/`transform`/`translate`/`scale`/`background-color`; tinggi baris daftar lewat `motion`. Tidak ada perubahan layout baru (CLS).
 
 ## 7. Cover
 
