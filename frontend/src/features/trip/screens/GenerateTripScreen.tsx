@@ -18,7 +18,8 @@
 //
 // See: /memories/navisha-frontend-patterns.md
 
-import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo, useTransition } from "react"
+import { startRouteProgress } from "@/lib/routeProgress"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LocationProviderBoundary } from "@/features/location/components/LocationProviderBoundary"
 import { DraftPreview } from "@/features/trip/components/DraftPreview"
@@ -72,6 +73,8 @@ function GenerateTripPageContent() {
   const generate = useGenerateJob()
   const create = useCreateTripFromDraft()
   const quota = useAutogenQuota()
+  // Stays true until the new trip page renders, so "Create trip" cannot save a second copy meanwhile.
+  const [isNavigating, startTransition] = useTransition()
 
   // Prevent concurrent generate calls AND re-generation after success.
   const submittedRef = useRef(false) // one-shot: true once mutate fires, never reset
@@ -161,7 +164,8 @@ function GenerateTripPageContent() {
       // This draft is used; do not offer it again on the next visit. Only storage:
       // the review screen stays up until the route changes (no empty wizard flash).
       if (job) ignoreJob(job.job_id)
-      router.push(`/trips/${trip_id}`)
+      startRouteProgress()
+      startTransition(() => router.push(`/trips/${trip_id}`))
     } catch (err) {
       setResolving(false)
       if (isOfflineError(err)) return
@@ -171,7 +175,7 @@ function GenerateTripPageContent() {
     }
   }, [result, destination, venue, create, router, selectedKeys, job])
 
-  const saving = create.isPending || resolving
+  const saving = create.isPending || resolving || isNavigating
   const noSelection = result !== null && selectedKeys.size === 0
 
   // Warn before leaving while the trip is being saved (generation keeps running without us).

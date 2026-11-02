@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
+import { startRouteProgress, watchRouteProgress } from "@/lib/routeProgress"
 
 function isModifiedClick(event: MouseEvent) {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0
@@ -18,6 +19,7 @@ export function RouteProgress() {
   const [visible, setVisible] = useState(false)
   const [settling, setSettling] = useState(false)
   const [prevPathname, setPrevPathname] = useState(pathname)
+  const watch = useRef<ReturnType<typeof watchRouteProgress>>(null)
 
   // The route changed: let a visible bar run to full width, then hide it.
   // Adjusted during render (not in an effect) so it lands in the same commit.
@@ -27,6 +29,24 @@ export function RouteProgress() {
   }
 
   useEffect(() => {
+    watch.current?.done()
+  }, [pathname])
+
+  useEffect(() => {
+    // Link clicks and startRouteProgress() (before router.push) share one path, and one timeout.
+    watch.current = watchRouteProgress(
+      window,
+      () => {
+        // Leaving `settling` cancels a pending hide (see the effect below).
+        setSettling(false)
+        setVisible(true)
+      },
+      () => {
+        setVisible(false)
+        setSettling(false)
+      },
+    )
+
     function onClick(event: MouseEvent) {
       if (isModifiedClick(event)) return
       const target = event.target as Element | null
@@ -36,13 +56,14 @@ export function RouteProgress() {
       const url = new URL(anchor.href)
       if (url.pathname === window.location.pathname && url.search === window.location.search) return
 
-      // Leaving `settling` cancels a pending hide (see the effect below).
-      setSettling(false)
-      setVisible(true)
+      startRouteProgress()
     }
 
     document.addEventListener("click", onClick, true)
-    return () => document.removeEventListener("click", onClick, true)
+    return () => {
+      document.removeEventListener("click", onClick, true)
+      watch.current?.stop()
+    }
   }, [])
 
   useEffect(() => {
