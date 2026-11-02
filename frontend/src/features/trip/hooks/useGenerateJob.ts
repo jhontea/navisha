@@ -66,6 +66,7 @@ export function useGenerateJob() {
   const jobGone = jobQuery.error instanceof ApiError && jobQuery.error.status === 404
 
   const startMutation = useMutation({
+    meta: { handlesError: true }, // onError below shows startError
     mutationFn: (input: GenerateTripInput) => tripApi.startGenerateJob(input),
     retry: 0,
     onSuccess: ({ job_id }, input) => {

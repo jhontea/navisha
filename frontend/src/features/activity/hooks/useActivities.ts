@@ -67,6 +67,7 @@ export function useCreateActivity(dayId: string, tripId: string) {
 export function useCreateActivitiesBatch(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // DayAIPlanner toasts its own message
     mutationFn: (items: CreateActivityInput[]) => activityApi.createBatch(dayId, items),
     onSuccess: (list, items) => {
       // The response is the day's full list in final order, so no extra GET.
@@ -143,6 +144,7 @@ export function useToggleTodoItem(dayId: string, tripId: string) {
 export function useDeleteActivity(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // scheduleDelete (lib/pendingDeletes) toasts its own message
     mutationFn: (id: string) => activityApi.delete(id),
     onSuccess: (_, deletedId) => {
       qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>

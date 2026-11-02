@@ -63,6 +63,7 @@ export function useLogout() {
   const { setUser } = useAuthStore()
 
   return useMutation({
+    meta: { handlesError: true }, // logout always redirects to /login (onSettled)
     mutationFn: async () => {
       // Mark intentional logout so any in-flight background request that 401s
       // after the server clears cookies won't trigger the toast + redirect.

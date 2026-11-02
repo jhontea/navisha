@@ -8,6 +8,7 @@ import { bookingImportApi } from "../api"
 export function useParseBookings(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // PasteConfirmation shows a Notice
     mutationFn: (text: string) => bookingImportApi.parse(tripId, text),
     // Parsing uses the shared AI daily quota (refunded on failure), so refresh the badge either way.
     onSettled: () => qc.invalidateQueries({ queryKey: ["autogen", "quota"] }),

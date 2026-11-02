@@ -70,6 +70,7 @@ export function useUpdateTransportation(id: string, tripId: string) {
 export function useDeleteTransportation(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // scheduleDelete (lib/pendingDeletes) toasts its own message
     mutationFn: (id: string) => transportationApi.delete(id),
     onSuccess: (_, deletedId) => {
       qc.setQueryData<TransportationListResponse>(listKey(tripId), (current) =>

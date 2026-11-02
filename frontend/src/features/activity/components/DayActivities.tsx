@@ -20,8 +20,6 @@ import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { sheetCloseAction } from "@/lib/discardGuard"
 import { TimePills, type TimePill } from "@/components/TimePills"
 import { scheduleDelete, usePendingDeletes } from "@/lib/pendingDeletes"
-import { isOfflineError } from "@/lib/api"
-import { toast } from "@/lib/toast"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -194,12 +192,8 @@ export function DayActivities({
       setDropStatus(`${activities[oldIdx].title} moved to position ${newIdx + 1} of ${activities.length}.`)
       reorderMut.mutate(
         { ids: newOrder },
-        {
-          onError: (error) => {
-            if (!isOfflineError(error)) toast("Couldn’t save the new order. It’s back the way it was.", "error")
-            qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "active" })
-          },
-        },
+        // The failure toast comes from the global mutation handler (components/providers.tsx).
+        { onError: () => qc.invalidateQueries({ queryKey: ["activities", "list", dayId], refetchType: "active" }) },
       )
     })
   }
@@ -243,10 +237,7 @@ export function DayActivities({
             })
           }
           onToggleTodo={(itemId) =>
-            toggleTodo.mutate(
-              { activityId: a.id, itemId },
-              { onError: (error) => { if (!isOfflineError(error)) toast("Couldn’t update this to-do. Try again.", "error") } },
-            )
+            toggleTodo.mutate({ activityId: a.id, itemId })
           }
           overlapTitles={overlapByActivity.get(a.id) ?? []}
           selectMode={selectMode}
