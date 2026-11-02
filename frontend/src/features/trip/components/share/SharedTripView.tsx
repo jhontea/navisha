@@ -26,7 +26,7 @@ import { LG_MEDIA_QUERY, useMediaQuery, useOnceTrue } from "@/lib/useMediaQuery"
 
 const SharedTripMap = dynamic(() => import("../SharedTripMap").then((m) => m.SharedTripMap), {
   ssr: false,
-  loading: () => <div className="h-full animate-pulse bg-muted" aria-hidden="true" />,
+  loading: () => <div className="h-full animate-pulse bg-skeleton" aria-hidden="true" />,
 })
 
 const EXPIRY_FORMAT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" })

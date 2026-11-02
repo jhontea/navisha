@@ -25,8 +25,8 @@ const DayActivities = dynamic(
     ssr: false,
     loading: () => (
       <div className="space-y-3" aria-label="Loading day activities">
-        <div className="h-16 animate-pulse rounded-xl bg-muted" />
-        <div className="h-11 animate-pulse rounded-xl bg-muted/70" />
+        <div className="h-16 animate-pulse rounded-xl bg-skeleton" />
+        <div className="h-11 animate-pulse rounded-xl bg-skeleton" />
       </div>
     ),
   },

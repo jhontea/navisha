@@ -40,10 +40,10 @@ export function SharedTripPage({ token, initial }: { token: string; initial?: Sh
   if (status === "loading") {
     return (
       <main className="mx-auto max-w-max-width px-margin-mobile pt-16 md:px-margin-desktop" aria-label="Loading trip" aria-busy="true">
-        <div className="h-56 animate-pulse rounded-xl bg-muted" />
+        <div className="h-56 animate-pulse rounded-xl bg-skeleton" />
         <div className="mt-6 space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-40 animate-pulse rounded-xl bg-skeleton" />
           ))}
         </div>
       </main>

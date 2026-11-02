@@ -13,7 +13,7 @@ const TripForm = dynamic(
   () => loadOrOffline(() => import("@/features/trip/components/TripForm").then((module) => module.TripForm)),
   {
     ssr: false,
-    loading: () => <div className="h-96 animate-pulse rounded-3xl bg-muted" aria-hidden="true" />,
+    loading: () => <div className="h-96 animate-pulse rounded-3xl bg-skeleton" aria-hidden="true" />,
   },
 )
 

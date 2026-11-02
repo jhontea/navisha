@@ -34,7 +34,7 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
 /** False when maps are turned off, or Google is selected without an API key. */
 export const MAP_ENABLED = MAP_PROVIDER !== "disabled" && !(MAP_PROVIDER === "google" && !GOOGLE_MAPS_API_KEY)
 
-const loading = () => <div className="h-full animate-pulse bg-muted" aria-hidden="true" />
+const loading = () => <div className="h-full animate-pulse bg-skeleton" aria-hidden="true" />
 
 // Each renderer is its own chunk, loaded only for the configured provider.
 const Renderer =

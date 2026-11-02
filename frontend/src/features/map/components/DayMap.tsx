@@ -10,7 +10,7 @@ import { MAP_ENABLED, MapCanvas } from "./MapCanvas"
 import { useOnceTrue } from "@/lib/useMediaQuery"
 import { cn } from "@/lib/utils"
 
-const mapLoading = () => <div className="h-full animate-pulse bg-muted" aria-hidden="true" />
+const mapLoading = () => <div className="h-full animate-pulse bg-skeleton" aria-hidden="true" />
 
 /**
  * Map of a single day's places, used beside the itinerary on desktop.

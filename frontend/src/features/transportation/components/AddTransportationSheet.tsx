@@ -11,7 +11,7 @@ import type { CreateTransportationInput, TransportDraft } from "../types"
 
 const TransportationForm = dynamic(
   () => loadOrOffline(() => import("./TransportationForm").then((module) => module.TransportationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
+  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
 )
 
 interface Props {

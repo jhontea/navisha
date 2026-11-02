@@ -275,8 +275,8 @@ function GenerateTripPageContent() {
 function GenerateTripPageFallback() {
   return (
     <div className="mx-auto w-full max-w-3xl px-margin-mobile pt-6 md:px-margin-desktop" aria-hidden="true">
-      <div className="h-8 w-56 animate-pulse rounded-lg bg-muted" />
-      <div className="mt-6 h-72 animate-pulse rounded-3xl bg-muted" />
+      <div className="h-8 w-56 animate-pulse rounded-lg bg-skeleton" />
+      <div className="mt-6 h-72 animate-pulse rounded-3xl bg-skeleton" />
     </div>
   )
 }

@@ -156,7 +156,7 @@ export function DayActivities({
     return (
       <div className="space-y-3 py-2" aria-label="Loading day activities">
         {[1, 2].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+          <div key={i} className="h-16 animate-pulse rounded-xl bg-skeleton" />
         ))}
       </div>
     )

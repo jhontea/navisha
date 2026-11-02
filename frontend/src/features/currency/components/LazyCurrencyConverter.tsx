@@ -8,7 +8,7 @@ const CurrencyConverter = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="h-80 animate-pulse rounded-xl bg-muted/30"
+        className="h-80 animate-pulse rounded-xl bg-skeleton"
         role="status"
         aria-label="Loading currency converter"
       />

@@ -23,7 +23,7 @@ import { AccommodationCard } from "./AccommodationCard"
 
 const AccommodationForm = dynamic(
   () => loadOrOffline(() => import("./AccommodationForm").then((module) => module.AccommodationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
+  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
 )
 
 interface Props {
@@ -78,7 +78,7 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
       {isLoading && (
         <div className="space-y-3" aria-label="Loading stays">
           {[1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-skeleton" />
           ))}
         </div>
       )}

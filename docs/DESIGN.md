@@ -35,6 +35,7 @@ Token adalah CSS variable di `globals.css` (format HSL seperti sekarang), dipeta
 | `--muted` | Permukaan sekunder (lingkaran tanggal, fact box, input) | `#F1F5FC` | `#212D45` | |
 | `--foreground` | Teks utama | `#23324D` | `#E6ECF7` | 12.0 / 13.1 |
 | `--muted-foreground` | Teks sekunder | `#5F6B82` | `#A3AFC5` | 5.0 / 7.9 |
+| ✚ `--skeleton` | Blok loading (skeleton pulse) | `#D4DEED` (= `--input`) | `#212D45` (= `--muted`) | |
 | `--border` | Garis halus | `#E6EDF7` | `#2A3650` | |
 | `--primary` | Tombol utama, link, state aktif (navy logo di terang) | `#0F2A44` | `#86B2FF` | |
 | `--primary-foreground` | Teks di atas primary | `#FFFFFF` | `#0E1626` | 14.6 / 8.5 |

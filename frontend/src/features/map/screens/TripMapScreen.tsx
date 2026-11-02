@@ -9,7 +9,7 @@ const TripMap = dynamic(
   () => import("@/features/map/components/TripMap").then((m) => ({ default: m.TripMap })),
   {
     ssr: false,
-    loading: () => <div className="h-[60vh] animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
+    loading: () => <div className="h-[60vh] animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
   },
 )
 
@@ -20,7 +20,7 @@ export function TripMapScreen() {
   return (
     <main className="mx-auto w-full max-w-max-width px-margin-mobile pb-6 pt-4 md:px-margin-desktop md:pb-8">
       {isLoading || !trip ? (
-        <div className="h-[60vh] animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+        <div className="h-[60vh] animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />
       ) : (
         <TripMap tripId={id} days={trip.days} />
       )}

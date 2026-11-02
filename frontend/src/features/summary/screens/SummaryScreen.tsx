@@ -7,7 +7,7 @@ const TripSummaryCard = dynamic(
   () => import("@/features/summary/components/TripSummaryCard").then((m) => m.TripSummaryCard),
   {
     ssr: false,
-    loading: () => <div className="h-40 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
+    loading: () => <div className="h-40 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
   },
 )
 
