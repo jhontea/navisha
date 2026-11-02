@@ -12,6 +12,7 @@
 
 import {
   IsRestoringProvider,
+  MutationCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query"
@@ -23,11 +24,22 @@ import {
   subscribeToQueryPersistence,
 } from "@/lib/queryPersistence"
 import { useAuthStore } from "@/features/auth/store"
+import { saveErrorMessage } from "@/lib/saveError"
+import { toast } from "@/lib/toast"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
+        // Every failed write gets one toast, unless the mutation shows its own
+        // message (meta.handlesError) or api.ts already said "offline".
+        mutationCache: new MutationCache({
+          onError: (error, _variables, _context, mutation) => {
+            if (mutation.meta?.handlesError) return
+            const message = saveErrorMessage(error)
+            if (message) toast(message, "error")
+          },
+        }),
         defaultOptions: {
           queries: {
             staleTime: 5 * 60 * 1000,        // 5 min — avoids cascade refetches

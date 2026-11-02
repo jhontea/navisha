@@ -112,6 +112,7 @@ export function useCreateTrip() {
 export function useDuplicateTrip(id: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TripShell toasts its own message
     mutationFn: (input: Parameters<typeof tripApi.duplicate>[1]) => tripApi.duplicate(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
@@ -122,6 +123,7 @@ export function useDuplicateTrip(id: string) {
 export function useUpdateTrip(id: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TripShell and BudgetScreen toast their own message
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
     onSuccess: (updated) => {
       qc.setQueryData<TripDetail>(["trips", "detail", id], (current) =>
@@ -150,6 +152,7 @@ export function useUpdateTrip(id: string) {
 export function useDeleteTrip() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TripShell toasts its own message
     mutationFn: (id: string) => tripApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
@@ -161,6 +164,7 @@ export function useDeleteTrip() {
 export function useCreateTripFromDraft() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // GenerateTripScreen shows formError
     mutationFn: (params: { start_date: string; end_date: string; draft: TripDraft; cover_image_url?: string; description?: string }) =>
       tripApi.createFromDraft(params),
     onSuccess: () => {

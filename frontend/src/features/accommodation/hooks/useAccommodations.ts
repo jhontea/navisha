@@ -72,6 +72,7 @@ export function useUpdateAccommodation(id: string, tripId: string) {
 export function useDeleteAccommodation(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // scheduleDelete (lib/pendingDeletes) toasts its own message
     mutationFn: (id: string) => accommodationApi.delete(id),
     onSuccess: (_, deletedId) => {
       qc.setQueryData<AccommodationListResponse>(listKey(tripId), (current) =>

@@ -38,6 +38,7 @@ export function useTripSummary(tripId: string) {
 export function useGenerateSummary(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TripSummaryCard shows a Notice
     mutationFn: (language: SummaryLanguage) => summaryApi.generate(tripId, language),
     onSuccess: (data) => {
       qc.setQueryData(summaryKey(tripId), data)

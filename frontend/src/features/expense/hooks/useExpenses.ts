@@ -75,6 +75,7 @@ export function useUpdateExpense(id: string, tripId: string) {
 export function useDeleteExpense(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // scheduleDelete (lib/pendingDeletes) toasts its own message
     mutationFn: (id: string) => expenseApi.delete(id),
     onSuccess: (_, deletedId) => {
       const previous = qc.getQueryData<ExpenseListResponse>(listKey(tripId))?.items.find((item) => item.id === deletedId)
