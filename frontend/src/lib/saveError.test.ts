@@ -18,6 +18,11 @@ describe("saveErrorMessage", () => {
     expect(saveErrorMessage(new ApiError(422, "VALIDATION", "Title is required"))).toBe("Title is required")
   })
 
+  it("returns null for an expired session or an intentional logout", () => {
+    expect(saveErrorMessage(new ApiError(401, "UNAUTHORIZED", "invalid token"))).toBeNull()
+    expect(saveErrorMessage(new ApiError(0, "LOGGING_OUT", "Session ending"))).toBeNull()
+  })
+
   it("shows the generic message for a 5xx", () => {
     expect(saveErrorMessage(new ApiError(500, "INTERNAL", "boom"))).toBe(SAVE_ERROR_MESSAGE)
   })
