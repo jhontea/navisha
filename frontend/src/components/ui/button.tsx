@@ -12,7 +12,7 @@ const outline =
   "border-border bg-card text-foreground hover:bg-muted aria-expanded:bg-muted"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-bold whitespace-nowrap transition-colors duration-150 outline-hidden select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-bold whitespace-nowrap transition-[color,background-color,border-color,scale] duration-150 ease-out outline-hidden motion-safe:active:scale-[.96] select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -29,7 +29,8 @@ const buttonVariants = cva(
         danger:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/40",
         // primary-soft-foreground: plain primary is 4.2:1 on the page background.
-        link: "h-auto px-0 text-primary-soft-foreground underline-offset-4 hover:underline",
+        // Inline text links do not shrink on press (cn/tailwind-merge drops the base scale).
+        link: "h-auto px-0 text-primary-soft-foreground underline-offset-4 hover:underline motion-safe:active:scale-100",
       },
       size: {
         // 44px on touch layouts, 40px from md up.

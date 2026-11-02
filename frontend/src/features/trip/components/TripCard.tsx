@@ -58,7 +58,7 @@ export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
+      className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[translate,scale,box-shadow] duration-150 ease-out hover:-translate-y-0.5 motion-safe:active:scale-[.96] hover:shadow-overlay focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
     >
       <TripCover
         trip={trip}

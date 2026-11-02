@@ -13,7 +13,7 @@ type Action = { label: string; icon: ComponentType<{ className?: string; "aria-h
 const POSITION =
   "fixed right-4 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.75rem)] z-40 md:hidden"
 const BUTTON =
-  "flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-overlay transition-transform active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 motion-reduce:transition-none"
+  "flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-overlay transition-[scale] duration-150 ease-out motion-safe:active:scale-[.92] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 motion-reduce:transition-none"
 const MENU_ITEM = "min-h-11 gap-3 px-3 text-sm font-semibold"
 
 /**
