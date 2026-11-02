@@ -56,11 +56,12 @@ export function ResponsiveSheet({
           // sm and up: centered dialog.
           "sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[85vh] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:p-7",
           // Enter/exit: on phones the sheet slides up (translate transition) under coss's
-          // fade, with coss's zoom turned off; from `sm` up coss's fade + zoom alone. No
+          // fade, with coss's zoom off and its exit fade off (a fading panel reads as
+          // dissolving, not sliding down); from `sm` up coss's fade + zoom alone. No
           // opacity-0 on data-ending-style: coss's exit keyframe would start from it and
           // the dialog would vanish in one frame. Base UI sets data-starting/ending-style.
           "transition-[translate] duration-250 ease-soft motion-reduce:transition-none",
-          "data-starting-style:translate-y-full data-ending-style:translate-y-full max-sm:data-open:zoom-in-[1] max-sm:data-closed:zoom-out-[1]",
+          "data-starting-style:translate-y-full data-ending-style:translate-y-full max-sm:data-open:zoom-in-[1] max-sm:data-closed:zoom-out-[1] max-sm:data-closed:fade-out-100",
           "sm:data-starting-style:-translate-y-1/2 sm:data-ending-style:-translate-y-1/2",
           className ?? "",
         ].join(" ")}
