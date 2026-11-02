@@ -179,7 +179,7 @@ function GenerateTripPageContent() {
   const noSelection = result !== null && selectedKeys.size === 0
 
   // Warn before leaving while the trip is being saved (generation keeps running without us).
-  const busy = saving
+  const busy = create.isPending || resolving // not isNavigating: the trip is saved, a hard-nav fallback must not prompt
   useEffect(() => {
     if (!busy) return
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
