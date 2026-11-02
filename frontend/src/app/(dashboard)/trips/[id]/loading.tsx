@@ -1,23 +1,13 @@
-import { Skeleton } from "@/components/ui/skeleton"
-
-/** Trip detail loading. */
+/** Trip tab loading: content only, since TripShell (the layout) already shows the hero and tabs. Same shape as ItineraryScreen's loading state. */
 export default function TripDetailLoading() {
   return (
-    <div className="flex flex-col pb-4">
-      {/* Hero skeleton */}
-      <Skeleton className="h-40 w-full sm:h-48 rounded-none" />
-      {/* Section nav skeleton */}
-      <div className="flex gap-1 px-2 pt-2">
+    <div className="mx-auto flex w-full max-w-max-width flex-col gap-3 px-margin-mobile py-6 md:px-margin-desktop" aria-hidden="true">
+      <div className="flex gap-2">
         {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-9 w-20 rounded-xl" />
+          <div key={i} className="size-12 animate-pulse rounded-full bg-muted" />
         ))}
       </div>
-      {/* Content skeleton */}
-      <div className="mx-auto w-full max-w-lg space-y-3 px-4 py-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
-      </div>
+      <div className="h-64 animate-pulse rounded-2xl bg-muted" />
     </div>
-  );
+  )
 }
