@@ -38,8 +38,8 @@ export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBu
   if (summary.isLoading) {
     return (
       <div className="space-y-4" aria-label="Loading budget">
-        <div className="h-36 animate-pulse rounded-xl bg-muted" />
-        <div className="h-48 animate-pulse rounded-xl bg-muted" />
+        <div className="h-36 animate-pulse rounded-xl bg-skeleton" />
+        <div className="h-48 animate-pulse rounded-xl bg-skeleton" />
       </div>
     )
   }

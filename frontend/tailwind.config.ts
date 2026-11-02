@@ -63,6 +63,7 @@ const config: Config = {
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
+        skeleton: "hsl(var(--skeleton))",
         ring: "hsl(var(--ring))",
         // ── Semantic status tokens (warning / info / success) ──
         warning: {
@@ -115,15 +116,6 @@ const config: Config = {
       boxShadow: {
         card: "var(--shadow-card)",
         overlay: "var(--shadow-overlay)",
-      },
-      keyframes: {
-        shimmer: {
-          "0%": { transform: "translateX(-100%)" },
-          "100%": { transform: "translateX(100%)" },
-        },
-      },
-      animation: {
-        shimmer: "shimmer 1.8s ease-in-out infinite",
       },
       // DESIGN.md §6: `duration-250 ease-soft` for sheet, dialog, tab/day switch, reveal.
       transitionTimingFunction: {

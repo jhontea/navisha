@@ -137,7 +137,7 @@ export function TripSummaryCard({ tripId }: { tripId: string }) {
     return () => window.removeEventListener("beforeunload", handler)
   }, [generate.isPending])
 
-  if (isLoading) return <div className="h-48 animate-pulse rounded-2xl bg-muted" aria-label="Loading summary" />
+  if (isLoading) return <div className="h-48 animate-pulse rounded-2xl bg-skeleton" aria-label="Loading summary" />
 
   const errors = (
     <>

@@ -27,7 +27,7 @@ import type { CreateExpenseInput, Expense } from "../types"
 
 const ExpenseForm = dynamic(
   () => loadOrOffline(() => import("./ExpenseForm").then((module) => module.ExpenseForm)),
-  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> },
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-skeleton" /> },
 )
 
 // date-* keep the per-date grouping; amount-* / category-* flatten into a single list.
@@ -227,7 +227,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
       {isLoading && (
         <div className="space-y-2" aria-label="Loading expenses">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-skeleton" />
           ))}
         </div>
       )}

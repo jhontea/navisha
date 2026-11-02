@@ -142,6 +142,7 @@
     --destructive-bg: 6 82.6% 95.5%;
     --border: 215 51.5% 93.5%;              /* #E6EDF7 */
     --input: 215 40% 88%;
+    --skeleton: var(--input);               /* loading blocks: --muted is ~1.02:1 on the page, too faint */
     --ring: 209 63.9% 16.3%;
     --radius: 1rem;
 
@@ -212,6 +213,7 @@
     --destructive-bg: 0 38.1% 16.5%;
     --border: 221 31.1% 23.9%;              /* #2A3650 */
     --input: 221 28% 30%;
+    --skeleton: var(--muted);
     --ring: 218 100% 76.3%;
 
     --warning: 36 89.1% 63.9%;
@@ -413,8 +415,7 @@
     animation-duration: 0s !important;
     animation-delay: 0s !important;
   }
-  .animate-fade-in,
-  .animate-shimmer {
+  .animate-fade-in {
     animation: none !important;
   }
 }

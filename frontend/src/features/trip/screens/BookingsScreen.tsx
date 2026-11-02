@@ -23,7 +23,7 @@ export function BookingsScreen() {
     return (
       <main className="mx-auto w-full max-w-max-width space-y-3 px-margin-mobile py-6 md:px-margin-desktop">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+          <div key={i} className="h-20 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />
         ))}
       </main>
     )

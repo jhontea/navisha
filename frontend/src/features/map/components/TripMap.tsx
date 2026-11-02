@@ -43,7 +43,7 @@ export function TripMap({ tripId, days }: { tripId: string; days: Day[] }) {
     )
   }
 
-  if (isLoading) return <div className="h-[60vh] animate-pulse rounded-xl bg-muted" aria-label="Loading map" />
+  if (isLoading) return <div className="h-[60vh] animate-pulse rounded-xl bg-skeleton" aria-label="Loading map" />
 
   if (isError) {
     return (

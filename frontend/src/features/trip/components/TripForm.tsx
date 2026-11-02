@@ -32,7 +32,7 @@ const DestinationAutocomplete = dynamic(
   () => loadOrOffline(() => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete)),
   {
     ssr: false,
-    loading: () => <div className="h-12 w-full animate-pulse rounded-lg border bg-muted/30" aria-hidden="true" />,
+    loading: () => <div className="h-12 w-full animate-pulse rounded-lg border bg-skeleton" aria-hidden="true" />,
   },
 )
 
@@ -40,7 +40,7 @@ const TravelDateRangePicker = dynamic(
   () => loadOrOffline(() => import("./TravelDateRangePicker").then((module) => module.TravelDateRangePicker)),
   {
     ssr: false,
-    loading: () => <div className="h-20 animate-pulse rounded-xl bg-muted/30" aria-hidden="true" />,
+    loading: () => <div className="h-20 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
   },
 )
 

@@ -72,10 +72,10 @@ export function TripsScreen() {
 
       {isLoading ? (
         <div className="space-y-6" aria-label="Loading trips" aria-busy="true">
-          <div className="h-72 animate-pulse rounded-3xl bg-muted md:h-80" />
+          <div className="h-72 animate-pulse rounded-3xl bg-skeleton md:h-80" />
           <div className={GRID}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted" />
+              <div key={i} className="h-64 animate-pulse rounded-2xl bg-skeleton" />
             ))}
           </div>
         </div>

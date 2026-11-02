@@ -20,7 +20,7 @@ import { LG_MEDIA_QUERY, useMediaQuery } from "@/lib/useMediaQuery"
 // initial bundle.
 const DayMap = dynamic(() => import("@/features/map/components/DayMap").then((m) => m.DayMap), {
   ssr: false,
-  loading: () => <div className="h-full animate-pulse rounded-2xl bg-muted" aria-hidden="true" />,
+  loading: () => <div className="h-full animate-pulse rounded-2xl bg-skeleton" aria-hidden="true" />,
 })
 
 /** Map of the selected day, beside the timeline on desktop (split view). */
@@ -111,10 +111,10 @@ export function ItineraryScreen() {
       <div className="mx-auto flex w-full max-w-max-width flex-col gap-3 px-margin-mobile py-6 md:px-margin-desktop">
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="size-12 animate-pulse rounded-full bg-muted" />
+            <div key={i} className="size-12 animate-pulse rounded-full bg-skeleton" />
           ))}
         </div>
-        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+        <div className="h-64 animate-pulse rounded-2xl bg-skeleton" />
       </div>
     )
   }

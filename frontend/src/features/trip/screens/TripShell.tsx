@@ -28,7 +28,7 @@ const TripForm = dynamic(
   () => loadOrOffline(() => import("@/features/trip/components/TripForm").then((m) => m.TripForm)),
   {
     ssr: false,
-    loading: () => <div className="h-96 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
+    loading: () => <div className="h-96 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
   },
 )
 
@@ -36,7 +36,7 @@ const DuplicateTripForm = dynamic(
   () => loadOrOffline(() => import("@/features/trip/components/DuplicateTripForm").then((m) => m.DuplicateTripForm)),
   {
     ssr: false,
-    loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />,
+    loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
   },
 )
 

@@ -11,7 +11,7 @@ import type { CreateAccommodationInput, StayDraft } from "../types"
 
 const AccommodationForm = dynamic(
   () => loadOrOffline(() => import("./AccommodationForm").then((module) => module.AccommodationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-muted" /> },
+  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
 )
 
 interface Props {
