@@ -386,6 +386,23 @@
   animation: fade-only var(--motion-base) cubic-bezier(.2, .8, .2, 1);
 }
 
+/* Inline save error in FormActions (E2, P10 B): fade in, and a ±2px shake twice
+   unless the user asked for reduced motion. */
+@keyframes shake {
+  0%, 100% { translate: 0; }
+  25% { translate: -2px; }
+  50% { translate: 2px; }
+  75% { translate: -2px; }
+}
+.animate-save-error {
+  animation: fade-only var(--motion-fast) ease-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .animate-save-error {
+    animation: fade-only var(--motion-fast) ease-out, shake 200ms ease-in-out;
+  }
+}
+
 /* coss dialog/alert-dialog/sheet overlays (DESIGN.md §6): 250ms ease-soft instead of
    coss's duration-100. Unlayered on purpose so it beats the utilities layer without
    editing components/ui (select/menu popovers keep 100ms). */
@@ -417,7 +434,8 @@
   }
   /* Even a 0.01ms run starts at opacity 0 for one frame; show these at once. */
   .animate-fade-in,
-  .animate-fade-only {
+  .animate-fade-only,
+  .animate-save-error {
     animation: none !important;
   }
 }

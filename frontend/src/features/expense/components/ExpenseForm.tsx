@@ -16,6 +16,7 @@ import {
   FormFieldLabel,
 } from "@/components/forms/FormFieldState"
 import { FormActions } from "@/components/forms/FormActions"
+import { useSaveError } from "@/components/forms/useSaveError"
 import { useConvert } from "@/features/currency/hooks/useCurrency"
 import {
   EXPENSE_CATEGORIES,
@@ -71,7 +72,7 @@ export function ExpenseForm({
   onCancel,
   isSubmitting,
 }: Props) {
-  const { register, handleSubmit, control, setValue, formState: { errors } } =
+  const { register, handleSubmit, control, setValue, watch, formState: { errors } } =
     useForm<FormValues>({
       resolver: zodResolver(schema),
       defaultValues: {
@@ -102,16 +103,18 @@ export function ExpenseForm({
     previewEnabled ? amount : 0,
   )
 
-  const submit = async (v: FormValues) => {
-    await onSubmit({
+  const { saveError, guardSave } = useSaveError(watch)
+
+  const submit = (v: FormValues) => guardSave(() =>
+    onSubmit({
       title: v.title,
       amount: Number(v.amount),
       currency: v.currency,
       category: v.category as ExpenseCategory,
       expense_date: v.expense_date || undefined,
       note: v.note || undefined,
-    })
-  }
+    }),
+  )
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-6" aria-busy={isSubmitting}>
@@ -297,7 +300,13 @@ export function ExpenseForm({
       </div>
 
       {/* Actions */}
-      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Add expense"} />
+      <FormActions
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+        submitLabel={initial ? "Save changes" : "Add expense"}
+        error={saveError?.message}
+        errorKey={saveError?.key}
+      />
       </fieldset>
     </form>
   )
