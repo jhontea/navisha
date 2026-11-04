@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  addTransitionType,
   createContext,
   startTransition,
   useCallback,
@@ -35,11 +36,13 @@ export function ItineraryFocusProvider({
 }) {
   const [activeDayId, setActiveDay] = useState<string | null>(initialDayId)
   const [pickedDayId, setPickedDay] = useOptimistic(activeDayId)
-  // A Transition, so <ViewTransition> crossfades the day panel (DESIGN.md §6) for every caller.
-  // React queues it behind a running crossfade, so the picker takes the optimistic day.
+  // A Transition, so <ViewTransition> crossfades the day panel (DESIGN.md §6) for every caller;
+  // its type keeps the day bar still (globals.css). React queues it behind a running
+  // crossfade, so the picker takes the optimistic day.
   const setActiveDayId = useCallback(
     (dayId: string) =>
       startTransition(() => {
+        addTransitionType("trip-day")
         setPickedDay(dayId)
         setActiveDay(dayId)
       }),

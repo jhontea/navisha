@@ -450,6 +450,14 @@
 ::view-transition-group(fab) {
   z-index: 99;
 }
+/* Day switch (transition type from setActiveDayId): the day bar shows live, so the new
+   tint is not crossfaded with a snapshot taken mid color change. */
+:root:active-view-transition-type(trip-day)::view-transition-old(trip-days) {
+  display: none;
+}
+:root:active-view-transition-type(trip-day)::view-transition-new(trip-days) {
+  animation: none;
+}
 /* Open overlays can stack, so they get unique names (match-element) and share one class. */
 [data-slot="dialog-overlay"],
 [data-slot="dialog-content"],
