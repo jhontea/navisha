@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils"
 import { FormField } from "@/components/forms/FormField"
 import { FormActions } from "@/components/forms/FormActions"
+import { useSaveError } from "@/components/forms/useSaveError"
 import {
   FormFieldDescription,
   FormFieldError,
@@ -145,6 +146,7 @@ export function AccommodationForm({
     clearErrors,
     setValue,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -173,8 +175,9 @@ export function AccommodationForm({
   const checkIn = useWatch({ control, name: "check_in" })
   const checkOut = useWatch({ control, name: "check_out" })
   const stayNights = getStayNights(checkIn, checkOut)
+  const { saveError, guardSave } = useSaveError(watch)
 
-  const submit = async (v: FormValues) => {
+  const submit = (v: FormValues) => guardSave(() => {
     const entity: CreateAccommodationInput = {
       accommodation_type: v.accommodation_type,
       name: v.name,
@@ -190,8 +193,8 @@ export function AccommodationForm({
       notes: v.notes,
     }
     const cost = costPayload(v.amount, v.currency, !withCost ? "off" : initial ? "edit" : "add")
-    await onSubmit({ ...entity, cost })
-  }
+    return onSubmit({ ...entity, cost })
+  })
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-6" aria-busy={isSubmitting}>
@@ -449,7 +452,13 @@ export function AccommodationForm({
       </div>
 
       {/* Form actions */}
-      <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save stay"} />
+      <FormActions
+        onCancel={onCancel}
+        isSubmitting={isSubmitting}
+        submitLabel={initial ? "Save changes" : "Save stay"}
+        error={saveError?.message}
+        errorKey={saveError?.key}
+      />
       </fieldset>
     </form>
   )

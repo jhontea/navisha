@@ -10,45 +10,31 @@ import { useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { BudgetForm, type BudgetFormValues } from "@/features/expense/components/BudgetForm"
 import { BudgetSummary } from "@/features/expense/components/BudgetSummary"
 import { ExpenseSection } from "@/features/expense/components/ExpenseSection"
-import { ApiError, isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 
 export function BudgetScreen() {
   const params = useParams<{ id: string }>()
   const id = params.id
   const { data: trip, isLoading } = useTrip(id)
-  const { mutate: updateTrip, isPending: isUpdating } = useUpdateTrip(id)
+  const { mutateAsync: updateTrip, isPending: isUpdating } = useUpdateTrip(id)
   const [editingBudget, setEditingBudget] = useState(false)
 
-  const saveBudget = ({ budget, budgetCategories }: BudgetFormValues) => {
+  // A failure throws to BudgetForm, which shows it inline.
+  const saveBudget = async ({ budget, budgetCategories }: BudgetFormValues) => {
     if (!trip) return
-    updateTrip(
-      {
-        title: trip.title,
-        description: trip.description,
-        start_date: trip.start_date,
-        end_date: trip.end_date,
-        base_currency: trip.base_currency,
-        budget,
-        budget_categories: budgetCategories,
-        cover_image_url: trip.cover_image_url,
-        notes: trip.notes,
-      },
-      {
-        onSuccess: () => {
-          setEditingBudget(false)
-          toast("Budget updated.")
-        },
-        onError: (error) => {
-          if (isOfflineError(error)) return
-          const message =
-            error instanceof ApiError && error.status >= 400 && error.status < 500
-              ? error.message
-              : "Couldn’t save your budget. Please check your connection and try again."
-          toast(message, "error")
-        },
-      },
-    )
+    await updateTrip({
+      title: trip.title,
+      description: trip.description,
+      start_date: trip.start_date,
+      end_date: trip.end_date,
+      base_currency: trip.base_currency,
+      budget,
+      budget_categories: budgetCategories,
+      cover_image_url: trip.cover_image_url,
+      notes: trip.notes,
+    })
+    setEditingBudget(false)
+    toast("Budget updated.")
   }
 
   if (isLoading || !trip) {

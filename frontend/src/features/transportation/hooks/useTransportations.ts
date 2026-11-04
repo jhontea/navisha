@@ -34,6 +34,7 @@ export function useTransportations(tripId: string) {
 export function useCreateTransportation(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TransportationForm shows the error inline
     mutationFn: (input: CreateTransportationInput) =>
       transportationApi.create(tripId, input),
     onSuccess: (created) => {
@@ -53,6 +54,7 @@ export function useCreateTransportation(tripId: string) {
 export function useUpdateTransportation(id: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TransportationForm shows the error inline
     mutationFn: (input: UpdateTransportationInput) =>
       transportationApi.update(id, input),
     onSuccess: (updated) => {
