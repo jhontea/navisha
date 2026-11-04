@@ -20,6 +20,10 @@ type FormActionsProps = {
   errorKey?: number
 }
 
+// Module-level so the ref is stable: it runs once per mount (a new errorKey remounts), not on every re-render.
+// The message pushes the buttons down; keep them on screen in a scrolled sheet.
+const scrollActionsIntoView = (el: HTMLParagraphElement | null) => el?.parentElement?.scrollIntoView({ block: "nearest" })
+
 export function FormActions({
   submitLabel,
   submittingLabel = "Saving…",
@@ -40,8 +44,7 @@ export function FormActions({
       {error && (
         <p
           key={errorKey}
-          // The message pushes the buttons down; keep them on screen in a scrolled sheet.
-          ref={(el) => el?.parentElement?.scrollIntoView({ block: "nearest" })}
+          ref={scrollActionsIntoView}
           role="alert"
           className="animate-save-error mb-4 flex items-start gap-2 rounded-2xl bg-destructive-bg px-3 py-2.5 text-sm font-semibold text-destructive">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
