@@ -96,7 +96,7 @@ export function TripTabBar({ tripId }: { tripId: string }) {
       {/* Once stuck, a page-coloured band hides the content scrolling under the pills. */}
       <div
         className={cn(
-          "sticky top-16 z-30 -mt-7 hidden justify-center px-margin-desktop md:flex",
+          "sticky top-16 z-30 -mt-7 hidden justify-center px-margin-desktop [view-transition-name:trip-tabs] md:flex",
           stuck && "before:absolute before:inset-x-0 before:top-0 before:-bottom-2 before:bg-background/90 before:backdrop-blur-sm",
         )}
       >

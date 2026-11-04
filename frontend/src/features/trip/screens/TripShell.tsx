@@ -1,11 +1,11 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState, useTransition } from "react"
+import { useState, useTransition, ViewTransition } from "react"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
 import { startRouteProgress } from "@/lib/routeProgress"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { BackLink } from "@/components/BackLink"
@@ -48,6 +48,7 @@ const DuplicateTripForm = dynamic(
 export function TripShell({ children }: { children: ReactNode }) {
   const { id: tripId } = useParams<{ id: string }>()
   const router = useRouter()
+  const pathname = usePathname()
   const { data: trip, isLoading, isError, error, refetch, isFetching } = useTrip(tripId)
   const { mutateAsync: updateTrip, isPending: isUpdating } = useUpdateTrip(tripId)
   const { mutate: deleteTrip, isPending: isDeleteRunning, isSuccess: isDeleted } = useDeleteTrip()
@@ -199,7 +200,10 @@ export function TripShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {children}
+      {/* Tab switch crossfade (DESIGN.md §6): a new key per tab pairs old and new content. */}
+      <ViewTransition key={pathname} name="trip-tab" share="auto" enter="auto" default="none">
+        <div data-vt-fallback>{children}</div>
+      </ViewTransition>
 
       <ResponsiveSheet open={editOpen} onOpenChange={setEditOpen} title="Edit trip">
         <TripForm
