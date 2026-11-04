@@ -1,6 +1,16 @@
 "use client"
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
+import {
+  addTransitionType,
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useMemo,
+  useOptimistic,
+  useState,
+  type ReactNode,
+} from "react"
 
 /**
  * Shared focus between the itinerary timeline and the side map (desktop):
@@ -8,6 +18,8 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
  */
 type ItineraryFocus = {
   activeDayId: string | null
+  /** The day the picker marks: the new day at once, while the panel's transition runs. */
+  pickedDayId: string | null
   setActiveDayId: (dayId: string) => void
   selectedActivityId: string | null
   selectActivity: (activityId: string | null) => void
@@ -22,12 +34,25 @@ export function ItineraryFocusProvider({
   initialDayId: string | null
   children: ReactNode
 }) {
-  const [activeDayId, setActiveDayId] = useState<string | null>(initialDayId)
+  const [activeDayId, setActiveDay] = useState<string | null>(initialDayId)
+  const [pickedDayId, setPickedDay] = useOptimistic(activeDayId)
+  // A Transition, so <ViewTransition> crossfades the day panel (DESIGN.md §6) for every caller;
+  // its type keeps the day bar still (globals.css). React queues it behind a running
+  // crossfade, so the picker takes the optimistic day.
+  const setActiveDayId = useCallback(
+    (dayId: string) =>
+      startTransition(() => {
+        addTransitionType("trip-day")
+        setPickedDay(dayId)
+        setActiveDay(dayId)
+      }),
+    [setPickedDay],
+  )
   const [selectedActivityId, selectActivity] = useState<string | null>(null)
 
   const value = useMemo(
-    () => ({ activeDayId, setActiveDayId, selectedActivityId, selectActivity }),
-    [activeDayId, selectedActivityId],
+    () => ({ activeDayId, pickedDayId, setActiveDayId, selectedActivityId, selectActivity }),
+    [activeDayId, pickedDayId, setActiveDayId, selectedActivityId],
   )
   return <ItineraryFocusContext.Provider value={value}>{children}</ItineraryFocusContext.Provider>
 }
@@ -37,6 +62,7 @@ export function useItineraryFocus(): ItineraryFocus {
   return (
     useContext(ItineraryFocusContext) ?? {
       activeDayId: null,
+      pickedDayId: null,
       setActiveDayId: () => {},
       selectedActivityId: null,
       selectActivity: () => {},

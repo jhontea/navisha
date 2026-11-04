@@ -415,7 +415,7 @@
   --tw-ease: cubic-bezier(.2, .8, .2, 1);
 }
 
-/* Trip tab crossfade (DESIGN.md §6, P2 C). Only the named content animates; the
+/* Trip tab and day crossfade (DESIGN.md §6, P2 C). Only the named content animates; the
    rest of the page (hero, tabs, nav) switches at once, and clicks pass through. */
 ::view-transition {
   pointer-events: none;
@@ -426,9 +426,37 @@
 }
 ::view-transition-group(trip-tab),
 ::view-transition-old(trip-tab),
-::view-transition-new(trip-tab) {
+::view-transition-new(trip-tab),
+::view-transition-old(trip-day),
+::view-transition-new(trip-day),
+::view-transition-old(trip-days),
+::view-transition-new(trip-days),
+::view-transition-group(fab),
+::view-transition-old(fab),
+::view-transition-new(fab) {
   animation-duration: var(--motion-base);
   animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+/* Days crossfade in place: from a long day scrolled down, the page shrinks and the
+   scroll clamps, and a moving group would slide the old day over the hero. Only the
+   name: old/new inherit the group's fill mode, and without it the old day flashes back. */
+::view-transition-group(trip-day),
+::view-transition-group(trip-days) {
+  animation-name: none;
+}
+/* The sticky day bar and the phone FAB stay above the crossfading day (unchanged, so their
+   own crossfade is invisible) and below the anchors; on a tab switch they fade like content. */
+::view-transition-group(trip-days),
+::view-transition-group(fab) {
+  z-index: 99;
+}
+/* Day switch (transition type from setActiveDayId): the day bar shows live, so the new
+   tint is not crossfaded with a snapshot taken mid color change. */
+:root:active-view-transition-type(trip-day)::view-transition-old(trip-days) {
+  display: none;
+}
+:root:active-view-transition-type(trip-day)::view-transition-new(trip-days) {
+  animation: none;
 }
 /* Open overlays can stack, so they get unique names (match-element) and share one class. */
 [data-slot="dialog-overlay"],
