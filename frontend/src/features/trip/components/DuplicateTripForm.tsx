@@ -4,6 +4,7 @@ import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { FormActions } from "@/components/forms/FormActions"
+import { useSaveError } from "@/components/forms/useSaveError"
 import { FormField } from "@/components/forms/FormField"
 import { FormFieldDescription } from "@/components/forms/FormFieldState"
 import { SelectableRow } from "@/components/SelectableRow"
@@ -39,14 +40,16 @@ export function DuplicateTripForm({
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { title: defaultTitle, start_date: "", include_bookings: false },
   })
+  const { saveError, guardSave } = useSaveError(watch)
   // An untouched default goes out blank so the server builds it and trims a long title to fit.
   const submit = (values: FormValues) =>
-    onSubmit({ ...values, title: values.title === defaultTitle ? "" : values.title })
+    guardSave(() => onSubmit({ ...values, title: values.title === defaultTitle ? "" : values.title }))
   const startDate = useWatch({ control, name: "start_date" })
   const includeBookings = useWatch({ control, name: "include_bookings" })
   const endDate = startDate ? addDaysISO(startDate, days - 1) : ""
@@ -109,6 +112,8 @@ export function DuplicateTripForm({
         isSubmitting={isSubmitting}
         submitDisabled={!startDate}
         onCancel={onCancel}
+        error={saveError?.message}
+        errorKey={saveError?.key}
       />
     </form>
   )

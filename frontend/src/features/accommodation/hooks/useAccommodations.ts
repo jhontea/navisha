@@ -36,6 +36,7 @@ export function useAccommodations(tripId: string) {
 export function useCreateAccommodation(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // AccommodationForm shows the error inline
     mutationFn: (input: CreateAccommodationInput) =>
       accommodationApi.create(tripId, input),
     onSuccess: (created) => {
@@ -55,6 +56,7 @@ export function useCreateAccommodation(tripId: string) {
 export function useUpdateAccommodation(id: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // AccommodationForm shows the error inline
     mutationFn: (input: UpdateAccommodationInput) =>
       accommodationApi.update(id, input),
     onSuccess: (updated) => {

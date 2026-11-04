@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import { ActionDisabledHint } from "@/components/forms/ActionDisabledHint"
 import { FormActions } from "@/components/forms/FormActions"
+import { useSaveError } from "@/components/forms/useSaveError"
 import { Input } from "@/components/ui/input"
 import { currencyDecimals, formatAmountInput, formatAmountValue, formatMoney, unformatAmountInput } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -21,7 +22,7 @@ interface Props {
   initialCategories?: Record<string, number>
   isSubmitting: boolean
   onCancel: () => void
-  onSubmit: (values: BudgetFormValues) => void
+  onSubmit: (values: BudgetFormValues) => Promise<unknown>
 }
 
 const amountOf = (v: string) => {
@@ -43,6 +44,7 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
   const categoryError =
     totalAmount > 0 && plannedSum > totalAmount ? "Category plans add up to more than the total budget." : null
   const disabledReason = getBudgetSaveDisabledReason(unformatAmountInput(total)) ?? categoryError
+  const { saveError, guardSave, clearSaveError } = useSaveError()
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -51,7 +53,7 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
     for (const [c, v] of Object.entries(categories)) {
       if (amountOf(v) > 0) budgetCategories[c] = amountOf(v)
     }
-    onSubmit({ budget: totalAmount, budgetCategories })
+    void guardSave(() => onSubmit({ budget: totalAmount, budgetCategories }))
   }
 
   return (
@@ -66,7 +68,10 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
             inputMode="decimal"
             autoFocus
             value={total}
-            onChange={(e) => setTotal(formatAmountInput(e.target.value, decimals))}
+            onChange={(e) => {
+              setTotal(formatAmountInput(e.target.value, decimals))
+              clearSaveError()
+            }}
             placeholder="e.g. 10,000,000"
             className="h-11 text-base tabular-nums md:h-10 md:text-sm"
           />
@@ -95,7 +100,10 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
             variant="bare"
                     inputMode="decimal"
                     value={categories[category] ?? ""}
-                    onChange={(e) => setCategories((cur) => ({ ...cur, [category]: formatAmountInput(e.target.value, decimals) }))}
+                    onChange={(e) => {
+                      setCategories((cur) => ({ ...cur, [category]: formatAmountInput(e.target.value, decimals) }))
+                      clearSaveError()
+                    }}
                     placeholder="0"
                     aria-label={`${cfg.label} planned amount`}
                     className="h-auto w-36 min-w-0 bg-transparent text-right text-base tabular-nums text-foreground outline-hidden placeholder:text-muted-foreground md:text-sm"
@@ -114,6 +122,8 @@ export function BudgetForm({ currency, initialBudget, initialCategories, isSubmi
         submitDisabled={Boolean(disabledReason)}
         submitAriaDescribedBy={disabledReason ? "budget-save-disabled-reason" : undefined}
         onCancel={onCancel}
+        error={saveError?.message}
+        errorKey={saveError?.key}
       />
     </form>
   )

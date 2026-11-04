@@ -101,6 +101,7 @@ export function useTrip(id: string, enabled = true) {
 export function useCreateTrip() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // TripForm (NewTripScreen) shows the error inline
     mutationFn: (input: CreateTripInput) => tripApi.create(input),
     onSuccess: () => {
       // Invalidate all trip list variants so dashboard + trips page update immediately
@@ -112,7 +113,7 @@ export function useCreateTrip() {
 export function useDuplicateTrip(id: string) {
   const qc = useQueryClient()
   return useMutation({
-    meta: { handlesError: true }, // TripShell toasts its own message
+    meta: { handlesError: true }, // DuplicateTripForm shows the error inline
     mutationFn: (input: Parameters<typeof tripApi.duplicate>[1]) => tripApi.duplicate(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trips"], refetchType: 'active' })
@@ -123,7 +124,7 @@ export function useDuplicateTrip(id: string) {
 export function useUpdateTrip(id: string) {
   const qc = useQueryClient()
   return useMutation({
-    meta: { handlesError: true }, // TripShell and BudgetScreen toast their own message
+    meta: { handlesError: true }, // TripForm (TripShell) and BudgetForm show the error inline
     mutationFn: (input: UpdateTripInput) => tripApi.update(id, input),
     onSuccess: (updated) => {
       qc.setQueryData<TripDetail>(["trips", "detail", id], (current) =>

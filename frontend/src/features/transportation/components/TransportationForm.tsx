@@ -7,6 +7,7 @@ import { Controller, useForm, useWatch } from "react-hook-form"
 
 import { Chip } from "@/components/Chip"
 import { FormActions } from "@/components/forms/FormActions"
+import { useSaveError } from "@/components/forms/useSaveError"
 import { FormFieldError, FormFieldLabel } from "@/components/forms/FormFieldState"
 import { LocationAutocomplete } from "@/features/activity/components/LocationAutocomplete"
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@/lib/currency"
@@ -82,8 +83,10 @@ export function TransportationForm({
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = form
+  const { saveError, guardSave } = useSaveError(watch)
   useEffect(() => {
     if (!defaultDeparture) return
     const t = window.setTimeout(() => document.getElementById("departure-datetime")?.focus(), 150)
@@ -94,7 +97,7 @@ export function TransportationForm({
 
   return (
     <form
-      onSubmit={handleSubmit((v) => onSubmit(transportInput(v, !withCost ? "off" : initial ? "edit" : "add")))}
+      onSubmit={handleSubmit((v) => guardSave(() => onSubmit(transportInput(v, !withCost ? "off" : initial ? "edit" : "add"))))}
       className="space-y-6"
       aria-busy={isSubmitting}
     >
@@ -182,7 +185,13 @@ export function TransportationForm({
 
         <TransportDetailsFields form={form} withCost={withCost} editing={Boolean(initial)} />
 
-        <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Save transport"} />
+        <FormActions
+          onCancel={onCancel}
+          isSubmitting={isSubmitting}
+          submitLabel={initial ? "Save changes" : "Save transport"}
+          error={saveError?.message}
+          errorKey={saveError?.key}
+        />
       </fieldset>
     </form>
   )

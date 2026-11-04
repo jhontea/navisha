@@ -35,9 +35,8 @@ export function NewTripScreen() {
         <TripForm
           isSubmitting={isPending || isNavigating}
           onSubmit={async (input) => {
-            // On failure the global mutation handler shows the toast; the form keeps its values.
-            const trip = await mutateAsync(input).catch(() => null)
-            if (!trip) return
+            // A failure throws to TripForm, which shows it inline and keeps its values.
+            const trip = await mutateAsync(input)
             startRouteProgress()
             startTransition(() => router.push(`/trips/${trip.id}`))
           }}
