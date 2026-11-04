@@ -286,6 +286,7 @@
   gap: 0.625rem;
   width: min(24rem, calc(100vw - 2rem));
   pointer-events: none;
+  view-transition-name: toast; /* anchored above the tab crossfade (§6) */
 }
 
 .navisha-toast {
@@ -414,6 +415,61 @@
   --tw-ease: cubic-bezier(.2, .8, .2, 1);
 }
 
+/* Trip tab crossfade (DESIGN.md §6, P2 C). Only the named content animates; the
+   rest of the page (hero, tabs, nav) switches at once, and clicks pass through. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-group(trip-tab),
+::view-transition-old(trip-tab),
+::view-transition-new(trip-tab) {
+  animation-duration: var(--motion-base);
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+/* Open overlays can stack, so they get unique names (match-element) and share one class. */
+[data-slot="dialog-overlay"],
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-overlay"],
+[data-slot="alert-dialog-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="select-content"] {
+  view-transition-name: match-element;
+  view-transition-class: anchor;
+}
+/* Anchors: named so the crossfading content cannot paint over them; shown live at once. */
+::view-transition-group(site-header),
+::view-transition-group(trip-tabs),
+::view-transition-group(floating-nav),
+::view-transition-group(toast),
+::view-transition-group(.anchor) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header),
+::view-transition-old(trip-tabs),
+::view-transition-old(floating-nav),
+::view-transition-old(toast),
+::view-transition-old(.anchor) {
+  display: none;
+}
+::view-transition-new(site-header),
+::view-transition-new(trip-tabs),
+::view-transition-new(floating-nav),
+::view-transition-new(toast),
+::view-transition-new(.anchor) {
+  animation: none;
+}
+/* No View Transitions: the remounted tab content fades in instead (opacity only, FAB-safe). */
+@supports not (view-transition-name: none) {
+  [data-vt-fallback] {
+    animation: fade-only var(--motion-base) cubic-bezier(.2, .8, .2, 1);
+  }
+}
+
 /* ── Reduced Motion (accessibility) ── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -435,7 +491,8 @@
   /* Even a 0.01ms run starts at opacity 0 for one frame; show these at once. */
   .animate-fade-in,
   .animate-fade-only,
-  .animate-save-error {
+  .animate-save-error,
+  [data-vt-fallback] {
     animation: none !important;
   }
 }

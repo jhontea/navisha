@@ -27,7 +27,7 @@ export function FloatingNav({
   return (
     <nav
       aria-label={ariaLabel}
-      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 md:hidden"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 [view-transition-name:floating-nav] md:hidden"
     >
       <ul className="mx-auto flex h-16 max-w-md items-center gap-1 rounded-full border bg-card px-2 shadow-overlay">
         {items.map(({ href, label, icon: Icon, active, onIntent }) => (
