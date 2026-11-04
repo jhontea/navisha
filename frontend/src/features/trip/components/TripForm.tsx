@@ -20,6 +20,7 @@ import {
   fieldDescriptionIds,
 } from "@/components/forms/FormFieldState"
 import { FormActions } from "@/components/forms/FormActions"
+import { useSaveError } from "@/components/forms/useSaveError"
 import { Button } from "@/components/ui/button"
 import { getInclusiveDayCount } from "../lib/dates"
 import { cn } from "@/lib/utils"
@@ -115,6 +116,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     clearErrors,
     setValue,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
 
@@ -127,6 +129,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
   const tripDuration = getInclusiveDayCount(startDate, endDate)
   const destination = useWatch({ control, name: "destination" })
   const baseCurrency = useWatch({ control, name: "base_currency" })
+  const { saveError, guardSave } = useSaveError(watch)
 
   const continueWithAI = () => {
     const params = new URLSearchParams()
@@ -139,8 +142,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
     router.push(query ? `/trips/generate?${query}` : "/trips/generate")
   }
 
-  const submit = async (values: FormValues) => {
-    await onSubmit({
+  const submit = (values: FormValues) => guardSave(() =>
+    onSubmit({
       title: values.title,
       description: values.destination ?? "",
       start_date: values.start_date,
@@ -153,8 +156,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           : getDefaultTripCover(values.destination),
       // No field edits notes; pass the existing value through so saving an edit keeps it.
       notes: values.notes ?? "",
-    })
-  }
+    }),
+  )
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5" aria-busy={isSubmitting}>
@@ -350,6 +353,8 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
           isSubmitting={isSubmitting}
           submittingLabel={initial ? "Saving…" : "Creating…"}
           submitLabel={submitLabel ?? (initial ? "Save changes" : "Create trip")}
+          error={saveError?.message}
+          errorKey={saveError?.key}
         />
       </fieldset>
     </form>

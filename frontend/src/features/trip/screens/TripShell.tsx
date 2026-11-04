@@ -209,19 +209,11 @@ export function TripShell({ children }: { children: ReactNode }) {
         <TripForm
           initial={trip}
           isSubmitting={isUpdating}
+          // A failure throws to TripForm, which shows it inline.
           onSubmit={async (input) => {
-            try {
-              await updateTrip(input)
-              setEditOpen(false)
-              toast("Trip details updated.")
-            } catch (updateError) {
-              if (isOfflineError(updateError)) return
-              const message =
-                updateError instanceof ApiError && updateError.status >= 400 && updateError.status < 600
-                  ? updateError.message
-                  : "Couldn't save your changes. Check your connection and try again."
-              toast(message, "error")
-            }
+            await updateTrip(input)
+            setEditOpen(false)
+            toast("Trip details updated.")
           }}
         />
       </ResponsiveSheet>
@@ -236,24 +228,16 @@ export function TripShell({ children }: { children: ReactNode }) {
           trip={trip}
           isSubmitting={isDuplicating}
           onCancel={() => setDuplicateOpen(false)}
+          // A failure throws to DuplicateTripForm, which shows it inline.
           onSubmit={async (input) => {
-            try {
-              const copy = await duplicateTrip(input)
-              toast("Trip duplicated.")
-              startRouteProgress()
-              // Closing inside the transition keeps the sheet up until the copy's page commits.
-              startTransition(() => {
-                setDuplicateOpen(false)
-                router.push(`/trips/${copy.id}`)
-              })
-            } catch (duplicateError) {
-              if (isOfflineError(duplicateError)) return
-              const message =
-                duplicateError instanceof ApiError && duplicateError.status >= 400 && duplicateError.status < 600
-                  ? duplicateError.message
-                  : "Couldn't duplicate this trip. Check your connection and try again."
-              toast(message, "error")
-            }
+            const copy = await duplicateTrip(input)
+            toast("Trip duplicated.")
+            startRouteProgress()
+            // Closing inside the transition keeps the sheet up until the copy's page commits.
+            startTransition(() => {
+              setDuplicateOpen(false)
+              router.push(`/trips/${copy.id}`)
+            })
           }}
         />
       </ResponsiveSheet>
