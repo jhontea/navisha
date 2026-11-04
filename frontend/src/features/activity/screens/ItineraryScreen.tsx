@@ -1,5 +1,6 @@
 "use client"
 
+import { ViewTransition } from "react"
 import dynamic from "next/dynamic"
 import { useParams } from "next/navigation"
 import { ChevronDown, List } from "lucide-react"
@@ -62,7 +63,7 @@ function DayView({
   destination: string
   tripBaseCurrency: string
 }) {
-  const { activeDayId, setActiveDayId, selectActivity } = useItineraryFocus()
+  const { activeDayId, pickedDayId, setActiveDayId, selectActivity } = useItineraryFocus()
   const { data: overview } = useTripOverview(tripId)
   const counts = overview?.activity_count_by_day ?? {}
   const day = days.find((d) => d.id === activeDayId) ?? days[0]
@@ -70,11 +71,11 @@ function DayView({
 
   return (
     <>
-      <div className="sticky top-[env(safe-area-inset-top)] z-20 -mx-margin-mobile mb-3 bg-background/95 px-margin-mobile pt-2 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none">
+      <div className="sticky top-[env(safe-area-inset-top)] z-20 -mx-margin-mobile mb-3 bg-background/95 px-margin-mobile pt-2 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:pt-0 md:backdrop-blur-none [view-transition-name:trip-days]">
         <DateCircles
           aria-label="Trip day"
           days={days.map((d) => ({ id: d.id, date: d.date, hasItems: (counts[d.id] ?? 0) > 0 }))}
-          value={day.id}
+          value={pickedDayId ?? day.id}
           onChange={(id) => {
             selectActivity(null)
             setActiveDayId(id)
@@ -82,20 +83,24 @@ function DayView({
         />
       </div>
 
-      {/* Keyed by day: switching days remounts the panel (fresh title edit / select state). */}
-      <DayPanel
-        key={day.id}
-        tripId={tripId}
-        dayId={day.id}
-        dayNumber={day.day_number}
-        date={day.date}
-        title={day.title ?? ""}
-        notes={day.notes ?? ""}
-        destination={destination}
-        tripBaseCurrency={tripBaseCurrency}
-        days={days}
-        weather={weather?.days.find((w) => w.date === day.date)}
-      />
+      {/* Keyed by day: switching days remounts the panel (fresh title edit / select state)
+          and pairs old and new panel for the day crossfade (DESIGN.md §6). */}
+      <ViewTransition key={day.id} name="trip-day" share="auto" default="none">
+        <div data-vt-fallback>
+          <DayPanel
+            tripId={tripId}
+            dayId={day.id}
+            dayNumber={day.day_number}
+            date={day.date}
+            title={day.title ?? ""}
+            notes={day.notes ?? ""}
+            destination={destination}
+            tripBaseCurrency={tripBaseCurrency}
+            days={days}
+            weather={weather?.days.find((w) => w.date === day.date)}
+          />
+        </div>
+      </ViewTransition>
     </>
   )
 }
