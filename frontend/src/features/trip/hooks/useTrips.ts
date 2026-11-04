@@ -189,6 +189,7 @@ export function useUpdateDayNotes(tripId: string) {
 export function useUpdateDayTitle(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // DayPanel shows the error inline
     mutationFn: ({ dayId, title }: { dayId: string; title: string }) =>
       tripApi.updateDayTitle(dayId, title),
     onSuccess: (updated) => updateDayCaches(qc, tripId, updated),

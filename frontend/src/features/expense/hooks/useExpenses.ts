@@ -45,6 +45,7 @@ function invalidateAll(qc: ReturnType<typeof useQueryClient>, tripId: string) {
 export function useCreateExpense(tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // ExpenseForm shows the error inline
     mutationFn: (input: CreateExpenseInput) =>
       expenseApi.create(tripId, input),
     onSuccess: (created) => {
@@ -60,6 +61,7 @@ export function useCreateExpense(tripId: string) {
 export function useUpdateExpense(id: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // ExpenseForm shows the error inline
     mutationFn: (input: UpdateExpenseInput) => expenseApi.update(id, input),
     onSuccess: (updated) => {
       const previous = qc.getQueryData<ExpenseListResponse>(listKey(tripId))?.items.find((item) => item.id === updated.id)

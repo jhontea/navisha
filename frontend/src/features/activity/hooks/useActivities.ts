@@ -51,6 +51,7 @@ function invalidateActivityViews(
 export function useCreateActivity(dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // ActivityForm shows the error inline
     mutationFn: (input: CreateActivityInput) => activityApi.create(dayId, input),
     onSuccess: (created) => {
       // The server slots it in by start time, shifting later activities.
@@ -81,6 +82,7 @@ export function useCreateActivitiesBatch(dayId: string, tripId: string) {
 export function useUpdateActivity(id: string, dayId: string, tripId: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { handlesError: true }, // ActivityForm shows the error inline
     mutationFn: (input: UpdateActivityInput) => activityApi.update(id, input),
     onSuccess: (updated) => {
       qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>

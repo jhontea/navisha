@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Loader2 } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -15,7 +15,14 @@ type FormActionsProps = {
   submitType?: "submit" | "button"
   submitIcon?: ReactNode
   className?: string
+  /** Inline save error shown above the buttons (E2); a new `errorKey` replays the shake. */
+  error?: string | null
+  errorKey?: number
 }
+
+// Module-level so the ref is stable: it runs once per mount (a new errorKey remounts), not on every re-render.
+// The message pushes the buttons down; keep them on screen in a scrolled sheet.
+const scrollActionsIntoView = (el: HTMLParagraphElement | null) => el?.parentElement?.scrollIntoView({ block: "nearest" })
 
 export function FormActions({
   submitLabel,
@@ -29,18 +36,32 @@ export function FormActions({
   submitType = "submit",
   submitIcon,
   className,
+  error,
+  errorKey,
 }: FormActionsProps) {
   return (
-    <div className={cn("flex flex-col-reverse gap-3 border-t border-border/40 pt-4 sm:flex-row sm:justify-end", className)}>
-      {onCancel && (
-        <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting} className="w-full rounded-xl sm:w-auto">
-          {cancelLabel}
-        </Button>
+    <div className={cn("border-t border-border/40 pt-4", className)}>
+      {error && (
+        <p
+          key={errorKey}
+          ref={scrollActionsIntoView}
+          role="alert"
+          className="animate-save-error mb-4 flex items-start gap-2 rounded-2xl bg-destructive-bg px-3 py-2.5 text-sm font-semibold text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {error}
+        </p>
       )}
-      <Button type={submitType} size="lg" onClick={onSubmit} disabled={isSubmitting || submitDisabled} aria-describedby={submitAriaDescribedBy} className="w-full min-w-32 rounded-xl sm:w-auto">
-        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : submitIcon}
-        {isSubmitting ? submittingLabel : submitLabel}
-      </Button>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        {onCancel && (
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting} className="w-full rounded-xl sm:w-auto">
+            {cancelLabel}
+          </Button>
+        )}
+        <Button type={submitType} size="lg" onClick={onSubmit} disabled={isSubmitting || submitDisabled} aria-describedby={submitAriaDescribedBy} className="w-full min-w-32 rounded-xl sm:w-auto">
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : submitIcon}
+          {isSubmitting ? submittingLabel : submitLabel}
+        </Button>
+      </div>
     </div>
   )
 }

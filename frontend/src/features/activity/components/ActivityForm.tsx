@@ -7,6 +7,7 @@ import { useForm, useWatch } from "react-hook-form"
 
 import { FormActions } from "@/components/forms/FormActions"
 import { FormField } from "@/components/forms/FormField"
+import { useSaveError } from "@/components/forms/useSaveError"
 import { SegmentedControl } from "@/components/SegmentedControl"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -58,6 +59,7 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isDirty },
   } = form
   const type = useWatch({ control: form.control, name: "type" })
@@ -66,15 +68,17 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
     onDirtyChange?.(isDirty)
   }, [isDirty, onDirtyChange])
 
-  const submit = async (v: ActivityFormValues) => {
-    await onSubmit({
+  const { saveError, guardSave } = useSaveError(watch)
+
+  const submit = (v: ActivityFormValues) => guardSave(() =>
+    onSubmit({
       type: v.type,
       title: v.title,
       start_time: v.start_time,
       end_time: v.end_time,
       payload: activityPayload(v),
-    })
-  }
+    }),
+  )
 
   const titleField = (
     <FormField label="Title" htmlFor="activity-title" required error={errors.title?.message} errorId="activity-title-error">
@@ -130,7 +134,13 @@ export function ActivityForm({ initial, lockType, onSubmit, onCancel, isSubmitti
 
         {type === "todo" && <TodoFields form={form} />}
 
-        <FormActions onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={initial ? "Save changes" : "Add activity"} />
+        <FormActions
+          onCancel={onCancel}
+          isSubmitting={isSubmitting}
+          submitLabel={initial ? "Save changes" : "Add activity"}
+          error={saveError?.message}
+          errorKey={saveError?.key}
+        />
       </fieldset>
     </form>
   )
