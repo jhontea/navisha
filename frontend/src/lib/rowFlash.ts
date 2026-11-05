@@ -20,7 +20,8 @@ export function flashRow(id: string) {
   const until = Date.now() + FIND_FOR_MS
   const find = () => {
     // Ids are server UUIDs, safe inside the quoted selector.
-    const el = document.querySelector(`[data-row-id="${id}"]`)
+    // Skip a copy that is animating out (an edited row that moved to another group).
+    const el = [...document.querySelectorAll(`[data-row-id="${id}"]`)].find((e) => !e.closest("[data-exiting]"))
     if (el) light(el)
     else if (Date.now() < until) requestAnimationFrame(find)
   }
