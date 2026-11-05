@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -12,8 +12,10 @@ import {
 } from "@dnd-kit/core"
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useQueryClient } from "@tanstack/react-query"
+import { AnimatePresence } from "motion/react"
 import { AlertTriangle, ChevronDown, Hotel, PenLine, Plane, Plus, Sparkles } from "lucide-react"
 
+import { Collapse } from "@/components/Collapse"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { FloatingAddButton, FloatingAddSpacer } from "@/components/FloatingAddButton"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
@@ -288,45 +290,58 @@ export function DayActivities({
         <TimePills className="lg:hidden" aria-label={`Times on Day ${dayNumber}`} items={timePills} value={timeFocus} onChange={jumpTo} />
       )}
 
-      {entries.length === 0 ? (
-        <div className="rounded-xl bg-muted px-3 py-4 text-center">
-          <p className="text-sm text-muted-foreground">Nothing planned for this day yet.</p>
-          {!selectMode && (
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {DAY_ACTIONS.map(({ mode, icon: Icon, title }) => (
-                <Button key={mode} variant="outline" className="min-w-0 bg-card" onClick={() => setSheet({ mode })}>
-                  <Icon aria-hidden="true" />
-                  {title}
-                </Button>
-              ))}
-            </div>
+      {/* One wrapper, so space-y gives no margin to a leaving copy (it would jump at unmount). */}
+      <div>
+        <AnimatePresence initial={false}>
+          {entries.length === 0 ? (
+            <Collapse key="empty">
+              <div className="rounded-xl bg-muted px-3 py-4 text-center">
+                <p className="text-sm text-muted-foreground">Nothing planned for this day yet.</p>
+                {!selectMode && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {DAY_ACTIONS.map(({ mode, icon: Icon, title }) => (
+                      <Button key={mode} variant="outline" className="min-w-0 bg-card" onClick={() => setSheet({ mode })}>
+                        <Icon aria-hidden="true" />
+                        {title}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Collapse>
+          ) : (
+            <Collapse key="list">
+              <DndContext
+                key={reorderKey}
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={() => setDragging(true)}
+                onDragEnd={onDragEnd}
+                onDragCancel={() => setDragging(false)}
+                accessibility={{ announcements: reorderAnnouncements(activities), screenReaderInstructions: reorderInstructions }}
+              >
+                <SortableContext items={activities.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+                  <div>
+                    {/* Height + opacity only (no layout/transform, which dnd-kit owns). A drop remounts
+                        this with the DndContext, and initial={false} keeps the rows from entering again. */}
+                    <AnimatePresence initial={false}>
+                      {entries.map((entry, i) => {
+                        const leg = selectMode ? undefined : legBetween(legs, entry, entries[i + 1])
+                        return (
+                          <Collapse key={entry.kind === "transport" ? `trans-${entry.data.id}` : entryRef(entry)} instant={dragging}>
+                            {renderEntry(entry)}
+                            {leg && <TravelConnector leg={leg} hidden={dragging} />}
+                          </Collapse>
+                        )
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </Collapse>
           )}
-        </div>
-      ) : (
-        <DndContext
-          key={reorderKey}
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={() => setDragging(true)}
-          onDragEnd={onDragEnd}
-          onDragCancel={() => setDragging(false)}
-          accessibility={{ announcements: reorderAnnouncements(activities), screenReaderInstructions: reorderInstructions }}
-        >
-          <SortableContext items={activities.map((a) => a.id)} strategy={verticalListSortingStrategy}>
-            <div>
-              {entries.map((entry, i) => {
-                const leg = selectMode ? undefined : legBetween(legs, entry, entries[i + 1])
-                return (
-                  <Fragment key={entry.kind === "transport" ? `trans-${entry.data.id}` : entryRef(entry)}>
-                    {renderEntry(entry)}
-                    {leg && <TravelConnector leg={leg} hidden={dragging} />}
-                  </Fragment>
-                )
-              })}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
+        </AnimatePresence>
+      </div>
 
       {!selectMode && entries.length > 0 && (
         <DropdownMenu>
