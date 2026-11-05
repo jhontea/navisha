@@ -1,3 +1,4 @@
+import { useIsRestoring } from "@tanstack/react-query"
 import { useActivities } from "./useActivities"
 import { useTransportations } from "@/features/transportation/hooks/useTransportations"
 import { useAccommodations } from "@/features/accommodation/hooks/useAccommodations"
@@ -10,12 +11,18 @@ import { findActivityOverlaps } from "../lib/time"
  * activities overlap in time.
  */
 export function useDayTimeline(tripId: string, dayId: string, date: string) {
-  const { data: activitiesData, isLoading } = useActivities(dayId)
-  const { data: transData } = useTransportations(tripId)
-  const { data: accomData } = useAccommodations(tripId)
+  const activitiesQuery = useActivities(dayId)
+  const transQuery = useTransportations(tripId)
+  const accomQuery = useAccommodations(tripId)
+  // Loading until all three settle, so late transport/stay rows don't push the day down.
+  // While the persisted cache restores, queries wait with no data and isLoading false.
+  const isRestoring = useIsRestoring()
+  const isLoading = [activitiesQuery, transQuery, accomQuery].some(
+    (query) => query.isLoading || (isRestoring && query.isPending),
+  )
 
-  const activities = activitiesData?.items ?? []
-  const staticItems = buildStaticItems(transData?.items ?? [], accomData?.items ?? [], date)
+  const activities = activitiesQuery.data?.items ?? []
+  const staticItems = buildStaticItems(transQuery.data?.items ?? [], accomQuery.data?.items ?? [], date)
   const overlapByActivity = findActivityOverlaps(
     activities.filter((activity) => activity.type === "location"),
   )

@@ -13,6 +13,7 @@ import { useTripWeather } from "@/features/trip/weather"
 import { toLocalISODate } from "@/features/trip/lib/status"
 import type { Day } from "@/features/trip/types"
 import { DayPanel } from "@/features/activity/components/DayPanel"
+import { ItinerarySkeleton } from "@/features/activity/components/DayActivitiesSkeleton"
 import { ItineraryFocusProvider, useItineraryFocus } from "@/features/activity/ItineraryFocus"
 import { TripOverview } from "@/features/trip/components/TripOverview"
 import { LG_MEDIA_QUERY, useMediaQuery } from "@/lib/useMediaQuery"
@@ -112,16 +113,7 @@ export function ItineraryScreen() {
   const { data: trip, isLoading, isError } = useTrip(id)
 
   if (isLoading) {
-    return (
-      <div className="mx-auto flex w-full max-w-max-width flex-col gap-3 px-margin-mobile py-6 md:px-margin-desktop">
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="size-12 animate-pulse rounded-full bg-skeleton" />
-          ))}
-        </div>
-        <div className="h-64 animate-pulse rounded-2xl bg-skeleton" />
-      </div>
-    )
+    return <ItinerarySkeleton />
   }
 
   if (isError || !trip) {
@@ -137,7 +129,8 @@ export function ItineraryScreen() {
   return (
     <ItineraryFocusProvider initialDayId={initialDay(trip.days)}>
       <main className="mx-auto grid w-full max-w-max-width gap-5 px-margin-mobile pb-6 pt-4 md:px-margin-desktop md:pb-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,37.5rem)_minmax(0,1fr)]">
-        <div className="min-w-0">
+        {/* The overview waits for the day: shown later it is new content, pushed down it is a layout shift. */}
+        <div className="min-w-0 has-[[data-day-loading]]:[&>details]:hidden">
           {trip.days.length === 0 ? (
             <EmptyState
               icon={List}

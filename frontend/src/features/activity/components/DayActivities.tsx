@@ -38,6 +38,7 @@ import {
   useUpdateActivity,
 } from "../hooks/useActivities"
 import { useDayTimeline } from "../hooks/useDayTimeline"
+import { DayActivitiesSkeleton } from "./DayActivitiesSkeleton"
 import { useActivitySelection } from "../hooks/useActivitySelection"
 import { useTripTravel } from "../hooks/useTripTravel"
 import { useItineraryFocus } from "../ItineraryFocus"
@@ -153,13 +154,7 @@ export function DayActivities({
   }, [reorderKey])
 
   if (isLoading) {
-    return (
-      <div className="space-y-3 py-2" aria-label="Loading day activities">
-        {[1, 2].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-xl bg-skeleton" />
-        ))}
-      </div>
-    )
+    return <DayActivitiesSkeleton />
   }
 
   const onDragEnd = (e: DragEndEvent) => {

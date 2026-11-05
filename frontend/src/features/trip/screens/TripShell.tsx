@@ -75,9 +75,10 @@ export function TripShell({ children }: { children: ReactNode }) {
           <Skeleton className="h-7 w-3/4" />
           <Skeleton className="h-5 w-1/2" />
         </div>
+        {/* Tall enough that the desktop footer stays off screen until the tab renders (no layout shift). */}
         <div className="mt-6 space-y-3 px-margin-mobile md:px-0">
           <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
       </div>
     )

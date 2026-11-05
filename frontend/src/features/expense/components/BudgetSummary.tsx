@@ -1,10 +1,12 @@
 "use client"
 
+import { useIsRestoring } from "@tanstack/react-query"
 import { AlertTriangle, Pencil, Plus } from "lucide-react"
 
 import { MoneyText } from "@/components/MoneyText"
 import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { Day } from "@/features/trip/types"
@@ -34,12 +36,17 @@ const CARD = "rounded-2xl border bg-card p-4 shadow-card sm:p-5"
 export function BudgetSummary({ tripId, budget, budgetCategories, days, onEditBudget }: Props) {
   const summary = useExpenseSummary(tripId)
   const expenses = useExpenses(tripId)
+  // While the persisted cache restores, queries wait with no data and isLoading false:
+  // without this the error below flashes, then the cards push the page down.
+  const isRestoring = useIsRestoring()
 
-  if (summary.isLoading) {
+  if ([summary, expenses].some((query) => query.isLoading || (isRestoring && query.isPending))) {
+    // Spent, category and daily cards at about their real height.
     return (
       <div className="space-y-4" aria-label="Loading budget">
-        <div className="h-36 animate-pulse rounded-xl bg-skeleton" />
-        <div className="h-48 animate-pulse rounded-xl bg-skeleton" />
+        <Skeleton className="h-44 rounded-2xl" />
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-48 rounded-2xl" />
       </div>
     )
   }
