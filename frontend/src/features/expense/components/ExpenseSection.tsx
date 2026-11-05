@@ -3,7 +3,7 @@
 import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
 import { useRef, useState } from "react"
-import { AnimatePresence, useReducedMotion } from "motion/react"
+import { AnimatePresence, useIsPresent, useReducedMotion } from "motion/react"
 import * as m from "motion/react-m"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
@@ -57,6 +57,8 @@ const EASE_SOFT = [0.2, 0.8, 0.2, 1] as const
 function Collapse({ as, rowId, children }: { as?: "li"; rowId?: string; children: React.ReactNode }) {
   // MotionConfig reducedMotion="user" leaves height/opacity running, so stop them here.
   const reduce = useReducedMotion()
+  // While exiting, a moved row's old copy still carries its data-row-id; flashRow skips it.
+  const present = useIsPresent()
   const [moving, setMoving] = useState(false)
   const ref = useRef<HTMLLIElement & HTMLDivElement>(null)
   const Tag = as === "li" ? m.li : m.div
@@ -71,6 +73,7 @@ function Collapse({ as, rowId, children }: { as?: "li"; rowId?: string; children
     <Tag
       ref={ref}
       data-row-id={rowId}
+      data-exiting={present ? undefined : ""}
       className={moving ? "overflow-clip" : undefined}
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}

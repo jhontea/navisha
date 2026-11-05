@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { FLASH_FADE_MS, FLASH_ON_MS, flashRow } from "./rowFlash"
 
-function fakeRow() {
+function fakeRow(exiting = false) {
   const attrs = new Map<string, string>()
   return {
+    closest: (sel: string) => (exiting && sel === "[data-exiting]" ? {} : null),
     setAttribute: (k: string, v: string) => attrs.set(k, v),
     removeAttribute: (k: string) => attrs.delete(k),
     flash: () => attrs.get("data-flash"),
@@ -14,14 +15,20 @@ function fakeRow() {
 
 describe("flashRow", () => {
   let rows: Record<string, ReturnType<typeof fakeRow>>
+  // Copies earlier in the DOM than rows[id], e.g. one animating out.
+  let before: Record<string, ReturnType<typeof fakeRow>[]>
 
   beforeEach(() => {
     vi.useFakeTimers()
     rows = {}
+    before = {}
     vi.stubGlobal("requestAnimationFrame", (cb: () => void) => setTimeout(cb, 16))
     vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) })
     vi.stubGlobal("document", {
-      querySelector: (sel: string) => rows[/data-row-id="(.+)"/.exec(sel)![1]] ?? null,
+      querySelectorAll: (sel: string) => {
+        const id = /data-row-id="(.+)"/.exec(sel)![1]
+        return [...(before[id] ?? []), ...(rows[id] ? [rows[id]] : [])]
+      },
     })
   })
 
@@ -42,6 +49,16 @@ describe("flashRow", () => {
     expect(row.flash()).toBe("off")
     vi.advanceTimersByTime(FLASH_FADE_MS)
     expect(row.flash()).toBeUndefined()
+  })
+
+  it("skips a copy that is animating out and flashes the live row", () => {
+    const old = fakeRow(true)
+    before.a = [old]
+    const row = (rows.a = fakeRow())
+    flashRow("a")
+    vi.advanceTimersByTime(16)
+    expect(old.flash()).toBeUndefined()
+    expect(row.flash()).toBe("on")
   })
 
   it("re-flashing during the fade turns it back on and restarts the 1000ms", () => {
