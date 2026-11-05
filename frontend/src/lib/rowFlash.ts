@@ -24,8 +24,9 @@ export function flashRow(id: string) {
     if (el) light(el)
     else if (Date.now() < until) requestAnimationFrame(find)
   }
-  // Wait a frame so an edited row has re-rendered (and moved) before scrolling to it.
-  requestAnimationFrame(find)
+  // Wait for TanStack Query's notify (setTimeout 0) and then a frame, so an edited row
+  // that moved (e.g. an expense whose date changed) has re-rendered before we find it.
+  setTimeout(() => requestAnimationFrame(find), 0)
 }
 
 function light(el: Element) {
