@@ -75,7 +75,8 @@ export function SortableActivityRow({
   return (
     <TimelineRow
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      // Translate only: Transform adds scaleY to match the hovered card, stretching the dragged one.
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       time={activity.start_time?.slice(0, 5)}
       icon={icon}
       className={cn(isDragging && "z-50 opacity-60")}

@@ -1,10 +1,10 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { useIsPresent, useReducedMotion } from "motion/react"
+import { useIsPresent } from "motion/react"
 import * as m from "motion/react-m"
 
-export const EASE_SOFT = [0.2, 0.8, 0.2, 1] as const
+const EASE_SOFT = [0.2, 0.8, 0.2, 1] as const
 
 /**
  * An AnimatePresence child that grows from / shrinks to height 0 while it fades.
@@ -13,9 +13,23 @@ export const EASE_SOFT = [0.2, 0.8, 0.2, 1] as const
  * transitionEnd did not land for rows mounted by a save in dev). overflow-clip, not
  * hidden, so it is no scroll container for flashRow's scrollIntoView.
  */
-export function Collapse({ as, rowId, children }: { as?: "li"; rowId?: string; children: React.ReactNode }) {
+export function Collapse({
+  as,
+  rowId,
+  instant,
+  children,
+}: {
+  as?: "li"
+  rowId?: string
+  /** No animation, e.g. while a list is being dragged. */
+  instant?: boolean
+  children: React.ReactNode
+}) {
   // MotionConfig reducedMotion="user" leaves height/opacity running, so stop them here.
-  const reduce = useReducedMotion()
+  // Read on every render, not useReducedMotion(): that one keeps its mount-time value,
+  // so a setting changed mid-session would still animate. Every animation starts from a
+  // render (mount or present flipping), so this value is current when it is used.
+  const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   // While exiting, a moved row's old copy still carries its data-row-id; flashRow skips it.
   const present = useIsPresent()
   const [moving, setMoving] = useState(false)
@@ -41,7 +55,7 @@ export function Collapse({ as, rowId, children }: { as?: "li"; rowId?: string; c
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: reduce ? 0 : 0.25, ease: EASE_SOFT }}
+      transition={{ duration: reduce || instant ? 0 : 0.25, ease: EASE_SOFT }}
       onAnimationStart={() => setMoving(true)}
       onAnimationComplete={finish}
     >
