@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { AnimatePresence } from "motion/react"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
 import { Hotel, Plus } from "lucide-react"
 
+import { Collapse } from "@/components/Collapse"
 import { EmptyState } from "@/components/EmptyState"
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
 import { Button } from "@/components/ui/button"
@@ -89,37 +91,48 @@ export function AccommodationSection({ tripId, tripBaseCurrency, days = [], dest
         </p>
       )}
 
-      {!isLoading && !isError && items.length === 0 && (
-        <EmptyState
-          icon={Hotel}
-          size="sm"
-          title="No stays yet"
-          description="Add where you're sleeping each night: hotels, hostels or apartments."
-          className="rounded-2xl border-2 border-dashed bg-card/60"
-        />
+      {/* Each card pads its own bottom (pb-3) so a leaving one shrinks to 0; -mb-3 drops the last gap. */}
+      {!isLoading && !isError && (
+        <div className="-mb-3">
+          <AnimatePresence initial={false}>
+            {items.length === 0 && (
+              <Collapse key="empty">
+                <div className="pb-3">
+                  <EmptyState
+                    icon={Hotel}
+                    size="sm"
+                    title="No stays yet"
+                    description="Add where you're sleeping each night: hotels, hostels or apartments."
+                    className="rounded-2xl border-2 border-dashed bg-card/60"
+                  />
+                </div>
+              </Collapse>
+            )}
+            {items.map((a) => (
+              <Collapse key={a.id}>
+                <div className="pb-3">
+                  <AccommodationCard
+                    accommodation={a}
+                    days={days}
+                    cost={linkedCostText(expenses.data?.items, "accommodation", a.id)}
+                    onEdit={() => setSheet({ mode: "edit", item: a })}
+                    onDelete={() =>
+                      scheduleDelete({
+                        id: a.id,
+                        message: linkedCost(expenses.data?.items, "accommodation", a.id)
+                          ? "Stay deleted. Its cost stays in Budget."
+                          : "Stay deleted.",
+                        errorMessage: "Couldn’t delete this stay. It’s back in the list.",
+                        commit: () => deleteMut.mutateAsync(a.id),
+                      })
+                    }
+                  />
+                </div>
+              </Collapse>
+            ))}
+          </AnimatePresence>
+        </div>
       )}
-
-      <div className="space-y-3">
-        {items.map((a) => (
-          <AccommodationCard
-            key={a.id}
-            accommodation={a}
-            days={days}
-            cost={linkedCostText(expenses.data?.items, "accommodation", a.id)}
-            onEdit={() => setSheet({ mode: "edit", item: a })}
-            onDelete={() =>
-              scheduleDelete({
-                id: a.id,
-                message: linkedCost(expenses.data?.items, "accommodation", a.id)
-                  ? "Stay deleted. Its cost stays in Budget."
-                  : "Stay deleted.",
-                errorMessage: "Couldn’t delete this stay. It’s back in the list.",
-                commit: () => deleteMut.mutateAsync(a.id),
-              })
-            }
-          />
-        ))}
-      </div>
 
       <ResponsiveSheet
         open={sheet?.mode === "edit"}
