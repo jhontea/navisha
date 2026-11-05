@@ -18,17 +18,13 @@ import { WeatherChip } from "@/features/trip/components/WeatherChip"
 import type { TripWeatherDay } from "@/features/trip/weather"
 import { useSortDayByTime } from "../hooks/useActivities"
 import { saveErrorMessage } from "@/lib/saveError"
+import { DayActivitiesSkeleton } from "./DayActivitiesSkeleton"
 
 const DayActivities = dynamic(
   () => import("./DayActivities").then((module) => module.DayActivities),
   {
     ssr: false,
-    loading: () => (
-      <div className="space-y-3" aria-label="Loading day activities">
-        <div className="h-16 animate-pulse rounded-xl bg-skeleton" />
-        <div className="h-11 animate-pulse rounded-xl bg-skeleton" />
-      </div>
-    ),
+    loading: DayActivitiesSkeleton,
   },
 )
 
