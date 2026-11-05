@@ -126,7 +126,7 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
       .join(" · ")
 
     return (
-      <li key={e.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
+      <li key={e.id} data-row-id={e.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
         <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", cfg.bg)}>
           <cfg.Icon className={cn("h-4 w-4", cfg.text)} aria-hidden="true" />
         </span>

@@ -28,6 +28,7 @@ export const TransportationCard = memo(function TransportationCard({
 
   return (
     <BoardingPass
+      rowId={t.id}
       transportation={t}
       dayNumber={tripDayNumber(t.departure_datetime, days)}
       cost={cost}

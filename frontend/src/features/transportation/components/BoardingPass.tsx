@@ -27,6 +27,7 @@ export function BoardingPass({
   cost,
   showDate = true,
   actions,
+  rowId,
   children,
   className,
 }: {
@@ -39,6 +40,8 @@ export function BoardingPass({
   cost?: string | null
   /** Optional slot top-right, e.g. the ⋯ menu. */
   actions?: ReactNode
+  /** Lets lib/rowFlash tint this card after a save or Undo (Bookings list only). */
+  rowId?: string
   /** Extra content under the facts, e.g. notes. */
   children?: ReactNode
   className?: string
@@ -74,6 +77,7 @@ export function BoardingPass({
 
   return (
     <article
+      data-row-id={rowId}
       aria-label={`${typeLabel}${t.label ? ` ${t.label}` : ""}${from ? ` from ${from.name}` : ""}${to ? ` to ${to.name}` : ""}`}
       className={cn("relative rounded-2xl border bg-card p-4 shadow-card", className)}
     >

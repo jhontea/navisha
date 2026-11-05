@@ -14,6 +14,7 @@ import type {
   UpdateExpenseInput,
 } from "../types"
 import type { TripOverviewResponse } from "@/features/trip/overview"
+import { flashRow } from "@/lib/rowFlash"
 
 const listKey = (tripId: string) => ["expenses", "list", tripId] as const
 const summaryKey = (tripId: string) =>
@@ -49,6 +50,7 @@ export function useCreateExpense(tripId: string) {
     mutationFn: (input: CreateExpenseInput) =>
       expenseApi.create(tripId, input),
     onSuccess: (created) => {
+      flashRow(created.id)
       qc.setQueryData<ExpenseListResponse>(listKey(tripId), (current) => ({
         items: current ? [created, ...current.items] : [created],
       }))
@@ -64,6 +66,7 @@ export function useUpdateExpense(id: string, tripId: string) {
     meta: { handlesError: true }, // ExpenseForm shows the error inline
     mutationFn: (input: UpdateExpenseInput) => expenseApi.update(id, input),
     onSuccess: (updated) => {
+      flashRow(updated.id)
       const previous = qc.getQueryData<ExpenseListResponse>(listKey(tripId))?.items.find((item) => item.id === updated.id)
       qc.setQueryData<ExpenseListResponse>(listKey(tripId), (current) =>
         current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,

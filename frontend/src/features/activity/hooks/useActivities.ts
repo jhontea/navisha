@@ -14,6 +14,7 @@ import type {
   UpdateActivityInput,
 } from "../types"
 import type { TripOverviewResponse } from "@/features/trip/overview"
+import { flashRow } from "@/lib/rowFlash"
 import { insertAtOrderIndex, isSortedByStartTime, sortByStartTime } from "../lib/order"
 
 const listKey = (dayId: string) => ["activities", "list", dayId] as const
@@ -54,6 +55,7 @@ export function useCreateActivity(dayId: string, tripId: string) {
     meta: { handlesError: true }, // ActivityForm shows the error inline
     mutationFn: (input: CreateActivityInput) => activityApi.create(dayId, input),
     onSuccess: (created) => {
+      flashRow(created.id)
       // The server slots it in by start time, shifting later activities.
       qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) => ({
         items: current ? insertAtOrderIndex(current.items, created) : [created],
@@ -85,6 +87,7 @@ export function useUpdateActivity(id: string, dayId: string, tripId: string) {
     meta: { handlesError: true }, // ActivityForm shows the error inline
     mutationFn: (input: UpdateActivityInput) => activityApi.update(id, input),
     onSuccess: (updated) => {
+      flashRow(updated.id)
       qc.setQueryData<ActivityListResponse>(listKey(dayId), (current) =>
         current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
       )

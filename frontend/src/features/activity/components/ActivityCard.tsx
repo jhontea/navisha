@@ -67,6 +67,7 @@ export function ActivityCard({
   return (
     <div
       onClick={onSelect}
+      data-row-id={activity.id}
       className={cn(
         "rounded-xl border bg-card px-4 py-3 transition-[box-shadow,background-color]",
         onSelect && "cursor-pointer hover:shadow-card",
