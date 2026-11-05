@@ -209,6 +209,7 @@ export function TripShell({ children }: { children: ReactNode }) {
         <TripForm
           initial={trip}
           isSubmitting={isUpdating}
+          onCancel={() => setEditOpen(false)}
           // A failure throws to TripForm, which shows it inline.
           onSubmit={async (input) => {
             await updateTrip(input)

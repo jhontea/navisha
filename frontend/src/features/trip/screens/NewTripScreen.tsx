@@ -34,6 +34,7 @@ export function NewTripScreen() {
       <div className="rounded-3xl border bg-card p-5 shadow-card md:p-8">
         <TripForm
           isSubmitting={isPending || isNavigating}
+          onCancel={() => router.back()}
           onSubmit={async (input) => {
             // A failure throws to TripForm, which shows it inline and keeps its values.
             const trip = await mutateAsync(input)
