@@ -74,6 +74,7 @@ type FormValues = z.infer<typeof schema>
 interface Props {
   initial?: Trip
   onSubmit: (input: CreateTripInput) => Promise<unknown>
+  onCancel: () => void
   isSubmitting: boolean
   submitLabel?: string
 }
@@ -98,7 +99,7 @@ function InputGroup({ prefix, invalid, children }: { prefix: ReactNode; invalid:
   )
 }
 
-export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props) {
+export function TripForm({ initial, onSubmit, onCancel, isSubmitting, submitLabel }: Props) {
   const router = useRouter()
   // Preserve an existing cover until the user explicitly removes it.
   const [coverPreview, setCoverPreview] = useState<string | null>(
@@ -349,7 +350,7 @@ export function TripForm({ initial, onSubmit, isSubmitting, submitLabel }: Props
 
         {/* Form Actions */}
         <FormActions
-          onCancel={() => router.back()}
+          onCancel={onCancel}
           isSubmitting={isSubmitting}
           submittingLabel={initial ? "Saving…" : "Creating…"}
           submitLabel={submitLabel ?? (initial ? "Save changes" : "Create trip")}
