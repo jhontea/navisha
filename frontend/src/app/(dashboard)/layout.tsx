@@ -4,6 +4,7 @@ import { OfflineBanner } from "@/components/OfflineBanner"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { Providers } from "@/components/providers"
 import { DashboardRuntime } from "@/components/DashboardRuntime"
+import { MotionProvider } from "@/components/MotionProvider"
 
 export default function DashboardLayout({
   children,
@@ -23,7 +24,7 @@ export default function DashboardLayout({
             id="main-content"
             className="flex-1 pb-[max(6.5rem,calc(5.75rem+env(safe-area-inset-bottom)))] md:pb-10"
           >
-            {children}
+            <MotionProvider>{children}</MotionProvider>
           </div>
 
         {/* Footer — visible on desktop only; legal links for every dashboard page */}

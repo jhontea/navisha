@@ -2,7 +2,9 @@
 
 import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
-import { useState } from "react"
+import { useRef, useState } from "react"
+import { AnimatePresence, useReducedMotion } from "motion/react"
+import * as m from "motion/react-m"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
 import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
@@ -42,6 +44,45 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
 ]
 
 const MENU_ITEM = "min-h-10 px-3 text-sm"
+
+const EASE_SOFT = [0.2, 0.8, 0.2, 1] as const
+
+/**
+ * An AnimatePresence child that grows from / shrinks to height 0 while it fades.
+ * Padding and gaps belong on an inner element so height 0 really is 0. It clips only
+ * while moving, so focus rings and shadows show at rest (state, not transitionEnd:
+ * transitionEnd did not land for rows mounted by a save in dev). overflow-clip, not
+ * hidden, so it is no scroll container for flashRow's scrollIntoView.
+ */
+function Collapse({ as, rowId, children }: { as?: "li"; rowId?: string; children: React.ReactNode }) {
+  // MotionConfig reducedMotion="user" leaves height/opacity running, so stop them here.
+  const reduce = useReducedMotion()
+  const [moving, setMoving] = useState(false)
+  const ref = useRef<HTMLLIElement & HTMLDivElement>(null)
+  const Tag = as === "li" ? m.li : m.div
+  const finish = () => {
+    setMoving(false)
+    // flashRow scrolled while this was still short; reach the row now it has full height.
+    const el = ref.current
+    const flashed = el?.matches("[data-flash]") ? el : el?.querySelector("[data-flash]")
+    flashed?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" })
+  }
+  return (
+    <Tag
+      ref={ref}
+      data-row-id={rowId}
+      className={moving ? "overflow-clip" : undefined}
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 0.25, ease: EASE_SOFT }}
+      onAnimationStart={() => setMoving(true)}
+      onAnimationComplete={finish}
+    >
+      {children}
+    </Tag>
+  )
+}
 
 function formatShortDate(dateStr: string): string {
   if (!dateStr) return ""
@@ -126,52 +167,54 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
       .join(" · ")
 
     return (
-      <li key={e.id} data-row-id={e.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
-        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", cfg.bg)}>
-          <cfg.Icon className={cn("h-4 w-4", cfg.text)} aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-foreground">{e.title}</p>
-          <p className="truncate text-xs text-muted-foreground">{meta}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <MoneyText amount={e.amount} currency={e.currency} className="block text-sm font-extrabold text-foreground" />
-          {!sameCurrency && (
-            <span className="block text-xs text-muted-foreground">
-              ≈ <MoneyText amount={e.converted_amount} currency={e.base_currency} />
-            </span>
-          )}
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label={`Actions for ${e.title}`}
-            className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "-mr-1 shrink-0 text-muted-foreground" })}
-          >
-            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "edit", expense: e })}>
-              <Pencil aria-hidden="true" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className={MENU_ITEM}
-              variant="destructive"
-              onClick={() =>
-                scheduleDelete({
-                  id: e.id,
-                  message: "Expense deleted.",
-                  errorMessage: "Couldn’t delete this expense. It’s back in the list.",
-                  commit: () => deleteMut.mutateAsync(e.id),
-                })
-              }
+      <Collapse key={e.id} as="li" rowId={e.id}>
+        <div className="flex items-center gap-3 px-3 py-3 sm:px-4">
+          <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", cfg.bg)}>
+            <cfg.Icon className={cn("h-4 w-4", cfg.text)} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-foreground">{e.title}</p>
+            <p className="truncate text-xs text-muted-foreground">{meta}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <MoneyText amount={e.amount} currency={e.currency} className="block text-sm font-extrabold text-foreground" />
+            {!sameCurrency && (
+              <span className="block text-xs text-muted-foreground">
+                ≈ <MoneyText amount={e.converted_amount} currency={e.base_currency} />
+              </span>
+            )}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={`Actions for ${e.title}`}
+              className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "-mr-1 shrink-0 text-muted-foreground" })}
             >
-              <Trash2 aria-hidden="true" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </li>
+              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem className={MENU_ITEM} onClick={() => setSheet({ mode: "edit", expense: e })}>
+                <Pencil aria-hidden="true" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className={MENU_ITEM}
+                variant="destructive"
+                onClick={() =>
+                  scheduleDelete({
+                    id: e.id,
+                    message: "Expense deleted.",
+                    errorMessage: "Couldn’t delete this expense. It’s back in the list.",
+                    commit: () => deleteMut.mutateAsync(e.id),
+                  })
+                }
+              >
+                <Trash2 aria-hidden="true" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </Collapse>
     )
   }
 
@@ -238,53 +281,67 @@ export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEn
         </p>
       )}
 
-      {!isLoading && !isError && allItems.length === 0 && (
-        <EmptyState
-          icon={Receipt}
-          size="sm"
-          title="No expenses yet"
-          description="Add what you spend on food, transport and activities to track your budget."
-          className="rounded-2xl border-2 border-dashed bg-card/60"
-        />
-      )}
-
-      {!isLoading && !isError && isDateSort && grouped.length > 0 && (
-        <div className="space-y-4">
-          {grouped.map((group) => {
-            const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
-            const baseCurrency = group.expenses[0]?.base_currency ?? tripBaseCurrency
-            const isCollapsed = collapsedGroups.has(group.date)
-            return (
-              <div key={group.date}>
-                {/* eslint-disable-next-line no-restricted-syntax -- collapsible date-group header row */}
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.date)}
-                  aria-expanded={!isCollapsed}
-                  className="-mx-1 mb-1 flex min-h-11 w-[calc(100%+0.5rem)] items-center justify-between gap-3 rounded-lg px-1 text-sm hover:bg-muted/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="flex items-center gap-2 font-display font-extrabold text-foreground">
-                    <ChevronDown
-                      className={cn("h-4 w-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")}
-                      aria-hidden="true"
-                    />
-                    {formatGroupDate(group.date)}
-                  </span>
-                  <MoneyText amount={groupTotal} currency={baseCurrency} className="text-muted-foreground" />
-                </button>
-                {!isCollapsed && (
+      {/* Each child pads its own bottom (pb-4) so an exiting one shrinks to 0; -mb-4 drops the last gap.
+          Keyed by sort kind so switching sort swaps lists without animating. */}
+      {!isLoading && !isError && (
+        <div key={isDateSort ? "date" : "flat"} className="-mb-4">
+          <AnimatePresence initial={false}>
+            {allItems.length === 0 && (
+              <Collapse key="empty">
+                <div className="pb-4">
+                  <EmptyState
+                    icon={Receipt}
+                    size="sm"
+                    title="No expenses yet"
+                    description="Add what you spend on food, transport and activities to track your budget."
+                    className="rounded-2xl border-2 border-dashed bg-card/60"
+                  />
+                </div>
+              </Collapse>
+            )}
+            {grouped.map((group) => {
+              const groupTotal = group.expenses.reduce((sum, e) => sum + e.converted_amount, 0)
+              const baseCurrency = group.expenses[0]?.base_currency ?? tripBaseCurrency
+              const isCollapsed = collapsedGroups.has(group.date)
+              return (
+                <Collapse key={group.date}>
+                  <div className="pb-4">
+                    {/* eslint-disable-next-line no-restricted-syntax -- collapsible date-group header row */}
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.date)}
+                      aria-expanded={!isCollapsed}
+                      className="-mx-1 mb-1 flex min-h-11 w-[calc(100%+0.5rem)] items-center justify-between gap-3 rounded-lg px-1 text-sm hover:bg-muted/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className="flex items-center gap-2 font-display font-extrabold text-foreground">
+                        <ChevronDown
+                          className={cn("h-4 w-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")}
+                          aria-hidden="true"
+                        />
+                        {formatGroupDate(group.date)}
+                      </span>
+                      <MoneyText amount={groupTotal} currency={baseCurrency} className="text-muted-foreground" />
+                    </button>
+                    {!isCollapsed && (
+                      <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-card">
+                        <AnimatePresence initial={false}>{group.expenses.map(renderRow)}</AnimatePresence>
+                      </ul>
+                    )}
+                  </div>
+                </Collapse>
+              )
+            })}
+            {!isDateSort && flatSorted.length > 0 && (
+              <Collapse key="flat">
+                <div className="pb-4">
                   <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-card">
-                    {group.expenses.map(renderRow)}
+                    <AnimatePresence initial={false}>{flatSorted.map(renderRow)}</AnimatePresence>
                   </ul>
-                )}
-              </div>
-            )
-          })}
+                </div>
+              </Collapse>
+            )}
+          </AnimatePresence>
         </div>
-      )}
-
-      {!isLoading && !isError && !isDateSort && flatSorted.length > 0 && (
-        <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-card">{flatSorted.map(renderRow)}</ul>
       )}
 
       <ResponsiveSheet
