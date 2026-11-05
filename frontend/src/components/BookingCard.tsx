@@ -60,6 +60,7 @@ export function BookingCard({
   actionsLabel,
   onEdit,
   onDelete,
+  rowId,
   children,
 }: {
   icon: ComponentType<{ className?: string }>
@@ -70,10 +71,12 @@ export function BookingCard({
   actionsLabel: string
   onEdit: () => void
   onDelete: () => void
+  /** Lets lib/rowFlash tint this card after a save or Undo. */
+  rowId?: string
   children?: ReactNode
 }) {
   return (
-    <article className="rounded-2xl border bg-card p-4 shadow-card">
+    <article data-row-id={rowId} className="rounded-2xl border bg-card p-4 shadow-card">
       <div className="flex items-start gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
           <Icon className="h-5 w-5" aria-hidden="true" />

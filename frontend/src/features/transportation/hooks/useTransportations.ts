@@ -12,6 +12,7 @@ import type {
   UpdateTransportationInput,
 } from "../types"
 import type { TripOverviewResponse } from "@/features/trip/overview"
+import { flashRow } from "@/lib/rowFlash"
 
 const listKey = (tripId: string) =>
   ["transportations", "list", tripId] as const
@@ -38,6 +39,7 @@ export function useCreateTransportation(tripId: string) {
     mutationFn: (input: CreateTransportationInput) =>
       transportationApi.create(tripId, input),
     onSuccess: (created) => {
+      flashRow(created.id)
       qc.setQueryData<TransportationListResponse>(listKey(tripId), (current) => ({
         items: current ? [...current.items, created] : [created],
       }))
@@ -58,6 +60,7 @@ export function useUpdateTransportation(id: string, tripId: string) {
     mutationFn: (input: UpdateTransportationInput) =>
       transportationApi.update(id, input),
     onSuccess: (updated) => {
+      flashRow(updated.id)
       qc.setQueryData<TransportationListResponse>(listKey(tripId), (current) =>
         current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
       )

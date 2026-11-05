@@ -498,6 +498,20 @@
   }
 }
 
+/* Row tint after save or Undo (lib/rowFlash.ts): on at once, fades when set to "off".
+   Unlayered so it beats the row's own bg-* and transition utilities. */
+[data-row-id] {
+  /* Its scrollIntoView stops clear of the sticky day band (top) and the phone nav + FAB (bottom). */
+  scroll-margin-block: 6rem 9.5rem;
+}
+[data-flash="on"] {
+  background-color: hsl(var(--primary-soft));
+  transition: none;
+}
+[data-flash="off"] {
+  transition: background-color 600ms ease-out;
+}
+
 /* ── Reduced Motion (accessibility) ── */
 @media (prefers-reduced-motion: reduce) {
   *,

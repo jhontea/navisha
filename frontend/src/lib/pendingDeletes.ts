@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react"
 
 import { isOfflineError } from "./api"
+import { flashRow } from "./rowFlash"
 import { toast } from "./toast"
 
 /**
@@ -63,6 +64,7 @@ function undo(id: string) {
   window.clearTimeout(item.timer)
   pending.delete(id)
   emit()
+  flashRow(id)
 }
 
 /**

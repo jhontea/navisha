@@ -12,6 +12,7 @@ import type {
   UpdateAccommodationInput,
 } from "../types"
 import type { TripOverviewResponse } from "@/features/trip/overview"
+import { flashRow } from "@/lib/rowFlash"
 
 const listKey = (tripId: string) =>
   ["accommodations", "list", tripId] as const
@@ -40,6 +41,7 @@ export function useCreateAccommodation(tripId: string) {
     mutationFn: (input: CreateAccommodationInput) =>
       accommodationApi.create(tripId, input),
     onSuccess: (created) => {
+      flashRow(created.id)
       qc.setQueryData<AccommodationListResponse>(listKey(tripId), (current) => ({
         items: current ? [...current.items, created] : [created],
       }))
@@ -60,6 +62,7 @@ export function useUpdateAccommodation(id: string, tripId: string) {
     mutationFn: (input: UpdateAccommodationInput) =>
       accommodationApi.update(id, input),
     onSuccess: (updated) => {
+      flashRow(updated.id)
       qc.setQueryData<AccommodationListResponse>(listKey(tripId), (current) =>
         current ? { items: current.items.map((item) => item.id === updated.id ? updated : item) } : current,
       )

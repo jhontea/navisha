@@ -50,6 +50,7 @@ export const AccommodationCard = memo(function AccommodationCard({
 
   return (
     <BookingCard
+      rowId={a.id}
       icon={TYPE_ICON[type] ?? Bed}
       title={a.name}
       badge={<StatusChip tone="info">{ACCOMMODATION_TYPE_LABELS[type as keyof typeof ACCOMMODATION_TYPE_LABELS] ?? "Stay"}</StatusChip>}

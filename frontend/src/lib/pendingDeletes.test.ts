@@ -12,11 +12,14 @@ vi.mock("./toast", () => ({
     return { dismiss: () => {} }
   },
 }))
+const flashRow = vi.hoisted(() => vi.fn())
+vi.mock("./rowFlash", () => ({ flashRow }))
 
 describe("scheduleDelete", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     toastCalls.length = 0
+    flashRow.mockClear()
     vi.stubGlobal("window", { setTimeout, clearTimeout, addEventListener: () => {} })
     vi.stubGlobal("document", { addEventListener: () => {}, visibilityState: "visible" })
   })
@@ -38,6 +41,7 @@ describe("scheduleDelete", () => {
     const commit = vi.fn().mockResolvedValue(undefined)
     scheduleDelete({ id: "b", message: "Stay deleted.", errorMessage: "x", commit })
     toastCalls[0].action!.onClick()
+    expect(flashRow).toHaveBeenCalledWith("b")
     await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS * 2)
     expect(commit).not.toHaveBeenCalled()
   })
