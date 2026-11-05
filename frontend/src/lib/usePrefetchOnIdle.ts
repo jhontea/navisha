@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 
 /**
- * Downloads a lazily loaded module (e.g. a form behind next/dynamic) once the
+ * Runs a lazily loaded form's `preload` (see lazyPreload) once the
  * page is idle, so the first open of its sheet shows the form instead of a
  * loading placeholder. Skipped offline and when the user asked to save data.
  */

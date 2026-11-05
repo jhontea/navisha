@@ -1,7 +1,6 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { loadOrOffline } from "@/lib/loadOrOffline"
+import { lazyPreload } from "@/lib/lazyPreload"
 import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
@@ -9,9 +8,9 @@ import type { LinkedCost } from "@/lib/linkedCost"
 import { useCreateTransportation } from "../hooks/useTransportations"
 import type { CreateTransportationInput, TransportDraft } from "../types"
 
-const TransportationForm = dynamic(
-  () => loadOrOffline(() => import("./TransportationForm").then((module) => module.TransportationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
+export const TransportationForm = lazyPreload(
+  () => import("./TransportationForm").then((module) => module.TransportationForm),
+  () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" />,
 )
 
 interface Props {
@@ -31,7 +30,7 @@ interface Props {
 /** Add-transport sheet (with cost), shared by the Bookings tab and the itinerary. */
 export function AddTransportationSheet({ tripId, tripBaseCurrency, open, onOpenChange, draft, draftCost, onCreated, defaultDeparture }: Props) {
   const createMut = useCreateTransportation(tripId)
-  usePrefetchOnIdle(() => import("./TransportationForm"))
+  usePrefetchOnIdle(TransportationForm.preload)
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Add transport">
       {open && (

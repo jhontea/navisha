@@ -1,7 +1,6 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { loadOrOffline } from "@/lib/loadOrOffline"
+import { lazyPreload } from "@/lib/lazyPreload"
 import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 
 import { ResponsiveSheet } from "@/components/ResponsiveSheet"
@@ -9,9 +8,9 @@ import type { LinkedCost } from "@/lib/linkedCost"
 import { useCreateAccommodation } from "../hooks/useAccommodations"
 import type { CreateAccommodationInput, StayDraft } from "../types"
 
-const AccommodationForm = dynamic(
-  () => loadOrOffline(() => import("./AccommodationForm").then((module) => module.AccommodationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
+export const AccommodationForm = lazyPreload(
+  () => import("./AccommodationForm").then((module) => module.AccommodationForm),
+  () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" />,
 )
 
 interface Props {
@@ -34,7 +33,7 @@ interface Props {
 /** Add-stay sheet (with cost), shared by the Bookings tab and the itinerary. */
 export function AddStaySheet({ tripId, tripBaseCurrency, open, onOpenChange, draft, draftCost, onCreated, days, checkIn, destination }: Props) {
   const createMut = useCreateAccommodation(tripId)
-  usePrefetchOnIdle(() => import("./AccommodationForm"))
+  usePrefetchOnIdle(AccommodationForm.preload)
   const tripDates = days.map((d) => d.date).sort()
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Add stay">

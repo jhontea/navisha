@@ -4,8 +4,7 @@ import { NativeSelect } from "@/components/NativeSelect"
 import { Chip } from "@/components/Chip"
 import { useState } from "react"
 import { AnimatePresence } from "motion/react"
-import dynamic from "next/dynamic"
-import { loadOrOffline } from "@/lib/loadOrOffline"
+import { lazyPreload } from "@/lib/lazyPreload"
 import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 import { ChevronDown, MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 
@@ -27,9 +26,9 @@ import { categoryRank, getCategoryColor } from "../categoryColors"
 import { useCreateExpense, useDeleteExpense, useExpenses, useUpdateExpense } from "../hooks/useExpenses"
 import type { CreateExpenseInput, Expense } from "../types"
 
-const ExpenseForm = dynamic(
-  () => loadOrOffline(() => import("./ExpenseForm").then((module) => module.ExpenseForm)),
-  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-skeleton" /> },
+const ExpenseForm = lazyPreload(
+  () => import("./ExpenseForm").then((module) => module.ExpenseForm),
+  () => <div className="h-64 animate-pulse rounded-xl bg-skeleton" />,
 )
 
 // date-* keep the per-date grouping; amount-* / category-* flatten into a single list.
@@ -73,7 +72,7 @@ interface Props {
 
 /** Expense list with category filter and sort; add and edit open in a sheet. */
 export function ExpenseSection({ tripId, tripBaseCurrency, tripStartDate, tripEndDate }: Props) {
-  usePrefetchOnIdle(() => import("./ExpenseForm"))
+  usePrefetchOnIdle(ExpenseForm.preload)
   const { data, isLoading, isError } = useExpenses(tripId)
   const [sheet, setSheet] = useState<{ mode: "add" } | { mode: "edit"; expense: Expense } | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())

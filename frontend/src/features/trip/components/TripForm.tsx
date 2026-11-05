@@ -6,8 +6,7 @@ import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useRouter } from "next/navigation"
-import dynamic from "next/dynamic"
-import { loadOrOffline } from "@/lib/loadOrOffline"
+import { lazyPreload } from "@/lib/lazyPreload"
 import { useState, type ReactNode } from "react"
 import { ChevronDown, MapPin, Sparkles } from "lucide-react"
 import { useSupportedCurrencies } from "@/features/currency/hooks/useCurrency"
@@ -29,21 +28,19 @@ import { canRenderTripCover, getDefaultTripCover } from "../lib/cover"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-const DestinationAutocomplete = dynamic(
-  () => loadOrOffline(() => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete)),
-  {
-    ssr: false,
-    loading: () => <div className="h-12 w-full animate-pulse rounded-lg border bg-skeleton" aria-hidden="true" />,
-  },
+const DestinationAutocomplete = lazyPreload(
+  () => import("./DestinationAutocomplete").then((module) => module.DestinationAutocomplete),
+  () => <div className="h-12 w-full animate-pulse rounded-lg border bg-skeleton" aria-hidden="true" />,
 )
 
-const TravelDateRangePicker = dynamic(
-  () => loadOrOffline(() => import("./TravelDateRangePicker").then((module) => module.TravelDateRangePicker)),
-  {
-    ssr: false,
-    loading: () => <div className="h-20 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
-  },
+const TravelDateRangePicker = lazyPreload(
+  () => import("./TravelDateRangePicker").then((module) => module.TravelDateRangePicker),
+  () => <div className="h-20 animate-pulse rounded-xl bg-skeleton" aria-hidden="true" />,
 )
+
+/** Loads the pickers too, so a preloaded form opens complete. A failure shows up when they render. */
+export const preloadTripFormPickers = () =>
+  void Promise.allSettled([DestinationAutocomplete.preload(), TravelDateRangePicker.preload()])
 
 const schema = z
   .object({

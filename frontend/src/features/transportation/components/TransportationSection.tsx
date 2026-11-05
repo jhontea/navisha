@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 import { AnimatePresence } from "motion/react"
-import dynamic from "next/dynamic"
-import { loadOrOffline } from "@/lib/loadOrOffline"
 import { Plane, Plus } from "lucide-react"
 
 import { Collapse } from "@/components/Collapse"
@@ -20,13 +18,8 @@ import {
   useUpdateTransportation,
 } from "../hooks/useTransportations"
 import type { Transportation } from "../types"
-import { AddTransportationSheet } from "./AddTransportationSheet"
+import { AddTransportationSheet, TransportationForm } from "./AddTransportationSheet"
 import { TransportationCard } from "./TransportationCard"
-
-const TransportationForm = dynamic(
-  () => loadOrOffline(() => import("./TransportationForm").then((module) => module.TransportationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
-)
 
 interface Props {
   tripId: string
