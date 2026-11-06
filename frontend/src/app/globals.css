@@ -412,8 +412,8 @@
   }
 }
 
-/* Autogen wait (C16): stared at for 1-3 minutes, so slow and small. The static values are the
-   reduced-motion frame; only translate/rotate move, so the sticky wrapper is never re-anchored. */
+/* Autogen wait (C16): stared at for 1-3 minutes, so slow and small. With reduced
+   motion nothing here runs. Only translate/rotate move, so the sticky wrapper is never re-anchored. */
 .autogen-plane {
   transform-origin: 51% 31%; /* the plane's center in its viewBox */
 }

@@ -27,7 +27,7 @@ export function GeneratingItinerarySkeleton({ startedAt }: Props) {
     <div className="flex h-full min-h-[260px] items-start justify-center" aria-busy="true">
       {/* Sticky: the wizard under the overlay is tall, keep the progress in view. */}
       <div className="sticky top-32 flex flex-col items-center gap-3 py-4 text-center">
-        <AutogenIllustration className="size-40 md:size-50" />
+        <AutogenIllustration className="size-40 md:size-50 [@media(max-height:600px)]:size-28" />
         <div className="h-1 w-50 overflow-hidden rounded-full bg-muted motion-reduce:hidden" aria-hidden="true">
           <div className="autogen-bar h-full w-2/5 rounded-full bg-primary" />
         </div>
