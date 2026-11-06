@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 import { AnimatePresence } from "motion/react"
-import dynamic from "next/dynamic"
-import { loadOrOffline } from "@/lib/loadOrOffline"
 import { Hotel, Plus } from "lucide-react"
 
 import { Collapse } from "@/components/Collapse"
@@ -20,13 +18,8 @@ import {
   useUpdateAccommodation,
 } from "../hooks/useAccommodations"
 import type { Accommodation } from "../types"
-import { AddStaySheet } from "./AddStaySheet"
+import { AccommodationForm, AddStaySheet } from "./AddStaySheet"
 import { AccommodationCard } from "./AccommodationCard"
-
-const AccommodationForm = dynamic(
-  () => loadOrOffline(() => import("./AccommodationForm").then((module) => module.AccommodationForm)),
-  { ssr: false, loading: () => <div className="h-72 animate-pulse rounded-xl bg-skeleton" /> },
-)
 
 interface Props {
   tripId: string

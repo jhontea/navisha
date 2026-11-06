@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useRef, useState, type ReactNode } from "react"
 
 import {
   Dialog,
@@ -38,6 +38,7 @@ export function ResponsiveSheet({
     setHeld({ title, description, children })
   }
   const shown = !open && held ? held : { title, description, children }
+  const popupRef = useRef<HTMLDivElement>(null)
 
   return (
     <Dialog
@@ -48,6 +49,10 @@ export function ResponsiveSheet({
       }}
     >
       <DialogContent
+        ref={popupRef}
+        // Base UI only spares the first input on a touch-opened trigger, and these sheets are
+        // controlled, so on touch focus the popup or the phone keyboard pops up on open.
+        initialFocus={() => (window.matchMedia("(pointer: coarse)").matches ? popupRef.current : true)}
         className={[
           // Phone: full-width sheet anchored to the bottom. The grid track may
           // shrink (minmax(0,1fr)) so a wide child, e.g. an iOS date/time input,
