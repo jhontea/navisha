@@ -6,7 +6,7 @@ import { StatusChip } from "@/components/StatusChip"
 import { cn } from "@/lib/utils"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
-import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import { preloadHeroCover, resolveTripCover, TRIP_COVER_SHARE, tripCoverSrcSet } from "../lib/cover"
 import type { Trip } from "../types"
 
 /** Trip cover illustration, or the dusk-navy fallback when there is none (DESIGN.md §7). */
@@ -51,10 +51,11 @@ export function TripCover({
 }
 
 /**
- * Scrolls to the top in the commit that leaves through this link. Next.js keeps the scroll when
- * the new page's content is in view, which would park the trip hero above the viewport.
+ * Props for a link that opens a trip with the cover morph. Scrolling to the top happens in the
+ * commit that leaves: Next.js keeps the scroll when the new content is in view, which would
+ * park the hero above the viewport.
  */
-export function useScrollTopOnLeave() {
+export function useOpenTripLink(trip: Trip) {
   const leaving = useRef(false)
   useLayoutEffect(
     () => () => {
@@ -62,8 +63,12 @@ export function useScrollTopOnLeave() {
     },
     [],
   )
-  return () => {
-    leaving.current = true
+  return {
+    transitionTypes: ["trip-open"],
+    onPointerDown: () => preloadHeroCover(trip.cover_image_url, trip.description),
+    onClick: () => {
+      leaving.current = true
+    },
   }
 }
 
@@ -71,15 +76,15 @@ export function useScrollTopOnLeave() {
 export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   const metrics = getTripDateMetrics(trip.start_date, trip.end_date)
   const timing = tripTimingLabel(metrics)
-  const onClick = useScrollTopOnLeave()
+  const openLink = useOpenTripLink(trip)
 
   return (
     <Link
       href={`/trips/${trip.id}`}
-      onClick={onClick}
+      {...openLink}
       className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[translate,scale,box-shadow] duration-150 ease-out hover:-translate-y-0.5 motion-safe:active:scale-[.96] hover:shadow-overlay focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
     >
-      <ViewTransition name={`trip-cover-${trip.id}`} share="trip-cover trip-cover-to-card" default="none">
+      <ViewTransition name={`trip-cover-${trip.id}`} share={TRIP_COVER_SHARE} default="none">
         <TripCover
           trip={trip}
           muted={metrics.status === "past"}

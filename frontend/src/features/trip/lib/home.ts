@@ -22,14 +22,6 @@ export function groupTrips<T extends TripDates>(trips: T[], today = new Date()):
   return { upcoming, past }
 }
 
-/**
- * Each trip once: a refreshed first page can repeat a trip from a later page,
- * and two cards with one cover name would cancel the cover morph.
- */
-export function uniqueTrips<T extends Pick<Trip, "id">>(trips: T[]): T[] {
-  return [...new Map(trips.map((t) => [t.id, t])).values()]
-}
-
 /** The trip to surface first: one in progress, else the soonest upcoming. */
 export function pickNextUp<T extends TripDates>(trips: T[], today = new Date()): T | null {
   const { upcoming } = groupTrips(trips, today)

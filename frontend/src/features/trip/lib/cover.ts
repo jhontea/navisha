@@ -137,3 +137,19 @@ export function tripCoverSrcSet(
   }
   return variants.map(({ width, url }) => `${url} ${width}w`).join(", ")
 }
+
+/** The morph runs only for links that carry the `trip-open` transition type, so going back does not morph. */
+export const TRIP_COVER_SHARE = { "trip-open": "trip-cover", default: "none" }
+
+export const HERO_COVER_WIDTHS = [768, 1280, 1600]
+export const HERO_COVER_SIZES = "(min-width: 1600px) 1600px, 100vw"
+
+/** React holds the morph until the hero image is ready, and only asks for it once the route arrives. */
+// shortcut: a scroll that starts on a card also fetches its hero image once; upgrade to a tap check if data use matters.
+export function preloadHeroCover(url: string, destination: string) {
+  const srcSet = tripCoverSrcSet(url, destination, HERO_COVER_WIDTHS)
+  if (!srcSet) return
+  const image = new Image()
+  image.sizes = HERO_COVER_SIZES
+  image.srcset = srcSet
+}

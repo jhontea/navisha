@@ -7,7 +7,8 @@ import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
 import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
-import { TripCover, useScrollTopOnLeave } from "./TripCard"
+import { TRIP_COVER_SHARE } from "../lib/cover"
+import { TripCover, useOpenTripLink } from "./TripCard"
 
 /**
  * The trip in progress, or the next one, as a big cover card above the Trips
@@ -19,11 +20,11 @@ export function NextUpCard({ trip }: { trip: Trip }) {
   const active = metrics.status === "active"
   const nights = Math.max(0, metrics.totalDays - 1)
   const { main, rest } = splitTripTitle(trip.title)
-  const onClick = useScrollTopOnLeave()
+  const openLink = useOpenTripLink(trip)
 
   return (
     <section aria-labelledby="next-up-heading" className="relative overflow-hidden rounded-3xl shadow-card">
-      <ViewTransition name={`trip-cover-${trip.id}`} share="trip-cover trip-cover-to-card" default="none">
+      <ViewTransition name={`trip-cover-${trip.id}`} share={TRIP_COVER_SHARE} default="none">
         <TripCover
           trip={trip}
           priority
@@ -69,7 +70,7 @@ export function NextUpCard({ trip }: { trip: Trip }) {
           </div>
         )}
 
-        <Link href={`/trips/${trip.id}`} onClick={onClick} className={buttonVariants({ variant: "cover", className: "px-5" })}>
+        <Link href={`/trips/${trip.id}`} {...openLink} className={buttonVariants({ variant: "cover", className: "px-5" })}>
           {active ? "Open today's plan" : "Open trip"}
           <ArrowRight aria-hidden="true" />
         </Link>

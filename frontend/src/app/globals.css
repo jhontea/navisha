@@ -439,6 +439,7 @@
 ::view-transition-new(trip-day),
 ::view-transition-old(trip-days),
 ::view-transition-new(trip-days),
+::view-transition-new(trip-list),
 ::view-transition-group(fab),
 ::view-transition-old(fab),
 ::view-transition-new(fab) {
@@ -499,9 +500,9 @@
 ::view-transition-new(.anchor) {
   animation: none;
 }
-/* Cover morph between a trip card and the hero (DESIGN.md §6, P-VT A). The class on the new
-   side tells the direction. Both snapshots keep their picture through object-fit and the old
-   one stays solid under the fade, so no see-through frame shows the page behind. */
+/* Cover morph from a trip card to the hero (DESIGN.md §6, P-VT A). Both snapshots keep their
+   picture through object-fit. The card stays solid, and the hero (title, buttons) and the tab
+   pill fade in only once the group has nearly landed. */
 ::view-transition-group(.trip-cover) {
   animation-duration: 380ms;
   animation-timing-function: cubic-bezier(.2, .8, .2, 1);
@@ -517,17 +518,9 @@
     --hero-radius: 1.5rem;
   }
 }
-::view-transition-image-pair(.trip-cover-to-hero) {
-  --from-radius: 0.75rem;
-  --to-radius: var(--hero-radius);
-}
-::view-transition-image-pair(.trip-cover-to-card) {
-  --from-radius: var(--hero-radius);
-  --to-radius: 0.75rem;
-}
 @keyframes trip-cover-radius {
-  from { border-radius: var(--from-radius); }
-  to { border-radius: var(--to-radius); }
+  from { border-radius: 0.75rem; }
+  to { border-radius: var(--hero-radius); }
 }
 ::view-transition-old(.trip-cover),
 ::view-transition-new(.trip-cover) {
@@ -538,21 +531,14 @@
 ::view-transition-old(.trip-cover) {
   animation: none;
 }
-/* To the hero: the wide hero snapshot only fits once the group has nearly grown. */
-::view-transition-new(.trip-cover-to-hero) {
-  animation: fade-only 180ms linear 100ms both;
+::view-transition-new(.trip-cover),
+:root:active-view-transition-type(trip-open)::view-transition-new(trip-tabs) {
+  animation: fade-only 100ms linear 200ms both;
 }
-/* To the card: its snapshot holds more of the picture, so it can take over right away. */
-::view-transition-new(.trip-cover-to-card) {
-  animation: fade-only 90ms linear both;
-}
-/* The card is off screen, so React drops the pair: the lone hero fades instead of hanging there. */
-::view-transition-old(.trip-cover):only-child {
-  animation: fade-only 150ms linear reverse both;
-}
-/* Back to the list: the day bar and FAB would linger on top of the first card. */
-:root:active-view-transition-type(trip-leave)::view-transition-old(trip-days),
-:root:active-view-transition-type(trip-leave)::view-transition-old(fab) {
+/* Back to the list: the list fades in like a tab. The day bar and FAB (and the day bar's blur)
+   leave at once instead of lingering on top of it. */
+:root:active-view-transition-type(trip-leave)::view-transition-group(trip-days),
+:root:active-view-transition-type(trip-leave)::view-transition-group(fab) {
   display: none;
 }
 /* Phones hide the header in a trip. The old-only group would still keep the header's blur and

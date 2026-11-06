@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils"
 import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
-import { resolveTripCover, tripCoverSrcSet } from "../lib/cover"
+import { HERO_COVER_SIZES, HERO_COVER_WIDTHS, resolveTripCover, TRIP_COVER_SHARE, tripCoverSrcSet } from "../lib/cover"
 import { CoverDestination } from "./CoverDestination"
 import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
@@ -58,7 +58,7 @@ export function TripHeader({
   const { main, rest } = splitTripTitle(trip.title)
   const range = formatTripRange(trip.start_date, trip.end_date)
   const cover = resolveTripCover(trip.cover_image_url, trip.description, 1600)
-  const srcSet = cover ? tripCoverSrcSet(trip.cover_image_url, trip.description, [768, 1280, 1600]) : undefined
+  const srcSet = cover ? tripCoverSrcSet(trip.cover_image_url, trip.description, HERO_COVER_WIDTHS) : undefined
   const meta = [range, `${nights} ${nights === 1 ? "night" : "nights"}`].filter(Boolean).join(" · ")
   const timingTone = metrics.status === "past" ? "neutral" : "info"
 
@@ -66,14 +66,14 @@ export function TripHeader({
   return (
     <section aria-label="Trip details" className="md:mx-auto md:w-full md:max-w-max-width md:px-margin-desktop md:pt-2">
       {/* Cover morph from the trip card (DESIGN.md §6). */}
-      <ViewTransition name={`trip-cover-${trip.id}`} share="trip-cover trip-cover-to-hero" default="none">
+      <ViewTransition name={`trip-cover-${trip.id}`} share={TRIP_COVER_SHARE} default="none">
         <div className="bg-cover-fallback relative h-52 overflow-hidden rounded-b-3xl md:h-60 md:rounded-3xl">
           {cover && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={cover}
               srcSet={srcSet}
-              sizes="(min-width: 1600px) 1600px, 100vw"
+              sizes={HERO_COVER_SIZES}
               alt=""
               width={1904}
               height={1000}
