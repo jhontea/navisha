@@ -1,7 +1,7 @@
 "use client"
 
 import { addressAfterName } from "../lib/place"
-import { AlertTriangle, ExternalLink, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { AlertTriangle, Check, ExternalLink, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 
 import { buttonVariants, Button } from "@/components/ui/button"
 import {
@@ -201,16 +201,35 @@ function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggle
                 onClick={(e) => e.stopPropagation()}
                 className={cn("flex min-h-8 items-center gap-2 text-sm", onToggleTodo && "cursor-pointer")}
               >
-                {/* eslint-disable-next-line no-restricted-syntax -- inline tick inside a card row; a full Checkbox field is too heavy here */}
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  readOnly={!onToggleTodo}
-                  disabled={!onToggleTodo}
-                  onChange={() => onToggleTodo?.(item.id)}
-                  className="h-4 w-4 shrink-0 rounded accent-primary"
-                />
-                <span className={cn("leading-snug", item.completed ? "text-muted-foreground line-through" : "text-foreground/80")}>
+                <span className="relative grid size-4 shrink-0 place-items-center">
+                  {/* eslint-disable-next-line no-restricted-syntax -- inline tick inside a card row; a full Checkbox field is too heavy here */}
+                  <input
+                    type="checkbox"
+                    checked={item.completed}
+                    readOnly={!onToggleTodo}
+                    disabled={!onToggleTodo}
+                    onChange={() => onToggleTodo?.(item.id)}
+                    className="absolute inset-0 appearance-none rounded border border-muted-foreground bg-background transition-[background-color,border-color] duration-150 ease-out checked:border-primary checked:bg-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:opacity-60"
+                  />
+                  {/* A transition, not animate-in: stays mounted so unticking fades too and a loaded list does not replay it. */}
+                  <Check
+                    aria-hidden="true"
+                    strokeWidth={3}
+                    className={cn(
+                      "pointer-events-none relative size-3 text-primary-foreground transition-[opacity,scale] duration-150 ease-out forced-colors:text-[CanvasText]",
+                      !item.completed && "opacity-0 motion-safe:scale-50",
+                    )}
+                  />
+                </span>
+                {/* line-through stays on and only its color changes, so nothing pops or shifts. Forced colors ignore the transparent color, so it is removed there. */}
+                <span
+                  className={cn(
+                    "leading-snug line-through transition-[color,text-decoration-color] duration-150 ease-out",
+                    item.completed
+                      ? "text-muted-foreground decoration-muted-foreground"
+                      : "text-foreground/80 decoration-transparent forced-colors:no-underline",
+                  )}
+                >
                   {item.text}
                 </span>
               </label>
