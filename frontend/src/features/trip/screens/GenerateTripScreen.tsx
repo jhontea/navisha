@@ -205,7 +205,7 @@ function GenerateTripPageContent() {
 
       {/* Wizard stays mounted during generation; the overlay covers it (pattern 3 above). */}
       {!result ? (
-        <div className={cn("relative", generate.running && "min-h-[320px]")}>
+        <div className={cn("relative", generate.running && "min-h-[360px]")}>
           {generate.running && (
             <div className="absolute inset-0 z-20 rounded-3xl border bg-card p-6 shadow-card">
               <GeneratingItinerarySkeleton startedAt={generate.job?.created_at} />

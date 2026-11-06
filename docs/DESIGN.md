@@ -188,7 +188,7 @@ Desktop                                         Mobile (di dalam trip)
 | **Empty / error state** | Kosong: `rounded-2xl`, border putus-putus 2px, ikon dalam lingkaran tint biru, judul Nunito. Error: kotak `destructive-bg` tanpa border. |
 | **BudgetMeter** | Bar 8px bulat dengan celah 2px antar segmen kategori. Caption `97% terpakai · sisa Rp 133.000`. |
 
-Ikon: Lucide stroke 2, ukuran 16 / 18 / 20. Ilustrasi hanya untuk cover dan empty state, dengan gaya yang sama seperti cover.
+Ikon: Lucide stroke 2, ukuran 16 / 18 / 20. Ilustrasi hanya untuk cover, empty state, dan layar tunggu AI yang lama (autogen 1–3 menit), dengan gaya lembut yang selaras dengan cover. Ilustrasi boleh memakai warna kategori sebagai aksen; pengecualian dari aturan warna kategori di atas.
 
 ---
 
