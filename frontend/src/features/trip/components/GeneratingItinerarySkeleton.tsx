@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { AutogenIllustration } from "@/components/illustrations/AutogenIllustration"
 
 import { formatElapsed } from "../lib/generateJob"
 
@@ -26,8 +26,11 @@ export function GeneratingItinerarySkeleton({ startedAt }: Props) {
   return (
     <div className="flex h-full min-h-[260px] items-start justify-center" aria-busy="true">
       {/* Sticky: the wizard under the overlay is tall, keep the progress in view. */}
-      <div className="sticky top-32 flex flex-col items-center gap-3 py-8 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+      <div className="sticky top-32 flex flex-col items-center gap-3 py-4 text-center">
+        <AutogenIllustration className="size-40 md:size-50" />
+        <div className="h-1 w-50 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+          <div className="autogen-bar h-full w-2/5 rounded-full bg-primary" />
+        </div>
         <p className="text-sm font-medium text-foreground">
           Generating your itinerary… <span className="tabular-nums">{formatElapsed(now - origin)}</span>
         </p>
