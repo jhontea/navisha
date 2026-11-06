@@ -56,6 +56,7 @@ export function TravelDateRangePicker({
   highlightRange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [visibleMonth, setVisibleMonth] = useState(() =>
     startOfMonth(parseISODate(startDate) ?? parseISODate(defaultMonth ?? "") ?? new Date()),
@@ -69,15 +70,19 @@ export function TravelDateRangePicker({
         setIsOpen(false)
       }
     }
+    // Capture phase: a surrounding sheet handles Escape on its popup, before it could bubble here.
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsOpen(false)
+      if (event.key !== "Escape") return
+      event.stopPropagation()
+      setIsOpen(false)
+      triggerRef.current?.focus()
     }
 
     document.addEventListener("pointerdown", closeOnOutsideClick)
-    document.addEventListener("keydown", closeOnEscape)
+    document.addEventListener("keydown", closeOnEscape, true)
     return () => {
       document.removeEventListener("pointerdown", closeOnOutsideClick)
-      document.removeEventListener("keydown", closeOnEscape)
+      document.removeEventListener("keydown", closeOnEscape, true)
     }
   }, [isOpen])
 
@@ -120,6 +125,7 @@ export function TravelDateRangePicker({
     <div ref={containerRef} className="relative">
       {/* eslint-disable-next-line no-restricted-syntax -- date range trigger styled as a field */}
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         onClick={() => setIsOpen((current) => !current)}
