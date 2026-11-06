@@ -66,7 +66,8 @@ export function useOpenTripLink(trip: Trip) {
   return {
     transitionTypes: ["trip-open"],
     onPointerDown: () => preloadHeroCover(trip.cover_image_url, trip.description),
-    onClick: () => {
+    // Next calls this only for a real navigation, not a Ctrl/Meta/Shift-click.
+    onNavigate: () => {
       leaving.current = true
     },
   }

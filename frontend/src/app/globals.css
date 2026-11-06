@@ -544,7 +544,7 @@
 /* Phones hide the header in a trip. The old-only group would still keep the header's blur and
    smear the top of the hero until the transition ends. */
 @media (max-width: 767px) {
-  ::view-transition-group(site-header) {
+  :root:active-view-transition-type(trip-open)::view-transition-group(site-header) {
     backdrop-filter: none;
   }
 }
