@@ -289,6 +289,14 @@
   view-transition-name: toast; /* anchored above the tab crossfade (§6) */
 }
 
+/* Phones: keep clear of the floating add button. */
+@media (max-width: 47.99rem) {
+  .navisha-toast-container {
+    right: 5.25rem;
+    width: min(24rem, calc(100vw - 6.25rem));
+  }
+}
+
 .navisha-toast {
   width: fit-content;
   max-width: 100%;
@@ -504,14 +512,18 @@
   /* Its scrollIntoView stops clear of the sticky day band (top) and the phone nav + FAB (bottom). */
   scroll-margin-block: 6rem 9.5rem;
 }
-/* The outline makes the light-mode tint visible on white and selected cards without lowering text contrast. */
+/* A faint outline keeps the tint visible on selected cards without reading as focus. */
 [data-flash] {
-  outline: 2px solid transparent;
+  outline: 1px solid transparent;
   outline-offset: -1px;
+}
+/* Expense rows sit in a clipped, rounded list that would cut the outline; the tint alone reads there. */
+li[data-flash] {
+  outline: none;
 }
 [data-flash="on"] {
   background-color: hsl(var(--primary-soft));
-  outline-color: hsl(var(--primary));
+  outline-color: hsl(var(--primary) / 0.35);
   transition: none;
 }
 [data-flash="off"] {
