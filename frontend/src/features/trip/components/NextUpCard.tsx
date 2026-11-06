@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ViewTransition } from "react"
 import { ArrowRight, MapPin } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
@@ -6,7 +7,7 @@ import { formatTripRange, tripTimingLabel } from "../lib/home"
 import { getTripDateMetrics } from "../lib/status"
 import { splitTripTitle } from "../lib/title"
 import type { Trip } from "../types"
-import { TripCover } from "./TripCard"
+import { TripCover, useScrollTopOnLeave } from "./TripCard"
 
 /**
  * The trip in progress, or the next one, as a big cover card above the Trips
@@ -18,15 +19,18 @@ export function NextUpCard({ trip }: { trip: Trip }) {
   const active = metrics.status === "active"
   const nights = Math.max(0, metrics.totalDays - 1)
   const { main, rest } = splitTripTitle(trip.title)
+  const onClick = useScrollTopOnLeave()
 
   return (
     <section aria-labelledby="next-up-heading" className="relative overflow-hidden rounded-3xl shadow-card">
-      <TripCover
-        trip={trip}
-        priority
-        sizes="(min-width: 1440px) 1440px, 100vw"
-        className="absolute inset-0 h-full w-full [&_img]:object-[75%_50%]"
-      />
+      <ViewTransition name={`trip-cover-${trip.id}`} share="trip-cover trip-cover-to-card" default="none">
+        <TripCover
+          trip={trip}
+          priority
+          sizes="(min-width: 1440px) 1440px, 100vw"
+          className="absolute inset-0 h-full w-full rounded-3xl [&_img]:object-[75%_50%]"
+        />
+      </ViewTransition>
       <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/15 to-transparent" aria-hidden="true" />
 
       <div className="relative flex min-h-60 flex-col items-start gap-3 p-5 text-on-cover sm:p-7 md:min-h-72 md:max-w-[65%] md:p-8">
@@ -65,7 +69,7 @@ export function NextUpCard({ trip }: { trip: Trip }) {
           </div>
         )}
 
-        <Link href={`/trips/${trip.id}`} className={buttonVariants({ variant: "cover", className: "px-5" })}>
+        <Link href={`/trips/${trip.id}`} onClick={onClick} className={buttonVariants({ variant: "cover", className: "px-5" })}>
           {active ? "Open today's plan" : "Open trip"}
           <ArrowRight aria-hidden="true" />
         </Link>

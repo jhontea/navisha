@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { getTripDateMetrics } from "./status"
-import { formatTripRange, groupTrips, pickNextUp, tripStats, tripTimingLabel } from "./home"
+import { formatTripRange, groupTrips, pickNextUp, tripStats, tripTimingLabel, uniqueTrips } from "./home"
 
 const today = new Date(2026, 9, 13) // 13 Oct 2026, local time
 
@@ -60,5 +60,13 @@ describe("tripStats", () => {
   it("counts trips, planned days and distinct currencies", () => {
     expect(tripStats([past1, past2, soon])).toEqual({ trips: 3, days: 6 + 10 + 3, currencies: 2 })
     expect(tripStats([])).toEqual({ trips: 0, days: 0, currencies: 0 })
+  })
+})
+
+describe("uniqueTrips", () => {
+  it("keeps one card per trip, so one cover name stays unique", () => {
+    const a = trip("a", "2026-11-01", "2026-11-02")
+    const b = trip("b", "2026-11-03", "2026-11-04")
+    expect(uniqueTrips([a, b, a]).map((t) => t.id)).toEqual(["a", "b"])
   })
 })

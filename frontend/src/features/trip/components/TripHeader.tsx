@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, ViewTransition } from "react"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
 import Link from "next/link"
@@ -65,91 +65,95 @@ export function TripHeader({
   // A labelled section, not a header: outside <main> a header is a second banner landmark.
   return (
     <section aria-label="Trip details" className="md:mx-auto md:w-full md:max-w-max-width md:px-margin-desktop md:pt-2">
-      <div className="bg-cover-fallback relative h-52 overflow-hidden rounded-b-3xl md:h-60 md:rounded-3xl">
-        {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            srcSet={srcSet}
-            sizes="(min-width: 1600px) 1600px, 100vw"
-            alt=""
-            width={1904}
-            height={1000}
-            fetchPriority="high"
-            decoding="async"
-            className="absolute inset-0 h-full w-full object-cover object-[75%_50%]"
-          />
-        )}
-        {/* Desktop already names the destination under the title. */}
-        {!cover && <CoverDestination destination={trip.description} className="inset-0 m-auto h-fit justify-center px-4 text-lg md:hidden" />}
-        {/* Keeps the title readable on the left of any cover. */}
-        <div className="absolute inset-0 hidden bg-linear-to-r from-black/40 via-black/10 to-transparent md:block" aria-hidden="true" />
+      {/* Cover morph from the trip card (DESIGN.md §6). */}
+      <ViewTransition name={`trip-cover-${trip.id}`} share="trip-cover trip-cover-to-hero" default="none">
+        <div className="bg-cover-fallback relative h-52 overflow-hidden rounded-b-3xl md:h-60 md:rounded-3xl">
+          {cover && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={cover}
+              srcSet={srcSet}
+              sizes="(min-width: 1600px) 1600px, 100vw"
+              alt=""
+              width={1904}
+              height={1000}
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover object-[75%_50%]"
+            />
+          )}
+          {/* Desktop already names the destination under the title. */}
+          {!cover && <CoverDestination destination={trip.description} className="inset-0 m-auto h-fit justify-center px-4 text-lg md:hidden" />}
+          {/* Keeps the title readable on the left of any cover. */}
+          <div className="absolute inset-0 hidden bg-linear-to-r from-black/40 via-black/10 to-transparent md:block" aria-hidden="true" />
 
-        <div className="absolute inset-x-3 top-3 flex items-center gap-2 md:inset-x-5 md:top-5">
-          <Link
-            href="/trips"
-            aria-label="Back to Trips"
-            className={buttonVariants({ variant: "cover", size: "icon", className: "shrink-0" })}
-          >
-            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-          </Link>
-          <span className="hidden rounded-full bg-cover-button/90 px-3 py-1.5 text-xs font-extrabold text-cover-button-foreground md:inline">
-            {timing}
-          </span>
-          <span className="flex-1" />
-          <IconButton label="Share trip" icon={<Share2 />} variant="cover" onClick={() => setShareOpen(true)} />
-          <DropdownMenu onOpenChange={(open) => open && onActionsOpen()}>
-            <DropdownMenuTrigger
-              aria-label="Trip actions"
+          <div className="absolute inset-x-3 top-3 flex items-center gap-2 md:inset-x-5 md:top-5">
+            <Link
+              href="/trips"
+              transitionTypes={["trip-leave"]}
+              aria-label="Back to Trips"
               className={buttonVariants({ variant: "cover", size: "icon", className: "shrink-0" })}
             >
-              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
-                <Pencil aria-hidden="true" />
-                Edit trip
-              </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onClick={() => setShareOpen(true)}>
-                <Share2 aria-hidden="true" />
-                Share trip
-              </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onClick={onDuplicate}>
-                <Copy aria-hidden="true" />
-                Duplicate trip
-              </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onClick={onAddToCalendar}>
-                <CalendarPlus aria-hidden="true" />
-                Add to calendar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={MENU_ITEM}
-                render={<a href={`/trips/${trip.id}/print`} target="_blank" rel="noopener noreferrer" />}
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+            <span className="hidden rounded-full bg-cover-button/90 px-3 py-1.5 text-xs font-extrabold text-cover-button-foreground md:inline">
+              {timing}
+            </span>
+            <span className="flex-1" />
+            <IconButton label="Share trip" icon={<Share2 />} variant="cover" onClick={() => setShareOpen(true)} />
+            <DropdownMenu onOpenChange={(open) => open && onActionsOpen()}>
+              <DropdownMenuTrigger
+                aria-label="Trip actions"
+                className={buttonVariants({ variant: "cover", size: "icon", className: "shrink-0" })}
               >
-                <FileDown aria-hidden="true" />
-                Download PDF
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>
-                <Trash2 aria-hidden="true" />
-                Delete trip
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem className={MENU_ITEM} onClick={onEdit}>
+                  <Pencil aria-hidden="true" />
+                  Edit trip
+                </DropdownMenuItem>
+                <DropdownMenuItem className={MENU_ITEM} onClick={() => setShareOpen(true)}>
+                  <Share2 aria-hidden="true" />
+                  Share trip
+                </DropdownMenuItem>
+                <DropdownMenuItem className={MENU_ITEM} onClick={onDuplicate}>
+                  <Copy aria-hidden="true" />
+                  Duplicate trip
+                </DropdownMenuItem>
+                <DropdownMenuItem className={MENU_ITEM} onClick={onAddToCalendar}>
+                  <CalendarPlus aria-hidden="true" />
+                  Add to calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className={MENU_ITEM}
+                  render={<a href={`/trips/${trip.id}/print`} target="_blank" rel="noopener noreferrer" />}
+                >
+                  <FileDown aria-hidden="true" />
+                  Download PDF
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className={cn(MENU_ITEM)} variant="destructive" onClick={onDelete}>
+                  <Trash2 aria-hidden="true" />
+                  Delete trip
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-        {/* Desktop: title on the cover, clear of the tabs that overlap the bottom edge. */}
-        <div className="absolute bottom-12 left-8 hidden max-w-[60%] flex-col items-start gap-1.5 text-on-cover md:flex">
-          <h1 className="line-clamp-2 font-display text-3xl font-extrabold leading-tight text-balance lg:text-hero">
-            {main}
-            {rest && <span className="opacity-70"> {rest}</span>}
-          </h1>
-          <p className="text-sm font-semibold text-on-cover/85 tabular-nums">
-            {meta}
-            {trip.description && <span> · {trip.description}</span>}
-          </p>
+          {/* Desktop: title on the cover, clear of the tabs that overlap the bottom edge. */}
+          <div className="absolute bottom-12 left-8 hidden max-w-[60%] flex-col items-start gap-1.5 text-on-cover md:flex">
+            <h1 className="line-clamp-2 font-display text-3xl font-extrabold leading-tight text-balance lg:text-hero">
+              {main}
+              {rest && <span className="opacity-70"> {rest}</span>}
+            </h1>
+            <p className="text-sm font-semibold text-on-cover/85 tabular-nums">
+              {meta}
+              {trip.description && <span> · {trip.description}</span>}
+            </p>
+          </div>
         </div>
-      </div>
+      </ViewTransition>
 
       {/* Phones: title under the cover. */}
       <div className="px-margin-mobile pt-4 md:hidden">

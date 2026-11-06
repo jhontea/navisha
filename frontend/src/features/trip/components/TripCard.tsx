@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { memo } from "react"
+import { memo, useLayoutEffect, useRef, ViewTransition } from "react"
 import { Compass, MapPin } from "lucide-react"
 
 import { StatusChip } from "@/components/StatusChip"
@@ -50,22 +50,43 @@ export function TripCover({
   )
 }
 
+/**
+ * Scrolls to the top in the commit that leaves through this link. Next.js keeps the scroll when
+ * the new page's content is in view, which would park the trip hero above the viewport.
+ */
+export function useScrollTopOnLeave() {
+  const leaving = useRef(false)
+  useLayoutEffect(
+    () => () => {
+      if (leaving.current) window.scrollTo({ top: 0, behavior: "instant" })
+    },
+    [],
+  )
+  return () => {
+    leaving.current = true
+  }
+}
+
 /** One trip in the Trips grid: cover, title, destination, one meta line. */
 export const TripCard = memo(function TripCard({ trip }: { trip: Trip }) {
   const metrics = getTripDateMetrics(trip.start_date, trip.end_date)
   const timing = tripTimingLabel(metrics)
+  const onClick = useScrollTopOnLeave()
 
   return (
     <Link
       href={`/trips/${trip.id}`}
+      onClick={onClick}
       className="group flex flex-col rounded-2xl border bg-card p-1.5 shadow-card transition-[translate,scale,box-shadow] duration-150 ease-out hover:-translate-y-0.5 motion-safe:active:scale-[.96] hover:shadow-overlay focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:hover:translate-y-0"
     >
-      <TripCover
-        trip={trip}
-        muted={metrics.status === "past"}
-        sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 480px"
-        className="aspect-video w-full rounded-xl [&_img]:object-[75%_50%]"
-      />
+      <ViewTransition name={`trip-cover-${trip.id}`} share="trip-cover trip-cover-to-card" default="none">
+        <TripCover
+          trip={trip}
+          muted={metrics.status === "past"}
+          sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 50vw, 480px"
+          className="aspect-video w-full rounded-xl [&_img]:object-[75%_50%]"
+        />
+      </ViewTransition>
       <div className="flex flex-1 flex-col gap-1 px-2.5 pb-2 pt-3">
         <h3 className="line-clamp-2 font-display text-lg font-extrabold leading-snug text-foreground">{trip.title}</h3>
         {trip.description && (

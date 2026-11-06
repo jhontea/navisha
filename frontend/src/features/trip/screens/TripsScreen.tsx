@@ -10,7 +10,7 @@ import { OnboardingCard } from "@/features/trip/components/OnboardingCard"
 import { TripCard } from "@/features/trip/components/TripCard"
 import { TripCTAs } from "@/features/trip/components/TripCTAs"
 import { useDashboardTrips, useTrips } from "@/features/trip/hooks/useTrips"
-import { groupTrips, pickNextUp, tripStats } from "@/features/trip/lib/home"
+import { groupTrips, pickNextUp, tripStats, uniqueTrips } from "@/features/trip/lib/home"
 import type { Trip } from "@/features/trip/types"
 
 const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
@@ -40,7 +40,7 @@ export function TripsScreen() {
   const dashboard = useDashboardTrips()
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useTrips()
 
-  const allTrips = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
+  const allTrips = useMemo(() => uniqueTrips(data?.pages.flatMap((p) => p.items) ?? []), [data])
   const { upcoming, past } = useMemo(() => groupTrips(allTrips), [allTrips])
   // The upcoming endpoint is ordered by start date, so it finds the next trip
   // even when it is not on the first page of the list.

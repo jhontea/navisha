@@ -483,7 +483,7 @@
 ::view-transition-group(toast),
 ::view-transition-group(.anchor) {
   animation: none;
-  z-index: 100;
+  z-index: 101;
 }
 ::view-transition-old(site-header),
 ::view-transition-old(trip-tabs),
@@ -498,6 +498,69 @@
 ::view-transition-new(toast),
 ::view-transition-new(.anchor) {
   animation: none;
+}
+/* Cover morph between a trip card and the hero (DESIGN.md §6, P-VT A). The class on the new
+   side tells the direction. Both snapshots keep their picture through object-fit and the old
+   one stays solid under the fade, so no see-through frame shows the page behind. */
+::view-transition-group(.trip-cover) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+  z-index: 100; /* above the fading tab content and day bar, below the anchors */
+}
+::view-transition-image-pair(.trip-cover) {
+  --hero-radius: 0 0 1.5rem 1.5rem;
+  overflow: hidden;
+  animation: trip-cover-radius 380ms cubic-bezier(.2, .8, .2, 1) both;
+}
+@media (min-width: 768px) {
+  ::view-transition-image-pair(.trip-cover) {
+    --hero-radius: 1.5rem;
+  }
+}
+::view-transition-image-pair(.trip-cover-to-hero) {
+  --from-radius: 0.75rem;
+  --to-radius: var(--hero-radius);
+}
+::view-transition-image-pair(.trip-cover-to-card) {
+  --from-radius: var(--hero-radius);
+  --to-radius: 0.75rem;
+}
+@keyframes trip-cover-radius {
+  from { border-radius: var(--from-radius); }
+  to { border-radius: var(--to-radius); }
+}
+::view-transition-old(.trip-cover),
+::view-transition-new(.trip-cover) {
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: normal;
+}
+::view-transition-old(.trip-cover) {
+  animation: none;
+}
+/* To the hero: the wide hero snapshot only fits once the group has nearly grown. */
+::view-transition-new(.trip-cover-to-hero) {
+  animation: fade-only 180ms linear 100ms both;
+}
+/* To the card: its snapshot holds more of the picture, so it can take over right away. */
+::view-transition-new(.trip-cover-to-card) {
+  animation: fade-only 90ms linear both;
+}
+/* The card is off screen, so React drops the pair: the lone hero fades instead of hanging there. */
+::view-transition-old(.trip-cover):only-child {
+  animation: fade-only 150ms linear reverse both;
+}
+/* Back to the list: the day bar and FAB would linger on top of the first card. */
+:root:active-view-transition-type(trip-leave)::view-transition-old(trip-days),
+:root:active-view-transition-type(trip-leave)::view-transition-old(fab) {
+  display: none;
+}
+/* Phones hide the header in a trip. The old-only group would still keep the header's blur and
+   smear the top of the hero until the transition ends. */
+@media (max-width: 767px) {
+  ::view-transition-group(site-header) {
+    backdrop-filter: none;
+  }
 }
 /* No View Transitions: the remounted tab content fades in instead (opacity only, FAB-safe). */
 @supports not (view-transition-name: none) {
@@ -543,6 +606,7 @@ li[data-flash] {
   }
   /* `*` does not reach view-transition pseudo-elements. */
   ::view-transition-group(*),
+  ::view-transition-image-pair(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation-duration: 0s !important;
