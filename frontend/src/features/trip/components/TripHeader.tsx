@@ -38,12 +38,14 @@ const MENU_ITEM = "min-h-10 px-3 text-sm"
  */
 export function TripHeader({
   trip,
+  onActionsOpen,
   onEdit,
   onDuplicate,
   onAddToCalendar,
   onDelete,
 }: {
   trip: Pick<Trip, "id" | "title" | "description" | "start_date" | "end_date" | "base_currency" | "cover_image_url">
+  onActionsOpen: () => void
   onEdit: () => void
   onDuplicate: () => void
   onAddToCalendar: () => void
@@ -96,7 +98,7 @@ export function TripHeader({
           </span>
           <span className="flex-1" />
           <IconButton label="Share trip" icon={<Share2 />} variant="cover" onClick={() => setShareOpen(true)} />
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(open) => open && onActionsOpen()}>
             <DropdownMenuTrigger
               aria-label="Trip actions"
               className={buttonVariants({ variant: "cover", size: "icon", className: "shrink-0" })}

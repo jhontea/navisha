@@ -3,7 +3,6 @@
 import type { ReactNode } from "react"
 import { useState, useTransition, ViewTransition } from "react"
 import { lazyPreload } from "@/lib/lazyPreload"
-import { usePrefetchOnIdle } from "@/lib/usePrefetchOnIdle"
 import { startRouteProgress } from "@/lib/routeProgress"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
@@ -62,8 +61,6 @@ export function TripShell({ children }: { children: ReactNode }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [exporting, setExporting] = useState(false)
   const queryClient = useQueryClient()
-  usePrefetchOnIdle(TripForm.preload)
-  usePrefetchOnIdle(DuplicateTripForm.preload)
 
   // During persisted-query restoration there can briefly be no data while
   // isLoading is false. Keep the skeleton until data or a real error arrives.
@@ -181,6 +178,11 @@ export function TripShell({ children }: { children: ReactNode }) {
     <>
       <TripHeader
         trip={trip}
+        // These are rare actions, so fetch their forms only once the menu shows intent.
+        onActionsOpen={() => {
+          void TripForm.preload().catch(() => {})
+          void DuplicateTripForm.preload().catch(() => {})
+        }}
         onEdit={() => setEditOpen(true)}
         onDuplicate={() => setDuplicateOpen(true)}
         onAddToCalendar={() => void onAddToCalendar()}
