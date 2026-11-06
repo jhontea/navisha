@@ -216,7 +216,7 @@ function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggle
                     aria-hidden="true"
                     strokeWidth={3}
                     className={cn(
-                      "pointer-events-none relative size-3 text-primary-foreground transition-[opacity,scale] duration-150 ease-out",
+                      "pointer-events-none relative size-3 text-primary-foreground transition-[opacity,scale] duration-150 ease-out forced-colors:text-[CanvasText]",
                       !item.completed && "opacity-0 motion-safe:scale-50",
                     )}
                   />
@@ -224,7 +224,7 @@ function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggle
                 {/* line-through stays on and only its color changes, so nothing pops or shifts. Forced colors ignore the transparent color, so it is removed there. */}
                 <span
                   className={cn(
-                    "leading-snug line-through transition-[color,text-decoration-color,opacity] duration-150 ease-out",
+                    "leading-snug line-through transition-[color,text-decoration-color] duration-150 ease-out",
                     item.completed
                       ? "text-muted-foreground decoration-muted-foreground"
                       : "text-foreground/80 decoration-transparent forced-colors:no-underline",
