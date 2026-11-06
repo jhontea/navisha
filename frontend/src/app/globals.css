@@ -439,6 +439,7 @@
 ::view-transition-new(trip-day),
 ::view-transition-old(trip-days),
 ::view-transition-new(trip-days),
+::view-transition-new(trip-list),
 ::view-transition-group(fab),
 ::view-transition-old(fab),
 ::view-transition-new(fab) {
@@ -483,7 +484,7 @@
 ::view-transition-group(toast),
 ::view-transition-group(.anchor) {
   animation: none;
-  z-index: 100;
+  z-index: 101;
 }
 ::view-transition-old(site-header),
 ::view-transition-old(trip-tabs),
@@ -498,6 +499,54 @@
 ::view-transition-new(toast),
 ::view-transition-new(.anchor) {
   animation: none;
+}
+/* Cover morph from a trip card to the hero (DESIGN.md §6, P-VT A). Both snapshots keep their
+   picture through object-fit. The card stays solid, and the hero (title, buttons) and the tab
+   pill fade in only once the group has nearly landed. */
+::view-transition-group(.trip-cover) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+  z-index: 100; /* above the fading tab content and day bar, below the anchors */
+}
+::view-transition-image-pair(.trip-cover) {
+  --hero-radius: 0 0 1.5rem 1.5rem;
+  overflow: hidden;
+  animation: trip-cover-radius 380ms cubic-bezier(.2, .8, .2, 1) both;
+}
+@media (min-width: 768px) {
+  ::view-transition-image-pair(.trip-cover) {
+    --hero-radius: 1.5rem;
+  }
+}
+@keyframes trip-cover-radius {
+  from { border-radius: 0.75rem; }
+  to { border-radius: var(--hero-radius); }
+}
+::view-transition-old(.trip-cover),
+::view-transition-new(.trip-cover) {
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: normal;
+}
+::view-transition-old(.trip-cover) {
+  animation: none;
+}
+::view-transition-new(.trip-cover),
+:root:active-view-transition-type(trip-open)::view-transition-new(trip-tabs) {
+  animation: fade-only 100ms linear 200ms both;
+}
+/* Back to the list: the list fades in like a tab. The day bar and FAB (and the day bar's blur)
+   leave at once instead of lingering on top of it. */
+:root:active-view-transition-type(trip-leave)::view-transition-group(trip-days),
+:root:active-view-transition-type(trip-leave)::view-transition-group(fab) {
+  display: none;
+}
+/* Phones hide the header in a trip. The old-only group would still keep the header's blur and
+   smear the top of the hero until the transition ends. */
+@media (max-width: 767px) {
+  :root:active-view-transition-type(trip-open)::view-transition-group(site-header) {
+    backdrop-filter: none;
+  }
 }
 /* No View Transitions: the remounted tab content fades in instead (opacity only, FAB-safe). */
 @supports not (view-transition-name: none) {
@@ -543,6 +592,7 @@ li[data-flash] {
   }
   /* `*` does not reach view-transition pseudo-elements. */
   ::view-transition-group(*),
+  ::view-transition-image-pair(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation-duration: 0s !important;

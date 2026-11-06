@@ -18,7 +18,8 @@ import { buildTripIcs, icsFileName } from "@/features/trip/lib/ics"
 import { activityApi } from "@/features/activity/api"
 import { accommodationApi } from "@/features/accommodation/api"
 import { transportationApi } from "@/features/transportation/api"
-import { useDeleteTrip, useDuplicateTrip, useTrip, useUpdateTrip } from "@/features/trip/hooks/useTrips"
+import { tripApi } from "@/features/trip/api"
+import { useDeleteTrip, useDuplicateTrip, useTripHero, useUpdateTrip } from "@/features/trip/hooks/useTrips"
 import { ApiError, isOfflineError } from "@/lib/api"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -46,7 +47,7 @@ export function TripShell({ children }: { children: ReactNode }) {
   const { id: tripId } = useParams<{ id: string }>()
   const router = useRouter()
   const pathname = usePathname()
-  const { data: trip, isLoading, isError, error, refetch, isFetching } = useTrip(tripId)
+  const { data: trip, isLoading, isError, error, refetch, isFetching } = useTripHero(tripId)
   const { mutateAsync: updateTrip, isPending: isUpdating } = useUpdateTrip(tripId)
   const { mutate: deleteTrip, isPending: isDeleteRunning, isSuccess: isDeleted } = useDeleteTrip()
   // Stays busy after success too, so the button cannot re-arm while the dialog animates out.
@@ -133,7 +134,12 @@ export function TripShell({ children }: { children: ReactNode }) {
     if (exporting) return
     setExporting(true)
     try {
-      const [activities, transports, stays] = await Promise.all([
+      const [fullTrip, activities, transports, stays] = await Promise.all([
+        // The hero's trip can still be the list item, which has no days.
+        queryClient.ensureQueryData({
+          queryKey: ["trips", "detail", tripId],
+          queryFn: () => tripApi.get(tripId),
+        }),
         queryClient.fetchQuery({
           queryKey: ["activities", "trip", tripId],
           queryFn: ({ signal }) => activityApi.listByTrip(tripId, signal),
@@ -148,7 +154,7 @@ export function TripShell({ children }: { children: ReactNode }) {
         }),
       ])
       const { text, count } = buildTripIcs({
-        trip,
+        trip: fullTrip,
         activitiesByDay: activities.items_by_day ?? {},
         transports: transports.items ?? [],
         stays: stays.items ?? [],

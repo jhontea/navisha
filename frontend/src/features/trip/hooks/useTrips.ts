@@ -10,6 +10,7 @@ import { tripApi } from "../api"
 import type {
   CreateTripInput,
   Day,
+  Trip,
   TripDetail,
   TripDraft,
   UpdateTripInput,
@@ -95,6 +96,24 @@ export function useTrip(id: string, enabled = true) {
     queryKey: ["trips", "detail", id],
     queryFn: () => tripApi.get(id),
     enabled: enabled && !!id,
+  })
+}
+
+/**
+ * The trip without its days, for the trip hero. Starts from the cached lists so the hero is
+ * in the navigation commit, which the cover morph needs. Pages that read days use useTrip.
+ */
+export function useTripHero(id: string) {
+  const qc = useQueryClient()
+  return useQuery<Trip>({
+    queryKey: ["trips", "detail", id],
+    queryFn: () => tripApi.get(id),
+    enabled: !!id,
+    placeholderData: () =>
+      [
+        ...(qc.getQueryData<{ items: Trip[] }>(["trips", "upcoming", 6])?.items ?? []),
+        ...(qc.getQueryData<InfiniteData<TripListResponse, string>>(["trips", "list"])?.pages.flatMap((p) => p.items) ?? []),
+      ].find((t) => t.id === id),
   })
 }
 
