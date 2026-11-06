@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { loadOrOffline } from "@/lib/loadOrOffline"
 import { startRouteProgress } from "@/lib/routeProgress"
+import { toast } from "@/lib/toast"
 
 import { PageHeader } from "@/components/PageHeader"
 import { useCreateTrip } from "@/features/trip/hooks/useTrips"
@@ -38,6 +39,7 @@ export function NewTripScreen() {
           onSubmit={async (input) => {
             // A failure throws to TripForm, which shows it inline and keeps its values.
             const trip = await mutateAsync(input)
+            toast("Trip created.")
             startRouteProgress()
             startTransition(() => router.push(`/trips/${trip.id}`))
           }}

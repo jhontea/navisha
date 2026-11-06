@@ -38,6 +38,7 @@ import { AlertCircle, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GenerateTripInput, GenerateTripResponse } from "@/features/trip/types"
 import { ApiError, isOfflineError } from "@/lib/api"
+import { toast } from "@/lib/toast"
 import { QuotaBadge } from "@/components/QuotaBadge"
 
 const MAX_DAYS = 10
@@ -164,6 +165,7 @@ function GenerateTripPageContent() {
       // This draft is used; do not offer it again on the next visit. Only storage:
       // the review screen stays up until the route changes (no empty wizard flash).
       if (job) ignoreJob(job.job_id)
+      toast("Trip created.")
       startRouteProgress()
       startTransition(() => router.push(`/trips/${trip_id}`))
     } catch (err) {
