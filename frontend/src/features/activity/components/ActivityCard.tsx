@@ -163,7 +163,7 @@ function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggle
                   rel="noopener noreferrer"
                   aria-label="Open in Google Maps"
                   onClick={(e) => e.stopPropagation()}
-                  className="-my-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-primary hover:bg-primary/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                  className="-my-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-primary hover:bg-primary/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
@@ -209,7 +209,7 @@ function ActivityBody({ activity, onToggleTodo }: { activity: Activity; onToggle
                     readOnly={!onToggleTodo}
                     disabled={!onToggleTodo}
                     onChange={() => onToggleTodo?.(item.id)}
-                    className="absolute inset-0 appearance-none rounded border border-muted-foreground bg-background transition-[background-color,border-color] duration-150 ease-out checked:border-primary checked:bg-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                    className="absolute inset-0 appearance-none rounded border border-muted-foreground bg-background transition-[background-color,border-color] duration-150 ease-out checked:border-primary checked:bg-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:opacity-60"
                   />
                   {/* A transition, not animate-in: stays mounted so unticking fades too and a loaded list does not replay it. */}
                   <Check
