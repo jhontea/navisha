@@ -166,6 +166,8 @@ export function GeoapifyAutocomplete({
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
+      // An open list takes this Escape; the next one may close the surrounding sheet.
+      if (isOpen) event.stopPropagation()
       setIsOpen(false)
       setActiveIndex(-1)
       return

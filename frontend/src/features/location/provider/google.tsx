@@ -94,6 +94,20 @@ function PlaceSearch(props: PlaceSearchProps) {
   )
 }
 
+/**
+ * The widget hides its open list on Escape, but the key would also close a surrounding sheet.
+ * Add this before creating the widget, which then still gets the key, on the same element.
+ */
+function keepEscapeInOpenList(input: HTMLInputElement) {
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Escape") return
+    const listOpen = [...document.querySelectorAll<HTMLElement>(".pac-container")].some((list) => list.offsetHeight > 0)
+    if (listOpen) event.stopPropagation()
+  }
+  input.addEventListener("keydown", onKeyDown)
+  return () => input.removeEventListener("keydown", onKeyDown)
+}
+
 function PlaceAutocompleteInput({
   value,
   onChange,
@@ -116,6 +130,7 @@ function PlaceAutocompleteInput({
 
   useEffect(() => {
     if (!places || failed || !inputRef.current) return
+    const releaseEscape = keepEscapeInOpenList(inputRef.current)
     const ac = new places.Autocomplete(inputRef.current, {
       fields: ["place_id", "name", "formatted_address", "geometry"],
     })
@@ -133,6 +148,7 @@ function PlaceAutocompleteInput({
     const cancelReplay = replayTypedText(inputRef.current, typedRef)
     return () => {
       cancelReplay()
+      releaseEscape()
       google.maps.event.removeListener(listener)
     }
   }, [places, failed, onSelectRef])
@@ -211,6 +227,7 @@ function DestinationAutocompleteInput({
 
   useEffect(() => {
     if (!places || failed || !inputRef.current) return
+    const releaseEscape = keepEscapeInOpenList(inputRef.current)
     const ac = new places.Autocomplete(inputRef.current, {
       // `(regions)`: city, province/state and country only, no streets or businesses.
       types: ["(regions)"],
@@ -231,6 +248,7 @@ function DestinationAutocompleteInput({
     const cancelReplay = replayTypedText(inputRef.current, typedRef)
     return () => {
       cancelReplay()
+      releaseEscape()
       google.maps.event.removeListener(listener)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
