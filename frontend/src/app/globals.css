@@ -417,9 +417,6 @@
 .autogen-plane {
   transform-origin: 51% 31%; /* the plane's center in its viewBox */
 }
-.autogen-bar {
-  translate: 75%; /* centered in the track */
-}
 @keyframes autogen-plane {
   0%, 100% { translate: 0 0; rotate: -3deg; }
   50% { translate: 0 -5px; rotate: 3deg; }
