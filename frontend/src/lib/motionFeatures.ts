@@ -1,5 +1,5 @@
 // Loaded async by MotionProvider so motion's animation features stay out of the
-// first dashboard chunk. Swap for domMax when a component needs layout/layoutId.
-import { domAnimation } from "motion/react"
+// first dashboard chunk. domMax, not domAnimation: ActivePill's layoutId needs it.
+import { domMax } from "motion/react"
 
-export default domAnimation
+export default domMax

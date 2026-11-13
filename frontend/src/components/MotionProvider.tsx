@@ -7,8 +7,8 @@ const loadFeatures = () => import("@/lib/motionFeatures").then((mod) => mod.defa
 /**
  * The one motion setup for the dashboard, mounted in app/(dashboard)/layout.tsx.
  * Components use `m.*` only; `strict` throws on a full `motion.*` component.
- * reducedMotion="user" stops transforms, not height/opacity, so lists also read
- * useReducedMotion() and set duration 0.
+ * reducedMotion="user" stops transforms and layout, not height/opacity, so Collapse
+ * also sets duration 0 itself.
  */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   return (

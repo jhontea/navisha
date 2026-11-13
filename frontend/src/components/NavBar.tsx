@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftRight, Home, Sparkles, UserRound } from "lucide-react";
 
+import { ActivePill } from "@/components/ActivePill";
 import { BrandMark } from "@/components/BrandMark";
 import { FloatingNav } from "@/components/FloatingNav";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -42,6 +43,10 @@ export function NavBar() {
     });
   }
 
+  // Read in render, before the new route resets the scroll: motion measures page coordinates,
+  // so in this sticky bar a scroll reset would fly the pill in from the old offset.
+  const scrolled = typeof window !== "undefined" && window.scrollY > 0;
+
   const desktopLinks = [
     { href: "/trips", label: "Trips", active: sections.trips || inTrip, onIntent: prefetchTrips },
     { href: "/trips/generate", label: "Plan with AI", active: sections.ai },
@@ -75,7 +80,7 @@ export function NavBar() {
             <span className="sr-only">: Trips</span>
           </Link>
 
-          <ul className="hidden items-center gap-1 md:flex">
+          <ul className="isolate hidden items-center gap-1 md:flex">
             {desktopLinks.map((link) => (
               <li key={link.href}>
                 <Link
@@ -84,12 +89,13 @@ export function NavBar() {
                   onFocus={link.onIntent}
                   aria-current={link.active ? "page" : undefined}
                   className={cn(
-                    "inline-flex h-10 items-center rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                    "relative inline-flex h-10 items-center rounded-full px-4 text-sm font-bold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                     link.active
-                      ? "bg-primary-soft text-primary-soft-foreground"
+                      ? "text-primary-soft-foreground"
                       : "text-muted-foreground hover:bg-card hover:text-foreground",
                   )}
                 >
+                  {link.active && <ActivePill layoutId="top-nav-pill" instant={scrolled} />}
                   {link.label}
                 </Link>
               </li>
