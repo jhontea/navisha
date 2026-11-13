@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useId } from "react"
 import type { LucideIcon } from "lucide-react"
+import * as m from "motion/react-m"
 
 import { ActivePill } from "@/components/ActivePill"
 import { cn } from "@/lib/utils"
@@ -32,7 +33,10 @@ export function FloatingNav({
   // should not fly between two different bars.
   const pillId = useId()
   return (
-    <nav
+    // layoutScroll on a fixed element makes it motion's scroll root: without it the pill
+    // flies in from the old scroll offset when a navigation resets the page scroll.
+    <m.nav
+      layoutScroll
       aria-label={ariaLabel}
       className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 [view-transition-name:floating-nav] md:hidden"
     >
@@ -57,6 +61,6 @@ export function FloatingNav({
           </li>
         ))}
       </ul>
-    </nav>
+    </m.nav>
   )
 }

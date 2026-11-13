@@ -43,6 +43,10 @@ export function NavBar() {
     });
   }
 
+  // Read in render, before the new route resets the scroll: motion measures page coordinates,
+  // so in this sticky bar a scroll reset would fly the pill in from the old offset.
+  const scrolled = typeof window !== "undefined" && window.scrollY > 0;
+
   const desktopLinks = [
     { href: "/trips", label: "Trips", active: sections.trips || inTrip, onIntent: prefetchTrips },
     { href: "/trips/generate", label: "Plan with AI", active: sections.ai },
@@ -91,7 +95,7 @@ export function NavBar() {
                       : "text-muted-foreground hover:bg-card hover:text-foreground",
                   )}
                 >
-                  {link.active && <ActivePill layoutId="top-nav-pill" />}
+                  {link.active && <ActivePill layoutId="top-nav-pill" instant={scrolled} />}
                   {link.label}
                 </Link>
               </li>

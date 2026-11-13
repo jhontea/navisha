@@ -9,14 +9,14 @@ import * as m from "motion/react-m"
  * every label it slides past. The radius is a style, not a class, so motion can keep the
  * ends round while it scales between items of other widths.
  */
-export function ActivePill({ layoutId }: { layoutId: string }) {
+export function ActivePill({ layoutId, instant }: { layoutId: string; instant?: boolean }) {
   return (
     <m.span
       layoutId={layoutId}
       aria-hidden="true"
       className="absolute inset-0 -z-10 bg-primary-soft"
       style={{ borderRadius: 9999 }}
-      transition={{ type: "spring", visualDuration: 0.42, bounce: 0.15 }}
+      transition={instant ? { type: false } : { type: "spring", visualDuration: 0.42, bounce: 0.15 }}
     />
   )
 }
