@@ -32,6 +32,9 @@ export function TabPills({
   const pillId = useId()
   const navRef = useRef<HTMLElement>(null)
   const activeHref = items.find((item) => item.active)?.href
+  // Sticky like NavBar: a navigation that resets the scroll would fly the pill in from the
+  // old scroll position, so it moves instantly when the page is scrolled.
+  const scrolled = typeof window !== "undefined" && window.scrollY > 0
 
   // Only when the bar overflows, so the page itself never scrolls for this.
   useEffect(() => {
@@ -59,7 +62,7 @@ export function TabPills({
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              {active && <ActivePill layoutId={pillId} />}
+              {active && <ActivePill layoutId={pillId} instant={scrolled} />}
               {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}
               {label}
             </Link>
