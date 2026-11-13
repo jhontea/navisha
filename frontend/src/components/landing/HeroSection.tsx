@@ -35,7 +35,7 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-linear-to-b from-black/50 via-black/60 to-black/65 lg:hidden" aria-hidden="true" />
 
         <div className="relative grid items-center gap-10 px-6 py-12 sm:px-10 md:py-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:px-14 lg:py-20">
-          <div className="text-on-cover">
+          <div className="landing-hero-text text-on-cover">
             <h1 className="text-balance font-display text-4xl font-extrabold leading-[1.05] md:text-5xl lg:text-6xl">
               Plan every day.
               <span className="block opacity-70">See it on the map.</span>
@@ -60,7 +60,7 @@ export function HeroSection() {
           </div>
 
           {/* Product shot: the same boarding pass the app draws. */}
-          <div className="hidden lg:block" aria-hidden="true">
+          <div className="landing-hero-pass hidden lg:block" aria-hidden="true">
             <BoardingPass transportation={SAMPLE_FLIGHT} dayNumber={1} className="ml-auto max-w-sm -rotate-2 shadow-overlay" />
           </div>
         </div>

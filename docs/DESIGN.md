@@ -201,11 +201,12 @@ Ikon: Lucide stroke 2, ukuran 16 / 18 / 20. Ilustrasi hanya untuk cover, empty s
 | View Transition 250ms `ease-soft` | `<ViewTransition>` dari `react` | pindah tab, pindah hari (crossfade) |
 | View Transition 380ms `ease-soft` | `<ViewTransition>` dari `react` | morph cover kartu trip → hero (hanya maju) |
 | Spring ringan | — | Bottom sheet peta saat ditarik |
+| Reveal landing | `.landing-hero-text` (250ms naik 8px) · `.landing-hero-pass` (400ms naik 16px, jeda 80ms) · `.landing-reveal` (naik 16px saat discroll, `animation-timeline: view()`, `--i` = indeks kolom) | hanya landing (Q6); gambar cover (LCP) diam; tanpa `view()` atau dengan reduced motion konten tampil biasa |
 | Pesan error simpan | `.animate-save-error` (fade 150ms + getar `translate` ±2px 200ms) | pesan inline di atas tombol form (`FormActions` `error`/`errorKey`); setelah gagal, fokus kembali ke tombol simpan bila sempat jatuh ke body; reduced motion: tanpa gerak, pesan tetap tampil |
 
 `--motion-fast`/`--motion-base` (di `:root`, `globals.css`) dipakai di CSS murni; di className pakai utility Tailwind (`ease-soft` dari `tailwind.config.ts`). Popover kecil (select, menu) tetap 100ms bawaan coss.
 
-Tidak ada animasi dekoratif. Semua mengikuti `prefers-reduced-motion`: aturan global di `globals.css` membuat animasi/transisi CSS dan `::view-transition-*` instan (termasuk `animation-delay`); transform baru (tekan, slide) memakai prefix `motion-safe:`. Feedback yang membawa informasi (sorotan baris, toast) tetap terlihat, hanya tanpa gerak.
+Tidak ada animasi dekoratif, kecuali reveal landing. Semua mengikuti `prefers-reduced-motion`: aturan global di `globals.css` membuat animasi/transisi CSS dan `::view-transition-*` instan (termasuk `animation-delay`); transform baru (tekan, slide) memakai prefix `motion-safe:`. Feedback yang membawa informasi (sorotan baris, toast) tetap terlihat, hanya tanpa gerak.
 
 Aturan teknis:
 - Tailwind v4 `translate-*`/`scale-*` mengubah properti CSS `translate`/`scale`, bukan `transform`. Pakai `transition-transform` atau `transition-[translate,scale,opacity]`, bukan `transition-[transform,…]`.

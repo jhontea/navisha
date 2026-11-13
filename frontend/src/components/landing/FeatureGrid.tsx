@@ -128,6 +128,9 @@ const STEPS: { Icon: LucideIcon; title: string; desc: string }[] = [
   },
 ]
 
+// Column index for the scroll reveal stagger on md+ (one column below md, so no stagger).
+const STEP_STAGGER = ["", "md:[--i:1]", "md:[--i:2]"]
+
 export function FeatureGrid() {
   return (
     <>
@@ -145,24 +148,28 @@ export function FeatureGrid() {
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
           <FeatureCard
+            className="landing-reveal"
             Icon={CalendarDays}
             title="One timeline per day"
             description="Activities keep your order; flights and hotel check-ins slot in by time, so the day reads top to bottom."
             visual={itineraryVisual}
           />
           <FeatureCard
+            className="landing-reveal md:[--i:1]"
             Icon={Map}
             title="Each day on a map"
             description="See the day's places in order, with the route between them. Tap a place to open it in Google Maps."
             visual={mapVisual}
           />
           <FeatureCard
+            className="landing-reveal"
             Icon={Wallet}
             title="Budget in any currency"
             description="Log expenses in the currency you paid; totals convert to the trip's base currency, by category and by day."
             visual={budgetVisual}
           />
           <FeatureCard
+            className="landing-reveal md:[--i:1]"
             Icon={Sparkles}
             title="AI drafts you review"
             description="Get a suggested day or a whole trip from a few answers. Nothing is added until you pick what to keep."
@@ -181,7 +188,7 @@ export function FeatureGrid() {
         </h2>
         <ol className="mt-10 grid gap-6 md:grid-cols-3">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="flex gap-4 rounded-2xl border bg-card p-5 shadow-card">
+            <li key={step.title} className={cn("landing-reveal flex gap-4 rounded-2xl border bg-card p-5 shadow-card", STEP_STAGGER[i])}>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-soft font-display text-lg font-extrabold text-primary-soft-foreground">
                 {i + 1}
               </span>
